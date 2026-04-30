@@ -75,7 +75,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux
@@ -142,7 +142,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux
@@ -229,7 +229,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux
