@@ -615,7 +615,7 @@ namespace NDI
         m_readyFrame = m_DLOutputVideoFrameQueue.at(0);
 
         // Create an NDI sender
-        m_ndiSender = NDIlib_send_create();
+        m_ndiSender = p_NDI_lib->send_create(nullptr);
         if (m_ndiSender == nullptr)
         {
             std::cout << "ERROR: Could not create NDI sender.\n";
@@ -658,7 +658,7 @@ namespace NDI
 
             if (m_ndiSender != nullptr)
             {
-                NDIlib_send_destroy(m_ndiSender);
+                p_NDI_lib->send_destroy(m_ndiSender);
                 m_ndiSender = nullptr;
             }
         }
@@ -731,24 +731,24 @@ namespace NDI
             {
                 m_ndiInterleaved16AudioFrame.p_data =
                     reinterpret_cast<short*>(&m_audioData[index * m_audioSamplesPerFrame * m_audioChannelCount * m_audioFormatSizeInBytes]);
-                NDIlib_util_send_send_audio_interleaved_16s(m_ndiSender, &m_ndiInterleaved16AudioFrame);
+                p_NDI_lib->util_send_send_audio_interleaved_16s(m_ndiSender, &m_ndiInterleaved16AudioFrame);
             }
             else if (m_audioFormat == TwkAudio::Float32Format)
             {
                 m_ndiInterleaved32fAudioFrame.p_data =
                     reinterpret_cast<float*>(&m_audioData[index * m_audioSamplesPerFrame * m_audioChannelCount * m_audioFormatSizeInBytes]);
-                NDIlib_util_send_send_audio_interleaved_32f(m_ndiSender, &m_ndiInterleaved32fAudioFrame);
+                p_NDI_lib->util_send_send_audio_interleaved_32f(m_ndiSender, &m_ndiInterleaved32fAudioFrame);
             }
             else
             {
                 m_ndiInterleaved32AudioFrame.p_data =
                     reinterpret_cast<int*>(&m_audioData[index * m_audioSamplesPerFrame * m_audioChannelCount * m_audioFormatSizeInBytes]);
-                NDIlib_util_send_send_audio_interleaved_32s(m_ndiSender, &m_ndiInterleaved32AudioFrame);
+                p_NDI_lib->util_send_send_audio_interleaved_32s(m_ndiSender, &m_ndiInterleaved32AudioFrame);
             }
         }
 
         // Send the video frame
-        NDIlib_send_send_video_v2(m_ndiSender, &m_ndiVideoFrame);
+        p_NDI_lib->send_send_video_v2(m_ndiSender, &m_ndiVideoFrame);
 
         return true;
     }
