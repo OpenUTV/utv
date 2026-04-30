@@ -15,6 +15,9 @@ on:
         type: string
         default: 'true'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   # Always runs — CY2024 Release only (PR scope)
   macos-pr:
