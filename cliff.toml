@@ -51,5 +51,5 @@ commit_parsers = [
 ]
 
 [remote.github]
-owner = "AcademySoftwareFoundation"
+owner = "makaisystems"
 repo = "UTV"
