@@ -75,6 +75,7 @@ EXTERNALPROJECT_ADD(
   DOWNLOAD_DIR ${RV_DEPS_DOWNLOAD_DIR}
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
   SOURCE_DIR ${_source_dir}
+  PATCH_COMMAND patch -p0 < ${CMAKE_SOURCE_DIR}/cmake/dependencies/patches/aja-macos-sdk.patch
   BINARY_DIR ${_build_dir}
   INSTALL_DIR ${_install_dir}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} ${_configure_options}
