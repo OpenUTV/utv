@@ -53,7 +53,7 @@ jobs:
       SCCACHE_GHA_ENABLED: false
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-windows
@@ -98,7 +98,7 @@ jobs:
       SCCACHE_GHA_ENABLED: false
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-windows
@@ -152,7 +152,7 @@ jobs:
       SCCACHE_GHA_ENABLED: false
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-windows

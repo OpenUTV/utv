@@ -54,7 +54,7 @@ jobs:
             vfx-platform: "CY2024"
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-macos
@@ -101,7 +101,7 @@ jobs:
             vfx-platform: "CY2024"
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-macos
