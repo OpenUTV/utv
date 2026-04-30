@@ -15,7 +15,7 @@
 
 ---
 
-## 🎬 A Player for the Masses
+## A Player for the Masses
 
 UTV is a highly performant, natively installable image and sequence viewer.
 
@@ -27,7 +27,7 @@ Whether you are a freelance artist, an editor, or just need to smoothly scrub th
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### macOS (Homebrew)
 
@@ -41,7 +41,7 @@ brew install --cask OpenUTV/utv/utv
 
 ---
 
-## 🛠️ Building from Source
+## Building from Source
 
 If you want to build UTV from source or contribute to the project, the process is streamlined.
 
@@ -69,16 +69,16 @@ The compiled binary will be placed in `_build/stage/app/UTV.app`.
 
 ---
 
-## 🤝 Contributing & Governance
+## Contributing & Governance
 
 We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) and [GOVERNANCE.md](GOVERNANCE.md) to get started.
 
-## 📈 Star History
+## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenUTV/utv&type=Date)](https://star-history.com/#OpenUTV/utv&Date)
 
 ---
 
-## 📜 About Third-Party Licenses
+## About Third-Party Licenses
 
 See [THIRD-PARTY.md](THIRD-PARTY.md) for license information about portions of UTV that have been imported from other projects.
