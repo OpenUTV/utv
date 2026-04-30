@@ -214,6 +214,7 @@ runs:
     - name: Configure UTV
       if: ${{ inputs.vfx-platform == 'CY2023' }}
       run: |
+        export SDKROOT=$(xcrun --show-sdk-path)
         which cmake
         cmake --version
         cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }} -DRV_USE_SYSTEM_DEPS=ON
@@ -222,6 +223,7 @@ runs:
     - name: Configure UTV
       if: ${{ inputs.vfx-platform == 'CY2024' }}
       run: |
+        export SDKROOT=$(xcrun --show-sdk-path)
         which cmake
         cmake --version
         cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }} -DRV_USE_SYSTEM_DEPS=ON
