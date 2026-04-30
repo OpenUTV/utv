@@ -2,7 +2,7 @@ UTV
 
 Copyright (C) 2026  Makai Systems. All Rights Reserved.
 
-This project, UTV, is a derivative work of UTV.
+This project, UTV, is a derivative work of OpenRV.
 
 Original portions of this work are:
 Copyright (C) 2022-2025 Autodesk, Inc. All Rights Reserved.
