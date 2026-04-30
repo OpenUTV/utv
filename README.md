@@ -7,10 +7,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/makaisystems/utv/releases"><img src="https://img.shields.io/github/v/release/makaisystems/utv?label=Release&color=success" alt="Latest Release" /></a>
-  <a href="https://github.com/makaisystems/utv/actions/workflows/build-and-release-macos.yml"><img src="https://img.shields.io/github/actions/workflow/status/makaisystems/utv/build-and-release-macos.yml?branch=main" alt="Build Status" /></a>
+  <a href="https://github.com/OpenUTV/utv/releases"><img src="https://img.shields.io/github/v/release/OpenUTV/utv?label=Release&color=success" alt="Latest Release" /></a>
+  <a href="https://github.com/OpenUTV/utv/actions/workflows/build-and-release-macos.yml"><img src="https://img.shields.io/github/actions/workflow/status/OpenUTV/utv/build-and-release-macos.yml?branch=main" alt="Build Status" /></a>
   <img src="https://img.shields.io/badge/python-3.14-blue" alt="Python 3.14" />
-  <a href="https://github.com/makaisystems/utv/stargazers"><img src="https://img.shields.io/github/stars/makaisystems/utv?style=social" alt="GitHub Stars" /></a>
+  <a href="https://github.com/OpenUTV/utv/stargazers"><img src="https://img.shields.io/github/stars/OpenUTV/utv?style=social" alt="GitHub Stars" /></a>
 </p>
 
 ---
@@ -34,7 +34,7 @@ Whether you are a freelance artist, an editor, or just need to smoothly scrub th
 You can install the pre-compiled native macOS (Apple Silicon) binary directly from our custom Homebrew tap:
 
 ```bash
-brew install --cask makaisystems/utv/utv
+brew install --cask OpenUTV/utv/utv
 ```
 
 *(Support for `apt`, `dnf`, `winget`, and `choco` is coming soon!)*
@@ -60,7 +60,7 @@ brew install ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake
 Once dependencies are installed, simply run the build script:
 
 ```bash
-git clone --recursive https://github.com/makaisystems/utv.git
+git clone --recursive https://github.com/OpenUTV/utv.git
 cd utv
 ./build.sh --release --clean
 ```
@@ -75,7 +75,7 @@ We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTI
 
 ## 📈 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=makaisystems/utv&type=Date)](https://star-history.com/#makaisystems/utv&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenUTV/utv&type=Date)](https://star-history.com/#OpenUTV/utv&Date)
 
 ---
 

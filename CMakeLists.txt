@@ -53,7 +53,7 @@ SET(RV_INTERNAL_ORGANIZATION_NAME
     CACHE STRING "RV's internal organization name"
 )
 SET(RV_INTERNAL_ORGANIZATION_DOMAIN
-    "makaisystems.com"
+    "OpenUTV.com"
     CACHE STRING "RV's internal organization domain"
 )
 

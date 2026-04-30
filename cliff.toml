@@ -51,5 +51,5 @@ commit_parsers = [
 ]
 
 [remote.github]
-owner = "makaisystems"
+owner = "OpenUTV"
 repo = "UTV"
