@@ -60,6 +60,16 @@ jobs:
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         shell: bash
 
+      - name: Cache Homebrew
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          key: ${{ runner.os }}-brew-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-
+
       - name: Install Homebrew dependencies
         run: |
           brew install --formula \
@@ -69,8 +79,17 @@ jobs:
 
 
 
+      - name: Cache CCache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
       - name: Build UTV (macOS)
         run: |
+          export CCACHE_DIR=~/.ccache
           chmod +x ./build.sh
           # Only pass major.minor (strip -PR stuff for CMake)
           CLEAN_VERSION=$(echo "${{ steps.versioning.outputs.version }}" | cut -d'-' -f1)
