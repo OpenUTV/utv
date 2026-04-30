@@ -522,7 +522,7 @@ namespace Mu
             const Type* type = o->type();
             const Type* ftype = 0;
 
-            for (int i = 0; ftype = type->fieldType(i); i++)
+            for (int i = 0; (ftype = type->fieldType(i)); i++)
             {
                 //
                 //  The fieldPointer may return 0 (end-of-fields)
@@ -1623,7 +1623,7 @@ namespace Mu
         string Reader::readString(istream& i)
         {
             string s;
-            for (int ch; ch = i.get();)
+            for (int ch; (ch = i.get());)
                 s += char(ch);
             return s;
         }

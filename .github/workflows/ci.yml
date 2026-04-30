@@ -1,16 +1,10 @@
-name: OpenRV
+name: UTV
+
+# Modified for the UTV project.
+# Copyright (C) 2026  Makai Systems. All Rights Reserved.
 
 on:
-  push:
-    branches:
-      # This will run when PR is merged or direct pushes to main.
-      - main
-
-  pull_request: # This handles PR creation and subsequent commits.
-
-  schedule:
-    # Midnight build every day
-    - cron: "0 0 * * *"
+  # This allows manual triggering of the workflow from the web
 
   # This allows manual triggering of the workflow from the web
   workflow_dispatch:
@@ -20,14 +14,20 @@ on:
         required: true
         default: 'false'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
-    if: github.repository_owner == 'AcademySoftwareFoundation'
     runs-on: ubuntu-latest
     outputs:
       cmake_changed: ${{ steps.filter.outputs.cmake }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36
         id: filter
         with:
@@ -38,7 +38,6 @@ jobs:
               - '**/*.cmake'
 
   linux:
-    if: github.repository_owner == 'AcademySoftwareFoundation'
     needs: detect-changes
     uses: ./.github/workflows/ci-linux.yml
     with:
@@ -48,7 +47,6 @@ jobs:
       run_debug: ${{ github.event_name != 'pull_request' || needs.detect-changes.outputs.cmake_changed == 'true' }}
 
   macos:
-    if: github.repository_owner == 'AcademySoftwareFoundation'
     needs: detect-changes
     uses: ./.github/workflows/ci-macos.yml
     with:
@@ -58,7 +56,6 @@ jobs:
       run_debug: ${{ github.event_name != 'pull_request' || needs.detect-changes.outputs.cmake_changed == 'true' }}
 
   windows:
-    if: github.repository_owner == 'AcademySoftwareFoundation'
     needs: detect-changes
     uses: ./.github/workflows/ci-windows.yml
     with:

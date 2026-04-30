@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.\n
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/AcademySoftwareFoundation/OpenRV
+  https://github.com/AcademySoftwareFoundation/UTV
 {%- endmacro -%}
 
 {% if version -%}
@@ -51,5 +51,5 @@ commit_parsers = [
 ]
 
 [remote.github]
-owner = "AcademySoftwareFoundation"
-repo = "OpenRV"
+owner = "OpenUTV"
+repo = "UTV"

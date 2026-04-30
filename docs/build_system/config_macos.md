@@ -1,6 +1,6 @@
-# Preparing Open RV on macOS
+# Preparing UTV on macOS
 
-Open RV 2025 can be built for macOS using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/AcademySoftwareFoundation/OpenRV/tree/main/cmake/defaults)
+UTV 2025 can be built for macOS using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/AcademySoftwareFoundation/UTV/tree/main/cmake/defaults)
 
 Select your VFX reference platform by clicking on the appropriate tab. Install instructions follows.
 
@@ -74,11 +74,11 @@ All other dependencies are shared across variations.
 - [Install Homebrew](install_homebrew)
 - [Install tools and build dependencies](install_tools_and_build_dependencies)
 - [Install Qt](install_qt)
-- [Build Open RV](build_openrv)
+- [Build UTV](build_openrv)
 - [Setting up debugging in VSCode](debugging_openrv)
 
 ````{note}
-Open RV can be built for *x86_64* by changing the architecture of the terminal to *x86_64* using the following command:
+UTV can be built for *x86_64* by changing the architecture of the terminal to *x86_64* using the following command:
 ```bash
 arch -x86_64 $SHELL
 ```
@@ -98,9 +98,9 @@ From macOS System Settings > Privacy & Security > App Management, allow Terminal
 **Heads Up:**
 If you are using >= Xcode 26 you will need to patch Qt 6.5.3 and 6.8.3 to implement the fix for [QTBUG-137687](https://bugreports.qt.io/browse/QTBUG-137687).
 
-This patch is run during the sourcing of rvcmds.sh.  You can also run it directly via `sh apply_qt_fix.sh`
+This patch is run automatically by `build.sh`. You can also run it directly via `sh apply_qt_fix.sh`
 
-Alternately you can use Xcode 16.4 on the latest macOS Tahoe 26 to build Open RV.
+Alternately you can use Xcode 16.4 on the latest macOS Tahoe 26 to build UTV.
 
 From the App Store, download Xcode 16.4. Make sure that it is the source of the active developer directory.
 
@@ -110,7 +110,7 @@ From the App Store, download Xcode 16.4. Make sure that it is the source of the 
 
 ## Install CMake
 
-Homebrew's CMake could previously be used to build Open RV on macOS, but now it installs CMake version 4, which is too recent and causes dependency issues. An earlier version of CMake must be installed separately: [cmake-3.31.7-macos-universal.dmg](https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-macos-universal.dmg).
+Homebrew's CMake could previously be used to build UTV on macOS, but now it installs CMake version 4, which is too recent and causes dependency issues. An earlier version of CMake must be installed separately: [cmake-3.31.7-macos-universal.dmg](https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-macos-universal.dmg).
 
 Add the CMake tool to the PATH using the following command:
 
@@ -156,7 +156,7 @@ Configure ccache with a larger cache size:
 ccache --max-size=10G
 ```
 
-OpenRV will automatically detect and use ccache when available. To verify it's working after building:
+UTV will automatically detect and use ccache when available. To verify it's working after building:
 
 ```bash
 ccache --show-stats
@@ -178,7 +178,7 @@ Make sure `xcode-select -p` still returns `/Applications/Xcode.app/Contents/Deve
 
 ## Install Qt
 
-Download the Qt version corresponding to your chosen VFX reference platform using the online installer on the [Qt page](https://www.qt.io/download-open-source). Qt logs, Android, iOS, and WebAssembly are not required to build Open RV.
+Download the Qt version corresponding to your chosen VFX reference platform using the online installer on the [Qt page](https://www.qt.io/download-open-source). Qt logs, Android, iOS, and WebAssembly are not required to build UTV.
 
 ````{tabs}
 ```{code-tab} bash VFX-CY2024
@@ -194,13 +194,13 @@ You will need to enable archive packages in the Qt installer to access Qt 5.15.2
 
 **WARNING**: If you fetch Qt from another source, make sure it is built with SSL support, contains everything required to build PySide6 (for VFX-CY2024) or PySide2 (for VFX-CY2023), and that the file structure is similar to the official package.
 
-**Note**: Qt from homebrew is known to not work well with Open RV.
+**Note**: Qt from homebrew is known to not work well with UTV.
 
 (build_openrv)=
 
-## Build Open RV
+## Build UTV
 
-Once the platform-specific installation process is complete, building Open RV follows the same process for all platforms. Please refer to the [Common Build Instructions](config_common_build.md) for the complete build process.
+Once the platform-specific installation process is complete, building UTV follows the same process for all platforms. Please refer to the [Common Build Instructions](config_common_build.md) for the complete build process.
 
 ### macOS-Specific Build Notes
 
@@ -208,10 +208,10 @@ Once the platform-specific installation process is complete, building Open RV fo
 
 ````{tabs}
 ```{tab} Release
-Once the build is completed, the Open RV application can be found in the Open RV directory under `_build/stage/app/RV.app/Contents/MacOS/RV`.
+Once the build is completed, the Open UTV.application can be found in the UTV directory under `_build/stage/app/UTV.app/Contents/MacOS/RV`.
 ```
 ```{tab} Debug
-Once the build is completed, the Open RV application can be found in the Open RV directory under `_build_debug/stage/app/RV.app/Contents/MacOS/RV`.
+Once the build is completed, the Open UTV.application can be found in the UTV directory under `_build_debug/stage/app/UTV.app/Contents/MacOS/RV`.
 ```
 ````
 
@@ -221,7 +221,7 @@ Once the build is completed, the Open RV application can be found in the Open RV
 
 For a general understanding on how to debug C++ code in VSCode, please refer to the [Microsoft documentation](https://code.visualstudio.com/docs/cpp/launch-json-reference).
 
-To set up the C++ debugger in VSCode for Open RV, use the following steps:
+To set up the C++ debugger in VSCode for UTV, use the following steps:
 
 1. **Install the [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) extension**
 
@@ -235,8 +235,8 @@ To set up the C++ debugger in VSCode for Open RV, use the following steps:
        {
          "type": "lldb",
          "request": "launch",
-         "name": "Debug Open RV (Debug Build)",
-         "program": "${workspaceFolder}/_build_debug/stage/app/RV.app/Contents/MacOS/RV",
+         "name": "Debug UTV (Debug Build)",
+         "program": "${workspaceFolder}/_build_debug/stage/app/UTV.app/Contents/MacOS/RV",
          "args": [],
          "cwd": "${workspaceFolder}",
          "preLaunchTask": "build"
@@ -245,10 +245,10 @@ To set up the C++ debugger in VSCode for Open RV, use the following steps:
    }
    ```
 
-   **NOTE:** `program` should point to the build of the Open RV executable you want to debug. `preLaunchTask` is only necessary if you decide to follow step 3.
+   **NOTE:** `program` should point to the build of the UTV executable you want to debug. `preLaunchTask` is only necessary if you decide to follow step 3.
 
 3. **Set up automatic rebuild (Optional)**\
-   If you want to automatically rebuild Open RV before starting the debugger, add a `tasks.json` file in the `.vscode` folder created in the previous step:
+   If you want to automatically rebuild UTV before starting the debugger, add a `tasks.json` file in the `.vscode` folder created in the previous step:
 
    ```json
    {

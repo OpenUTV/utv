@@ -690,6 +690,9 @@ namespace TwkMovie
 #if defined(RV_FFMPEG_USE_VIDEOTOOLBOX) || defined(RV_USE_APPLE_PRORES_SDK)
                                                        ,
                                                        "prores"sv
+                                                       "prores_aw"sv,
+                                                       "prores_ks"sv,
+                                                       "prores_raw"sv
 #endif
         };
 
@@ -821,6 +824,8 @@ namespace TwkMovie
         AVPixelFormat getBestAVFormat(AVPixelFormat native)
         {
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(native);
+            if (!desc)
+                return AV_PIX_FMT_RGB24;
             int bitSize = desc->comp[0].depth - desc->comp[0].shift;
             bool hasAlpha = true; //(desc->flags & AV_PIX_FMT_FLAG_ALPHA);
             return (hasAlpha) ? ((bitSize > 8) ? AV_PIX_FMT_RGBA64 : AV_PIX_FMT_RGBA)
@@ -841,6 +846,8 @@ namespace TwkMovie
             //
 
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(native);
+            if (!desc)
+                return AV_PIX_FMT_RGB24;
             int bitSize = desc->comp[0].depth - desc->comp[0].shift;
             bool hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
             bool isPlanar = (desc->flags & AV_PIX_FMT_FLAG_PLANAR);
@@ -1448,6 +1455,7 @@ namespace TwkMovie
 
         // Open the codec
         (*avCodecContext)->thread_count = m_io->codecThreads();
+        (*avCodecContext)->thread_type = FF_THREAD_SLICE;
         if (avcodec_open2(*avCodecContext, avCodec, nullptr) < 0)
         {
             std::cerr << "ERROR: MovieFFMpeg: Failed to open codec '" << avCodec->name << "' for " << m_filename << '\n';
@@ -1460,9 +1468,9 @@ namespace TwkMovie
         {
             const AVPixelFormat nativeFormat = (*avCodecContext)->pix_fmt;
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
-            if (desc == nullptr)
+            if (desc == nullptr && nativeFormat != AV_PIX_FMT_NONE)
             {
-                std::cerr << "ERROR: MovieFFMpeg: Invalid pixel format! " << m_filename << '\n';
+                std::cerr << "ERROR: MovieFFMpeg: Invalid pixel format! " << m_filename << " (format: " << nativeFormat << ")\n";
                 avcodec_free_context(avCodecContext);
                 return false;
             }
@@ -1489,9 +1497,10 @@ namespace TwkMovie
         }
 
         // Make sure to only use allowed codecs
-        if (!m_io->codecIsAllowed((*avCodecContext)->codec->name, true))
+        const char* codecName = (*avCodecContext)->codec ? (*avCodecContext)->codec->name : "unknown";
+        if (!m_io->codecIsAllowed(codecName, true))
         {
-            std::cerr << "ERROR: MovieFFMpeg: Unallowed codec '" << (*avCodecContext)->codec->name << "' in " << m_filename << '\n';
+            std::cerr << "ERROR: MovieFFMpeg: Unallowed codec '" << codecName << "' in " << m_filename << '\n';
             avcodec_free_context(avCodecContext);
             return false;
         }
@@ -1525,9 +1534,14 @@ namespace TwkMovie
     {
         AVRational tcRate = {tsStream->time_base.den, tsStream->time_base.num};
 
-        if (isMOVformat(formatContext))
+        bool isMxf = formatContext && formatContext->iformat && formatContext->iformat->name
+                     && strstr(formatContext->iformat->name, "mxf") != nullptr;
+        if (isMOVformat(formatContext) || isMxf)
         {
-            tcRate = tsStream->avg_frame_rate;
+            if (tsStream->avg_frame_rate.num > 0 && tsStream->avg_frame_rate.den > 0)
+            {
+                tcRate = tsStream->avg_frame_rate;
+            }
         }
 
         return tcRate;
@@ -1594,7 +1608,11 @@ namespace TwkMovie
                 for (unsigned int s = 0; s < m_avFormatContext->nb_streams; ++s)
                 {
                     AVStream* tsStream = m_avFormatContext->streams[s];
-                    tcRate = getTimecodeRate(tsStream, m_avFormatContext);
+                    if (tsStream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
+                    {
+                        tcRate = getTimecodeRate(tsStream, m_avFormatContext);
+                        break;
+                    }
                 }
                 AVTimecode avTimecode;
                 av_timecode_init_from_string(&avTimecode, tcRate, fmtTcEntry->value, m_avFormatContext);
@@ -1720,8 +1738,9 @@ namespace TwkMovie
         AVCodecContext* videoCodecContext = track->avCodecContext;
         AVPixelFormat nativeFormat = videoCodecContext->pix_fmt;
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
-        bool yuvPlanar =
-            (!(desc->flags & AV_PIX_FMT_FLAG_ALPHA) && (desc->flags & AV_PIX_FMT_FLAG_PLANAR) && !(desc->flags & AV_PIX_FMT_FLAG_RGB));
+        bool yuvPlanar = desc ? (!(desc->flags & AV_PIX_FMT_FLAG_ALPHA) && (desc->flags & AV_PIX_FMT_FLAG_PLANAR)
+                                 && !(desc->flags & AV_PIX_FMT_FLAG_RGB))
+                              : false;
 
         int rotation = 0;
         AVDictionaryEntry* rotEntry;
@@ -1767,7 +1786,7 @@ namespace TwkMovie
         {
         case 270:
         case -90:
-            track->fb.setOrientation(FrameBuffer::BOTTOMRIGHT);
+            track->fb.setOrientation(FrameBuffer::TOPLEFT);
             track->rotate = yuvPlanar;
             rotate = true;
             break;
@@ -1777,7 +1796,7 @@ namespace TwkMovie
             break;
         case 90:
         case -270:
-            track->fb.setOrientation(FrameBuffer::TOPLEFT);
+            track->fb.setOrientation(FrameBuffer::BOTTOMRIGHT);
             track->rotate = yuvPlanar;
             rotate = true;
             break;
@@ -2045,7 +2064,7 @@ namespace TwkMovie
             //  display correctly.
             //
 
-            string name = string(videoCodecContext->codec->name);
+            string name = string(videoCodecContext->codec ? videoCodecContext->codec->name : "unknown");
             if (name == "dnxhd")
             {
                 //
@@ -2595,7 +2614,8 @@ namespace TwkMovie
             AVCodecContext* videoCodecContext = track->avCodecContext;
 
             // Tell RV to restrict caching to one thread
-            bool slowTrackRandomAccess = (codecHasSlowAccess(videoCodecContext->codec->name) || TwkUtil::pathIsURL(m_filename));
+            bool slowTrackRandomAccess =
+                (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name)) || TwkUtil::pathIsURL(m_filename);
             slowRandomAccess = slowTrackRandomAccess || slowRandomAccess;
 
             // Make sure the orientation/rotation matches for each track
@@ -2616,13 +2636,20 @@ namespace TwkMovie
         AVStream* firstVideoStream = m_avFormatContext->streams[m_videoTracks[0]->number];
         AVCodecContext* firstVideoCodecContext = m_videoTracks[0]->avCodecContext;
         AVPixelFormat nativeFormat = firstVideoCodecContext->pix_fmt;
+
+        // Fallback for formats where the initial pix_fmt might be AV_PIX_FMT_NONE
+        if (nativeFormat == AV_PIX_FMT_NONE)
+        {
+            nativeFormat = AV_PIX_FMT_RGB24;
+        }
+
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         int bitSize = desc->comp[0].depth - desc->comp[0].shift;
         m_info.numChannels = desc->nb_components;
         m_info.dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
 
-        // Set the channel specific information
-        string fmtname = string(av_get_pix_fmt_name(nativeFormat));
+        const char* fmtname_raw = av_get_pix_fmt_name(nativeFormat);
+        string fmtname = string(fmtname_raw ? fmtname_raw : "none");
         set<char> visited;
         int c = 0;
         for (string::iterator it = fmtname.begin(); it != fmtname.end() && c < m_info.numChannels; ++it)
@@ -2729,7 +2756,8 @@ namespace TwkMovie
                                              : int64_t(double(m_avFormatContext->duration) / double(AV_TIME_BASE) * audioSampleRate + 0.49);
             audioFormat = audioCodecContext->sample_fmt;
             audioLanguage = streamLang(track->number);
-            audioCodec = string(audioCodecContext->codec->long_name);
+            audioCodec =
+                string((audioCodecContext->codec && audioCodecContext->codec->long_name) ? audioCodecContext->codec->long_name : "unknown");
 
             DBL(DB_AUDIO, "Audio track " << i << " start_time: " << audioStream->start_time << " num frames: " << audioStream->nb_frames
                                          << " frame size: " << audioCodecContext->frame_size << " duration: " << duration
@@ -2796,8 +2824,11 @@ namespace TwkMovie
         snagVideoColorInformation(track);
 
         track->fb.setPixelAspectRatio(m_info.pixelAspect);
-        track->fb.newAttribute("VideoPixelFormat", string(av_get_pix_fmt_name(videoCodecContext->pix_fmt)));
-        track->fb.newAttribute("VideoCodec", string(videoCodecContext->codec->long_name));
+        const char* fmt_name = av_get_pix_fmt_name(videoCodecContext->pix_fmt);
+        track->fb.newAttribute("VideoPixelFormat", string(fmt_name ? fmt_name : "none"));
+
+        const char* codec_name = videoCodecContext->codec ? videoCodecContext->codec->long_name : nullptr;
+        track->fb.newAttribute("VideoCodec", string(codec_name ? codec_name : "unknown"));
 
         ostringstream attr;
         attr << m_videoTracks.size();
@@ -3912,16 +3943,17 @@ namespace TwkMovie
             std::call_once(warnOnce,
                            [this]()
                            {
+                               const char* fallback_fmt = av_get_pix_fmt_name(m_pxlFormatOnOpen);
                                std::cout << "WARNING: FFmpeg detected pixel format "
                                             "AV_PIX_FMT_NONE for frames in "
-                                         << m_filename << ". Using fallback pixel format: " << av_get_pix_fmt_name(m_pxlFormatOnOpen)
+                                         << m_filename << ". Using fallback pixel format: " << (fallback_fmt ? fallback_fmt : "none")
                                          << std::endl;
                            });
             // Use the pixel format detected when the file was opened as a
             // fallback. Assumes that m_pxlFormatOnOpen is set because the file
             // was opened.
-            outFrame->format = m_pxlFormatOnOpen;
-            nativeFormat = m_pxlFormatOnOpen;
+            outFrame->format = (m_pxlFormatOnOpen != AV_PIX_FMT_NONE) ? m_pxlFormatOnOpen : AV_PIX_FMT_RGB24;
+            nativeFormat = (AVPixelFormat)outFrame->format;
             desc = av_pix_fmt_desc_get(nativeFormat);
         }
 
@@ -4480,7 +4512,8 @@ namespace TwkMovie
                 if (m_request.verbose)
                 {
                     ostringstream message;
-                    message << "No pix_fmt specified. Using: " << string(av_get_pix_fmt_name(avCodecContext->pix_fmt));
+                    const char* fmt_name = av_get_pix_fmt_name(avCodecContext->pix_fmt);
+                    message << "No pix_fmt specified. Using: " << string(fmt_name ? fmt_name : "none");
                     report(message.str());
                 }
             }

@@ -1,6 +1,8 @@
 #
 # Copyright (C) 2022  Autodesk, Inc. All Rights Reserved.
 #
+# Modified for the UTV project. Copyright (C) 2026  Makai Systems. All Rights Reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -78,5 +80,10 @@ IF(RV_FFMPEG_USE_VIDEOTOOLBOX)
     PRIVATE "-DRV_FFMPEG_USE_VIDEOTOOLBOX"
   )
 ENDIF()
+
+TARGET_COMPILE_DEFINITIONS(
+  ${_target}
+  PRIVATE "SKIP_CODEC_CHECKS"
+)
 
 RV_STAGE(TYPE "LIBRARY" TARGET ${_target})

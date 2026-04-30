@@ -38,7 +38,7 @@ FILE(MAKE_DIRECTORY ${RV_PACKAGES_DIR})
 
 IF(RV_TARGET_DARWIN)
   SET(RV_STAGE_ROOT_DIR
-      ${RV_APP_ROOT}/RV.app/Contents
+      ${RV_APP_ROOT}/UTV.app/Contents
       CACHE STRING "RV's build install root directory."
   )
   SET(RV_STAGE_BIN_DIR
@@ -63,6 +63,12 @@ IF(RV_TARGET_DARWIN)
   )
   FILE(MAKE_DIRECTORY ${RV_STAGE_FRAMEWORKS_DIR})
   MESSAGE(STATUS "RV_STAGE_FRAMEWORKS_DIR: ${RV_STAGE_FRAMEWORKS_DIR}")
+
+  SET(RV_STAGE_HELPERS_DIR
+      ${RV_STAGE_ROOT_DIR}/Helpers
+  )
+  FILE(MAKE_DIRECTORY ${RV_STAGE_HELPERS_DIR})
+  MESSAGE(STATUS "RV_STAGE_HELPERS_DIR: ${RV_STAGE_HELPERS_DIR}")
 ENDIF()
 
 IF(RV_TARGET_LINUX
@@ -112,9 +118,9 @@ IF(RV_TARGET_DARWIN)
   FILE(MAKE_DIRECTORY ${RV_STAGE_RESOURCES_ENGLISH_DIR})
   MESSAGE(STATUS "RV_STAGE_RESOURCES_ENGLISH_DIR: ${RV_STAGE_RESOURCES_ENGLISH_DIR}")
 
-  # Create RVLinkLauncher Resources directory and copy icon files
+  # Create UTVLinkLauncher Resources directory and copy icon files
   SET(RVLINKLAUNCHER_RESOURCES_DIR
-      ${RV_STAGE_ROOT_DIR}/MacOS/RVLinkLauncher.app/Contents/Resources
+      ${RV_STAGE_HELPERS_DIR}/UTVLinkLauncher.app/Contents/Resources
   )
   FILE(MAKE_DIRECTORY ${RVLINKLAUNCHER_RESOURCES_DIR})
 ELSE()
@@ -252,6 +258,6 @@ IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 ENDIF()
 
 SET(RV_COPYRIGHT_TEXT
-    "Copyright Contributors to the Open RV Project"
+    "Copyright Contributors to the UTV Project"
     CACHE STRING "RV's copyright text."
 )

@@ -1,0 +1,18 @@
+--- cmake/CMakeOptions.cmake.orig	2026-04-30 14:51:43
++++ cmake/CMakeOptions.cmake	2026-04-30 14:51:52
+@@ -51,9 +51,12 @@
+         endif()
+     endif()
+     # Get the macOS SDK version
+-    get_filename_component(MACOS_SDK_NAME ${CMAKE_OSX_SYSROOT} NAME_WLE)
+-    string(REPLACE "MacOSX" "" MACOS_SDK_VERSION ${MACOS_SDK_NAME})
+-    string(REPLACE "." ";" MACOS_SDK_VERSION_LIST ${MACOS_SDK_VERSION})
++    get_filename_component(MACOS_SDK_NAME "${CMAKE_OSX_SYSROOT}" NAME_WLE)
++    string(REPLACE "MacOSX" "" MACOS_SDK_VERSION "${MACOS_SDK_NAME}")
++    if(NOT MACOS_SDK_VERSION)
++        set(MACOS_SDK_VERSION "14.0")
++    endif()
++    string(REPLACE "." ";" MACOS_SDK_VERSION_LIST "${MACOS_SDK_VERSION}")
+     list(GET MACOS_SDK_VERSION_LIST 0 MACOS_SDK_VERSION_MAJOR)
+     list(GET MACOS_SDK_VERSION_LIST 1 MACOS_SDK_VERSION_MINOR)
+     message(STATUS "CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")

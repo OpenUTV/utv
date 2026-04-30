@@ -1,6 +1,6 @@
 # Contributors
 
-Here is a list of the people who've contributed code to the Open RV project, sorted by first name.
+Here is a list of the people who've contributed code to the UTV project, sorted by first name.
 
 * adro79 ([adro79](https://github.com/adro79))
 * Alain Compagnat ([compaga](https://github.com/compaga))
@@ -23,6 +23,7 @@ Here is a list of the people who've contributed code to the Open RV project, sor
 * Mark Reid ([markreidvfx](https://github.com/markreidvfx))
 * Martin Chesnay ([mchesnay](https://github.com/mchesnay))
 * Matt Daw ([mattdaw](https://github.com/mattdaw))
+* Michael Oliver ([mcoliver](https://github.com/mcoliver))
 * Nicolas Montmarquette ([nmontmarquette](https://github.com/nmontmarquette))
 * Paul Barton ([paulbarton90](https://github.com/paulbarton90))
 * Robert Zhou ([meepzh](https://github.com/meepzh))
@@ -32,7 +33,7 @@ Here is a list of the people who've contributed code to the Open RV project, sor
 * Shannon Yearwood ([shannonyearwood](https://github.com/shannonyearwood))  
 * Thomas Bernier ([ThomBern](https://github.com/ThomBern))  
 
-A special recognition to the Tweak Software original founders, and to all the developers who contributed to RV before it became Open RV. Their passion, dedication, and hard work have shaped RV into the powerful media review and playback software it is today.
+A special recognition to the Tweak Software original founders, and to all the developers who contributed to RV before it became UTV. Their passion, dedication, and hard work have shaped RV into the powerful media review and playback software it is today.
 
 * Andrew Gardner
 * Jim Hourihan

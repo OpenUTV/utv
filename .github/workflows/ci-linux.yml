@@ -1,4 +1,4 @@
-name: OpenRV Linux
+name: UTV Linux
 
 on:
   workflow_call:
@@ -14,6 +14,13 @@ on:
       run_debug:
         type: string
         default: 'true'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Always runs — CY2024 Release only (PR scope)
@@ -68,7 +75,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux
@@ -135,7 +142,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux
@@ -222,7 +229,7 @@ jobs:
         run: dnf install -y git
         shell: bash
       - name: Check out repository code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # 6.0.2
+        uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: ./.github/actions/build-linux

@@ -3,12 +3,44 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-import os
 import sys
-import rv.commands
-import rv.extra_commands
-import rv.runtime
-from pymu import MuSymbol
+import os
+
+# Set RTLD_GLOBAL so that Python C++ extensions (like OpenTimelineIO's _otio.so)
+# share their C++ RTTI types (e.g. std::any) across different dynamic modules.
+# This prevents "RuntimeError: bad any cast" on macOS.
+sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_NOW)
+
+import site  # noqa: E402
+
+# Find the UTV project root relative to the executable
+utv_root = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "..", "..", "..", "..", ".."))
+venv_fallback = os.path.join(utv_root, ".venv")
+
+possible_venvs = []
+if "VIRTUAL_ENV" in os.environ:
+    possible_venvs.append(os.environ["VIRTUAL_ENV"])
+if os.path.exists(venv_fallback):
+    possible_venvs.append(venv_fallback)
+
+py_version = f"python{sys.version_info.major}.{sys.version_info.minor}"
+for venv_path in possible_venvs:
+    site_packages = os.path.join(venv_path, "lib", py_version, "site-packages")
+    if os.path.exists(site_packages):
+        site.addsitedir(site_packages)
+        break
+
+# Add homebrew python path explicitly just in case
+homebrew_path = f"/opt/homebrew/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
+if os.path.exists(homebrew_path):
+    site.addsitedir(homebrew_path)
+
+print("UTV SYS.PATH:", sys.path)
+
+import rv.commands  # noqa: E402
+import rv.extra_commands  # noqa: E402
+import rv.runtime  # noqa: E402
+from pymu import MuSymbol  # noqa: E402
 
 all_mu_commands = [
     "insertByteProperty",

@@ -1,29 +1,12 @@
 #
-# Copyright (C) 2024  Autodesk, Inc. All Rights Reserved.
-#
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2024  Autodesk, Inc. All Rights Reserved. Modified for UTV SPDX-License-Identifier: Apache-2.0
 #
 
 SET(_target
     "RV_DEPS_BMD"
 )
-
-SET(RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH
-    ""
-    CACHE STRING "Path to Blackmagic Decklink SDK (zip)"
-)
-
-IF(NOT RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH)
-  MESSAGE(
-    WARNING
-      "Blackmagic Decklink SDK path not specified, disabling Blackmagic output plugin.\nDownload the Blackmagic Desktop Video SDK to add Blackmagic output capability to Open RV (optional): https://www.blackmagicdesign.com/desktopvideo_sdk. Then set RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH to the path of the downloaded zip file on the rvcfg line.\nExample:\nrvcfg -DRV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH='<downloads_path>/Blackmagic_DeckLink_SDK_14.1.zip'"
-  )
-  RETURN()
-ENDIF()
-
-STRING(
-  REGEX
-  REPLACE ".*_([0-9]+\\.[0-9]+(\\.[0-9]+)?).*" "\\1" _version ${RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH}
+SET(_version
+    "15.3"
 )
 
 IF(RV_TARGET_DARWIN)
@@ -39,45 +22,49 @@ ELSEIF(RV_TARGET_WINDOWS)
       "Win"
   )
 ENDIF()
+
 SET(_include_dir
-    ${RV_DEPS_BASE_DIR}/${_target}/src/${_bmd_platform_dir}/include
+    ${CMAKE_SOURCE_DIR}/cmake/dependencies/bmd_sdk/${_bmd_platform_dir}/include
 )
 
-EXTERNALPROJECT_ADD(
-  ${_target}
-  URL ${RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH}
-  DOWNLOAD_NAME ${_target}_${_version}.zip
-  DOWNLOAD_DIR ${RV_DEPS_DOWNLOAD_DIR}
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  SOURCE_DIR ${RV_DEPS_BASE_DIR}/${_target}/src
-  INSTALL_DIR ${_install_dir}
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND ""
-  INSTALL_COMMAND ""
-)
-
-# Generate the DeckLinkAPI.h file from DeckLinkAPI.idl provided with the DeckLink SDK
 IF(RV_TARGET_WINDOWS)
-  EXTERNALPROJECT_ADD_STEP(
-    ${_target} post_install_step
-    COMMAND midl.exe ARGS /header DeckLinkAPI.h /iid DeckLinkAPIDispatch.cpp DeckLinkAPI.idl
-    WORKING_DIRECTORY ${_include_dir}
-    DEPENDEES install
+  # Ensure the generated headers are placed in the build directory, not the source directory
+  SET(_bmd_gen_dir
+      ${CMAKE_BINARY_DIR}/bmd_generated
+  )
+  FILE(MAKE_DIRECTORY ${_bmd_gen_dir})
+
+  ADD_CUSTOM_COMMAND(
+    OUTPUT ${_bmd_gen_dir}/DeckLinkAPI.h ${_bmd_gen_dir}/DeckLinkAPIDispatch.cpp
+    COMMAND midl.exe /header ${_bmd_gen_dir}/DeckLinkAPI.h /iid ${_bmd_gen_dir}/DeckLinkAPIDispatch.cpp ${_include_dir}/DeckLinkAPI.idl
+    DEPENDS ${_include_dir}/DeckLinkAPI.idl
+    COMMENT "Generating DeckLink API headers with MIDL"
+  )
+  ADD_CUSTOM_TARGET(
+    GenerateBMDHeaders
+    DEPENDS ${_bmd_gen_dir}/DeckLinkAPI.h ${_bmd_gen_dir}/DeckLinkAPIDispatch.cpp
   )
 ENDIF()
 
 ADD_LIBRARY(BlackmagicDeckLinkSDK INTERFACE)
-ADD_DEPENDENCIES(BlackmagicDeckLinkSDK ${_target})
-TARGET_INCLUDE_DIRECTORIES(
-  BlackmagicDeckLinkSDK
-  INTERFACE ${_include_dir}
-)
+
+IF(RV_TARGET_WINDOWS)
+  ADD_DEPENDENCIES(BlackmagicDeckLinkSDK GenerateBMDHeaders)
+  TARGET_INCLUDE_DIRECTORIES(
+    BlackmagicDeckLinkSDK
+    INTERFACE ${_include_dir} ${_bmd_gen_dir}
+  )
+ELSE()
+  TARGET_INCLUDE_DIRECTORIES(
+    BlackmagicDeckLinkSDK
+    INTERFACE ${_include_dir}
+  )
+ENDIF()
 
 SET(RV_DEPS_BMD_VERSION_INCLUDE_DIR
     ${_include_dir}
     CACHE STRING "Path to installed includes for ${_target}"
 )
-
 SET(RV_DEPS_BMD_VERSION
     ${_version}
     CACHE INTERNAL "" FORCE

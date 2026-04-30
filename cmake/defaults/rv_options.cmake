@@ -1,6 +1,8 @@
 #
 # Copyright (C) 2022  Autodesk, Inc. All Rights Reserved.
 #
+# Modified for the UTV project. Copyright (C) 2026  Makai Systems. All Rights Reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -19,6 +21,8 @@ SET(RV_DEPS_DOWNLOAD_DIR
     "${RV_DEPS_BASE_DIR}/RV_DEPS_DOWNLOAD"
     CACHE STRING "RV's 3rd party download cache location."
 )
+
+OPTION(RV_USE_SYSTEM_DEPS "Use system-provided dependencies (brew, apt, dnf, choco) instead of building them." OFF)
 
 IF(NOT EXISTS (${RV_DEPS_BASE_DIR}))
   FILE(MAKE_DIRECTORY ${RV_DEPS_BASE_DIR})
@@ -49,7 +53,7 @@ SET_PROPERTY(
 #
 # VFX Platform option
 #
-# That option is to control the versions of the external dependencies that OpenRV downloads and install based on the VFX platform.
+# That option is to control the versions of the external dependencies that UTV downloads and install based on the VFX platform.
 #
 # e.g. For CY2023, OCIO 2.2.x should be supported. For CY2024, OCIO 2.3.x should be supported.
 #
@@ -59,7 +63,7 @@ SET(RV_VFX_SUPPORTED_OPTIONS
 )
 # Default option
 SET(_RV_VFX_PLATFORM
-    "CY2023"
+    "CY2026"
 )
 
 IF(DEFINED RV_VFX_PLATFORM)
@@ -84,7 +88,7 @@ SET_PROPERTY(
 #
 # FFmpeg option
 #
-# This option is to control the version of FFmpeg that OpenRV downloads and installs.
+# This option is to control the version of FFmpeg that UTV downloads and installs.
 #
 # There will be one version used by default per major release. Any other version will require RV_FFMPEG env var to be set with the desired major version.
 #
@@ -95,7 +99,7 @@ SET(RV_FFMPEG_SUPPORTED_OPTIONS
 )
 # Default option
 SET(_RV_FFMPEG
-    "6"
+    "8"
 )
 
 IF(DEFINED RV_FFMPEG)

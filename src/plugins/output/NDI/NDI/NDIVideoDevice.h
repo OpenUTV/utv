@@ -33,6 +33,7 @@
 #include <TwkGLF/GLFence.h>
 
 #include <Processing.NDI.Lib.h>
+#include <Processing.NDI.DynamicLoad.h>
 
 #include <iostream>
 #include <stl_ext/thread_group.h>

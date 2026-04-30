@@ -1,22 +1,30 @@
 name: Release PR
 
+# Modified for the UTV project.
+# Copyright (C) 2026  Makai Systems. All Rights Reserved.
+
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   release-pr:
     runs-on: ubuntu-latest
     # Skip if this push is the merge of a release PR
-    if: github.repository_owner == 'AcademySoftwareFoundation' && !startsWith(github.event.head_commit.message, 'chore(release):')
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

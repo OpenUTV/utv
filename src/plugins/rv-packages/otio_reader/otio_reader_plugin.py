@@ -33,10 +33,10 @@ import sys
 from rv import commands, extra_commands
 from rv import rvtypes
 
-import opentimelineio as otio
-
-import otio_reader
-import otio_writer
+print("OTIO IMPORT: dlopenflags before import =", sys.getdlopenflags())
+import opentimelineio as otio  # noqa: E402
+import otio_reader  # noqa: E402
+import otio_writer  # noqa: E402
 
 
 class Mode(object):
@@ -98,10 +98,17 @@ class ExampleOTIOReaderPlugin(rvtypes.MinorMode):
         if ext:
             ext = ext[1:]
 
-        if ext in otio.adapters.suffixes_with_defined_adapters(read=True):
-            self.mode = Mode.loading
-            movieproc = "blank,otioFile={}.movieproc".format(in_path)
-            event.setReturnContent(movieproc)
+        try:
+            if ext in otio.adapters.suffixes_with_defined_adapters(read=True):
+                self.mode = Mode.loading
+                movieproc = "blank,otioFile={}.movieproc".format(in_path)
+                event.setReturnContent(movieproc)
+                return
+        except RuntimeError as e:
+            # Catch "bad any cast" and other C++ exceptions from OTIO bindings on macOS
+            print("WARNING: OTIO Reader disabled due to binding error:", e)
+
+        event.reject()
 
     def after_progressive_loading(self, event):
         """

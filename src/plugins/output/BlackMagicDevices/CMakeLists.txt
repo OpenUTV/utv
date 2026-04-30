@@ -4,11 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-IF(NOT RV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH)
-  # Warning message if the Blackmagic Decklink SDK path is not specified should already have been reported in bmd.cmake
-  RETURN()
-ENDIF()
-
 SET(_target
     "BlackMagicDevices"
 )

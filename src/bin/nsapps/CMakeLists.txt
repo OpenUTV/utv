@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-ADD_SUBDIRECTORY(RV)
-ADD_SUBDIRECTORY(rvlinklauncher)
+ADD_SUBDIRECTORY(UTV)
+ADD_SUBDIRECTORY(utvlinklauncher)

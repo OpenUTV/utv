@@ -89,8 +89,9 @@ FUNCTION(rv_stage)
         )
       ENDIF()
 
-      IF(_native_target_type STREQUAL "EXECUTABLE"
-         OR _native_target_type STREQUAL "SHARED_LIBRARY"
+      IF((_native_target_type STREQUAL "EXECUTABLE"
+          OR _native_target_type STREQUAL "SHARED_LIBRARY")
+         AND NOT RV_USE_SYSTEM_DEPS
       )
         FOREACH(
           dep
@@ -102,11 +103,13 @@ FUNCTION(rv_stage)
               TARGET ${dep}
               PROPERTY LOCATION
             )
-            GET_FILENAME_COMPONENT(dep_file_name ${dep_file_path} NAME)
-            ADD_CUSTOM_COMMAND(
-              COMMENT "Fixing ${dep_file_name}'s rpath in ${arg_TARGET}" TARGET ${arg_TARGET} POST_BUILD
-              COMMAND ${CMAKE_INSTALL_NAME_TOOL} -change "${dep_file_path}" "@rpath/${dep_file_name}" "$<TARGET_FILE:${arg_TARGET}>"
-            )
+            IF(dep_file_path)
+              GET_FILENAME_COMPONENT(dep_file_name ${dep_file_path} NAME)
+              ADD_CUSTOM_COMMAND(
+                COMMENT "Fixing ${dep_file_name}'s rpath in ${arg_TARGET}" TARGET ${arg_TARGET} POST_BUILD
+                COMMAND ${CMAKE_INSTALL_NAME_TOOL} -change "${dep_file_path}" "@rpath/${dep_file_name}" "$<TARGET_FILE:${arg_TARGET}>"
+              )
+            ENDIF()
           ENDIF()
         ENDFOREACH()
       ENDIF()
@@ -663,6 +666,41 @@ FUNCTION(rv_stage)
       output_plugins
       dependencies
     )
+
+  ELSEIF(${arg_TYPE} STREQUAL "HELPER_APP")
+    GET_TARGET_PROPERTY(_native_target_type ${arg_TARGET} TYPE)
+    IF(NOT _native_target_type STREQUAL "EXECUTABLE")
+      MESSAGE(FATAL_ERROR "\"${arg_TARGET}\" ${arg_TYPE} should be a EXECUTABLE, not a ${_native_target_type}")
+    ENDIF()
+
+    ADD_DEPENDENCIES(executables ${arg_TARGET})
+
+    IF(RV_TARGET_DARWIN)
+      SET_TARGET_PROPERTIES(
+        ${arg_TARGET}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_HELPERS_DIR}"
+      )
+    ELSE()
+      SET_TARGET_PROPERTIES(
+        ${arg_TARGET}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_BIN_DIR}"
+      )
+    ENDIF()
+
+    IF(RV_TARGET_WINDOWS)
+      FOREACH(
+        OUTPUTCONFIG
+        ${CMAKE_CONFIGURATION_TYPES}
+      )
+        STRING(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+        SET_TARGET_PROPERTIES(
+          ${arg_TARGET}
+          PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${RV_STAGE_BIN_DIR}"
+        )
+      ENDFOREACH()
+    ENDIF()
+
+    ADD_DEPENDENCIES(${arg_TARGET} dependencies)
 
   ELSEIF(${arg_TYPE} STREQUAL "MAIN_EXECUTABLE")
     GET_TARGET_PROPERTY(_native_target_type ${arg_TARGET} TYPE)

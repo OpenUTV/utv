@@ -1,5 +1,8 @@
-name: Build OpenRV on macOS
-description: Build and test OpenRV on macOS
+name: Build UTV on macOS
+description: Build and test UTV on macOS
+
+# Modified for the UTV project.
+# Copyright (C) 2026  Makai Systems. All Rights Reserved.
 
 inputs:
   arch-type:
@@ -59,7 +62,7 @@ runs:
       shell: bash
 
     - name: Add repository as safe directory
-      run: git config --global --add safe.directory /__w/OpenRV/OpenRV
+      run: git config --global --add safe.directory /__w/UTV/UTV
       shell: bash
 
     - name: Install cmake
@@ -138,8 +141,9 @@ runs:
         until [ $retry_count -ge $max_retries ]; do
           echo "Attempt $((retry_count + 1)) of $max_retries"
 
-          if brew install --formula ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python yasm clang-format black meson nasm pkg-config glew ccache && \
-             brew install --formula icu4c; then
+          if brew install --formula \
+             ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache \
+             ffmpeg openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo; then
             echo "Homebrew dependencies installed successfully"
             break
           else
@@ -207,30 +211,32 @@ runs:
     # Let's revisit this if we can reduce the size of the cache (potentially dropping x86_64 for Mac)
     # or by moving some dependencies from the cache to Conan or another dependency manager.
 
-    - name: Configure OpenRV
+    - name: Configure UTV
       if: ${{ inputs.vfx-platform == 'CY2023' }}
       run: |
+        export SDKROOT=$(xcrun --show-sdk-path)
         which cmake
         cmake --version
-        cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }}
+        cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }} -DRV_USE_SYSTEM_DEPS=ON
       shell: bash
 
-    - name: Configure OpenRV
+    - name: Configure UTV
       if: ${{ inputs.vfx-platform == 'CY2024' }}
       run: |
+        export SDKROOT=$(xcrun --show-sdk-path)
         which cmake
         cmake --version
-        cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }}
+        cmake -B _build -G "Ninja" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }} -DRV_USE_SYSTEM_DEPS=ON
       shell: bash
 
-    - name: Build OpenRV dependencies
+    - name: Build UTV dependencies
       if: steps.cmake-dependencies.outputs.cache-hit != 'true'
       run: |
         cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$(python -c 'import os; print(os.cpu_count())') -v
         ls -al _build
       shell: bash
 
-    - name: Build OpenRV main executable
+    - name: Build UTV main executable
       run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$(python -c 'import os; print(os.cpu_count())') -v
       shell: bash
 
@@ -238,7 +244,7 @@ runs:
       run: ctest --test-dir _build -C ${{ inputs.build-type }} --extra-verbose
       shell: bash
 
-    - name: Install OpenRV
+    - name: Install UTV
       run: cmake --install _build --prefix $(pwd)/_install --config ${{ inputs.build-type }}
       shell: bash
 

@@ -7,7 +7,7 @@
 INCLUDE(cxx_defaults)
 
 SET(_target
-    "rvpkg"
+    "utvpkg"
 )
 
 LIST(APPEND _sources main.cpp utf8Main.cpp)
