@@ -667,6 +667,41 @@ FUNCTION(rv_stage)
       dependencies
     )
 
+  ELSEIF(${arg_TYPE} STREQUAL "HELPER_APP")
+    GET_TARGET_PROPERTY(_native_target_type ${arg_TARGET} TYPE)
+    IF(NOT _native_target_type STREQUAL "EXECUTABLE")
+      MESSAGE(FATAL_ERROR "\"${arg_TARGET}\" ${arg_TYPE} should be a EXECUTABLE, not a ${_native_target_type}")
+    ENDIF()
+
+    ADD_DEPENDENCIES(executables ${arg_TARGET})
+
+    IF(RV_TARGET_DARWIN)
+      SET_TARGET_PROPERTIES(
+        ${arg_TARGET}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_HELPERS_DIR}"
+      )
+    ELSE()
+      SET_TARGET_PROPERTIES(
+        ${arg_TARGET}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_BIN_DIR}"
+      )
+    ENDIF()
+
+    IF(RV_TARGET_WINDOWS)
+      FOREACH(
+        OUTPUTCONFIG
+        ${CMAKE_CONFIGURATION_TYPES}
+      )
+        STRING(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+        SET_TARGET_PROPERTIES(
+          ${arg_TARGET}
+          PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${RV_STAGE_BIN_DIR}"
+        )
+      ENDFOREACH()
+    ENDIF()
+
+    ADD_DEPENDENCIES(${arg_TARGET} dependencies)
+
   ELSEIF(${arg_TYPE} STREQUAL "MAIN_EXECUTABLE")
     GET_TARGET_PROPERTY(_native_target_type ${arg_TARGET} TYPE)
     IF(NOT _native_target_type STREQUAL "EXECUTABLE")
