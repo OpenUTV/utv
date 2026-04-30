@@ -63,31 +63,11 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install --formula \
-               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt \
                ffmpeg openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
         shell: bash
 
-      - name: Install Qt 6.11.0
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.11.0'
-          host: 'mac'
-          target: 'desktop'
-          arch: 'clang_64'
-          dir: "${{ github.workspace }}/deps"
-          install-deps: 'false'
-          modules: 'debug_info qt3d qt5compat qtcharts qtconnectivity qtdatavis3d qtgrpc qthttpserver qtimageformats qtlanguageserver qtlocation qtlottie qtmultimedia qtnetworkauth qtpdf qtpositioning qtquick3d qtquick3dphysics qtquickeffectmaker qtquicktimeline qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtshadertools qtspeech qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets qtwebview'
-          archives: 'qtbase qtdeclarative qtsvg qttools qttranslations'
-          cache: false
-          setup-python: true
-          tools: 'tools_qtcreator'
-          set-env: 'true'
-          tools-only: 'false'
-          aqtversion: '==3.2.*'
 
-      - name: Set QT_HOME
-        run: echo "QT_HOME=${{ github.workspace }}/deps/Qt/6.11.0/macos" >> $GITHUB_ENV
-        shell: bash
 
       - name: Build UTV (macOS)
         run: |
