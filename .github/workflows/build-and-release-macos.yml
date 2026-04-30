@@ -60,14 +60,21 @@ jobs:
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
         shell: bash
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT # Updates weekly
+        shell: bash
+
       - name: Cache Homebrew
         uses: actions/cache@v4
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
             ~/Library/Caches/Homebrew/Casks
-          key: ${{ runner.os }}-brew-${{ hashFiles('**/build.sh') }}
+          # Re-evaluate the cache weekly to capture upstream brew updates
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
           restore-keys: |
+            ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
             ${{ runner.os }}-brew-
 
       - name: Install Homebrew dependencies
