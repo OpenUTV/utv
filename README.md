@@ -34,10 +34,11 @@ Whether you are a freelance artist, an editor, or just need to smoothly scrub th
 You can install the pre-compiled native macOS (Apple Silicon) binary directly from our custom Homebrew tap:
 
 ```bash
-brew install --cask OpenUTV/utv/utv
+brew tap OpenUTV/utv https://github.com/OpenUTV/utv
+brew install --cask utv
 ```
 
-*(Support for `apt`, `dnf`, `winget`, and `choco` is coming soon!)*
+*(Native support for Linux (`apt`/`dnf`) and Windows (`.exe`) is actively being implemented!)*
 
 ---
 
