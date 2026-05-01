@@ -18,6 +18,7 @@ BMD_SDK=""
 PRORES_SDK=""
 CUSTOM_VERSION=""
 PYTHON_VERSION="3.13"
+GCC_VERSION="15"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -89,7 +90,8 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
 
     # Install specific CMake version natively on Linux if not present or too old
     if [[ "$OSTYPE" != "darwin"* ]] && [[ "$OSTYPE" != "msys"* ]]; then
-        CMAKE_REQ_VER="4.2.3"
+        # CMAKE_REQ_VER="4.2.3"
+        CMAKE_REQ_VER="3.31.12"
         # Check if cmake exists and its version
         CURRENT_CMAKE_VER=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
         if [[ "$CURRENT_CMAKE_VER" != "$CMAKE_REQ_VER" ]]; then
@@ -181,7 +183,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 flex \
                 git \
                 glew-utils \
-                libaio \
+                libaio-dev \
                 libasound2-dev \
                 libavcodec-dev \
                 libavformat-dev \
@@ -198,7 +200,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libopencolorio-dev \
                 libopencv-dev \
                 libopenexr-dev \
-                libopenimageio-dev \
                 libopenjp2-7-dev \
                 libosmesa6-dev \
                 libpng-dev \
@@ -219,7 +220,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libxrender-dev \
                 libyaml-cpp-dev \
                 ninja-build \
-                openimageio-tools \
                 pkg-config \
                 qt6-5compat-dev \
                 qt6-base-dev \
@@ -234,6 +234,22 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 rpm \
                 unzip \
                 zip
+        ## GCC Install code below - currently not used but retained for potential future use
+        # $SUDO apt install software-properties-common
+        # $SUDO add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        # $SUDO apt-get update && apt-get upgrade -y
+        # $SUDO apt-get install -y gcc-${GCC_VERSION} g++-${GCC_VERSION}
+        # $SUDO update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION}
+        
+        # --- Build OpenImageIO from source for Ubuntu ---
+        if [ ! -d "/usr/local/include/OpenImageIO" ]; then
+            echo "--- Building OpenImageIO from source ---"
+            git clone --branch v2.5.9.0 --depth 1 https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/OIIO
+            cmake -B /tmp/OIIO/build -S /tmp/OIIO -DCMAKE_BUILD_TYPE=Release -DOIIO_BUILD_TESTS=OFF -DOIIO_BUILD_TOOLS=ON -DUSE_PYTHON=OFF -DOpenColorIO_DIR=/usr/share/cmake
+            cmake --build /tmp/OIIO/build -j $(nproc)
+            $SUDO cmake --install /tmp/OIIO/build
+            rm -rf /tmp/OIIO
+        fi
 
         # --- Build openjph from source for Ubuntu (missing on amd64) ---
         if [ ! -d "/usr/local/include/openjph" ]; then
