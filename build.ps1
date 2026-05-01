@@ -65,6 +65,23 @@ if ($InstallDeps) {
         Write-Host "Checking/Installing $pkg..."
         winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent | Out-Null
     }
+
+    Write-Host "--- Bootstrapping vcpkg ---" -ForegroundColor Cyan
+    $VcpkgDir = Join-Path $ProjectRoot "vcpkg"
+    if (-not (Test-Path $VcpkgDir)) {
+        Write-Host "Cloning vcpkg..."
+        & git clone https://github.com/microsoft/vcpkg.git $VcpkgDir
+        & "$VcpkgDir\bootstrap-vcpkg.bat" -disableMetrics
+    }
+    
+    $vcpkgDeps = @(
+        "openexr", "boost", "opencolorio", "ffmpeg", "libraw", "tiff", 
+        "libpng", "openimageio", "openjpeg", "yaml-cpp", "spdlog"
+    )
+    foreach ($dep in $vcpkgDeps) {
+        Write-Host "Installing vcpkg dependency: $dep"
+        & "$VcpkgDir\vcpkg.exe" install "$dep`:x64-windows"
+    }
 }
 
 # 1. Setup Python Environment
@@ -116,6 +133,11 @@ $CmakeArgs = @(
     "-DRV_VFX_PLATFORM=CY2026",
     "-DRV_USE_SYSTEM_DEPS=ON"
 )
+
+$VcpkgDir = Join-Path $ProjectRoot "vcpkg"
+if (Test-Path "$VcpkgDir\scripts\buildsystems\vcpkg.cmake") {
+    $CmakeArgs += "-DCMAKE_TOOLCHAIN_FILE=$VcpkgDir\scripts\buildsystems\vcpkg.cmake"
+}
 
 & cmake $CmakeArgs
 

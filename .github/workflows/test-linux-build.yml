@@ -1,0 +1,96 @@
+name: Test Linux Build
+
+on:
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ubuntu:
+    name: Build Ubuntu (DEB)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.3'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          dir: "${{ github.workspace }}/deps"
+          install-deps: 'false'
+          cache: false
+
+      - name: Build and Package UTV
+        run: |
+          chmod +x ./build.sh
+          ./build.sh --release --clean --install-deps --package
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-Ubuntu-DEB
+          path: _build/*.deb
+          retention-days: 7
+
+  build-rocky:
+    name: Build Rocky Linux (RPM)
+    runs-on: ubuntu-latest
+    container:
+      image: amd64/rockylinux:9
+    steps:
+      - name: Install Node and Git for Actions
+        run: dnf install -y nodejs git
+        shell: bash
+
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.5.3'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          dir: "${{ github.workspace }}/deps"
+          install-deps: 'false'
+          cache: false
+
+      - name: Build and Package UTV
+        run: |
+          chmod +x ./build.sh
+          ./build.sh --release --clean --install-deps --package
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-Rocky-RPM
+          path: _build/*.rpm
+          retention-days: 7
