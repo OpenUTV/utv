@@ -96,10 +96,10 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf install -y epel-release crb
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel
+        $SUDO dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev
+        $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
