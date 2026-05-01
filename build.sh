@@ -111,7 +111,18 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         "$VCPKG_DIR/vcpkg" install "opencolorio"
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential cmake ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libjpeg-turbo8-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev libopenjph-dev
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential cmake ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libjpeg-turbo8-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
+
+        # --- Bootstrapping vcpkg for missing Ubuntu dependencies (OpenJPH missing on amd64) ---
+        VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
+        if [ ! -d "$VCPKG_DIR" ]; then
+            echo "--- Bootstrapping vcpkg for missing Ubuntu dependencies ---"
+            git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
+            "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
+        fi
+        export VCPKG_BUILD_TYPE="release"
+        echo "Installing missing dependencies via vcpkg (Release only)..."
+        "$VCPKG_DIR/vcpkg" install "openjph"
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
