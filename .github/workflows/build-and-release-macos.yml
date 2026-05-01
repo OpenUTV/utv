@@ -184,7 +184,8 @@ jobs:
         shell: bash
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v3.0.0
         with:
           tag_name: ${{ needs.build.outputs.version }}
           name: UTV Release ${{ needs.build.outputs.version }}
