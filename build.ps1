@@ -61,9 +61,13 @@ if ($InstallDeps) {
         "Python.Python.3.14",
         "Microsoft.VisualStudio.2022.BuildTools"
     )
-    foreach ($pkg in $packages) {
-        Write-Host "Checking/Installing $pkg..."
-        winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent | Out-Null
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        foreach ($pkg in $packages) {
+            Write-Host "Checking/Installing $pkg..."
+            winget install --id $pkg --exact --accept-source-agreements --accept-package-agreements --silent | Out-Null
+        }
+    } else {
+        Write-Host "WARNING: winget not found. Skipping system dependency installation. Please ensure CMake, Ninja, and Visual Studio are installed." -ForegroundColor Yellow
     }
 
     Write-Host "--- Bootstrapping vcpkg ---" -ForegroundColor Cyan
@@ -86,22 +90,20 @@ if ($InstallDeps) {
 
 # 1. Setup Python Environment
 Write-Host "--- Setting up Python Environment ---" -ForegroundColor Cyan
-if (Get-Command uv -ErrorAction SilentlyContinue) {
-    if (-not (Test-Path $VenvDir)) {
-        & uv venv $VenvDir --python 3.14
-    }
-    $env:VIRTUAL_ENV = $VenvDir
-    $env:PATH = "$VenvDir\Scripts;$env:PATH"
-    & uv pip install -r "$ProjectRoot\requirements.txt"
-} else {
-    Write-Host "uv not found, falling back to standard venv/pip." -ForegroundColor Yellow
-    if (-not (Test-Path $VenvDir)) {
-        & python -m venv $VenvDir
-    }
-    $env:VIRTUAL_ENV = $VenvDir
-    $env:PATH = "$VenvDir\Scripts;$env:PATH"
-    & python -m pip install -r "$ProjectRoot\requirements.txt"
+if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    Write-Host "uv not found. Installing astral uv..."
+    Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile "install_uv.ps1"
+    & .\install_uv.ps1
+    Remove-Item "install_uv.ps1"
+    $env:PATH = "$HOME\.cargo\bin;$env:PATH"
 }
+
+if (-not (Test-Path $VenvDir)) {
+    & uv venv $VenvDir --python 3.14
+}
+$env:VIRTUAL_ENV = $VenvDir
+$env:PATH = "$VenvDir\Scripts;$env:PATH"
+& uv pip install -r "$ProjectRoot\requirements.txt"
 
 # 2. Locate Qt6
 Write-Host "--- Locating Qt6 ---" -ForegroundColor Cyan
