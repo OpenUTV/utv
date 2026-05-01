@@ -97,7 +97,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y --allowerasing cmake ninja-build git curl zip unzip tar perl pkgconf-pkg-config openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel glew-devel libdav1d-devel libopenjph-devel doctest-devel
+        $SUDO dnf install -y --allowerasing ninja-build git curl zip unzip tar perl pkgconf-pkg-config openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel glew-devel libdav1d-devel libopenjph-devel doctest-devel
 
         # --- Bootstrapping vcpkg for missing Rocky dependencies (OpenColorIO) ---
         VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
@@ -111,7 +111,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         "$VCPKG_DIR/vcpkg" install "opencolorio"
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential cmake ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libjpeg-turbo8-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libturbojpeg0-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
 
         # --- Bootstrapping vcpkg for missing Ubuntu dependencies (OpenJPH missing on amd64) ---
         VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
@@ -125,6 +125,19 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         "$VCPKG_DIR/vcpkg" install "openjph"
     else
         echo "WARNING: Unsupported package manager for --install-deps."
+    fi
+
+    # Install specific CMake version natively on Linux if not present or too old
+    if [[ "$OSTYPE" != "darwin"* ]] && [[ "$OSTYPE" != "msys"* ]]; then
+        CMAKE_REQ_VER="3.31.12"
+        # Check if cmake exists and its version
+        CURRENT_CMAKE_VER=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
+        if [[ "$CURRENT_CMAKE_VER" != "$CMAKE_REQ_VER" ]]; then
+            echo "--- Installing CMake ${CMAKE_REQ_VER} (Linux x86_64) ---"
+            curl -L -o /tmp/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v${CMAKE_REQ_VER}/cmake-${CMAKE_REQ_VER}-linux-x86_64.tar.gz"
+            $SUDO tar -zxvf /tmp/cmake.tar.gz -C /usr/local --strip-components=1
+            rm /tmp/cmake.tar.gz
+        fi
     fi
 fi
 
