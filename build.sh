@@ -131,17 +131,20 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO apt-get update
         DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y libglew-dev glew-utils libopencv-dev qt6-base-private-dev libosmesa6-dev qt6-multimedia-dev qt6-shadertools-dev qt6-tools-dev flex bison openimageio-tools libfreetype-dev zip unzip build-essential ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev qt6-5compat-dev qt6-svg-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libturbojpeg0-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
 
-        # --- Bootstrapping vcpkg for missing Ubuntu dependencies (OpenJPH missing on amd64) ---
-        VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
-        if [ ! -d "$VCPKG_DIR" ]; then
-            echo "--- Bootstrapping vcpkg for missing Ubuntu dependencies ---"
-            git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
-            "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
-            echo "set(VCPKG_BUILD_TYPE release)" >> "$VCPKG_DIR/triplets/x64-linux.cmake"
+        # --- Build openjph from source for Ubuntu (missing on amd64) ---
+        if [ ! -d "/usr/local/include/openjph" ]; then
+            echo "--- Building openjph from source ---"
+            git clone https://github.com/aous72/OpenJPH.git /tmp/OpenJPH
+            cmake -B /tmp/OpenJPH/build -S /tmp/OpenJPH -DCMAKE_BUILD_TYPE=Release
+            cmake --build /tmp/OpenJPH/build -j $(nproc)
+            $SUDO cmake --install /tmp/OpenJPH/build
+            rm -rf /tmp/OpenJPH
         fi
-        export VCPKG_BUILD_TYPE="release"
-        echo "Installing missing dependencies via vcpkg (Release only)..."
-        "$VCPKG_DIR/vcpkg" install "openjph"
+
+        # Fix Ubuntu 24.04 broken OpenColorIO CMake target
+        if [ -f "/usr/share/cmake/OpenColorIOTargets.cmake" ]; then
+            $SUDO sed -i 's|\${_IMPORT_PREFIX}/include|/usr/include|g' /usr/share/cmake/OpenColorIOTargets.cmake
+        fi
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
@@ -226,11 +229,11 @@ CMAKE_ARGS=(
 if [ -f "${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" ]; then
     echo "Injecting vcpkg toolchain for system dependency fallbacks..."
     CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_BUILD_TYPE=release")
-    
-    # On Ubuntu, vcpkg overrides system search paths, so we manually point OpenColorIO
-    if command -v apt-get >/dev/null 2>&1; then
-        CMAKE_ARGS+=("-DOpenColorIO_DIR=/usr/share/cmake")
-    fi
+fi
+
+# On Ubuntu, OpenColorIO is installed to /usr/share/cmake, so we manually point it out
+if command -v apt-get >/dev/null 2>&1; then
+    CMAKE_ARGS+=("-DOpenColorIO_DIR=/usr/share/cmake")
 fi
 
 if [ -n "$BMD_SDK" ]; then
