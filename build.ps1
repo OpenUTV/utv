@@ -82,8 +82,12 @@ if ($InstallDeps) {
         "openexr", "boost", "opencolorio", "ffmpeg", "libraw", "tiff", 
         "libpng", "openimageio", "openjpeg", "yaml-cpp", "spdlog"
     )
+    
+    # Optimize build times by only building Release variants
+    $env:VCPKG_BUILD_TYPE = "release"
+    
     foreach ($dep in $vcpkgDeps) {
-        Write-Host "Installing vcpkg dependency: $dep"
+        Write-Host "Installing vcpkg dependency: $dep (Release only)"
         & "$VcpkgDir\vcpkg.exe" install "$dep`:x64-windows"
     }
 }
@@ -133,7 +137,8 @@ $CmakeArgs = @(
     "-DCMAKE_BUILD_TYPE=$BuildType",
     "-DRV_DEPS_QT_LOCATION=$env:QT_HOME",
     "-DRV_VFX_PLATFORM=CY2026",
-    "-DRV_USE_SYSTEM_DEPS=ON"
+    "-DRV_USE_SYSTEM_DEPS=ON",
+    "-DVCPKG_BUILD_TYPE=release"
 )
 
 $VcpkgDir = Join-Path $ProjectRoot "vcpkg"
