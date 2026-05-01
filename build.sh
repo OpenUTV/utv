@@ -17,6 +17,7 @@ LOG_FILE=""
 BMD_SDK=""
 PRORES_SDK=""
 CUSTOM_VERSION=""
+PYTHON_VERSION="3.13"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -68,7 +69,7 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/_build"
 INST_DIR="${PROJECT_ROOT}/_install"
-VENV_DIR="${PROJECT_ROOT}/.venv"
+VENV_DIR="${PROJECT_ROOT}/.venv-$OSTYPE"
 
 echo "=== UTV Build Script ==="
 echo "Build Type: ${BUILD_TYPE}"
@@ -86,12 +87,27 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         SUDO=""
     fi
 
+    # Install specific CMake version natively on Linux if not present or too old
+    if [[ "$OSTYPE" != "darwin"* ]] && [[ "$OSTYPE" != "msys"* ]]; then
+        CMAKE_REQ_VER="4.2.3"
+        # Check if cmake exists and its version
+        CURRENT_CMAKE_VER=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
+        if [[ "$CURRENT_CMAKE_VER" != "$CMAKE_REQ_VER" ]]; then
+            echo "--- Installing CMake ${CMAKE_REQ_VER} (Linux x86_64) ---"
+            curl -L -o /tmp/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v${CMAKE_REQ_VER}/cmake-${CMAKE_REQ_VER}-linux-x86_64.tar.gz"
+            $SUDO tar -zxvf /tmp/cmake.tar.gz -C /usr/local --strip-components=1
+            rm /tmp/cmake.tar.gz
+        fi
+    fi
+
+    # macOS setup
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if command -v brew >/dev/null 2>&1; then
-            brew install cmake ninja python@3.14
+            brew install cmake ninja python@${PYTHON_VERSION}
         else
             echo "WARNING: Homebrew not found. Please install it first."
         fi
+    # RHEL / Rocky Setup
     elif command -v dnf >/dev/null 2>&1; then
         $SUDO dnf install -y epel-release dnf-plugins-core
         $SUDO dnf config-manager --set-enabled crb || true
@@ -110,9 +126,10 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         export VCPKG_BUILD_TYPE="release"
         echo "Installing missing dependencies via vcpkg (Release only)..."
         "$VCPKG_DIR/vcpkg" install "opencolorio"
+    # Ubuntu Setup
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libturbojpeg0-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y libglew-dev glew-utils libopencv-dev qt6-base-private-dev libosmesa6-dev qt6-multimedia-dev qt6-shadertools-dev qt6-tools-dev flex bison openimageio-tools libfreetype-dev zip unzip build-essential ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev qt6-5compat-dev qt6-svg-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libturbojpeg0-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
 
         # --- Bootstrapping vcpkg for missing Ubuntu dependencies (OpenJPH missing on amd64) ---
         VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
@@ -129,18 +146,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
 
-    # Install specific CMake version natively on Linux if not present or too old
-    if [[ "$OSTYPE" != "darwin"* ]] && [[ "$OSTYPE" != "msys"* ]]; then
-        CMAKE_REQ_VER="3.31.12"
-        # Check if cmake exists and its version
-        CURRENT_CMAKE_VER=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
-        if [[ "$CURRENT_CMAKE_VER" != "$CMAKE_REQ_VER" ]]; then
-            echo "--- Installing CMake ${CMAKE_REQ_VER} (Linux x86_64) ---"
-            curl -L -o /tmp/cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v${CMAKE_REQ_VER}/cmake-${CMAKE_REQ_VER}-linux-x86_64.tar.gz"
-            $SUDO tar -zxvf /tmp/cmake.tar.gz -C /usr/local --strip-components=1
-            rm /tmp/cmake.tar.gz
-        fi
-    fi
 fi
 
 # 1. Setup Python Environment
@@ -152,7 +157,7 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 if [ ! -d "${VENV_DIR}" ]; then
-    uv venv "${VENV_DIR}" --python 3.14
+    uv venv "${VENV_DIR}" --python ${PYTHON_VERSION}
 fi
 source "${VENV_DIR}/bin/activate"
 uv pip install -r "${PROJECT_ROOT}/requirements.txt"
