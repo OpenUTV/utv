@@ -82,6 +82,38 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 
 ---
 
+## Advanced FFmpeg (Non-Free Codecs & Hardware I/O)
+
+To comply with open-source licensing distributions, the default binaries of UTV are shipped with a standard LGPL version of FFmpeg. This natively supports playback of most standard codecs (H.264, MP4, etc.) without restriction.
+
+However, professional pipelines often require proprietary features such as **ProRes** encoding, **FDK-AAC** audio, hardware-accelerated **NVENC**, or direct FFmpeg **DeckLink** integration. Compiling FFmpeg with these features requires the `--enable-nonfree` flag, which makes the resulting binary legally un-redistributable.
+
+**The Solution ("Bring Your Own FFmpeg"):**
+If you require these proprietary features, you can easily compile a "Pro" version of FFmpeg yourself and drop the resulting dynamic libraries (`.dll`, `.dylib`, or `.so`) into your UTV installation directory. Because UTV dynamically links to FFmpeg at runtime, it will automatically adopt the new capabilities!
+
+### Windows (via vcpkg)
+
+If you have Visual Studio Build Tools and [vcpkg](https://github.com/microsoft/vcpkg) installed, you can compile a full-featured FFmpeg using the following command. The `[feature]` brackets tell `vcpkg` exactly which non-free features to enable:
+
+```powershell
+vcpkg install ffmpeg[nvcodec,decklink,fdk-aac,x264,x265]:x64-windows
+```
+
+Once complete, simply copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin` directly into the folder where `UTV.exe` is installed.
+
+### macOS (via Homebrew)
+
+On macOS, you can use the incredible community-maintained `homebrew-ffmpeg` tap to build a customized version from source:
+
+```bash
+brew tap homebrew-ffmpeg/ffmpeg
+brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-decklink --with-fdk-aac --with-openh264 --with-x265
+```
+
+After installation, you can use the `macdeployqt` and `install_name_tool` utilities to re-link your `UTV.app` bundle to the newly compiled `/opt/homebrew/opt/ffmpeg/` libraries.
+
+---
+
 ## Contributing & Governance
 
 We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) and [GOVERNANCE.md](GOVERNANCE.md) to get started.
