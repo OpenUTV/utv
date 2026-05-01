@@ -97,7 +97,18 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y cmake ninja-build git openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel dav1d-devel
+        $SUDO dnf install -y cmake ninja-build git curl zip unzip tar perl openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel dav1d-devel
+
+        # --- Bootstrapping vcpkg for missing Rocky dependencies (OpenColorIO) ---
+        VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
+        if [ ! -d "$VCPKG_DIR" ]; then
+            echo "--- Bootstrapping vcpkg for missing Rocky dependencies ---"
+            git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
+            "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
+        fi
+        export VCPKG_BUILD_TYPE="release"
+        echo "Installing missing dependencies via vcpkg (Release only)..."
+        "$VCPKG_DIR/vcpkg" install "opencolorio"
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
         DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential cmake ninja-build git curl ca-certificates libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libjpeg-turbo8-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev
@@ -175,6 +186,12 @@ CMAKE_ARGS=(
     "-DRV_VFX_PLATFORM=CY2026"
     "-DRV_USE_SYSTEM_DEPS=ON"
 )
+
+# vcpkg fallback toolchain injection for missing Linux system dependencies
+if [ -f "${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" ]; then
+    echo "Injecting vcpkg toolchain for system dependency fallbacks..."
+    CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_BUILD_TYPE=release")
+fi
 
 if [ -n "$BMD_SDK" ]; then
     CMAKE_ARGS+=("-DRV_DEPS_BMD_DECKLINK_SDK_ZIP_PATH=${BMD_SDK}")
