@@ -81,6 +81,11 @@ fi
 
 if [ "${INSTALL_DEPS}" -eq 1 ]; then
     echo "--- Installing System Dependencies ---"
+    SUDO="sudo"
+    if [ "$(id -u)" -eq 0 ] || ! command -v sudo >/dev/null 2>&1; then
+        SUDO=""
+    fi
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         if command -v brew >/dev/null 2>&1; then
             brew install cmake ninja python@3.14
@@ -88,13 +93,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             echo "WARNING: Homebrew not found. Please install it first."
         fi
     elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y epel-release crb
-        sudo dnf config-manager --set-enabled crb || true
-        sudo dnf groupinstall -y "Development Tools"
-        sudo dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel
+        $SUDO dnf install -y epel-release crb
+        $SUDO dnf config-manager --set-enabled crb || true
+        $SUDO dnf groupinstall -y "Development Tools"
+        $SUDO dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel
     elif command -v apt-get >/dev/null 2>&1; then
-        sudo apt-get update
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev
+        $SUDO apt-get update
+        $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
@@ -118,7 +123,16 @@ uv pip install -r "${PROJECT_ROOT}/requirements.txt"
 echo "--- Locating Qt6 ---"
 if [ -z "$QT_HOME" ]; then
     if [[ "$OSTYPE" == "linux"* ]]; then
-        QT_HOME=$(find /usr/lib64/qt6 /usr/lib/qt6 ~/Qt*/6.* -maxdepth 4 -type d -path '*/gcc_64' 2>/dev/null | sort -V | tail -n 1)
+        QT_HOME=$(find /usr/lib64/qt6 /usr/lib/qt6 /usr/lib/x86_64-linux-gnu/qt6 ~/Qt*/6.* -maxdepth 4 -type d -path '*/gcc_64' 2>/dev/null | sort -V | tail -n 1)
+        if [ -z "$QT_HOME" ]; then
+            if [ -d "/usr/lib/x86_64-linux-gnu/qt6" ]; then
+                QT_HOME="/usr/lib/x86_64-linux-gnu/qt6"
+            elif [ -d "/usr/lib64/qt6" ]; then
+                QT_HOME="/usr/lib64/qt6"
+            else
+                QT_HOME="/usr"
+            fi
+        fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         if [ -d "/opt/homebrew/opt/qtbase/lib/cmake/Qt6" ]; then
             QT_HOME="/opt/homebrew/opt/qtbase"
