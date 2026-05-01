@@ -11,6 +11,8 @@ set -e
 BUILD_TYPE="Release"
 CLEAN_BUILD=0
 INSTALL=0
+PACKAGE=0
+INSTALL_DEPS=0
 LOG_FILE=""
 BMD_SDK=""
 PRORES_SDK=""
@@ -23,6 +25,8 @@ while [[ "$#" -gt 0 ]]; do
         --release) BUILD_TYPE="Release"; shift ;;
         --clean) CLEAN_BUILD=1; shift ;;
         --install) INSTALL=1; shift ;;
+        --package) PACKAGE=1; shift ;;
+        --install-deps) INSTALL_DEPS=1; shift ;;
         --bmd-sdk) BMD_SDK="$2"; shift 2 ;;
         --prores-sdk) PRORES_SDK="$2"; shift 2 ;;
         --version) CUSTOM_VERSION="$2"; shift 2 ;;
@@ -43,6 +47,8 @@ while [[ "$#" -gt 0 ]]; do
             echo "  --release  Build in Release mode (default)"
             echo "  --clean    Remove build directory and virtual environment before building"
             echo "  --install  Install the build to the _install directory"
+            echo "  --package  Generate native installers (RPM/DEB/ZIP) via CPack"
+            echo "  --install-deps Install core system build dependencies via dnf/apt/brew"
             echo "  --log [f]  Log output to a file (default: logs/build_TIMESTAMP.log)"
             echo "  --bmd-sdk  Path to the Blackmagic Decklink SDK zip file"
             echo "  --prores-sdk Path to the Apple ProRes SDK zip file"
@@ -71,6 +77,26 @@ if [ "${CLEAN_BUILD}" -eq 1 ]; then
     echo "Cleaning build and environment directories..."
     rm -rf "${BUILD_DIR}"
     rm -rf "${VENV_DIR}"
+fi
+
+if [ "${INSTALL_DEPS}" -eq 1 ]; then
+    echo "--- Installing System Dependencies ---"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew >/dev/null 2>&1; then
+            brew install cmake ninja python@3.14
+        else
+            echo "WARNING: Homebrew not found. Please install it first."
+        fi
+    elif command -v dnf >/dev/null 2>&1; then
+        sudo dnf install -y epel-release
+        sudo dnf groupinstall -y "Development Tools"
+        sudo dnf install -y cmake ninja-build python3.14 alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build
+    elif command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake ninja-build python3.14-venv libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm
+    else
+        echo "WARNING: Unsupported package manager for --install-deps."
+    fi
 fi
 
 # 1. Setup Python Environment
@@ -182,6 +208,25 @@ if [ "${INSTALL}" -eq 1 ]; then
         echo "--- Sanitizing Installed Homebrew Links ---"
         python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${INST_DIR}"
     fi
+fi
+
+if [ "${PACKAGE}" -eq 1 ]; then
+    echo "--- Packaging UTV ---"
+    cd "${BUILD_DIR}"
+    if [[ "$OSTYPE" == "linux"* ]]; then
+        if command -v dpkg >/dev/null 2>&1; then
+            cpack -G DEB -C "${BUILD_TYPE}"
+        elif command -v rpmbuild >/dev/null 2>&1; then
+            cpack -G RPM -C "${BUILD_TYPE}"
+        else
+            cpack -G TGZ -C "${BUILD_TYPE}"
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        cpack -G ZIP -C "${BUILD_TYPE}"
+    else
+        cpack -G ZIP -C "${BUILD_TYPE}"
+    fi
+    cd "${PROJECT_ROOT}"
 fi
 
 echo "=== Build Complete ==="
