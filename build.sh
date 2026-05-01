@@ -96,10 +96,10 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf install -y epel-release dnf-plugins-core
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel
+        $SUDO dnf install -y cmake ninja-build git openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel opencolorio-devel libraw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        $SUDO DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y build-essential cmake ninja-build git curl ca-certificates libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libjpeg-turbo8-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
@@ -110,7 +110,7 @@ echo "--- Setting up Python Environment ---"
 if ! command -v uv >/dev/null 2>&1; then
     echo "uv not found. Installing astral uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    export PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
 fi
 
 if [ ! -d "${VENV_DIR}" ]; then
