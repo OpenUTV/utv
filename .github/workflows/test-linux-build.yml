@@ -1,6 +1,9 @@
 name: Test Linux Build
 
 on:
+  push:
+    branches:
+      - utv-cpack-installers
   workflow_dispatch:
 
 env:

@@ -1,6 +1,9 @@
 name: Test Windows Build
 
 on:
+  push:
+    branches:
+      - utv-cpack-installers
   workflow_dispatch:
 
 env:
