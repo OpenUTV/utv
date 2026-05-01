@@ -97,7 +97,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y cmake ninja-build git curl zip unzip tar perl pkgconf-pkg-config openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel glew-devel libdav1d-devel libopenjph-devel doctest-devel
+        $SUDO dnf install -y --allowerasing cmake ninja-build git curl zip unzip tar perl pkgconf-pkg-config openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel glew-devel libdav1d-devel libopenjph-devel doctest-devel
 
         # --- Bootstrapping vcpkg for missing Rocky dependencies (OpenColorIO) ---
         VCPKG_DIR="${PROJECT_ROOT}/vcpkg"

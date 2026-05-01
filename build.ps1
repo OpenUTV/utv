@@ -99,7 +99,7 @@ if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
     Invoke-WebRequest -Uri "https://astral.sh/uv/install.ps1" -OutFile "install_uv.ps1"
     & .\install_uv.ps1
     Remove-Item "install_uv.ps1"
-    $env:PATH = "$HOME\.cargo\bin;$env:PATH"
+    $env:PATH = "$HOME\.local\bin;$HOME\.cargo\bin;$env:PATH"
 }
 
 if (-not (Test-Path $VenvDir)) {

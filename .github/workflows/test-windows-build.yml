@@ -8,8 +8,6 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  # Best practice: enable vcpkg binary caching using GHA native cache API
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -43,6 +41,14 @@ jobs:
           dir: "C:/"
           install-deps: 'false'
           cache: false
+
+      - name: Cache vcpkg binary archives
+        uses: actions/cache@v4
+        with:
+          path: ~\AppData\Local\vcpkg\archives
+          key: ${{ runner.os }}-vcpkg-${{ hashFiles('**/build.ps1') }}
+          restore-keys: |
+            ${{ runner.os }}-vcpkg-
 
       - name: Build and Package UTV
         run: .\build.ps1 -Release -Clean -InstallDeps -Package
