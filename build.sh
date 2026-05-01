@@ -113,7 +113,50 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true
         $SUDO dnf groupinstall -y "Development Tools"
-        $SUDO dnf install -y --allowerasing ninja-build git curl zip unzip tar perl pkgconf-pkg-config openssl-devel alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel boost-devel openexr-devel imath-devel LibRaw-devel libtiff-devel libpng-devel OpenImageIO-devel openjpeg2-devel libwebp-devel yaml-cpp-devel spdlog-devel libicu-devel libjpeg-turbo-devel ffmpeg-devel glew-devel libdav1d-devel libopenjph-devel doctest-devel
+        $SUDO dnf install -y --allowerasing \
+                alsa-lib-devel \
+                boost-devel \
+                curl \
+                doctest-devel \
+                ffmpeg-devel \
+                git \
+                glew-devel \
+                imath-devel \
+                libdav1d-devel \
+                libicu-devel \
+                libjpeg-turbo-devel \
+                libopenjph-devel \
+                libpng-devel \
+                LibRaw-devel \
+                libtiff-devel \
+                libwebp-devel \
+                libX11-devel \
+                libXcursor-devel \
+                libXext-devel \
+                libXi-devel \
+                libxkbcommon-devel \
+                libXrandr-devel \
+                libXrender-devel \
+                mesa-libGLU-devel \
+                ninja-build \
+                openexr-devel \
+                OpenImageIO-devel \
+                openjpeg2-devel \
+                openssl-devel \
+                perl \
+                pkgconf-pkg-config \
+                qt6-qt5compat-devel \
+                qt6-qtbase-devel \
+                qt6-qtdeclarative-devel \
+                qt6-qtsvg-devel \
+                qt6-qtwebchannel-devel \
+                qt6-qtwebengine-devel \
+                rpm-build \
+                spdlog-devel \
+                tar \
+                unzip \
+                yaml-cpp-devel \
+                zip
 
         # --- Bootstrapping vcpkg for missing Rocky dependencies (OpenColorIO) ---
         VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
@@ -129,7 +172,68 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
     # Ubuntu Setup
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
-        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y libglew-dev glew-utils libopencv-dev qt6-base-private-dev libosmesa6-dev qt6-multimedia-dev qt6-shadertools-dev qt6-tools-dev flex bison openimageio-tools libfreetype-dev zip unzip build-essential ninja-build git curl ca-certificates pkg-config libssl-dev libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev qt6-5compat-dev qt6-svg-dev qt6-declarative-dev qt6-webengine-dev qt6-webchannel-dev libboost-all-dev libopenexr-dev libimath-dev libopencolorio-dev libraw-dev libtiff-dev libpng-dev libopenimageio-dev libopenjp2-7-dev libwebp-dev libyaml-cpp-dev libspdlog-dev libicu-dev libturbojpeg0-dev libavcodec-dev libavformat-dev libswscale-dev libavutil-dev libswresample-dev libdav1d-dev libglew-dev doctest-dev
+        DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
+                bison \
+                build-essential \
+                ca-certificates \
+                curl \
+                doctest-dev \
+                flex \
+                git \
+                glew-utils \
+                libaio \
+                libasound2-dev \
+                libavcodec-dev \
+                libavformat-dev \
+                libavutil-dev \
+                libboost-all-dev \
+                libdav1d-dev \
+                libfreetype-dev \
+                libgl1-mesa-dev \
+                libglew-dev \
+                libglew-dev \
+                libglu1-mesa-dev \
+                libicu-dev \
+                libimath-dev \
+                libopencolorio-dev \
+                libopencv-dev \
+                libopenexr-dev \
+                libopenimageio-dev \
+                libopenjp2-7-dev \
+                libosmesa6-dev \
+                libpng-dev \
+                libraw-dev \
+                libspdlog-dev \
+                libssl-dev \
+                libswresample-dev \
+                libswscale-dev \
+                libtiff-dev \
+                libturbojpeg0-dev \
+                libwebp-dev \
+                libx11-dev \
+                libxcursor-dev \
+                libxext-dev \
+                libxi-dev \
+                libxkbcommon-dev \
+                libxrandr-dev \
+                libxrender-dev \
+                libyaml-cpp-dev \
+                ninja-build \
+                openimageio-tools \
+                pkg-config \
+                qt6-5compat-dev \
+                qt6-base-dev \
+                qt6-base-private-dev \
+                qt6-declarative-dev \
+                qt6-multimedia-dev \
+                qt6-shadertools-dev \
+                qt6-svg-dev \
+                qt6-tools-dev \
+                qt6-webchannel-dev \
+                qt6-webengine-dev \
+                rpm \
+                unzip \
+                zip
 
         # --- Build openjph from source for Ubuntu (missing on amd64) ---
         if [ ! -d "/usr/local/include/openjph" ]; then
