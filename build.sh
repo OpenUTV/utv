@@ -93,7 +93,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             echo "WARNING: Homebrew not found. Please install it first."
         fi
     elif command -v dnf >/dev/null 2>&1; then
-        $SUDO dnf install -y epel-release crb
+        $SUDO dnf install -y epel-release dnf-plugins-core
         $SUDO dnf config-manager --set-enabled crb || true
         $SUDO dnf groupinstall -y "Development Tools"
         $SUDO dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel qt6-qtwebengine-devel qt6-qtwebchannel-devel
