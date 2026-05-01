@@ -88,12 +88,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             echo "WARNING: Homebrew not found. Please install it first."
         fi
     elif command -v dnf >/dev/null 2>&1; then
-        sudo dnf install -y epel-release
+        sudo dnf install -y epel-release crb
+        sudo dnf config-manager --set-enabled crb || true
         sudo dnf groupinstall -y "Development Tools"
-        sudo dnf install -y cmake ninja-build python3.14 alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build
+        sudo dnf install -y cmake ninja-build alsa-lib-devel libX11-devel libXext-devel libXrender-devel libXrandr-devel libXcursor-devel libXi-devel libxkbcommon-devel mesa-libGLU-devel rpm-build qt6-qtbase-devel qt6-qt5compat-devel qt6-qtsvg-devel qt6-qtdeclarative-devel
     elif command -v apt-get >/dev/null 2>&1; then
         sudo apt-get update
-        sudo apt-get install -y build-essential cmake ninja-build python3.14-venv libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential cmake ninja-build libasound2-dev libx11-dev libxext-dev libxrender-dev libxrandr-dev libxcursor-dev libxi-dev libxkbcommon-dev libgl1-mesa-dev libglu1-mesa-dev rpm qt6-base-dev libqt6core5compat6-dev libqt6svg6-dev qt6-declarative-dev
     else
         echo "WARNING: Unsupported package manager for --install-deps."
     fi
@@ -101,20 +102,17 @@ fi
 
 # 1. Setup Python Environment
 echo "--- Setting up Python Environment ---"
-if command -v uv >/dev/null 2>&1; then
-    if [ ! -d "${VENV_DIR}" ]; then
-        uv venv "${VENV_DIR}" --python 3.14
-    fi
-    source "${VENV_DIR}/bin/activate"
-    uv pip install -r "${PROJECT_ROOT}/requirements.txt"
-else
-    echo "uv not found, falling back to standard venv/pip."
-    if [ ! -d "${VENV_DIR}" ]; then
-        python3 -m venv "${VENV_DIR}"
-    fi
-    source "${VENV_DIR}/bin/activate"
-    python3 -m pip install -r "${PROJECT_ROOT}/requirements.txt"
+if ! command -v uv >/dev/null 2>&1; then
+    echo "uv not found. Installing astral uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.cargo/bin:$PATH"
 fi
+
+if [ ! -d "${VENV_DIR}" ]; then
+    uv venv "${VENV_DIR}" --python 3.14
+fi
+source "${VENV_DIR}/bin/activate"
+uv pip install -r "${PROJECT_ROOT}/requirements.txt"
 
 # 2. Locate Qt6
 echo "--- Locating Qt6 ---"

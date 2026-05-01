@@ -29,17 +29,6 @@ jobs:
         run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
         shell: bash
 
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.5.3'
-          host: 'linux'
-          target: 'desktop'
-          arch: 'gcc_64'
-          dir: "${{ github.workspace }}/deps"
-          install-deps: 'false'
-          cache: false
-
       - name: Build and Package UTV
         run: |
           chmod +x ./build.sh
@@ -73,17 +62,6 @@ jobs:
         id: date
         run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
         shell: bash
-
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.5.3'
-          host: 'linux'
-          target: 'desktop'
-          arch: 'gcc_64'
-          dir: "${{ github.workspace }}/deps"
-          install-deps: 'false'
-          cache: false
 
       - name: Build and Package UTV
         run: |
