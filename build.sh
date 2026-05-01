@@ -117,17 +117,14 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         $SUDO dnf groupinstall -y "Development Tools"
         $SUDO dnf install -y --allowerasing \
                 alsa-lib-devel \
-                boost-devel \
                 curl \
                 doctest-devel \
-                ffmpeg-devel \
+                gh \
                 git \
                 glew-devel \
-                imath-devel \
                 libdav1d-devel \
                 libicu-devel \
                 libjpeg-turbo-devel \
-                libopenjph-devel \
                 libpng-devel \
                 LibRaw-devel \
                 libtiff-devel \
@@ -141,8 +138,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libXrender-devel \
                 mesa-libGLU-devel \
                 ninja-build \
-                openexr-devel \
-                OpenImageIO-devel \
                 openjpeg2-devel \
                 openssl-devel \
                 perl \
@@ -160,17 +155,18 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 yaml-cpp-devel \
                 zip
 
-        # --- Bootstrapping vcpkg for missing Rocky dependencies (OpenColorIO) ---
-        VCPKG_DIR="${PROJECT_ROOT}/vcpkg"
-        if [ ! -d "$VCPKG_DIR" ]; then
-            echo "--- Bootstrapping vcpkg for missing Rocky dependencies ---"
-            git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
-            "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
-            echo "set(VCPKG_BUILD_TYPE release)" >> "$VCPKG_DIR/triplets/x64-linux.cmake"
+        # --- Install custom pre-compiled dependencies from utv-dependencies ---
+        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ]; then
+            echo "--- Fetching pre-compiled RPM dependencies from GitHub Releases ---"
+            mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
+            gh release download latest --repo OpenUTV/utv-dependencies -p "*.rpm" || echo "No custom RPMs found."
+            if ls *.rpm 1> /dev/null 2>&1; then
+                $SUDO dnf install -y ./*.rpm
+            fi
+            cd - > /dev/null
+        else
+            echo "WARNING: GITHUB_TOKEN or GH_TOKEN not set! Cannot fetch custom dependencies from private repository."
         fi
-        export VCPKG_BUILD_TYPE="release"
-        echo "Installing missing dependencies via vcpkg (Release only)..."
-        "$VCPKG_DIR/vcpkg" install "opencolorio"
     # Ubuntu Setup
     elif command -v apt-get >/dev/null 2>&1; then
         $SUDO apt-get update
@@ -181,14 +177,11 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 curl \
                 doctest-dev \
                 flex \
+                gh \
                 git \
                 glew-utils \
                 libaio-dev \
                 libasound2-dev \
-                libavcodec-dev \
-                libavformat-dev \
-                libavutil-dev \
-                libboost-all-dev \
                 libdav1d-dev \
                 libfreetype-dev \
                 libgl1-mesa-dev \
@@ -196,18 +189,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libglew-dev \
                 libglu1-mesa-dev \
                 libicu-dev \
-                libimath-dev \
-                libopencolorio-dev \
                 libopencv-dev \
-                libopenexr-dev \
                 libopenjp2-7-dev \
                 libosmesa6-dev \
                 libpng-dev \
                 libraw-dev \
                 libspdlog-dev \
                 libssl-dev \
-                libswresample-dev \
-                libswscale-dev \
                 libtiff-dev \
                 libturbojpeg0-dev \
                 libwebp-dev \
@@ -241,29 +229,17 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         # $SUDO apt-get install -y gcc-${GCC_VERSION} g++-${GCC_VERSION}
         # $SUDO update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION}
         
-        # --- Build OpenImageIO from source for Ubuntu ---
-        if [ ! -d "/usr/local/include/OpenImageIO" ]; then
-            echo "--- Building OpenImageIO from source ---"
-            git clone --branch v2.5.9.0 --depth 1 https://github.com/AcademySoftwareFoundation/OpenImageIO.git /tmp/OIIO
-            cmake -B /tmp/OIIO/build -S /tmp/OIIO -DCMAKE_BUILD_TYPE=Release -DOIIO_BUILD_TESTS=OFF -DOIIO_BUILD_TOOLS=ON -DUSE_PYTHON=OFF -DOpenColorIO_DIR=/usr/share/cmake
-            cmake --build /tmp/OIIO/build -j $(nproc)
-            $SUDO cmake --install /tmp/OIIO/build
-            rm -rf /tmp/OIIO
-        fi
-
-        # --- Build openjph from source for Ubuntu (missing on amd64) ---
-        if [ ! -d "/usr/local/include/openjph" ]; then
-            echo "--- Building openjph from source ---"
-            git clone https://github.com/aous72/OpenJPH.git /tmp/OpenJPH
-            cmake -B /tmp/OpenJPH/build -S /tmp/OpenJPH -DCMAKE_BUILD_TYPE=Release
-            cmake --build /tmp/OpenJPH/build -j $(nproc)
-            $SUDO cmake --install /tmp/OpenJPH/build
-            rm -rf /tmp/OpenJPH
-        fi
-
-        # Fix Ubuntu 24.04 broken OpenColorIO CMake target
-        if [ -f "/usr/share/cmake/OpenColorIOTargets.cmake" ]; then
-            $SUDO sed -i 's|\${_IMPORT_PREFIX}/include|/usr/include|g' /usr/share/cmake/OpenColorIOTargets.cmake
+        # --- Install custom pre-compiled dependencies from utv-dependencies ---
+        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ]; then
+            echo "--- Fetching pre-compiled DEB dependencies from GitHub Releases ---"
+            mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
+            gh release download latest --repo OpenUTV/utv-dependencies -p "*.deb" || echo "No custom DEBs found."
+            if ls *.deb 1> /dev/null 2>&1; then
+                $SUDO apt-get install -y ./*.deb
+            fi
+            cd - > /dev/null
+        else
+            echo "WARNING: GITHUB_TOKEN or GH_TOKEN not set! Cannot fetch custom dependencies from private repository."
         fi
     else
         echo "WARNING: Unsupported package manager for --install-deps."
