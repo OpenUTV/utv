@@ -105,6 +105,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             echo "--- Bootstrapping vcpkg for missing Rocky dependencies ---"
             git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
             "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
+            echo "set(VCPKG_BUILD_TYPE release)" >> "$VCPKG_DIR/triplets/x64-linux.cmake"
         fi
         export VCPKG_BUILD_TYPE="release"
         echo "Installing missing dependencies via vcpkg (Release only)..."
@@ -119,6 +120,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             echo "--- Bootstrapping vcpkg for missing Ubuntu dependencies ---"
             git clone https://github.com/microsoft/vcpkg.git "$VCPKG_DIR"
             "$VCPKG_DIR/bootstrap-vcpkg.sh" -disableMetrics
+            echo "set(VCPKG_BUILD_TYPE release)" >> "$VCPKG_DIR/triplets/x64-linux.cmake"
         fi
         export VCPKG_BUILD_TYPE="release"
         echo "Installing missing dependencies via vcpkg (Release only)..."
@@ -154,6 +156,10 @@ if [ ! -d "${VENV_DIR}" ]; then
 fi
 source "${VENV_DIR}/bin/activate"
 uv pip install -r "${PROJECT_ROOT}/requirements.txt"
+
+if [ -d ".git" ]; then
+    git config --global --add safe.directory '*'
+fi
 
 # 2. Locate Qt6
 echo "--- Locating Qt6 ---"
@@ -215,6 +221,11 @@ CMAKE_ARGS=(
 if [ -f "${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" ]; then
     echo "Injecting vcpkg toolchain for system dependency fallbacks..."
     CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_BUILD_TYPE=release")
+    
+    # On Ubuntu, vcpkg overrides system search paths, so we manually point OpenColorIO
+    if command -v apt-get >/dev/null 2>&1; then
+        CMAKE_ARGS+=("-DOpenColorIO_DIR=/usr/share/cmake")
+    fi
 fi
 
 if [ -n "$BMD_SDK" ]; then

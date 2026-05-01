@@ -76,6 +76,9 @@ if ($InstallDeps) {
         Write-Host "Cloning vcpkg..."
         & git clone https://github.com/microsoft/vcpkg.git $VcpkgDir
         & "$VcpkgDir\bootstrap-vcpkg.bat" -disableMetrics
+        
+        Write-Host "Enforcing release-only builds..."
+        Add-Content -Path "$VcpkgDir\triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
     }
     
     $vcpkgDeps = @(
