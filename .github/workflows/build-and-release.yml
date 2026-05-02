@@ -1,0 +1,192 @@
+name: Build and Release macOS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint codebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          
+      - name: Install pre-commit
+        run: pip install pre-commit
+        
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  build:
+    name: Build macOS
+    needs: lint
+    runs-on: macos-26 # arm64
+    outputs:
+      version: ${{ steps.versioning.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0 # Need all history and tags to determine version
+
+      - name: Determine Next Semantic Version
+        id: versioning
+        run: |
+          YEAR=$(date +%Y)
+          LATEST_TAG=$(git tag -l "${YEAR}.*" | sort -V | tail -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_VERSION="${YEAR}.1"
+          else
+            MINOR=$(echo $LATEST_TAG | cut -d'.' -f2)
+            NEW_VERSION="${YEAR}.$((MINOR + 1))"
+          fi
+          
+          # If it's a pull request, append PR number
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            NEW_VERSION="${NEW_VERSION}-PR${{ github.event.pull_request.number }}"
+          elif [ "${{ github.event_name }}" == "push" ]; then
+            NEW_VERSION="${NEW_VERSION}-dev"
+          fi
+          
+          echo "Next version is: $NEW_VERSION"
+          echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT # Updates weekly
+        shell: bash
+
+      - name: Cache Homebrew
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          # Re-evaluate the cache weekly to capture upstream brew updates
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
+            ${{ runner.os }}-brew-
+
+      - name: Install Homebrew dependencies
+        run: |
+          brew install --formula \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt \
+               ffmpeg openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+        shell: bash
+
+
+
+      - name: Cache CCache
+        uses: actions/cache@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Build UTV (macOS)
+        run: |
+          export CCACHE_DIR=~/.ccache
+          export SDKROOT=$(xcrun --show-sdk-path)
+          chmod +x ./build.sh
+          # Only pass major.minor (strip -PR stuff for CMake)
+          CLEAN_VERSION=$(echo "${{ steps.versioning.outputs.version }}" | cut -d'-' -f1)
+          ./build.sh --release --clean --version $CLEAN_VERSION
+        shell: bash
+
+      - name: Apply Ad-Hoc macOS Code Signature
+        run: |
+          codesign --force --deep --sign - _build/stage/app/UTV.app
+        shell: bash
+
+      - name: Package macOS App
+        run: |
+          cd _build/stage/app
+          zip -ry UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip UTV.app
+        shell: bash
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-${{ steps.versioning.outputs.version }}-macOS-arm64
+          path: _build/stage/app/UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip
+          retention-days: 7
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
+          path: _build/stage/app
+
+      - name: Generate Release Notes
+        id: release-notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew Cask Formula
+        run: |
+          ZIP_FILE="_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
+          SHA256_HASH=$(sha256sum "$ZIP_FILE" | awk '{print $1}')
+          
+          # Update version and sha256 in Cask formula
+          sed -i "s/version \".*\"/version \"${{ needs.build.outputs.version }}\"/" Casks/utv.rb
+          sed -i "s/sha256 \".*\"/sha256 \"$SHA256_HASH\"/" Casks/utv.rb
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/utv.rb
+          git commit -m "chore(release): update homebrew cask for ${{ needs.build.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git push origin main
+        shell: bash
+
+      - name: Create and Push Tag
+        run: |
+          git tag ${{ needs.build.outputs.version }}
+          git push origin ${{ needs.build.outputs.version }}
+        shell: bash
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3.0.0
+        with:
+          tag_name: ${{ needs.build.outputs.version }}
+          name: UTV Release ${{ needs.build.outputs.version }}
+          body: ${{ steps.release-notes.outputs.content }}
+          files: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
