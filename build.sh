@@ -156,7 +156,8 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 zip
 
         # --- Install custom pre-compiled dependencies from utv-dependencies ---
-        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ]; then
+        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ] || [ -n "$GH_TOKEN_DEPS_READ" ]; then
+            export GH_TOKEN="${GH_TOKEN_DEPS_READ:-${GH_TOKEN:-$GITHUB_TOKEN}}"
             echo "--- Fetching pre-compiled RPM dependencies from GitHub Releases ---"
             mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
             gh release download latest --repo OpenUTV/utv-dependencies -p "*.rpm" || echo "No custom RPMs found."
@@ -230,7 +231,8 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         # $SUDO update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100 --slave /usr/bin/g++ g++ /usr/bin/g++-${GCC_VERSION}
         
         # --- Install custom pre-compiled dependencies from utv-dependencies ---
-        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ]; then
+        if [ -n "$GITHUB_TOKEN" ] || [ -n "$GH_TOKEN" ] || [ -n "$GH_TOKEN_DEPS_READ" ]; then
+            export GH_TOKEN="${GH_TOKEN_DEPS_READ:-${GH_TOKEN:-$GITHUB_TOKEN}}"
             echo "--- Fetching pre-compiled DEB dependencies from GitHub Releases ---"
             mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
             gh release download latest --repo OpenUTV/utv-dependencies -p "*.deb" || echo "No custom DEBs found."
