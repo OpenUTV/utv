@@ -48,3 +48,5 @@ about_rv.cpp
 
 # Build logs
 logs/
+
+vcpkg/

@@ -34,10 +34,11 @@ Whether you are a freelance artist, an editor, or just need to smoothly scrub th
 You can install the pre-compiled native macOS (Apple Silicon) binary directly from our custom Homebrew tap:
 
 ```bash
-brew install --cask OpenUTV/utv/utv
+brew tap OpenUTV/utv https://github.com/OpenUTV/utv
+brew install --cask utv
 ```
 
-*(Support for `apt`, `dnf`, `winget`, and `choco` is coming soon!)*
+*(Native support for Linux (`apt`/`dnf`) and Windows (`.exe`) is actively being implemented!)*
 
 ---
 
@@ -78,6 +79,52 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 - **NDI**: Download and install the NDI Runtime from [https://ndi.video/tools/](https://ndi.video/tools/) (or the NDI SDK [macOS](https://downloads.ndi.tv/SDK/NDI_SDK_Mac/Install_NDI_SDK_v6_Apple.pkg), [Linux](https://downloads.ndi.tv/SDK/NDI_SDK_Linux/Install_NDI_SDK_v6_Linux.tar.gz), [Windows](https://downloads.ndi.tv/SDK/NDI_SDK/NDI%206%20SDK.exe)).
 - **Blackmagic Design**: Download the "Desktop Video" driver from the [Blackmagic Design Support Center](https://www.blackmagicdesign.com/support/family/capture-and-playback).
 - **AJA Video Systems**: Download the "Desktop Software" driver from the [AJA Support Center](https://www.aja.com/support).
+
+---
+
+## Advanced FFmpeg (Non-Free Codecs & Hardware I/O)
+
+To comply with open-source licensing distributions, the default binaries of UTV are shipped with a standard LGPL version of FFmpeg. This natively supports playback of most standard codecs (H.264, MP4, etc.) without restriction.
+
+However, professional pipelines often require proprietary features such as **ProRes** encoding, **FDK-AAC** audio, hardware-accelerated **NVENC**, or direct FFmpeg **DeckLink** integration. Compiling FFmpeg with these features requires the `--enable-nonfree` flag, which makes the resulting binary legally un-redistributable.
+
+**The Solution ("Bring Your Own FFmpeg"):**
+If you require these proprietary features, you can easily compile a "Pro" version of FFmpeg yourself and drop the resulting dynamic libraries (`.dll`, `.dylib`, or `.so`) into your UTV installation directory. Because UTV dynamically links to FFmpeg at runtime, it will automatically adopt the new capabilities!
+
+### Windows (via vcpkg)
+
+If you have Visual Studio Build Tools and [vcpkg](https://github.com/microsoft/vcpkg) installed, you can compile a full-featured FFmpeg using the following command. The `[feature]` brackets tell `vcpkg` exactly which non-free features to enable:
+
+```powershell
+vcpkg install ffmpeg[nvcodec,decklink,fdk-aac,x264,x265]:x64-windows
+```
+
+Once complete, simply copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin` directly into the folder where `UTV.exe` is installed.
+
+### macOS (via Homebrew)
+
+On macOS, you can use the incredible community-maintained `homebrew-ffmpeg` tap to build a customized version from source:
+
+```bash
+brew tap homebrew-ffmpeg/ffmpeg
+brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-decklink --with-fdk-aac --with-openh264 --with-x265
+```
+
+After installation, you can use the `macdeployqt` and `install_name_tool` utilities to re-link your `UTV.app` bundle to the newly compiled `/opt/homebrew/opt/ffmpeg/` libraries.
+
+---
+
+## 💖 Support OpenUTV
+
+OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project!
+
+- **[💳 Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card/Apple Pay)
+
+**Crypto Donations:**
+
+- **BTC:** `bc1qwpd4nmz409xx3x5n9z76avnv7rqucu8w53aejy`
+- **ETH:** `0xB9Ab3823a967804EdE427541F36E785912b67f98`
+- **SOL:** `9EdidyxKi9rwx35yvi5FVr7bDkFMPUUKMhFCdp4ASNG7`
 
 ---
 

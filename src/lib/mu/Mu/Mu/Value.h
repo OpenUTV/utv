@@ -118,7 +118,7 @@ namespace Mu
         T t;
     };
 
-    inline Value::Value(const Value& v) = default;
+    inline Value::Value(const Value& v) { memcpy(this, &v, sizeof(Value)); }
 
     // template <typename T> T Value::as() const { return reinterpret_cast<const
     // Valign<T>*>(this)->t; } template <typename T> T& Value::as() { return
