@@ -119,3 +119,65 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(packages)
 
 ADD_SUBDIRECTORY(cmake/install)
+
+# ==============================================================================
+# Packaging Configuration (CPack)
+# ==============================================================================
+SET(CPACK_PACKAGE_NAME
+    "${RV_INTERNAL_APPLICATION_NAME}"
+)
+SET(CPACK_PACKAGE_VENDOR
+    "${RV_INTERNAL_ORGANIZATION_NAME}"
+)
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "UTV - Streamlined Playback Review"
+)
+SET(CPACK_PACKAGE_VERSION_MAJOR
+    "${RV_MAJOR_VERSION}"
+)
+SET(CPACK_PACKAGE_VERSION_MINOR
+    "${RV_MINOR_VERSION}"
+)
+SET(CPACK_PACKAGE_VERSION_PATCH
+    "${RV_REVISION_NUMBER}"
+)
+SET(CPACK_PACKAGE_VERSION
+    "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
+)
+
+IF(RV_TARGET_LINUX)
+  FIND_PROGRAM(DPKG_CMD dpkg)
+  FIND_PROGRAM(RPM_CMD rpmbuild)
+  IF(DPKG_CMD)
+    SET(CPACK_GENERATOR
+        "DEB"
+    )
+    SET(CPACK_DEBIAN_PACKAGE_MAINTAINER
+        "Makai Systems"
+    )
+  ELSEIF(RPM_CMD)
+    SET(CPACK_GENERATOR
+        "RPM"
+    )
+  ELSE()
+    SET(CPACK_GENERATOR
+        "TGZ"
+    )
+  ENDIF()
+ELSEIF(RV_TARGET_WINDOWS)
+  SET(CPACK_GENERATOR
+      "NSIS;ZIP"
+  )
+  SET(CPACK_NSIS_MUI_FINISHPAGE_RUN
+      "bin\\\\utv.exe"
+  )
+  SET(CPACK_NSIS_DISPLAY_NAME
+      "UTV"
+  )
+ELSEIF(RV_TARGET_DARWIN)
+  SET(CPACK_GENERATOR
+      "ZIP"
+  )
+ENDIF()
+
+INCLUDE(CPack)
