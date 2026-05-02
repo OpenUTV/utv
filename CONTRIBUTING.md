@@ -10,7 +10,7 @@ Start by getting familiar with the [GOVERNANCE](GOVERNANCE.md) document. It deta
 
 ## Committers
 
-The RV Open Source Project Committers are listed in alphabetical order, by first name, in [COMMITERS](COMMITERS.md)
+The UTV Open Source Project Committers are listed in alphabetical order, by first name, in [COMMITERS](COMMITERS.md)
 
 ## Coding Conventions
 
