@@ -114,6 +114,20 @@ After installation, you can use the `macdeployqt` and `install_name_tool` utilit
 
 ---
 
+## 💖 Support OpenUTV
+
+OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project!
+
+- **[💳 Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card/Apple Pay)
+
+**Crypto Donations:**
+
+- **BTC:** `bc1qwpd4nmz409xx3x5n9z76avnv7rqucu8w53aejy`
+- **ETH:** `0xB9Ab3823a967804EdE427541F36E785912b67f98`
+- **SOL:** `9EdidyxKi9rwx35yvi5FVr7bDkFMPUUKMhFCdp4ASNG7`
+
+---
+
 ## Contributing & Governance
 
 We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) and [GOVERNANCE.md](GOVERNANCE.md) to get started.
