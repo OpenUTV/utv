@@ -137,7 +137,7 @@ OpenUTV is completely free and open-source. If you use UTV in your studio pipeli
 
 ## Contributing & Governance
 
-We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTING.md) and [GOVERNANCE.md](GOVERNANCE.md) to get started.
+We welcome community contributions! Please read our [CONTRIBUTING.md](.github/CONTRIBUTING.md) and [GOVERNANCE.md](docs/GOVERNANCE.md) to get started.
 
 ## Star History
 
@@ -147,4 +147,4 @@ We welcome community contributions! Please read our [CONTRIBUTING.md](CONTRIBUTI
 
 ## About Third-Party Licenses
 
-See [THIRD-PARTY.md](THIRD-PARTY.md) for license information about portions of UTV that have been imported from other projects.
+See [THIRD-PARTY.md](docs/THIRD-PARTY.md) for license information about portions of UTV that have been imported from other projects.
