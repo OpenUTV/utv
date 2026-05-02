@@ -160,7 +160,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             export GH_TOKEN="${GH_TOKEN_DEPS_READ:-${GH_TOKEN:-$GITHUB_TOKEN}}"
             echo "--- Fetching pre-compiled RPM dependencies from GitHub Releases ---"
             mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
-            gh release download latest --repo OpenUTV/utv-dependencies -p "*.rpm" || echo "No custom RPMs found."
+            gh release download rocky-9 --repo OpenUTV/utv-dependencies -p "*.rpm" || echo "No custom RPMs found."
             if ls *.rpm 1> /dev/null 2>&1; then
                 $SUDO dnf install -y ./*.rpm
             fi
@@ -235,7 +235,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             export GH_TOKEN="${GH_TOKEN_DEPS_READ:-${GH_TOKEN:-$GITHUB_TOKEN}}"
             echo "--- Fetching pre-compiled DEB dependencies from GitHub Releases ---"
             mkdir -p /tmp/utv_deps && cd /tmp/utv_deps
-            gh release download latest --repo OpenUTV/utv-dependencies -p "*.deb" || echo "No custom DEBs found."
+            gh release download ubuntu-24.04 --repo OpenUTV/utv-dependencies -p "*.deb" || echo "No custom DEBs found."
             if ls *.deb 1> /dev/null 2>&1; then
                 $SUDO apt-get install -y ./*.deb
             fi
