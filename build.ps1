@@ -82,12 +82,31 @@ if ($InstallDeps) {
     }
     
     $vcpkgDeps = @(
-        "boost", "dav1d", "doctest", "expat", "ffmpeg", "bdwgc", "glew",
-        "imath", "libjpeg-turbo", "nanobind", "opencolorio",
+        "bdwgc",
+        "boost",
+        "dav1d",
+        "doctest",
+        "expat",
+        "ffmpeg",
+        "glew",
+        "imath",
+        "libatomic-ops",
+        "libjpeg-turbo",
+        "libpng",
+        "libraw",
+        "libwebp",
+        "nanobind",
+        "opencolorio",
+        "openexr",
         "openimageio[ffmpeg,libraw,freetype,opencolorio,openjpeg,webp]",
-        "openexr", "openjpeg", "openjph", "openssl", "pcre2", "libpng",
-        "libraw", "spdlog", "tiff", "libwebp", "yaml-cpp", "zlib",
-        "libatomic-ops"
+        "openjpeg",
+        "openjph",
+        "openssl",
+        "pcre2",
+        "spdlog",
+        "tiff",
+        "yaml-cpp",
+        "zlib"
     )
     
     # Optimize build times by only building Release variants
