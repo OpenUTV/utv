@@ -33,7 +33,7 @@ jobs:
         shell: bash
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-Ubuntu-DEB
           path: _build/*.deb
@@ -67,7 +67,7 @@ jobs:
         shell: bash
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-Rocky-RPM
           path: _build/*.rpm
