@@ -171,7 +171,7 @@ runs:
         version: '${{ inputs.qt-version }}'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_msvc2019_64'
+        arch: 'win64_msvc2022_64'
         dir: "c:/"
         install-deps: 'false'
         modules: ${{ inputs.windows_qt6_modules }}
@@ -181,7 +181,7 @@ runs:
         tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
-        aqtversion: '==3.2.*'
+        aqtversion: '>=3.3.*'
 
     - name: Install Python dependencies
       run: python3 -m pip install --user --upgrade -r ./requirements.txt
