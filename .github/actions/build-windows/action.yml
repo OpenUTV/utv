@@ -176,7 +176,7 @@ runs:
         install-deps: 'false'
         modules: ${{ inputs.windows_qt6_modules }}
         archives: ${{ inputs.windows_qt6_archives }}
-        cache: false
+        cache: 'true'
         setup-python: 'false'
         tools: 'tools_qtcreator'
         set-env: 'true'
