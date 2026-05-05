@@ -31,13 +31,14 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.5.3'
+          version: '6.11.0'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2019_64'
+          arch: 'win64_msvc2022_64'
           dir: "C:/"
           install-deps: 'false'
-          cache: false
+          cache: 'true'
+          aqtversion: '>=3.3.*'
 
       - name: Cache vcpkg binary archives
         uses: actions/cache@v5
