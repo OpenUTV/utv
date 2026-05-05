@@ -1,6 +1,7 @@
 name: UTV Windows
 
 on:
+  workflow_dispatch:
   workflow_call:
     inputs:
       skip_deps_cache:
