@@ -10,10 +10,10 @@ inputs:
     default: '6.11.0'
   python-version:
     required: false
-    default: '3.14'
+    default: '3.15'
   cmake-version:
     required: false
-    default: '3.31.6'
+    default: '4.3.2'
   vfx-platform:
     required: false
     default: 'CY2026'
@@ -106,7 +106,7 @@ runs:
           zip
 
     - name: Activate Python ${{ inputs.python-version }}
-      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # 5.2.0
+      uses: actions/setup-python@v6
       with:
         python-version: '${{ inputs.python-version }}'
 
@@ -115,7 +115,7 @@ runs:
       shell: powershell
 
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@0b1efabc08b657293548b77fb76cc02d26091c7e
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: stable
 
@@ -192,9 +192,9 @@ runs:
       # For sccache to actually cache the Windows/MSVC build, CMake must use it as the compiler
       # launcher, e.g. -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
       # in the Configure UTV step (and sccache must be on PATH when the build runs).
-      uses: mozilla-actions/sccache-action@v0.0.6
+      uses: mozilla-actions/sccache-action@v0.0.10
       with:
-        version: "v0.8.1"
+        version: "v0.15.0"
 
     - name: Configure sccache for msys2
       run: |
