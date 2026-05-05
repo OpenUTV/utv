@@ -3,19 +3,26 @@ description: Build and test UTV on Windows
 
 inputs:
   build-type:
-    required: true
+    required: false
+    default: 'Release'
   qt-version:
-    required: true
+    required: false
+    default: '6.11.0'
   python-version:
-    required: true
+    required: false
+    default: '3.14'
   cmake-version:
-    required: true
+    required: false
+    default: '3.31.6'
   vfx-platform:
-    required: true
+    required: false
+    default: 'CY2026'
   msvc-component:
-    required: true
+    required: false
+    default: '14.40.17.10.x86.x64'
   msvc-compiler:
-    required: true
+    required: false
+    default: '14.40.33807'
   qt5_modules:
     required: false
     default: ''
@@ -159,26 +166,6 @@ runs:
       shell: msys2 {0}
 
     - name: Install Qt ${{ inputs.qt-version }}
-      if: ${{ inputs.vfx-platform == 'CY2023' }}
-      uses: jurplel/install-qt-action@v4
-      with:
-        version: '${{ inputs.qt-version }}'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_msvc2019_64'
-        dir: "c:/"
-        install-deps: 'false'
-        modules: ${{ inputs.qt5_modules }}
-        archives: ${{ inputs.windows_qt5_archives }}
-        cache: false
-        setup-python: 'false'
-        tools: 'tools_qtcreator'
-        set-env: 'true'
-        tools-only: 'false'
-        aqtversion: '==3.2.*'
-
-    - name: Install Qt ${{ inputs.qt-version }}
-      if: ${{ inputs.vfx-platform == 'CY2024' }}
       uses: jurplel/install-qt-action@v4
       with:
         version: '${{ inputs.qt-version }}'
@@ -216,19 +203,9 @@ runs:
       shell: msys2 {0}
 
     - name: Configure UTV
-      if: ${{ inputs.vfx-platform == 'CY2023' }}
       run: |
         cmake --version
-        export QT_HOME=c:/Qt/${{ inputs.qt-version }}/msvc2019_64
-        cmake -B _build -G "Visual Studio 17 2022" -A x64 -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }}
-      shell: msys2 {0}
-
-    - name: Configure UTV
-      if: ${{ inputs.vfx-platform == 'CY2024' }}
-      run: |
-        cmake --version
-        export QT_HOME=c:/Qt/${{ inputs.qt-version }}/msvc2019_64
-        cmake -B _build -G "Visual Studio 17 2022" -A x64 -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DRV_DEPS_QT_LOCATION=$QT_HOME -DRV_VFX_PLATFORM=${{ inputs.vfx-platform }}
+        cmake -B _build -G "Visual Studio 17 2022" -A x64 -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
       shell: msys2 {0}
 
     - name: Build UTV dependencies
