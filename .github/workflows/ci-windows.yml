@@ -50,7 +50,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      SCCACHE_GHA_ENABLED: false
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6
@@ -95,7 +95,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      SCCACHE_GHA_ENABLED: false
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6
@@ -149,7 +149,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      SCCACHE_GHA_ENABLED: false
+      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6

@@ -32,6 +32,23 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Download and Install Prebuilt Dependencies
+      shell: powershell
+      run: |
+        $ReleaseUrl = "https://api.github.com/repos/mcoliver4/utv-dependencies/releases/tags/windows-x64"
+        $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
+        $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
+        if (-not $Asset) {
+            Write-Error "Could not find MSI asset in the release."
+            exit 1
+        }
+        $DownloadUrl = $Asset.browser_download_url
+        Write-Host "Downloading $DownloadUrl..."
+        Invoke-WebRequest -Uri $DownloadUrl -OutFile "OpenUTVDeps.msi"
+        Write-Host "Installing MSI..."
+        Start-Process msiexec.exe -ArgumentList "/i OpenUTVDeps.msi /qn" -Wait -NoNewWindow
+        Write-Host "Installation complete."
+
     - name: Install MSVC components ${{ inputs.msvc-component }}
       run: |
         Set-Location "C:\Program Files (x86)\Microsoft Visual Studio\Installer\"

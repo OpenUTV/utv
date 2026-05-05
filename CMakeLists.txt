@@ -63,6 +63,37 @@ IF(NOT RV_APPLICATION_TYPE)
   )
 ENDIF()
 
+# Auto-detect OpenUTVDeps vcpkg toolchain on Windows
+IF(WIN32
+   AND NOT DEFINED CMAKE_TOOLCHAIN_FILE
+)
+  FILE(GLOB DEPS_DIRS "C:/Program Files/OpenUTVDeps *")
+  IF(DEPS_DIRS)
+    LIST(
+      SORT DEPS_DIRS
+      COMPARE NATURAL
+    )
+    LIST(REVERSE DEPS_DIRS)
+    LIST(GET DEPS_DIRS 0 LATEST_DEPS_DIR)
+    IF(EXISTS "${LATEST_DEPS_DIR}/scripts/buildsystems/vcpkg.cmake")
+      MESSAGE(STATUS "Auto-detected OpenUTVDeps vcpkg toolchain: ${LATEST_DEPS_DIR}")
+      SET(CMAKE_TOOLCHAIN_FILE
+          "${LATEST_DEPS_DIR}/scripts/buildsystems/vcpkg.cmake"
+          CACHE FILEPATH "Vcpkg toolchain file"
+      )
+    ENDIF()
+  ELSEIF(
+    DEFINED ENV{OPENUTV_DEPS_ROOT}
+    AND EXISTS "$ENV{OPENUTV_DEPS_ROOT}/scripts/buildsystems/vcpkg.cmake"
+  )
+    MESSAGE(STATUS "Auto-detected OpenUTVDeps vcpkg toolchain from ENV: $ENV{OPENUTV_DEPS_ROOT}")
+    SET(CMAKE_TOOLCHAIN_FILE
+        "$ENV{OPENUTV_DEPS_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE FILEPATH "Vcpkg toolchain file"
+    )
+  ENDIF()
+ENDIF()
+
 PROJECT(
   open-rv
   VERSION "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
