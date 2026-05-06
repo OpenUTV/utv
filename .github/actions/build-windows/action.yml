@@ -161,6 +161,20 @@ runs:
         cargo --version || echo "WARNING: Cargo not found in msys2 PATH"
       shell: msys2 {0}
 
+    - name: Get Latest Vulkan SDK Version
+      id: vulkan-version
+      run: |
+        $version = Invoke-RestMethod -Uri "https://vulkan.lunarg.com/sdk/latest/windows.txt"
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+      shell: powershell
+
+    - name: Setup Vulkan SDK
+      uses: humbletim/setup-vulkan-sdk@v1.1.1
+      with:
+        vulkan-query-version: ${{ steps.vulkan-version.outputs.version }}
+        vulkan-components: Vulkan-Headers, Vulkan-Loader
+        vulkan-use-cache: true
+
     - name: Prepare Qt folder
       run: mkdir -p /c/qt
       shell: msys2 {0}
