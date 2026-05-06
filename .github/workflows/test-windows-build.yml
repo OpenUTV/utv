@@ -53,7 +53,7 @@ jobs:
         shell: powershell
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-Windows-EXE
           path: _build/*.exe
