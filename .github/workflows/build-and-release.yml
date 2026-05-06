@@ -145,7 +145,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
           path: _build/stage/app
