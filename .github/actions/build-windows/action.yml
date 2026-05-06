@@ -181,7 +181,7 @@ runs:
         tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
-        aqtversion: '==3.3.*'
+        aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Python dependencies
       run: python3 -m pip install --user --upgrade -r ./requirements.txt

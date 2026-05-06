@@ -38,7 +38,7 @@ jobs:
           dir: "C:/"
           install-deps: 'false'
           cache: 'true'
-          aqtversion: '==3.3.*'
+          aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
       - name: Cache vcpkg binary archives
         uses: actions/cache@v5

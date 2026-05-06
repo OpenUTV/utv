@@ -91,7 +91,7 @@ runs:
         tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
-        aqtversion: '==3.3.*'
+        aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Qt ${{ inputs.qt-version }}
       if: inputs.vfx-platform == 'CY2024'
@@ -111,7 +111,7 @@ runs:
         tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
-        aqtversion: '==3.3.*'
+        aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Patch Qt ${{ inputs.qt-version }}
       if: inputs.arch-type == 'x86_64' && inputs.vfx-platform == 'CY2023'
