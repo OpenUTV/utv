@@ -184,7 +184,7 @@ runs:
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Python dependencies
-      run: python3 -m pip install --user --upgrade -r ./requirements.txt
+      run: python3 -m pip install --user --upgrade uv
       shell: msys2 {0}
 
     - name: Setup sccache

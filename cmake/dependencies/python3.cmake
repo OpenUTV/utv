@@ -33,11 +33,13 @@ FIND_PROGRAM(UV_EXECUTABLE uv)
 IF(UV_EXECUTABLE)
   MESSAGE(STATUS "Using uv for python dependency management")
   EXECUTE_PROCESS(
-    COMMAND ${UV_EXECUTABLE} pip install -r ${PROJECT_SOURCE_DIR}/requirements.txt
+    COMMAND ${UV_EXECUTABLE} pip install --python ${Python3_EXECUTABLE} -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE uv_result
   )
 ELSE()
   MESSAGE(STATUS "uv not found, using pip for python dependency management")
+  # Attempt to bootstrap pip in case the vcpkg Python distribution is missing it
+  EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -m ensurepip --upgrade)
   EXECUTE_PROCESS(
     COMMAND ${Python3_EXECUTABLE} -m pip install -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE pip_result
