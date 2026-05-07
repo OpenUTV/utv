@@ -55,6 +55,7 @@ runs:
         Write-Host "Installing MSI..."
         Start-Process msiexec.exe -ArgumentList "/i OpenUTVDeps.msi /qn" -Wait -NoNewWindow
         Write-Host "Installation complete."
+        echo "C:\Program Files\OpenUTVDeps 26.1.0\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
     - name: Install MSVC components ${{ inputs.msvc-component }}
       run: |

@@ -78,15 +78,14 @@ INCLUDE(doctest)
 INCLUDE(jpegturbo) # jpegturbo huge advantage over jpeg is that it does come with CMake support!
 INCLUDE(png)
 INCLUDE(tiff) # depends on jpeg, jpegturbo
-# src/pub: lmcs: src/pub will be removed eventually, this path will needed to change. ADD_SUBDIRECTORY(../../src/pub/lcms src/pub/lcms) # required by raw
+INCLUDE(lcms) # Replaces the legacy source build
 INCLUDE(raw) # depends on jpeg, zlib
 INCLUDE(openjpeg) # depends on zlib, tiff, png
 INCLUDE(openjph)
 INCLUDE(webp)
 INCLUDE(openexr)
 INCLUDE(ocio)
-# src/pub: freetype: src/pub will be removed eventually, this path will needed to change. ADD_SUBDIRECTORY(../../src/pub/freetype src/pub/freetype) # required
-# by oiio
+INCLUDE(freetype) # Replaces the legacy source build
 INCLUDE(oiio) # depends on openexr and most image formats above and ocio (actually, there's inter-dependency between ocio and oiio)
 IF(RV_TARGET_WINDOWS)
   INCLUDE(pcre2)
