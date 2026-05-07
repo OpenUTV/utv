@@ -63,14 +63,26 @@ FOREACH(
       )
     ENDIF()
 
-    SET_PROPERTY(
-      TARGET ffmpeg::${_lib}
-      PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_lib${_lib}_INCLUDE_DIRS}"
+    # Sanitize include directory path. pkg-config on Windows improperly splits paths with spaces (like "C:/Program Files/...") into invalid CMake lists.
+    FIND_PATH(
+      FFMPEG_lib${_lib}_INCLUDE_DIR
+      NAMES "lib${_lib}/${_lib}.h"
+      HINTS ${FFMPEG_lib${_lib}_INCLUDEDIR} ${FFMPEG_lib${_lib}_INCLUDE_DIRS}
     )
-    SET_PROPERTY(
-      TARGET ffmpeg::${_lib}
-      PROPERTY INTERFACE_COMPILE_OPTIONS "${FFMPEG_lib${_lib}_CFLAGS_OTHER}"
-    )
+
+    IF(FFMPEG_lib${_lib}_INCLUDE_DIR)
+      SET_PROPERTY(
+        TARGET ffmpeg::${_lib}
+        PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FFMPEG_lib${_lib}_INCLUDE_DIR}"
+      )
+    ENDIF()
+
+    IF(FFMPEG_lib${_lib}_CFLAGS_OTHER)
+      SET_PROPERTY(
+        TARGET ffmpeg::${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS "${FFMPEG_lib${_lib}_CFLAGS_OTHER}"
+      )
+    ENDIF()
 
     # Promote to global if it came from PkgConfig target
     IF(TARGET PkgConfig::FFMPEG_lib${_lib})
