@@ -42,7 +42,7 @@ runs:
     - name: Download and Install Prebuilt Dependencies
       shell: powershell
       run: |
-        $ReleaseUrl = "https://api.github.com/repos/mcoliver4/utv-dependencies/releases/tags/windows-x64"
+        $ReleaseUrl = "https://api.github.com/repos/mcoliver4/utv-dependencies/releases/latest"
         $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
         $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
         if (-not $Asset) {
