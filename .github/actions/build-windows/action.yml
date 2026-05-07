@@ -162,17 +162,6 @@ runs:
         cargo --version || echo "WARNING: Cargo not found in msys2 PATH"
       shell: msys2 {0}
 
-    - name: Download and Install Vulkan SDK
-      run: |
-        $version = Invoke-RestMethod -Uri "https://vulkan.lunarg.com/sdk/latest/windows.txt"
-        Write-Host "Downloading Vulkan SDK version $version..."
-        Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/$version/windows/vulkan_sdk.exe" -OutFile vulkansdk.exe
-        Write-Host "Installing Vulkan SDK..."
-        .\vulkansdk.exe --root "C:\VulkanSDK" --accept-licenses --default-answer --confirm-command install
-        echo "VULKAN_SDK=C:\VulkanSDK" >> $env:GITHUB_ENV
-        echo "C:\VulkanSDK\Bin" >> $env:GITHUB_PATH
-      shell: powershell
-
     - name: Prepare Qt folder
       run: mkdir -p /c/qt
       shell: msys2 {0}
