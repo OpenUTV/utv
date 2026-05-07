@@ -19,7 +19,7 @@ SET(_download_url
 
 # Hash validation is intentionally skipped for unpinned/latest URLs.
 SET(_download_hash
-    ""
+    "35e417e4e49cd97976ef14c50e06db9b"
 )
 
 SET(_install_dir
