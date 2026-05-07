@@ -50,6 +50,7 @@ FOREACH(
   random
   regex
   serialization
+  system
   thread
   timer
 )
