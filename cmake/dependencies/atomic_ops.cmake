@@ -50,7 +50,7 @@ EXTERNALPROJECT_ADD(
   DOWNLOAD_NAME ${_target}_${_version}.zip
   DOWNLOAD_DIR ${RV_DEPS_DOWNLOAD_DIR}
   CONFIGURE_COMMAND ${CMAKE_COMMAND} -S ${RV_DEPS_BASE_DIR}/${_target}/src -B ${_build_dir} -DCMAKE_INSTALL_PREFIX=${_install_dir}
-                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -Denable_gpl=OFF
+                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -Denable_gpl=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
   BUILD_COMMAND ${CMAKE_COMMAND} --build ${_build_dir} --config ${CMAKE_BUILD_TYPE} -j${_cpu_count}
   INSTALL_COMMAND ${CMAKE_COMMAND} --install ${_build_dir} --prefix ${_install_dir} --config ${CMAKE_BUILD_TYPE}
   BUILD_IN_SOURCE FALSE
