@@ -12,13 +12,14 @@ SET(_version
     ${RV_DEPS_ATOMIC_OPS_VERSION}
 )
 
-# Download a recent version that includes the feature we need (--disable-gpl) which hasn't been released nor tagged yet.
+# Download the latest version of libatomic_ops from bdwgc
 SET(_download_url
-    "https://github.com/ivmai/libatomic_ops/archive/044573903530c4a8e8318e20a830d4a0531b2035.zip"
+    "https://github.com/bdwgc/libatomic_ops/archive/refs/tags/v7.10.0.zip"
 )
 
+# Hash validation is intentionally skipped for unpinned/latest URLs.
 SET(_download_hash
-    ${RV_DEPS_ATOMIC_OPS_DOWNLOAD_HASH}
+    ""
 )
 
 SET(_install_dir
