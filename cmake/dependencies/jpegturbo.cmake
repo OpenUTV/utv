@@ -29,10 +29,17 @@ IF(NOT TARGET libjpeg-turbo::turbojpeg)
     libjpeg-turbo::turbojpeg
     INTERFACE ${TURBOJPEG_LIBRARIES}
   )
-  TARGET_INCLUDE_DIRECTORIES(
-    libjpeg-turbo::turbojpeg
-    INTERFACE ${TURBOJPEG_INCLUDE_DIRS}
+  FIND_PATH(
+    TURBOJPEG_INCLUDE_DIR
+    NAMES "turbojpeg.h"
+    HINTS ${TURBOJPEG_INCLUDEDIR} ${TURBOJPEG_INCLUDE_DIRS}
   )
+  IF(TURBOJPEG_INCLUDE_DIR)
+    TARGET_INCLUDE_DIRECTORIES(
+      libjpeg-turbo::turbojpeg
+      INTERFACE "${TURBOJPEG_INCLUDE_DIR}"
+    )
+  ENDIF()
 ENDIF()
 
 IF(DEFINED JPEG_VERSION)
