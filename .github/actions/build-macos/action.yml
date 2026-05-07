@@ -191,7 +191,7 @@ runs:
       # Restore only if there are no changes under cmake folder and Release build.
       if: inputs.skip_deps_cache == 'false' && steps.changes-in-deps.outputs.dependencies == 'false' && inputs.build-type == 'Release'
       id: cmake-dependencies
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: |
           ./_build/RV_DEPS_*
@@ -251,7 +251,7 @@ runs:
     - name: Save dependencies cache
       # Only save on push/schedule/workflow_dispatch so PRs use cache from main branch.
       if: inputs.skip_deps_cache == 'false' && steps.changes-in-deps.outputs.dependencies == 'false' && inputs.build-type == 'Release' && github.event_name != 'pull_request'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: |
           ./_build/RV_DEPS_*
