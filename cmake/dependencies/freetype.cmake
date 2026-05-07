@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-FIND_PACKAGE(Freetype REQUIRED)
+FIND_PACKAGE(Freetype MODULE REQUIRED)
 
 IF(TARGET Freetype::Freetype)
   SET_PROPERTY(
