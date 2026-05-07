@@ -4,83 +4,21 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-SET(_target
-    "RV_DEPS_ATOMIC_OPS"
-)
+# Find the pre-compiled libatomic-ops provided by our vcpkg OpenUTVDeps environment
+FIND_PACKAGE(atomic_ops CONFIG REQUIRED)
 
-SET(_version
-    ${RV_DEPS_ATOMIC_OPS_VERSION}
-)
-
-# Download the latest version of libatomic_ops from bdwgc
-SET(_download_url
-    "https://github.com/bdwgc/libatomic_ops/archive/refs/tags/v7.10.0.zip"
-)
-
-# Hash validation is intentionally skipped for unpinned/latest URLs.
-SET(_download_hash
-    "35e417e4e49cd97976ef14c50e06db9b"
-)
-
-SET(_install_dir
-    ${RV_DEPS_BASE_DIR}/${_target}/install
-)
-
-SET(_lib_dir
-    ${_install_dir}/lib
-)
-
-SET(_atomic_ops_lib_name
-    ${CMAKE_STATIC_LIBRARY_PREFIX}atomic_ops${CMAKE_STATIC_LIBRARY_SUFFIX}
-)
-
-SET(_atomic_ops_lib
-    ${_lib_dir}/${_atomic_ops_lib_name}
-)
-
-SET(_build_dir
-    ${RV_DEPS_BASE_DIR}/${_target}/build
-)
-
-EXTERNALPROJECT_ADD(
-  ${_target}
-  SOURCE_DIR ${RV_DEPS_BASE_DIR}/${_target}/src
-  INSTALL_DIR ${_install_dir}
-  URL ${_download_url}
-  URL_MD5 ${_download_hash}
-  DOWNLOAD_NAME ${_target}_${_version}.zip
-  DOWNLOAD_DIR ${RV_DEPS_DOWNLOAD_DIR}
-  CONFIGURE_COMMAND ${CMAKE_COMMAND} -S ${RV_DEPS_BASE_DIR}/${_target}/src -B ${_build_dir} -DCMAKE_INSTALL_PREFIX=${_install_dir}
-                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -Denable_gpl=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-  BUILD_COMMAND ${CMAKE_COMMAND} --build ${_build_dir} --config ${CMAKE_BUILD_TYPE} -j${_cpu_count}
-  INSTALL_COMMAND ${CMAKE_COMMAND} --install ${_build_dir} --prefix ${_install_dir} --config ${CMAKE_BUILD_TYPE}
-  BUILD_IN_SOURCE FALSE
-  BUILD_ALWAYS FALSE
-  BUILD_BYPRODUCTS ${_atomic_ops_lib}
-  USES_TERMINAL_BUILD TRUE
-)
-
-SET(_include_dir
-    ${_install_dir}/include
-)
-
-RV_ADD_IMPORTED_LIBRARY(
-  NAME
-  atomic_ops::atomic_ops
-  TYPE
-  STATIC
-  LOCATION
-  ${_atomic_ops_lib}
-  INCLUDE_DIRS
-  ${_include_dir}
-  DEPENDS
-  ${_target}
-  ADD_TO_DEPS_LIST
-)
-
-RV_STAGE_DEPENDENCY_LIBS(TARGET ${_target} OUTPUTS ${RV_STAGE_LIB_DIR}/${_atomic_ops_lib_name})
-
-SET(RV_DEPS_ATOMIC_OPS_VERSION
-    ${_version}
-    CACHE INTERNAL "" FORCE
-)
+# The vcpkg port typically exports atomic_ops or atomic_ops::atomic_ops. We ensure atomic_ops::atomic_ops is available and global, as required by the GC module.
+IF(TARGET atomic_ops)
+  SET_PROPERTY(
+    TARGET atomic_ops
+    PROPERTY IMPORTED_GLOBAL TRUE
+  )
+  IF(NOT TARGET atomic_ops::atomic_ops)
+    ADD_LIBRARY(atomic_ops::atomic_ops ALIAS atomic_ops)
+  ENDIF()
+ELSEIF(TARGET atomic_ops::atomic_ops)
+  SET_PROPERTY(
+    TARGET atomic_ops::atomic_ops
+    PROPERTY IMPORTED_GLOBAL TRUE
+  )
+ENDIF()
