@@ -29,6 +29,13 @@ IF(TARGET Freetype::Freetype)
       APPEND
       PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FREETYPE_HACK_INC}"
     )
+    IF(TARGET freetype)
+      SET_PROPERTY(
+        TARGET freetype
+        APPEND
+        PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FREETYPE_HACK_INC}"
+      )
+    ENDIF()
   ENDIF()
 
   IF(NOT TARGET freetype)
