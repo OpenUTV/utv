@@ -32,6 +32,10 @@ IF(TARGET Freetype::Freetype)
     IF(TARGET freetype)
       SET_PROPERTY(
         TARGET freetype
+        PROPERTY IMPORTED_GLOBAL TRUE
+      )
+      SET_PROPERTY(
+        TARGET freetype
         APPEND
         PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${FREETYPE_HACK_INC}"
       )
