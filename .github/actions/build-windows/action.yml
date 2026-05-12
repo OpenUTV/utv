@@ -145,8 +145,10 @@ runs:
 
     - name: Set PATH environment variable
       run: |
-        echo "export PATH=\"/c/Program Files/CMake/bin:/c/msys64/mingw64/bin:$PATH:/c/Strawberry/c/bin:/c/Strawberry/perl/site/bin:/c/Strawberry/perl/bin:/c/ProgramData/Chocolatey/bin:/c/ProgramData/Chocolatey/lib/jom/tools\"" >> ~/.bash_profile
-      shell: msys2 {0}
+        $MsysPythonPath = $env:pythonLocation -replace '\\', '/' -replace 'C:', '/c'
+        $ExportCmd = "export PATH=`"/c/Program Files/CMake/bin:$MsysPythonPath:/c/msys64/mingw64/bin:`$PATH:/c/Strawberry/c/bin:/c/Strawberry/perl/site/bin:/c/Strawberry/perl/bin:/c/ProgramData/Chocolatey/bin:/c/ProgramData/Chocolatey/lib/jom/tools`""
+        $ExportCmd >> C:\msys64\home\runneradmin\.bash_profile
+      shell: powershell
 
     - name: Set ACLOCAL_PATH environment variable
       run: |
@@ -163,7 +165,7 @@ runs:
         echo $PATH
         echo $ACLOCAL_PATH
         which python
-        which python3
+        python --version
         which cmake
         rustc --version || echo "WARNING: Rust not found in msys2 PATH"
         cargo --version || echo "WARNING: Cargo not found in msys2 PATH"
@@ -192,8 +194,8 @@ runs:
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Python dependencies
-      run: python3 -m pip install --user --upgrade uv
-      shell: msys2 {0}
+      run: python -m pip install --upgrade uv
+      shell: powershell
 
     - name: Setup sccache
       # Used for this run only (SCCACHE_GHA_ENABLED=false); not stored in Actions cache.
