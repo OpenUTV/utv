@@ -196,7 +196,8 @@ runs:
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Python dependencies
-      run: & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
+      run: |
+        & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
       shell: powershell
 
     - name: Setup sccache
