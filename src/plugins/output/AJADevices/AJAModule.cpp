@@ -12,6 +12,7 @@
 #include <TwkGLF/GL.h>
 #endif
 #ifdef PLATFORM_WINDOWS
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glew.h>

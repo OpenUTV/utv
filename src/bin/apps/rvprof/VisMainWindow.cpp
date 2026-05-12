@@ -10,6 +10,9 @@
 #ifdef PLATFORM_DARWIN
 #include <OpenGL/glu.h>
 #else
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <GL/glu.h>
 #endif
 

@@ -12,10 +12,10 @@
 #include <boost/thread.hpp>
 
 #ifdef PLATFORM_WINDOWS
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <pthread.h>
-#include <windows.h>
 #include <process.h>
 #endif
 

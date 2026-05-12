@@ -9,6 +9,7 @@
 
 #ifdef PLATFORM_WINDOWS
 #include <winsock2.h>
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #define DEFAULT_RINGBUFFER_SIZE 4

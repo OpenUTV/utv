@@ -36,6 +36,11 @@
 #include <windows.h>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#else
 #ifdef PLATFORM_DARWIN
 #include <OpenGL/gl.h>
 #include <OpenGL/glext.h>
@@ -43,6 +48,7 @@
 #else
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif
 #endif
 
 #include <TwkGLText/TwkGLText.h>

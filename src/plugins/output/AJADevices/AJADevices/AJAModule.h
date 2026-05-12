@@ -11,6 +11,7 @@
 #include <TwkGLF/GLVideoDevice.h>
 #include <TwkGLF/GL.h>
 #ifdef PLATFORM_WINDOWS
+#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/wglew.h>
