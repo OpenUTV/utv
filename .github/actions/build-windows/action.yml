@@ -145,10 +145,12 @@ runs:
 
     - name: Set PATH environment variable
       run: |
-        $MsysPythonPath = $env:pythonLocation -replace '\\', '/' -replace 'C:', '/c'
-        $ExportCmd = "export PATH=`"/c/Program Files/CMake/bin:$MsysPythonPath:/c/msys64/mingw64/bin:`$PATH:/c/Strawberry/c/bin:/c/Strawberry/perl/site/bin:/c/Strawberry/perl/bin:/c/ProgramData/Chocolatey/bin:/c/ProgramData/Chocolatey/lib/jom/tools`""
-        $ExportCmd >> C:\msys64\home\runneradmin\.bash_profile
-      shell: powershell
+        MSYS_PYTHON_PATH=$(cygpath -u "$pythonLocation")
+        mkdir -p ~/bin
+        ln -sf "$MSYS_PYTHON_PATH/python.exe" ~/bin/python3.exe
+        ln -sf "$MSYS_PYTHON_PATH/python.exe" ~/bin/python.exe
+        echo "export PATH=\"/c/Program Files/CMake/bin:~/bin:$MSYS_PYTHON_PATH:$MSYS_PYTHON_PATH/Scripts:/c/msys64/mingw64/bin:\$PATH:/c/Strawberry/c/bin:/c/Strawberry/perl/site/bin:/c/Strawberry/perl/bin:/c/ProgramData/Chocolatey/bin:/c/ProgramData/Chocolatey/lib/jom/tools\"" >> ~/.bash_profile
+      shell: msys2 {0}
 
     - name: Set ACLOCAL_PATH environment variable
       run: |
@@ -194,7 +196,7 @@ runs:
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Install Python dependencies
-      run: python -m pip install --upgrade uv
+      run: & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
       shell: powershell
 
     - name: Setup sccache
@@ -213,19 +215,16 @@ runs:
       shell: msys2 {0}
 
     - name: Configure UTV
-      run: |
-        cmake --version
-        cmake -B _build -G "Visual Studio 17 2022" -A x64 -T "version=${{ inputs.msvc-compiler }}" -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_PREFIX_PATH="C:/Qt/${{ inputs.qt-version }}/msvc2022_64;C:/Qt/${{ inputs.qt-version }}/qt6_6110_msvc2022_64" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }}
-      shell: msys2 {0}
+      run: cmake -B _build -G "Visual Studio 17 2022" -A x64 -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_PREFIX_PATH="C:/Qt/${{ inputs.qt-version }}/msvc2022_64;C:/Qt/${{ inputs.qt-version }}/qt6_6110_msvc2022_64" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DPython3_ROOT_DIR="$env:pythonLocation" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+      shell: powershell
 
     - name: Build UTV dependencies
-      run: cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$(python -c 'import os; print(os.cpu_count())') -v
-      shell: msys2 {0}
-      id: build_deps
+      run: cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$(& "$env:pythonLocation\python.exe" -c 'import os; print(os.cpu_count())') -v
+      shell: powershell
 
     - name: Build UTV main executable
-      run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$(python -c 'import os; print(os.cpu_count())') -v
-      shell: msys2 {0}
+      run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$(& "$env:pythonLocation\python.exe" -c 'import os; print(os.cpu_count())') -v
+      shell: powershell
 
     - name: Tests
       continue-on-error: true
