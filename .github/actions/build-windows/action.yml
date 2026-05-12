@@ -113,6 +113,12 @@ runs:
           unzip
           zip
 
+    - name: Add MSYS2 tools to GITHUB_PATH
+      run: |
+        echo "C:\msys64\usr\bin" >> $env:GITHUB_PATH
+        echo "C:\msys64\mingw64\bin" >> $env:GITHUB_PATH
+      shell: powershell
+
     - name: Activate Python ${{ inputs.python-version }}
       uses: actions/setup-python@v6
       with:
