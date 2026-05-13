@@ -19,10 +19,10 @@ inputs:
     default: 'CY2026'
   msvc-component:
     required: false
-    default: '14.40.17.10.x86.x64'
+    default: ''
   msvc-compiler:
     required: false
-    default: '14.40.33807'
+    default: ''
   qt5_modules:
     required: false
     default: ''
@@ -69,7 +69,7 @@ runs:
             Write-Warning "Could not find OpenUTVDeps installation directory."
         }
 
-    - name: Set up MSVC ${{ inputs.msvc-compiler }}
+    - name: Set up MSVC
       uses: ilammy/msvc-dev-cmd@v1
       with:
         toolset: ${{ inputs.msvc-compiler }}
