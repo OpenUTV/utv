@@ -19,10 +19,10 @@ inputs:
     default: 'CY2026'
   msvc-component:
     required: false
-    default: ''
+    default: '14.40.17.10.x86.x64'
   msvc-compiler:
     required: false
-    default: ''
+    default: '14.40'
   qt5_modules:
     required: false
     default: ''
@@ -72,6 +72,7 @@ runs:
     - name: Set up MSVC
       uses: ilammy/msvc-dev-cmd@v1
       with:
+        toolset: ${{ inputs.msvc-compiler }}
         arch: 'x86_64'
 
     - name: Configure Bundled Python
@@ -175,7 +176,7 @@ runs:
       shell: bash
 
     - name: Configure UTV
-      run: cmake -B _build -G "Visual Studio 17 2022" -A x64 -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_PREFIX_PATH="C:/Qt/${{ inputs.qt-version }}/msvc2022_64;C:/Qt/${{ inputs.qt-version }}/qt6_6110_msvc2022_64" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DPython3_ROOT_DIR="$env:pythonLocation" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+      run: cmake -B _build -G "Visual Studio 17 2022" -A x64 -T v143,version=${{ inputs.msvc-compiler }} -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_PREFIX_PATH="C:/Qt/${{ inputs.qt-version }}/msvc2022_64;C:/Qt/${{ inputs.qt-version }}/qt6_6110_msvc2022_64" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DPython3_ROOT_DIR="$env:pythonLocation" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
       shell: powershell
 
     - name: Build UTV dependencies
