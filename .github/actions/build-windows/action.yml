@@ -87,6 +87,11 @@ runs:
                 "pythonLocation=$PythonPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
                 "$PythonPath" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
                 "$PythonPath\Scripts" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+                
+                # Ensure pip is installed in the bundled Python
+                Write-Host "Ensuring pip is available..."
+                & "$PythonPath\python.exe" -m ensurepip
+                & "$PythonPath\python.exe" -m pip install --upgrade pip setuptools wheel
             } else {
                 Write-Error "Bundled Python not found at $PythonPath"
                 exit 1
