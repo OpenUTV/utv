@@ -72,7 +72,6 @@ runs:
     - name: Set up MSVC
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        toolset: ${{ inputs.msvc-compiler }}
         arch: 'x86_64'
 
     - name: Configure Bundled Python
