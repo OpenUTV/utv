@@ -30,7 +30,16 @@ IF(GIT_FOUND
    AND EXISTS "${PROJECT_SOURCE_DIR}/.git"
 )
   # Update submodules as needed
-  OPTION(GIT_SUBMODULE "Check submodules during build" ON)
+  IF(DEFINED ENV{GITHUB_ACTIONS})
+    SET(_git_submodule_default
+        OFF
+    )
+  ELSE()
+    SET(_git_submodule_default
+        ON
+    )
+  ENDIF()
+  OPTION(GIT_SUBMODULE "Check submodules during build" ${_git_submodule_default})
   IF(GIT_SUBMODULE)
     MESSAGE(STATUS "Updating submodules")
     EXECUTE_PROCESS(

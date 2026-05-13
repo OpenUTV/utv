@@ -27,6 +27,7 @@ jobs:
   build:
     name: 'Windows Build'
     runs-on: windows-2022
+    timeout-minutes: 90
     env:
       SCCACHE_GHA_ENABLED: "true"
     steps:
