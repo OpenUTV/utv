@@ -19,10 +19,10 @@ inputs:
     default: 'CY2026'
   msvc-component:
     required: false
-    default: '14.40.17.10.x86.x64'
+    default: ''
   msvc-compiler:
     required: false
-    default: '14.40'
+    default: ''
   qt5_modules:
     required: false
     default: ''
@@ -64,7 +64,8 @@ runs:
         if ($DepsDir) {
             Write-Host "Found OpenUTVDeps at $($DepsDir.FullName)"
             $BinPath = Join-Path $DepsDir.FullName "installed\x64-windows\bin"
-            echo "$BinPath" >> $env:GITHUB_PATH
+            # Add dependencies bin to PATH
+            "$BinPath" | Add-Content -Path $env:GITHUB_PATH
         } else {
             Write-Warning "Could not find OpenUTVDeps installation directory."
         }
@@ -72,7 +73,6 @@ runs:
     - name: Set up MSVC
       uses: ilammy/msvc-dev-cmd@v1
       with:
-        toolset: ${{ inputs.msvc-compiler }}
         arch: 'x86_64'
 
     - name: Configure Bundled Python
@@ -84,14 +84,14 @@ runs:
             $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
             if (Test-Path "$PythonPath\python.exe") {
                 Write-Host "Configuring bundled Python at $PythonPath"
-                "pythonLocation=$PythonPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-                "$PythonPath" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
-                "$PythonPath\Scripts" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+                "pythonLocation=$PythonPath" | Add-Content -Path $env:GITHUB_ENV
                 
-                # Ensure pip is installed in the bundled Python
-                Write-Host "Ensuring pip is available..."
-                & "$PythonPath\python.exe" -m ensurepip
-                & "$PythonPath\python.exe" -m pip install --upgrade pip setuptools wheel
+                # Bootstrap pip into the bundled Python if missing
+                if (-not (& "$PythonPath\python.exe" -m pip --version 2>$null)) {
+                    Write-Host "Bootstrapping pip into bundled Python..."
+                    Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "$env:TEMP\get-pip.py"
+                    & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
+                }
             } else {
                 Write-Error "Bundled Python not found at $PythonPath"
                 exit 1
@@ -102,7 +102,9 @@ runs:
         }
 
     - name: Display Python installation location
-      run: python -c "import sys; print(sys.executable)"
+      run: |
+        Write-Host "Host Python: $(python -c 'import sys; print(sys.executable)')"
+        Write-Host "Bundled Python: $env:pythonLocation\python.exe"
       shell: powershell
 
     - name: Cache CMake for Windows
@@ -120,7 +122,7 @@ runs:
     - name: Install build tools (JOM, flex, bison, nasm, patch)
       run: |
         choco install jom winflexbison3 nasm patch --yes
-        "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+        "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
       shell: powershell
 
     - name: Set PATH environment variable
@@ -152,16 +154,27 @@ runs:
         modules: ${{ inputs.windows_qt6_modules }}
         archives: ${{ inputs.windows_qt6_archives }}
         cache: 'true'
-        setup-python: 'false'
+        setup-python: 'true'
         tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
+    - name: Activate Bundled Python
+      shell: powershell
+      run: |
+        # Now that Qt is installed, we can move the bundled Python to the front of the PATH
+        $PythonPath = $env:pythonLocation
+        "$PythonPath" | Add-Content -Path $env:GITHUB_PATH
+        "$PythonPath\Scripts" | Add-Content -Path $env:GITHUB_PATH
+        Write-Host "Bundled Python is now active on PATH"
+
     - name: Install Python dependencies
       run: |
-        & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
-        & "$env:pythonLocation\Scripts\uv.exe" pip install --system -r "$env:GITHUB_WORKSPACE\utv\requirements.txt"
+        # Install uv into the host python to handle dependency sync
+        python -m pip install --upgrade uv
+        # Use uv to sync requirements into the bundled python environment
+        uv pip install --python "$env:pythonLocation\python.exe" --system -r "$env:GITHUB_WORKSPACE\utv\requirements.txt"
       shell: powershell
 
     - name: Setup sccache
@@ -181,7 +194,22 @@ runs:
       shell: bash
 
     - name: Configure UTV
-      run: cmake -B _build -G "Visual Studio 17 2022" -A x64 -T v143,version=${{ inputs.msvc-compiler }} -DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin -DCMAKE_PREFIX_PATH="C:/Qt/${{ inputs.qt-version }}/msvc2022_64;C:/Qt/${{ inputs.qt-version }}/qt6_6110_msvc2022_64" -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DPython3_ROOT_DIR="$env:pythonLocation" -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
+      run: |
+        $CmakeArgs = @(
+            "-B", "_build",
+            "-G", "Visual Studio 17 2022",
+            "-A", "x64",
+            "-DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin",
+            "-DCMAKE_PREFIX_PATH=C:/Qt/${{ inputs.qt-version }}/msvc2022_64",
+            "-DCMAKE_BUILD_TYPE=${{ inputs.build-type }}",
+            "-DPython3_ROOT_DIR=$env:pythonLocation",
+            "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
+            "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+        )
+        if ($env:MSVC_COMPILER_VERSION) {
+            $CmakeArgs += "-T", "v143,version=$env:MSVC_COMPILER_VERSION"
+        }
+        & cmake $CmakeArgs
       shell: powershell
 
     - name: Build UTV dependencies

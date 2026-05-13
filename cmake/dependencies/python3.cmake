@@ -39,7 +39,14 @@ IF(UV_EXECUTABLE)
 ELSE()
   MESSAGE(STATUS "uv not found, using pip for python dependency management")
   # Attempt to bootstrap pip in case the vcpkg Python distribution is missing it
-  EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -m ensurepip --upgrade)
+  EXECUTE_PROCESS(
+    COMMAND ${Python3_EXECUTABLE} -m pip --version
+    RESULT_VARIABLE pip_check_result
+  )
+  IF(NOT pip_check_result EQUAL 0)
+    MESSAGE(STATUS "Pip not found, trying to bootstrap...")
+    EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -m ensurepip --upgrade)
+  ENDIF()
   EXECUTE_PROCESS(
     COMMAND ${Python3_EXECUTABLE} -m pip install -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE pip_result

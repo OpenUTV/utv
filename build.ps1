@@ -140,9 +140,15 @@ if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
     $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
 }
 
-# Sync PATH
-$env:PATH = "$PythonPath;$PythonPath\Scripts;C:\ProgramData\chocolatey\bin;$env:PATH"
+# Sync pythonLocation for CMake
 $env:pythonLocation = $PythonPath
+
+# Bootstrap pip into the bundled Python if missing
+if (-not (& "$PythonPath\python.exe" -m pip --version 2>$null)) {
+    Write-Host "Bootstrapping pip into bundled Python..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "$env:TEMP\get-pip.py"
+    & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
+}
 
 # --- 5. Qt 6.11.0 ---
 Write-Host "`n--- Checking Qt 6.11.0 ---" -ForegroundColor Cyan
@@ -159,13 +165,16 @@ if ($env:QT_HOME -and (Test-Path $env:QT_HOME)) {
         Write-Host "Qt $QtVersion not found at $QtPath. Installing via aqtinstall..." -ForegroundColor Yellow
         if (-not (Test-Path $QtTargetDir)) { New-Item -ItemType Directory -Path $QtTargetDir }
         
-        # Use bundled python to install aqtinstall
+        # Ensure aqtinstall is present in bundled python
         & "$PythonPath\python.exe" -m pip install aqtinstall
         
         Write-Host "Installing Qt $QtVersion (this will take a while)..."
         & "$PythonPath\Scripts\aqt.exe" install-qt windows desktop $QtVersion win64_msvc2022_64 --outputdir $QtTargetDir --modules qt3d qt5compat qtactiveqt qtcharts qtconnectivity qtdatavis3d qtgrpc qthttpserver qtimageformats qtlanguageserver qtlocation qtlottie qtmultimedia qtnetworkauth qtpdf qtpositioning qtquick3d qtquick3dphysics qtquickeffectmaker qtquicktimeline qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtshadertools qtspeech qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets qtwebview
     }
 }
+
+# Sync PATH for build phase
+$env:PATH = "$PythonPath;$PythonPath\Scripts;C:\ProgramData\chocolatey\bin;$env:PATH"
 
 if (-not (Test-Path $QtPath)) {
     Write-Error "Qt 6.11.0 was not found. In CI, ensure the install-qt-action ran successfully. Locally, do not use -SkipBootstrapping."
