@@ -28,25 +28,44 @@ SET(RV_DEPS_PYTHON3_EXECUTABLE
     CACHE INTERNAL "" FORCE
 )
 
-# Install requirements using uv if available
+# Install requirements using uv
 FIND_PROGRAM(UV_EXECUTABLE uv)
-IF(UV_EXECUTABLE)
-  MESSAGE(STATUS "Using uv for python dependency management")
+IF(NOT UV_EXECUTABLE)
+  # If uv is not found on PATH, check if it's in the Python Scripts directory
+  GET_FILENAME_COMPONENT(PYTHON_DIR "${Python3_EXECUTABLE}" DIRECTORY)
+  IF(WIN32)
+    SET(UV_EXECUTABLE
+        "${PYTHON_DIR}/Scripts/uv.exe"
+    )
+  ELSE()
+    SET(UV_EXECUTABLE
+        "${PYTHON_DIR}/uv"
+    )
+  ENDIF()
+
+  IF(NOT EXISTS "${UV_EXECUTABLE}")
+    MESSAGE(STATUS "uv not found, installing uv via pip...")
+    EXECUTE_PROCESS(
+      COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade uv
+      RESULT_VARIABLE uv_install_result
+    )
+    IF(NOT uv_install_result EQUAL 0)
+      MESSAGE(WARNING "Failed to install uv via pip. Falling back to pip for requirements.")
+      UNSET(UV_EXECUTABLE)
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+IF(UV_EXECUTABLE
+   AND EXISTS "${UV_EXECUTABLE}"
+)
+  MESSAGE(STATUS "Using uv for python dependency management: ${UV_EXECUTABLE}")
   EXECUTE_PROCESS(
-    COMMAND ${UV_EXECUTABLE} pip install --python ${Python3_EXECUTABLE} -r ${PROJECT_SOURCE_DIR}/requirements.txt
+    COMMAND ${UV_EXECUTABLE} pip install --python ${Python3_EXECUTABLE} --system -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE uv_result
   )
 ELSE()
-  MESSAGE(STATUS "uv not found, using pip for python dependency management")
-  # Attempt to bootstrap pip in case the vcpkg Python distribution is missing it
-  EXECUTE_PROCESS(
-    COMMAND ${Python3_EXECUTABLE} -m pip --version
-    RESULT_VARIABLE pip_check_result
-  )
-  IF(NOT pip_check_result EQUAL 0)
-    MESSAGE(STATUS "Pip not found, trying to bootstrap...")
-    EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} -m ensurepip --upgrade)
-  ENDIF()
+  MESSAGE(STATUS "Using pip for python dependency management")
   EXECUTE_PROCESS(
     COMMAND ${Python3_EXECUTABLE} -m pip install -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE pip_result

@@ -87,7 +87,8 @@ runs:
                 "pythonLocation=$PythonPath" | Add-Content -Path $env:GITHUB_ENV
                 
                 # Bootstrap pip into the bundled Python if missing
-                if (-not (& "$PythonPath\python.exe" -m pip --version 2>$null)) {
+                $hasPip = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('pip') else 'MISSING')"
+                if ($hasPip -ne "OK") {
                     Write-Host "Bootstrapping pip into bundled Python..."
                     Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "$env:TEMP\get-pip.py"
                     & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
@@ -171,10 +172,10 @@ runs:
 
     - name: Install Python dependencies
       run: |
-        # Install uv into the host python to handle dependency sync
-        python -m pip install --upgrade uv
         # Use uv to sync requirements into the bundled python environment
-        uv pip install --python "$env:pythonLocation\python.exe" --system -r "$env:GITHUB_WORKSPACE\utv\requirements.txt"
+        # We use --system to install into the bundled Python site-packages directly
+        & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
+        & "$env:pythonLocation\Scripts\uv.exe" pip install --python "$env:pythonLocation\python.exe" --system -r "$env:GITHUB_WORKSPACE\utv\requirements.txt"
       shell: powershell
 
     - name: Setup sccache

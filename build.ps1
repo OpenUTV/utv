@@ -144,7 +144,8 @@ if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
 $env:pythonLocation = $PythonPath
 
 # Bootstrap pip into the bundled Python if missing
-if (-not (& "$PythonPath\python.exe" -m pip --version 2>$null)) {
+$hasPip = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('pip') else 'MISSING')"
+if ($hasPip -ne "OK") {
     Write-Host "Bootstrapping pip into bundled Python..." -ForegroundColor Yellow
     Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "$env:TEMP\get-pip.py"
     & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
@@ -166,7 +167,8 @@ if ($env:QT_HOME -and (Test-Path $env:QT_HOME)) {
         if (-not (Test-Path $QtTargetDir)) { New-Item -ItemType Directory -Path $QtTargetDir }
         
         # Ensure aqtinstall is present in bundled python
-        & "$PythonPath\python.exe" -m pip install aqtinstall
+        & "$PythonPath\python.exe" -m pip install --upgrade uv
+        & "$PythonPath\Scripts\uv.exe" pip install --system aqtinstall
         
         Write-Host "Installing Qt $QtVersion (this will take a while)..."
         & "$PythonPath\Scripts\aqt.exe" install-qt windows desktop $QtVersion win64_msvc2022_64 --outputdir $QtTargetDir --modules qt3d qt5compat qtactiveqt qtcharts qtconnectivity qtdatavis3d qtgrpc qthttpserver qtimageformats qtlanguageserver qtlocation qtlottie qtmultimedia qtnetworkauth qtpdf qtpositioning qtquick3d qtquick3dphysics qtquickeffectmaker qtquicktimeline qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtshadertools qtspeech qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets qtwebview
