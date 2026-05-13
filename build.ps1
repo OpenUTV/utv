@@ -82,8 +82,8 @@ if (Get-Command vswhere -ErrorAction SilentlyContinue) {
 if (-not $vsInstalled -and -not $SkipBootstrapping) {
     Write-Host "Visual Studio 2022 with C++ workload not found. Installing via Chocolatey..." -ForegroundColor Yellow
     # Install Build Tools and the Native Desktop (C++) workload
-    & choco install visualstudio2022buildtools --yes
-    & choco install visualstudio2022-workload-nativedesktop --yes
+    & choco install visualstudio2022buildtools --yes --no-progress
+    & choco install visualstudio2022-workload-nativedesktop --yes --no-progress
 }
 
 # --- 3. System Build Tools ---
@@ -100,7 +100,7 @@ foreach ($tool in $requiredTools) {
 if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
     Write-Host "Missing tools: $($missingTools -join ', '). Installing via Chocolatey..." -ForegroundColor Yellow
     foreach ($tool in $missingTools) {
-        & choco install $tool --yes
+        & choco install $tool --yes --no-progress
     }
     $env:PATH += ";C:\ProgramData\chocolatey\bin"
 }

@@ -117,12 +117,12 @@ runs:
 
     - name: Install CMake ${{ inputs.cmake-version }} with chocolatey
       if: steps.windows-cmake-cache.outputs.cache-hit != 'true'
-      run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade
+      run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
     - name: Install build tools (JOM, flex, bison, nasm, patch)
       run: |
-        choco install jom winflexbison3 nasm patch --yes
+        choco install jom winflexbison3 nasm patch --yes --no-progress
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
       shell: powershell
 
