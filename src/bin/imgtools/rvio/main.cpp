@@ -68,6 +68,7 @@
 #include <RvApp/FormatIPNode.h>
 #include <arg.h>
 #include <iostream>
+#include <memory>
 #include <sched.h>
 #include <cstdlib>
 #include <stl_ext/thread_group.h>
@@ -382,6 +383,27 @@ void threadedMovieInit()
 #else
     GC_INIT();
 #endif
+}
+
+//
+//  Runs on the writer thread once it has rendered the last frame. The GL
+//  context is current on that thread, and making it current on the main
+//  thread fails (BadAccess on GLX and EGL, silently on WGL).
+//
+
+void threadedMovieFinalize()
+{
+    // clean up any frame buffers we allocated writing the movie
+    MovieRV::uninit();
+
+    //
+    //  Delete the pixel buffer objects while the GL context is still
+    //  current. Left to the pools' static destructors, glDeleteBuffers
+    //  runs after the GL library has shut down, which crashes at exit
+    //  with Mesa.
+    //
+
+    TwkGLF::DeletePBOPoolBuffers();
 }
 
 TwkMovie::Movie* makeLeaderMovie(MovieWriter::WriteRequest& writeRequest, TwkMovie::Movie* omov, Mu::MuLangContext* context,
@@ -981,13 +1003,7 @@ int utf8Main(int argc, char* argv[])
     setEnvVar("LC_ALL", "C");
     TwkFB::ThreadPool::initialize();
 
-    //
-    //  XXX dummyDev is leaking here.  Best would be to pass it to the App so
-    //  that it could delete it after startup, since it's no longer needed at
-    //  that point.
-    //
-
-    TwkGLF::FBOVideoDevice* dummyDev = new TwkGLF::FBOVideoDevice(0, 10, 10, false);
+    auto dummyDev = std::make_unique<TwkGLF::FBOVideoDevice>(nullptr, 10, 10, false);
     IPCore::ImageRenderer::queryGL();
     const char* glVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
     IPCore::Shader::Function::useShadingLanguageVersion(glVersion);
@@ -1662,13 +1678,13 @@ int utf8Main(int argc, char* argv[])
 #ifdef WIN32
         GC_INIT();
         GC_allow_register_threads();
-        outmov = new ThreadedMovie(inputMovies, outFrames, 8, 0, threadedMovieInit);
+        outmov = new ThreadedMovie(inputMovies, outFrames, 8, 0, threadedMovieInit, threadedMovieFinalize);
 #else
         ThreadedMovie::ThreadAPI threadAPI;
         threadAPI.create = GC_pthread_create;
         threadAPI.join = GC_pthread_join;
         threadAPI.detach = GC_pthread_detach;
-        outmov = new ThreadedMovie(inputMovies, outFrames, 8, &threadAPI, threadedMovieInit);
+        outmov = new ThreadedMovie(inputMovies, outFrames, 8, &threadAPI, threadedMovieInit, threadedMovieFinalize);
 #endif
 #endif
 
@@ -1770,19 +1786,6 @@ int utf8Main(int argc, char* argv[])
 
         if (!writer->write(outmov, outfile, writeRequest))
             exit(-2);
-
-        // clean up any frame buffers we allocated writing the movie
-        //
-        MovieRV::uninit();
-
-        //
-        //  Delete the pixel buffer objects while the GL context is still
-        //  current. Left to the pools' static destructors, glDeleteBuffers
-        //  runs after the GL library has shut down, which crashes at exit
-        //  with Mesa.
-        //
-
-        TwkGLF::DeletePBOPoolBuffers();
     }
     catch (TwkExc::Exception& exc)
     {
