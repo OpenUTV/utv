@@ -182,7 +182,7 @@ jobs:
         shell: bash
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3.0.0
+        uses: softprops/action-gh-release@v3.0.1
         with:
           tag_name: ${{ needs.build.outputs.version }}
           name: UTV Release ${{ needs.build.outputs.version }}
