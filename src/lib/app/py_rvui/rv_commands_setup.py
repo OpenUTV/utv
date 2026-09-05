@@ -349,6 +349,8 @@ all_mu_commands = [
     "sourceMediaRepsAndNodes",
     "devicePixelRatio",
     "waitForProgressiveLoading",
+    "rebind",
+    "rebindRegex",
 ]
 
 
