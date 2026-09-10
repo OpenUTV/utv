@@ -223,6 +223,12 @@ namespace Rv
 
         m_caLayer = (__bridge_retained void*)caLayer;
 
+        // Ensure the OpenGL context is created and made current before initializing
+        // the session, as the RV core (IPCore, MuGL, etc) expects an active OpenGL
+        // context to exist when evaluating GLSL shaders and initializing GL functions.
+        if (m_videoDevice)
+            m_videoDevice->makeCurrent();
+
         // Kick off session initialization (equivalent to GLView::initializeGL)
         if (m_doc)
             m_doc->initializeSession();
