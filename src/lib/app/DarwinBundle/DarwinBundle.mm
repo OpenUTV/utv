@@ -147,6 +147,23 @@ DarwinBundle::DarwinBundle(const FileName& appName,
     str << majv << "." << minv << "." << revn;
     setEnvVar("TWK_APP_VERSION", str.str().c_str(), 1);
 
+    bool setPythonHome = !(getenv("PYTHONHOME") && getenv("RV_ALLOW_SITE_PYTHONHOME"));
+    if (setPythonHome) {
+#ifdef SYSTEM_PYTHONHOME
+        setEnvVar("PYTHONHOME", SYSTEM_PYTHONHOME, true);
+#endif
+    }
+    
+    bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
+#ifdef SYSTEM_PYTHONPATH
+    // Add the system site-packages so PySide6 and other modules can be found
+    NSArray *paths = [[NSString stringWithUTF8String:SYSTEM_PYTHONPATH] componentsSeparatedByString:@":"];
+    for (NSString *p in paths)
+    {
+        addPathToEnvVar("PYTHONPATH", [p UTF8String], forceToFront);
+    }
+#endif
+
     NSString* versionStr = [[NSString alloc] initWithUTF8String: str.str().c_str()];
 
     //
