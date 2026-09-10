@@ -18,10 +18,7 @@
 #include <lcms2.h>
 #include <boost/functional/hash.hpp>
 
-extern "C"
-{
-#include <lcms2_internal.h>
-}
+static inline double _cms15Fixed16toDouble(cmsS15Fixed16Number fix32) { return (double)fix32 / 65536.0; }
 
 namespace IPCore
 {
@@ -261,14 +258,12 @@ namespace IPCore
             //  profile on the GPU
             //
 
-            const _cmsICCPROFILE* iccProfile = (_cmsICCPROFILE*)state.profile;
-
             for (cmsInt32Number i = 0, s = cmsGetTagCount(state.profile); i < s; i++)
             {
                 cmsTagSignature sig = cmsGetTagSignature(state.profile, i);
                 string sigName = packedFourCCAsString(sig);
 
-                const size_t tagSize = iccProfile->TagSizes[i];
+                const size_t tagSize = cmsReadRawTag(state.profile, sig, nullptr, 0);
                 vector<char> buffer(tagSize);
                 char* rawTagData = &buffer.front();
                 const size_t nread = cmsReadRawTag(state.profile, sig, rawTagData, tagSize);
