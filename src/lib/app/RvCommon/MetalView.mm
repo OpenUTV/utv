@@ -80,9 +80,13 @@ namespace Rv
 
         ostringstream str;
         str << UI_APPLICATION_NAME " Main Window (Metal)" << "/" << m_doc;
-        m_videoDevice = new QTMetalVideoDevice(nullptr, str.str(), this, nullptr);
+        m_videoDevice = new QTMetalVideoDevice(nullptr, str.str(), this, this);
 
         m_activityTimer.start();
+        setMouseTracking(true);
+        setAcceptDrops(true);
+        setFocusPolicy(Qt::StrongFocus);
+        setAttribute(Qt::WA_KeyCompression, true);
 
         m_eventProcessingTimer.setSingleShot(true);
         connect(&m_eventProcessingTimer, SIGNAL(timeout()), this, SLOT(eventProcessingTimeout()));
