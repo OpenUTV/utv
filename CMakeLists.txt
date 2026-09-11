@@ -49,7 +49,7 @@ SET(RV_INTERNAL_APPLICATION_NAME
     CACHE STRING "RV's internal application name"
 )
 SET(RV_INTERNAL_ORGANIZATION_NAME
-    "Makai Systems"
+    "OpenUTV"
     CACHE STRING "RV's internal organization name"
 )
 SET(RV_INTERNAL_ORGANIZATION_DOMAIN
