@@ -672,7 +672,7 @@ class: FilmstripWidget : QLabel
 
     method: mouseMoveEvent (void; QMouseEvent event)
     {
-        showFrameAtX(@MU_QT_QDRAGMOVEEVENT_POSITION@.x());
+        showFrameAtX(event.position().toPoint().x());
         QWidget.mouseMoveEvent(this, event);
     }
 }
@@ -917,7 +917,7 @@ class: NodeTreeView : QTreeView
 
     method: dragMoveEvent (void; QDragMoveEvent event)
     {
-        let index = indexAt(@MU_QT_QDRAGMOVEEVENT_POSITION@),
+        let index = indexAt(event.position().toPoint()),
             item  = _viewModel.itemFromIndex(index);
 
         if (item eq nil) 
@@ -1153,7 +1153,7 @@ class: SessionManagerMode : MinorMode
 
     method: colorAdjustedIcon (QIcon; string rpath, bool invertSense)
     {
-        let bg = QApplication.palette().color(QPalette.Active, @MU_QT_QPALETTE_COLORROLE@),
+        let bg = QApplication.palette().color(QPalette.Active, QPalette.Window),
             icon0 = QImage(regex.replace("48x48", rpath, "out"), nil),
             icon1 = QImage(rpath, nil),
             swap = invertSense != _darkUI,
@@ -1494,7 +1494,9 @@ class: SessionManagerMode : MinorMode
             topNode = nodeFromIndex(topIndex, _inputsModel);
         }
 
+        _inputsView.blockSignals(true);
         _inputsModel.clear();
+        _inputsView.blockSignals(false);
         let connections = nodeInputs(node);
 
         for_index (i; connections)
@@ -1693,8 +1695,10 @@ class: SessionManagerMode : MinorMode
 
     method: setItemExpandedState (void; QModelIndex index, int value)
     {
-        let item    = _viewModel.itemFromIndex(index),
-            node    = itemNode(item),
+        let item = _viewModel.itemFromIndex(index);
+        if (item eq nil) return;
+
+        let node    = itemNode(item),
             subComp = itemIsSubComponent(item);
 
         if (subComp)
@@ -2080,7 +2084,9 @@ class: SessionManagerMode : MinorMode
         if (_disableUpdates) return;
         _srcNodeKeys = string[]();
         _grpNodeValues = string[]();
+        _viewTreeView.blockSignals(true);
         _viewModel.clear();
+        _viewTreeView.blockSignals(false);
         _viewModel.setHorizontalHeaderLabels(string[] {"Name", "*", "*"});
         _viewTreeView.header().setMinimumSectionSize(-1);
         if (viewNode() eq nil) return;
