@@ -71,6 +71,15 @@ TARGET_COMPILE_OPTIONS(
 
 RV_STAGE(TYPE "EXECUTABLE" TARGET ${_target})
 
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvpkg
+    COMMENT "Creating rvpkg symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()
+
 ADD_CUSTOM_COMMAND(
   COMMENT "Installing ${RV_UI_APPLICATION_NAME} Packages"
   OUTPUT ${RV_STAGE_PLUGINS_PACKAGES_DIR}/rvinstall

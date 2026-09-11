@@ -67,3 +67,12 @@ TARGET_COMPILE_OPTIONS(
 )
 
 RV_STAGE(TYPE "EXECUTABLE_WITH_PLUGINS" TARGET ${_target})
+
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvls
+    COMMENT "Creating rvls symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()

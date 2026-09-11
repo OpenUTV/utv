@@ -32,6 +32,7 @@ class: ExportCutsMode : MinorMode
     method: rvio (ExternalProcess; string name, string[] inargs, (void;) cleanup = nil)
     {
         let cmd = system.getenv("RV_APP_RVIO");
+        if (cmd eq nil || cmd eq "") cmd = system.getenv("UTV_APP_UTVIO");
         string[] args;  
         args.push_back("-v");
         args.push_back("-err-to-out");

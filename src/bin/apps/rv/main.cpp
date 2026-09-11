@@ -647,9 +647,13 @@ int utf8Main(int argc, char* argv[])
     bundle.setEnvVar("RV_PYTHONPATH_EXTERNAL", (pythonPath) ? pythonPath : "");
     bundle.setEnvVar("RV_PYTHONHOME_EXTERNAL", (pythonHome) ? pythonHome : "");
 
-    if (getenv("RV_APP_RVIO"))
+    if (getenv("RV_APP_RVIO") || getenv("UTV_APP_UTVIO"))
     {
         bundle.setEnvVar("RV_APP_RVIO_SET_BY_USER", "true");
+        if (getenv("RV_APP_RVIO") && !getenv("UTV_APP_UTVIO"))
+            bundle.setEnvVar("UTV_APP_UTVIO", getenv("RV_APP_RVIO"));
+        else if (getenv("UTV_APP_UTVIO") && !getenv("RV_APP_RVIO"))
+            bundle.setEnvVar("RV_APP_RVIO", getenv("UTV_APP_UTVIO"));
     }
     else
     {
@@ -669,6 +673,24 @@ int utf8Main(int argc, char* argv[])
     bundle.setEnvVar("RV_APP_RV", rvPath);
     bundle.setEnvVar("UTV_APP_UTV", rvPath);
     bundle.setEnvVar("UTV_APP_UTV_SHORT_NAME", EXECUTABLE_SHORT_NAME);
+    string rvpushPath = bundle.executableFile("utvpush");
+    if (rvpushPath.empty())
+        rvpushPath = bundle.executableFile("rvpush");
+    bundle.setEnvVar("RV_APP_RVPUSH", rvpushPath);
+    bundle.setEnvVar("UTV_APP_UTVPUSH", rvpushPath);
+
+    string rvpkgPath = bundle.executableFile("utvpkg");
+    if (rvpkgPath.empty())
+        rvpkgPath = bundle.executableFile("rvpkg");
+    bundle.setEnvVar("RV_APP_RVPKG", rvpkgPath);
+    bundle.setEnvVar("UTV_APP_UTVPKG", rvpkgPath);
+
+    string rvlsPath = bundle.executableFile("utvls");
+    if (rvlsPath.empty())
+        rvlsPath = bundle.executableFile("rvls");
+    bundle.setEnvVar("RV_APP_RVLS", rvlsPath);
+    bundle.setEnvVar("UTV_APP_UTVLS", rvlsPath);
+
     bundle.setEnvVar("RV_APP_MANUAL", bundle.resource("rv_manual", "pdf"));
     bundle.setEnvVar("RV_APP_MANUAL_HTML", bundle.resource("rv_manual", "html"));
     bundle.setEnvVar("RV_APP_SDI_MANUAL", bundle.resource("rvsdi_manual", "pdf"));
@@ -685,10 +707,18 @@ int utf8Main(int argc, char* argv[])
     //  Find the init file
     //
 
-    string muInitFile = bundle.rcfile("rvrc", "mu", "RV_INIT");
-    string pyInitFile = bundle.rcfile("rvrc", "py", "RV_PYINIT");
+    string muInitFile = bundle.rcfile("utvrc", "mu", "UTV_INIT");
+    if (muInitFile.empty())
+        muInitFile = bundle.rcfile("rvrc", "mu", "RV_INIT");
+
+    string pyInitFile = bundle.rcfile("utvrc", "py", "UTV_PYINIT");
+    if (pyInitFile.empty())
+        pyInitFile = bundle.rcfile("rvrc", "py", "RV_PYINIT");
+
     bundle.setEnvVar("RV_APP_INIT", muInitFile.c_str());
     bundle.setEnvVar("RV_APP_PYINIT", pyInitFile.c_str());
+    bundle.setEnvVar("UTV_APP_INIT", muInitFile.c_str());
+    bundle.setEnvVar("UTV_APP_PYINIT", pyInitFile.c_str());
 
     if (opts.initscript)
         muInitFile = opts.initscript;
