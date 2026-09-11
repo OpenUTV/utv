@@ -137,13 +137,14 @@ namespace Rv
         mutable bool m_glContextReady{false};
 
         // IOSurface present ring (zero-copy GL->IOSurface->CALayer path).
-        // Double-buffered so the CA compositor can read the just-presented
-        // surface while GL renders the next frame into the other one.
+        // Triple-buffered so the CA compositor can read the active surface
+        // while the previous surface finishes compositing and GL renders
+        // the next frame into the third one.
         // Stored as void* to keep this header free of ObjC/CoreVideo types.
-        static constexpr int kRingSize = 2;
-        mutable void* m_ioSurfaces[kRingSize]{nullptr, nullptr}; // IOSurfaceRef
-        mutable GLuint m_ioTextures[kRingSize]{0, 0};
-        mutable TwkGLF::GLFBO* m_ioFbos[kRingSize]{nullptr, nullptr};
+        static constexpr int kRingSize = 3;
+        mutable void* m_ioSurfaces[kRingSize]{nullptr, nullptr, nullptr}; // IOSurfaceRef
+        mutable GLuint m_ioTextures[kRingSize]{0, 0, 0};
+        mutable TwkGLF::GLFBO* m_ioFbos[kRingSize]{nullptr, nullptr, nullptr};
         mutable int m_ringIndex{0};
         mutable int m_sharedWidth{0};
         mutable int m_sharedHeight{0};

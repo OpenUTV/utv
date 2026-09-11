@@ -724,12 +724,19 @@ namespace Rv
             glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_drawFbo[slot]);
         }
 
+        GLboolean scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+        if (scissorWasEnabled)
+            glDisable(GL_SCISSOR_TEST);
+
         glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, readFbo);
 
         // Note: GL origin is bottom-left, Vulkan origin is top-left. We need to flip Y.
         glBlitFramebufferEXT(0, 0, w, h, 0, h, w, 0, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, readFbo); // restore
+
+        if (scissorWasEnabled)
+            glEnable(GL_SCISSOR_TEST);
 
         // Signal Vulkan that GL is done
         GLuint signalDstLayouts[] = {GL_LAYOUT_COLOR_ATTACHMENT_EXT};

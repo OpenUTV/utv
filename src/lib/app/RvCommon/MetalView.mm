@@ -78,6 +78,10 @@ namespace Rv
         setAttribute(Qt::WA_OpaquePaintEvent);
         setAutoFillBackground(false);
 
+        QPalette pal = palette();
+        pal.setColor(QPalette::Window, Qt::black);
+        setPalette(pal);
+
         ostringstream str;
         str << UI_APPLICATION_NAME " Main Window (Metal)" << "/" << m_doc;
         m_videoDevice = new QTMetalVideoDevice(nullptr, str.str(), this, this);
@@ -212,6 +216,7 @@ namespace Rv
         // is composited natively and correctly for the 10-bit format.
         CALayer* caLayer = [CALayer layer];
         caLayer.opaque          = YES;
+        caLayer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
         caLayer.contentsGravity = kCAGravityResize;  // IOSurface fills layer exactly
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"

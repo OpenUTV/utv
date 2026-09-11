@@ -679,6 +679,13 @@ namespace Rv
             TwkGLF::GLFBO* ioFbo = m_ioFbos[slot];
             bool blitOk = true;
 
+            // Ensure scissor test is disabled during presentation blit and alpha clear.
+            // glBlitFramebufferEXT and glClear are both constrained by GL_SCISSOR_TEST
+            // if enabled by prior overlay/paint passes.
+            GLboolean scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+            if (scissorWasEnabled)
+                glDisable(GL_SCISSOR_TEST);
+
             // GPU blit from the RGBA16F render FBO into the IOSurface-backed
             // RGB10_A2 texture.  The GPU does the float->10-bit conversion.
             // Swapped destination Y (h -> 0) flips GL's bottom-left origin to the
@@ -703,7 +710,7 @@ namespace Rv
                 // clearBackgroundToBlack), and the blit copies that through; the CA
                 // compositor honours the IOSurface's per-pixel alpha (despite the
                 // layer's opaque=YES hint), so a transparent background would be
-                // blended against the gray window backdrop instead of showing black.
+                // blended against the window backdrop instead of showing black.
                 // glClear respects glColorMask, so this writes only alpha (2-bit ->
                 // 3 = opaque) and leaves the blitted RGB untouched — the GPU analog
                 // of the CPU fallback's hard-coded (3u << 30) alpha.
@@ -715,12 +722,17 @@ namespace Rv
                 // Restore the render FBO as the active target.
                 glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fboID());
 
-                // Publish the GL writes to the CA render server.  glFlush (not
-                // glFinish) is enough — it does not stall the main thread waiting for
-                // the GPU to go idle, and IOSurface provides the cross-context
-                // synchronisation the compositor needs.  This is what removes the
-                // per-frame main-thread stall behind menus and keyboard shortcuts.
-                glFlush();
+                if (scissorWasEnabled)
+                    glEnable(GL_SCISSOR_TEST);
+
+                // Synchronize GPU writes before CALayer presentation.
+                // On Apple Silicon GL-on-Metal, glFlush() only commits the command
+                // buffer asynchronously without a cross-process fence to the CA
+                // compositor. Calling glFinish() guarantees that all tiles of the
+                // blit and alpha clear are fully committed to the IOSurface before
+                // CoreAnimation samples the surface, preventing partial-frame/tiled
+                // checkerboard flicker during rapid mouse motion.
+                glFinish();
 
                 m_view->presentIOSurface(m_ioSurfaces[slot]);
 
@@ -736,6 +748,9 @@ namespace Rv
                 }
                 return;
             }
+
+            if (scissorWasEnabled)
+                glEnable(GL_SCISSOR_TEST);
         }
 
         // --- Fallback: GL readback -> CPU pack -> IOSurface upload ---
@@ -752,6 +767,10 @@ namespace Rv
 
         ensureCpuFallbackTarget(w, h);
 
+        GLboolean cpuScissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+        if (cpuScissorWasEnabled)
+            glDisable(GL_SCISSOR_TEST);
+
         // Y-flip blit (GL bottom-left → IOSurface top-left) into the RGB10_A2
         // target. The GPU does the RGBA16F → 10-bit quantisation in one pass.
         glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fbo->fboID());
@@ -766,6 +785,9 @@ namespace Rv
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        if (cpuScissorWasEnabled)
+            glEnable(GL_SCISSOR_TEST);
 
         // On macOS GL-on-Metal, glReadPixels does not implicitly synchronise the
         // Metal command stream — glFinish() is required to commit the blit before
