@@ -33,7 +33,6 @@ import sys
 from rv import commands, extra_commands
 from rv import rvtypes
 
-print("OTIO IMPORT: dlopenflags before import =", sys.getdlopenflags())
 import opentimelineio as otio  # noqa: E402
 import otio_reader  # noqa: E402
 import otio_writer  # noqa: E402
@@ -104,9 +103,10 @@ class ExampleOTIOReaderPlugin(rvtypes.MinorMode):
                 movieproc = "blank,otioFile={}.movieproc".format(in_path)
                 event.setReturnContent(movieproc)
                 return
-        except RuntimeError as e:
-            # Catch "bad any cast" and other C++ exceptions from OTIO bindings on macOS
-            print("WARNING: OTIO Reader disabled due to binding error:", e)
+        except RuntimeError:
+            # Catch "bad any cast" and other C++ exceptions from OTIO bindings on macOS.
+            # We fail silently here because this gets evaluated repeatedly.
+            pass
 
         event.reject()
 
