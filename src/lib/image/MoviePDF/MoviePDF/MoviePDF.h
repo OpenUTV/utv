@@ -10,6 +10,7 @@
 #include <TwkMovie/MovieReader.h>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #if defined(PLATFORM_DARWIN)
 #include <CoreGraphics/CoreGraphics.h>
@@ -41,8 +42,12 @@ namespace TwkMovie
     private:
         void identifier(int frame, std::ostream& os) const;
         void renderPage(int pageNumber, TwkFB::FrameBuffer& fb);
+        void renderRawPage(int pageNumber, int& w, int& h, std::vector<uint32_t>& pixels);
+        void findContentBox(const uint32_t* pixels, int w, int h, int& minX, int& maxX, int& minY, int& maxY) const;
 
         float m_dpi;
+        bool m_autoCrop;
+        int m_marginPts;
         mutable std::mutex m_mutex;
 
 #if defined(PLATFORM_DARWIN)
