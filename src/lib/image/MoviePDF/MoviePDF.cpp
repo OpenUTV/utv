@@ -227,11 +227,8 @@ namespace TwkMovie
         CGContextSetRGBFillColor(ctx, 1.0, 1.0, 1.0, 1.0);
         CGContextFillRect(ctx, CGRectMake(0, 0, w, h));
 
-        // Draw PDF page top-down into context
+        // Draw PDF page directly using drawing transform
         CGContextSaveGState(ctx);
-        CGContextTranslateCTM(ctx, 0, h);
-        CGContextScaleCTM(ctx, 1.0, -1.0);
-
         CGAffineTransform t = CGPDFPageGetDrawingTransform(page, kCGPDFCropBox, CGRectMake(0, 0, w, h), 0, true);
         CGContextConcatCTM(ctx, t);
         CGContextDrawPDFPage(ctx, page);
