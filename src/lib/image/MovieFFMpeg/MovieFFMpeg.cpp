@@ -731,7 +731,9 @@ namespace TwkMovie
                     == "deprecated pixel format used, make sure you did set "
                        "range correctly")
                 || (string(fmt).substr(0, 20) == "overread end of atom") || (string(fmt).substr(0, 19) == "Timecode frame rate")
-                || (string(fmt).substr(0, 32) == "unsupported color_parameter_type"))
+                || (string(fmt).substr(0, 32) == "unsupported color_parameter_type")
+                || (string(fmt).substr(0, 40) == "Could not find codec parameters for stre")
+                || (string(fmt).substr(0, 47) == "Consider increasing the value for the 'analyzed"))
             {
                 return;
             }
@@ -1456,6 +1458,10 @@ namespace TwkMovie
         // Open the codec
         (*avCodecContext)->thread_count = m_io->codecThreads();
         (*avCodecContext)->thread_type = FF_THREAD_SLICE;
+        if (avStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
+        {
+            (*avCodecContext)->apply_cropping = 0;
+        }
         if (avcodec_open2(*avCodecContext, avCodec, nullptr) < 0)
         {
             std::cerr << "ERROR: MovieFFMpeg: Failed to open codec '" << avCodec->name << "' for " << m_filename << '\n';
@@ -2640,7 +2646,14 @@ namespace TwkMovie
         // Fallback for formats where the initial pix_fmt might be AV_PIX_FMT_NONE
         if (nativeFormat == AV_PIX_FMT_NONE)
         {
-            nativeFormat = AV_PIX_FMT_RGB24;
+            if (firstVideoStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
+            {
+                nativeFormat = AV_PIX_FMT_RGB48;
+            }
+            else
+            {
+                nativeFormat = AV_PIX_FMT_RGB24;
+            }
         }
 
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
@@ -3944,7 +3957,8 @@ namespace TwkMovie
         //
 
         AVFrame* outFrame = av_frame_alloc();
-        AVPixelFormat nativeFormat = videoCodecContext->sw_pix_fmt;
+        AVPixelFormat nativeFormat = (videoFrame && videoFrame->format != AV_PIX_FMT_NONE) ? static_cast<AVPixelFormat>(videoFrame->format)
+                                                                                           : videoCodecContext->sw_pix_fmt;
         outFrame->format = nativeFormat;
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         if (!desc && nativeFormat == AV_PIX_FMT_NONE)
