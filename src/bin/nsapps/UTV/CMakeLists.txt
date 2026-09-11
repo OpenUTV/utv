@@ -88,6 +88,15 @@ ENDIF()
 
 RV_STAGE(TYPE "MAIN_EXECUTABLE" TARGET ${_target})
 
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/RV
+    COMMENT "Creating RV symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()
+
 FILE(GLOB _icns_files *.icns)
 FOREACH(
   _icns_file

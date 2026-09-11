@@ -616,12 +616,25 @@ int main(int argc, char* argv[])
     //
 
     if (getenv("RV_APP_RVIO"))
+    {
         bundle.setEnvVar("RV_APP_RVIO_SET_BY_USER", "true");
+    }
     else
-        bundle.setEnvVar("RV_APP_RVIO", bundle.executableFile("rvio"));
+    {
+        string rvioPath = bundle.executableFile("utvio");
+        if (rvioPath.empty())
+            rvioPath = bundle.executableFile("rvio");
+        bundle.setEnvVar("RV_APP_RVIO", rvioPath);
+        bundle.setEnvVar("UTV_APP_UTVIO", rvioPath);
+    }
 
-    bundle.setEnvVar("RV_APP_RV", bundle.executableFile("RV"));
-    bundle.setEnvVar("RV_APP_RV_SHORT_NAME", "RV");
+    string rvPath = bundle.executableFile("UTV");
+    if (rvPath.empty())
+        rvPath = bundle.executableFile("RV");
+    bundle.setEnvVar("RV_APP_RV", rvPath);
+    bundle.setEnvVar("RV_APP_RV_SHORT_NAME", "UTV");
+    bundle.setEnvVar("UTV_APP_UTV", rvPath);
+    bundle.setEnvVar("UTV_APP_UTV_SHORT_NAME", "UTV");
     bundle.setEnvVar("RV_APP_MANUAL", bundle.resource("rv_manual", "pdf"));
     bundle.setEnvVar("RV_APP_MANUAL_HTML", bundle.resource("rv_manual", "html"));
     bundle.setEnvVar("RV_APP_SDI_MANUAL", bundle.resource("rvsdi_manual", "pdf"));
