@@ -578,6 +578,23 @@ namespace Rv
             }
         }
 
+        if (QKeyEvent* kevent = dynamic_cast<QKeyEvent*>(event))
+        {
+            keyevent = true;
+            if (m_lastKey == kevent->key()
+                && (m_lastKeyType == QEvent::ShortcutOverride
+                        && (kevent->type() == QEvent::KeyPress)
+                    || (m_lastKeyType == kevent->type())))
+            {
+                m_lastKey     = kevent->key();
+                m_lastKeyType = kevent->type();
+                event->accept();
+                return true;
+            }
+            m_lastKeyType = kevent->type();
+            m_lastKey     = kevent->key();
+        }
+
         switch (event->type())
         {
         case QEvent::FocusIn:
@@ -703,6 +720,22 @@ namespace Rv
         if (event->type() == QEvent::KeyPress    || event->type() == QEvent::KeyRelease
             || event->type() == QEvent::Shortcut || event->type() == QEvent::ShortcutOverride)
         {
+            if (QKeyEvent* kevent = dynamic_cast<QKeyEvent*>(event))
+            {
+                if (m_lastKey == kevent->key()
+                    && (m_lastKeyType == QEvent::ShortcutOverride
+                            && (kevent->type() == QEvent::KeyPress)
+                        || (m_lastKeyType == kevent->type())))
+                {
+                    m_lastKey     = kevent->key();
+                    m_lastKeyType = kevent->type();
+                    event->accept();
+                    return true;
+                }
+                m_lastKeyType = kevent->type();
+                m_lastKey     = kevent->key();
+            }
+
             Session* session = m_doc ? m_doc->session() : nullptr;
             if (session && m_videoDevice && m_videoDevice->hasTranslator())
             {
