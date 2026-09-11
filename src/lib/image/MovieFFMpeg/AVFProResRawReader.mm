@@ -81,7 +81,7 @@ struct AVFProResRawReader::Impl
         reader.timeRange = CMTimeRangeMake(targetTime, kCMTimePositiveInfinity);
 
         NSDictionary* outputSettings = @{
-            (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA)
+            (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_64RGBAHalf)
         };
 
         output = [AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:track outputSettings:outputSettings];
@@ -264,33 +264,16 @@ bool AVFProResRawReader::readFrame(int64_t frameIndex, uint8_t* dst, size_t rowB
         size_t width = CVPixelBufferGetWidth(imageBuffer);
         size_t height = CVPixelBufferGetHeight(imageBuffer);
 
-        // Convert BGRA to RGBA using vImagePermuteChannels_ARGB8888
-        vImage_Buffer srcBuf = {
-            .data = srcBase,
-            .height = static_cast<vImagePixelCount>(height),
-            .width = static_cast<vImagePixelCount>(width),
-            .rowBytes = srcRowBytes
-        };
-
-        vImage_Buffer dstBuf = {
-            .data = dst,
-            .height = static_cast<vImagePixelCount>(height),
-            .width = static_cast<vImagePixelCount>(width),
-            .rowBytes = rowBytes
-        };
-
-        // Permute BGRA (0=B, 1=G, 2=R, 3=A) to RGBA (R=2, G=1, B=0, A=3)
-        const uint8_t permuteMap[4] = {2, 1, 0, 3};
-        vImage_Error err = vImagePermuteChannels_ARGB8888(&srcBuf, &dstBuf, permuteMap, kvImageNoFlags);
+        // 64RGBAHalf: 4 half-floats = 8 bytes per pixel, native RGBA memory layout
+        const size_t bytesPerPixel = 8;
+        const size_t copyBytesPerRow = std::min(rowBytes, width * bytesPerPixel);
+        for (size_t y = 0; y < height; ++y)
+        {
+            std::memcpy(dst + y * rowBytes, srcBase + y * srcRowBytes, copyBytesPerRow);
+        }
 
         CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
         CFRelease(sampleBuffer);
-
-        if (err != kvImageNoError)
-        {
-            std::cerr << "ERROR: AVFProResRawReader: vImagePermuteChannels failed with error " << err << std::endl;
-            return false;
-        }
 
         m_impl->currentFrameIndex = frameIndex;
         return true;

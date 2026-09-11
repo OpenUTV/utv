@@ -2735,7 +2735,7 @@ namespace TwkMovie
 #if defined(__APPLE__)
         if (m_videoTracks[0]->useAVFProResRaw)
         {
-            nativeFormat = AV_PIX_FMT_RGBA;
+            nativeFormat = AV_PIX_FMT_RGBA64LE;
         }
         else
 #endif
@@ -2755,7 +2755,14 @@ namespace TwkMovie
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         int bitSize = desc->comp[0].depth - desc->comp[0].shift;
         m_info.numChannels = desc->nb_components;
-        m_info.dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+#if defined(__APPLE__)
+        if (m_videoTracks[0]->useAVFProResRaw)
+        {
+            m_info.dataType = FrameBuffer::HALF;
+        }
+        else
+#endif
+            m_info.dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
 
         const char* fmtname_raw = av_get_pix_fmt_name(nativeFormat);
         string fmtname = string(fmtname_raw ? fmtname_raw : "none");
@@ -3822,11 +3829,11 @@ namespace TwkMovie
         chans[2] = "B";
         chans[3] = "A";
 
-        FrameBuffer* out = new FrameBuffer(width, height, 4, FrameBuffer::UCHAR, NULL, &chans);
+        FrameBuffer* out = new FrameBuffer(width, height, 4, FrameBuffer::HALF, NULL, &chans);
 
         // RV inframe is 1-based, AVFoundation frameIndex is 0-based
         int64_t frameIndex = inframe - 1;
-        if (!track->avfReader->readFrame(frameIndex, out->pixels<uint8_t>(), width * 4, width, height))
+        if (!track->avfReader->readFrame(frameIndex, out->pixels<uint8_t>(), width * 8, width, height))
         {
             delete out;
             TWK_THROW_EXC_STREAM("AVFoundation failed to decode ProRes RAW frame at: " << inframe);
