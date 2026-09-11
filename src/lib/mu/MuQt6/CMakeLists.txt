@@ -258,6 +258,18 @@ IF(NOT QT_MOC_EXECUTABLE)
   )
 ENDIF()
 
+#
+# SignalSpy derives from QSignalSpy up to Qt 6.5 and from QObject as of Qt 6.8, where QSignalSpy stopped being a QObject (see SignalSpy.h). moc does not
+# evaluate QT_VERSION, so the choice has to be handed to moc and to the compiler explicitly: if they disagree, moc generates a meta object naming a base class
+# the compiler never saw. The definition is harmless for the other headers moc'ed below.
+#
+SET(_signalspy_definitions
+    RV_MUQT_SIGNALSPY_OWN_CONNECT=1
+)
+SET(_signalspy_moc_definitions
+    -DRV_MUQT_SIGNALSPY_OWN_CONNECT=1
+)
+
 FILE(
   GLOB _files_to_moc
   RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -277,7 +289,7 @@ FOREACH(
   )
   ADD_CUSTOM_COMMAND(
     OUTPUT ${outfile}
-    COMMAND ${QT_MOC_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR} -o ${outfile} ${infile}
+    COMMAND ${QT_MOC_EXECUTABLE} ${_signalspy_moc_definitions} -I ${CMAKE_CURRENT_SOURCE_DIR} -o ${outfile} ${infile}
     MAIN_DEPENDENCY ${infile}
     VERBATIM
   )
@@ -302,6 +314,11 @@ ADD_LIBRARY(
   ${_sources} ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/moc_SignalSpy_filtered.hpp
 )
 
+TARGET_COMPILE_DEFINITIONS(
+  ${_target}
+  PRIVATE ${_signalspy_definitions}
+)
+
 #
 # Note: Defining WIN32_LEAN_AND_MEAN to prevent a clash between winsock.h and winsock2.h: windows.h, which is included indirectly by <QtCore/QtCore>, includes
 # winsock.h by default (if WIN32_LEAN_AND_MEAN is not defined). And then winsock2.h is later included by SignalSpy.h. Any time winsock.h gets included before
@@ -324,8 +341,8 @@ SET_PROPERTY(
 
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/moc_SignalSpy.cpp
-  COMMAND ${QT_MOC_EXECUTABLE} -I ${CMAKE_CURRENT_SOURCE_DIR} -o ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/moc_SignalSpy.cpp
-          ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/SignalSpy.h
+  COMMAND ${QT_MOC_EXECUTABLE} ${_signalspy_moc_definitions} -I ${CMAKE_CURRENT_SOURCE_DIR} -o
+          ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/moc_SignalSpy.cpp ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/SignalSpy.h
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/SignalSpy.cpp
   COMMENT "Generating SignalSpy moc file ..."
   VERBATIM

@@ -458,6 +458,19 @@ namespace Mu
         qt_QAction_setShortcuts_void_QAction_int(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer), NODE_ARG(1, int));
     }
 
+    void qt_QAction_setShortcutContext_void_QAction_int(Mu::Thread& NODE_THREAD, Pointer param_this, int param_context)
+    {
+        MuLangContext* c = static_cast<MuLangContext*>(NODE_THREAD.context());
+        QAction* arg0 = object<QAction>(param_this);
+        Qt::ShortcutContext arg1 = (Qt::ShortcutContext)(param_context);
+        arg0->setShortcutContext(arg1);
+    }
+
+    static NODE_IMPLEMENTATION(_n_setShortcutContext0, void)
+    {
+        qt_QAction_setShortcutContext_void_QAction_int(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer), NODE_ARG(1, int));
+    }
+
     static NODE_IMPLEMENTATION(_n_shortcut0, Pointer)
     {
         NODE_RETURN(qt_QAction_shortcut_QKeySequence_QAction(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer)));
@@ -577,6 +590,8 @@ namespace Mu
             // QList<QKeySequence> &" shortcuts)
             new Function(c, "setShortcuts", _n_setShortcuts1, None, Compiled, qt_QAction_setShortcuts_void_QAction_int, Return, "void",
                          Parameters, new Param(c, "this", "qt.QAction"), new Param(c, "key", "int"), End),
+            new Function(c, "setShortcutContext", _n_setShortcutContext0, None, Compiled, qt_QAction_setShortcutContext_void_QAction_int,
+                         Return, "void", Parameters, new Param(c, "this", "qt.QAction"), new Param(c, "context", "int"), End),
             // PROP: setStatusTip (void; QAction this, string statusTip)
             // PROP: setText (void; QAction this, string text)
             // PROP: setToolTip (void; QAction this, string tip)
