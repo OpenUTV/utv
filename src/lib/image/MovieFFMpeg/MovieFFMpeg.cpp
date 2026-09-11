@@ -3700,6 +3700,16 @@ namespace TwkMovie
             // First we need to read a packet from the stream.
             readPacketFromStream(inframe, track);
 
+            // If track was marked for OpenJPH because codec is JPEG2000, verify
+            // that the packet is indeed HTJ2K. If not, use standard FFmpeg decoding.
+            if (track->useOpenJPH && track->videoPacket && track->videoPacket->data && track->videoPacket->size > 0)
+            {
+                if (!TwkFB::isHTJ2K(track->videoPacket->data, track->videoPacket->size))
+                {
+                    track->useOpenJPH = false;
+                }
+            }
+
             // Then we need to send the packet as input to the decoder.
             // but we don't do it if we are using OpenJPH or Apple's ProRes
             // since they will handle the decode themselves and ProRes
@@ -6108,6 +6118,8 @@ namespace TwkMovie
         formats["gif"] = make_pair("Graphics Interchange Format", vidcap);
         formats["m3u8"] = make_pair("M3U8 Stream Metadata", vidcap);
         formats["m4v"] = make_pair("iTunes Video Format (from MPEG-4)", vidcap);
+        formats["mj2"] = make_pair("Motion JPEG 2000", vidcap);
+        formats["mjp2"] = make_pair("Motion JPEG 2000", vidcap);
         formats["mkv"] = make_pair("Matroska Video", vidcap);
         formats["mov"] = make_pair("Quicktime Movie", vidcap);
         formats["mp4"] = make_pair("MPEG-4 Movie Container", vidcap);
