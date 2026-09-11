@@ -10,7 +10,7 @@ pip
 setuptools
 wheel
 numpy
-opentimelineio
+opentimelineio @ git+https://github.com/mcoliver/OpenTimelineIO.git@fix-macos-bad-any-cast
 PyOpenGL
 PyOpenGL_accelerate
 certifi
