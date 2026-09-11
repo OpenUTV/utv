@@ -213,6 +213,10 @@ namespace Rv
         CALayer* caLayer = [CALayer layer];
         caLayer.opaque          = YES;
         caLayer.contentsGravity = kCAGravityResize;  // IOSurface fills layer exactly
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        caLayer.wantsExtendedDynamicRangeContent = YES;
+#pragma clang diagnostic pop
 
         // Attach directly to the widget's NSView.  Since we use IOSurface (not a
         // Metal drawable), _NSOpenGLViewBackingLayer does not intercept or tile the
@@ -268,6 +272,10 @@ namespace Rv
                           << w << "x" << h << "\n";
                 return;
             }
+
+            CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+            IOSurfaceSetValue(newSurf, kCVImageBufferCGColorSpaceKey, cs);
+            CGColorSpaceRelease(cs);
 
             if (m_ioSurface)
             {
@@ -478,6 +486,16 @@ namespace Rv
     {
         if (!m_initialized)
             initialize();
+
+        NSView* nsView = (__bridge NSView*)reinterpret_cast<void*>(winId());
+        if (NSWindow* window = [nsView window])
+        {
+            if ([window colorSpace] != [NSColorSpace extendedSRGBColorSpace])
+            {
+                [window setColorSpace:[NSColorSpace extendedSRGBColorSpace]];
+            }
+        }
+
         // Post an UpdateRequest so the first render fires from the event loop
         // after the widget is fully laid out (same pattern as QOpenGLWindow).
         requestUpdate();

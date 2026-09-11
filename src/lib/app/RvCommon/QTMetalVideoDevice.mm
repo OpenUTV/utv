@@ -516,6 +516,10 @@ namespace Rv
                 return false;
             }
 
+            CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+            IOSurfaceSetValue(surf, kCVImageBufferCGColorSpaceKey, cs);
+            CGColorSpaceRelease(cs);
+
             GLuint tex = 0;
             glGenTextures(1, &tex);
             glBindTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
