@@ -124,3 +124,58 @@ python3 tools/diagnostics/10bit/generate_10bit_test_patterns.py
 ```
 
 Outputs are automatically written to `tools/diagnostics/10bit/media/`.
+
+---
+
+## 7. Windows and Linux 10-Bit Setup & Configuration
+
+OpenUTV already includes full 10-bit presentation support on Windows and Linux via the **Vulkan presentation backend** (`VulkanWindow` + `QTVulkanVideoDevice`), which negotiates a native `VK_FORMAT_A2B10G10R10_UNORM_PACK32` (or `A2R10G10B10`) swapchain to avoid DWM/compositor 8-bit window truncation.
+
+### Activating 10-Bit in OpenUTV (Windows & Linux)
+
+Unlike macOS where Metal is active by default, OpenUTV defaults to legacy OpenGL (8-bit) on Windows and Linux unless 10-bit display output is requested.
+
+1. **In GUI Preferences**:
+   - Go to **Preferences (`Cmd/Ctrl + ,`) -> Display -> Display Output**.
+   - Change from `Default (Auto)` to **`10 10 10 2`**.
+   - Restart OpenUTV.
+2. **Via Command Line**:
+
+   ```bash
+   UTV -dispRedBits 10 -dispGreenBits 10 -dispBlueBits 10 -dispAlphaBits 2 path/to/image.exr
+   ```
+
+   When `dispRedBits == 10`, OpenUTV automatically invokes `VulkanView::supports10BitPresentation()` and creates the native Vulkan swapchain.
+
+---
+
+### OS and Driver Prerequisites
+
+#### Windows
+
+1. **GPU Driver Control Panel**:
+   - **NVIDIA Control Panel**: *Display* -> *Change resolution* -> *Apply the following settings* -> Set **Output color depth** to **10 bpc** (or 12 bpc) and **Output color format** to **RGB** (Full dynamic range).
+   - **AMD Software (Adrenalin)**: *Gaming* -> *Display* -> *Color Depth* -> Set to **10 bpc**.
+   - **Intel Graphics Command Center**: *Display* -> *Color Depth* -> Set to **10-bit**.
+2. **Windows Settings**:
+   - In *Settings -> System -> Display -> Advanced display*, verify that **Bit depth** reports **10-bit**.
+
+#### Linux
+
+1. **X11**:
+   - The default Xorg configuration is `Depth 24` (8 bits per channel).
+   - To enable 30-bit color, edit `/etc/X11/xorg.conf` (or `/etc/X11/xorg.conf.d/20-nvidia.conf`) to include:
+
+     ```xorg
+     Section "Screen"
+         Identifier "Screen0"
+         DefaultDepth 30
+         SubSection "Display"
+             Depth 30
+         EndSubSection
+     EndSection
+     ```
+
+2. **Wayland**:
+   - Modern Wayland compositors (KDE Plasma 6, GNOME 46+, Sway) support 10-bit Vulkan surfaces natively through `wp_color_management_v1` and Direct Scanout.
+   - `VulkanWindow` automatically negotiates the 10-bit swapchain via `VK_KHR_wayland_surface`.
