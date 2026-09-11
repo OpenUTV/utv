@@ -1448,8 +1448,18 @@ namespace TwkMovie
                                []()
                                {
                                    std::cout << "WARNING: Hardware decoder is not available "
-                                                "or failed to intialize."
+                                                "or failed to initialize."
                                              << std::endl;
+                               });
+            }
+            else
+            {
+                static std::once_flag infoOnce;
+                std::call_once(infoOnce,
+                               [&avCodec]()
+                               {
+                                   std::cout << "INFO: Using Apple VideoToolbox hardware acceleration for '" << avCodec->name
+                                             << "' decoding." << std::endl;
                                });
             }
         }
