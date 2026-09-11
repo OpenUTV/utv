@@ -713,10 +713,20 @@ namespace TwkMovie
                                                        "wmv3image"sv,
                                                        "xith"sv,
                                                        "xvid"sv,
-                                                       "libdav1d"sv
+                                                       "libdav1d"sv,
+                                                       "mpeg1video"sv,
+                                                       "mpeg2video"sv,
+                                                       "hevc"sv,
+                                                       "h265"sv,
+                                                       "vp8"sv,
+                                                       "vp9"sv,
+                                                       "av1"sv,
+                                                       "theora"sv,
+                                                       "wmv1"sv,
+                                                       "wmv2"sv
 #if defined(RV_FFMPEG_USE_VIDEOTOOLBOX) || defined(RV_USE_APPLE_PRORES_SDK)
                                                        ,
-                                                       "prores"sv
+                                                       "prores"sv,
                                                        "prores_aw"sv,
                                                        "prores_ks"sv,
                                                        "prores_raw"sv
@@ -750,6 +760,11 @@ namespace TwkMovie
 
         void avLogCallback(void* ptr, int level, const char* fmt, va_list vargs)
         {
+            if (strstr(fmt, "Header missing") != nullptr)
+            {
+                return;
+            }
+
             if ((string(fmt).substr(0, 51) == "Encoder did not produce proper pts, making some up.")
                 || (string(fmt).substr(0, 47) == "No accelerated colorspace conversion found from")
                 || (string(fmt).substr(0, 28) == "Increasing reorder buffer to")
@@ -2708,9 +2723,22 @@ namespace TwkMovie
             AVStream* videoStream = m_avFormatContext->streams[track->number];
             AVCodecContext* videoCodecContext = track->avCodecContext;
 
+            const AVCodecDescriptor* desc = avcodec_descriptor_get(videoStream->codecpar->codec_id);
+            bool isInterFrame = (desc && !(desc->props & AV_CODEC_PROP_INTRA_ONLY));
+            bool isMpegContainer = false;
+            if (m_avFormatContext->iformat && m_avFormatContext->iformat->name)
+            {
+                string ifmtName = m_avFormatContext->iformat->name;
+                if (ifmtName.find("mpeg") != string::npos || ifmtName.find("vob") != string::npos)
+                {
+                    isMpegContainer = true;
+                }
+            }
+
             // Tell RV to restrict caching to one thread
-            bool slowTrackRandomAccess =
-                (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name)) || TwkUtil::pathIsURL(m_filename);
+            bool slowTrackRandomAccess = isInterFrame || isMpegContainer
+                                         || (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name))
+                                         || TwkUtil::pathIsURL(m_filename);
             slowRandomAccess = slowTrackRandomAccess || slowRandomAccess;
 
             // Make sure the orientation/rotation matches for each track
@@ -3552,9 +3580,13 @@ namespace TwkMovie
                                            << " start: " << track->start << " desired: " << track->desired);
 
                     if (track->bufferStart > track->start + track->desired)
+                    {
+                        track->lastDecodedAudio = track->start + track->desired - 1;
                         return track->desired;
+                    }
                     if (track->bufferStart > track->start)
                     {
+                        track->lastDecodedAudio = track->bufferStart - 1;
                         return track->bufferStart - track->start;
                     }
                     if (track->bufferEnd < track->start)
@@ -4006,7 +4038,12 @@ namespace TwkMovie
         // videoCodecContext->gop_size because it is initialized by default by
         // FFmpeg with a default value of 12 even for intra-frame compression
         // codecs (such as Apple Pro Res for example).
-        const int nearFrameThreshold = (m_info.slowRandomAccess && videoCodecContext->gop_size != 0) ? videoCodecContext->gop_size : 1;
+        int gopSize = videoCodecContext->gop_size;
+        if (gopSize <= 0)
+        {
+            gopSize = (m_info.fps > 0.0) ? static_cast<int>(round(m_info.fps)) : 30;
+        }
+        const int nearFrameThreshold = m_info.slowRandomAccess ? gopSize : 1;
         if (track->lastDecodedVideo == -1 || track->lastDecodedVideo >= inframe || track->lastDecodedVideo < (inframe - nearFrameThreshold))
         {
             seekToFrame(inframe, frameDur, videoStream, track);
