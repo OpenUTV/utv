@@ -1017,7 +1017,13 @@ namespace Rv
 
                 sendEvent(e);
                 if (e.handled)
+                {
                     handled = true;
+                    if (type == DragDropEvent::Enter || type == DragDropEvent::Move || type == DragDropEvent::Release)
+                    {
+                        devent->acceptProposedAction();
+                    }
+                }
             }
         }
 
