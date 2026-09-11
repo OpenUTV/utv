@@ -33,6 +33,9 @@ namespace Rv
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
     class MetalView;
 #endif
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+    class VulkanView;
+#endif
     class DiagnosticsView;
     class DesktopVideoModule;
     class DesktopVideoDevice;
@@ -79,6 +82,16 @@ namespace Rv
 
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
         MetalView* metalView() const;
+#endif
+
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+        VulkanView* vulkanView() const;
+
+        // True once close has been accepted or the document is being destroyed.
+        bool isClosing() const { return m_currentlyClosing || m_closeEventReceived; }
+
+        // Replace a live VulkanView with GLView after a runtime Vulkan failure.
+        void fallbackVulkanToGLView();
 #endif
 
         const QAction* lastPopupAction() const { return m_lastPopupAction; }
@@ -194,6 +207,9 @@ namespace Rv
         GLView* m_oldGLView;
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
         MetalView* m_metalView;
+#endif
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+        VulkanView* m_vulkanView;
 #endif
         QWidget* m_viewWidget;
         QWidget* m_viewContainerWidget;

@@ -24,6 +24,19 @@
 #include <GL/glew.h>
 #endif
 #include <RvCommon/GLView.h> // WINDOWS: include AFTER other stuff
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+#include <RvCommon/VulkanView.h>
+#include <RvCommon/QTVulkanVideoDevice.h>
+// The X11/QtX11Extras includes (Linux-only, above) drag in GL headers that
+// conflict with GLEW; only assert the include-order invariant on Linux.
+// On Windows, GLEW is intentionally included first (see the
+// PLATFORM_WINDOWS block higher up) and the conflict does not apply.
+#if defined(PLATFORM_LINUX)
+#ifdef __glew_h_
+#error "GLEW IS DEFINED BEFORE QTGUI!"
+#endif
+#endif
+#endif
 // #include <RvCommon/DiagnosticsView.h>
 #include <RvCommon/QTGLVideoDevice.h>
 #include <QtGui/QtGui>
@@ -155,6 +168,9 @@ namespace Rv
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
         , m_metalView(nullptr)
 #endif
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+        , m_vulkanView(nullptr)
+#endif
         , m_diagnosticsView(nullptr)
         , m_diagnosticsDock(nullptr)
         , m_sourceEditor(0)
@@ -201,25 +217,31 @@ namespace Rv
         {
             m_metalView = new MetalView(this, this, true);
             m_viewWidget = m_metalView;
-
-            // Optional: log fallback path trigger
-            // QTimer::singleShot(5000, this, SLOT(fallbackMetalToGLView()));
-
-            // NOTE: DiagnosticsView (a QOpenGLWidget) is created below for all
-            // backends. It shares GL resources with the offscreen render context
-            // via Qt::AA_ShareOpenGLContexts (set in main).
-            //
-            // macOS caveat: historically a QOpenGLWidget anywhere in the window
-            // hierarchy could force Qt's macOS backend to use
-            // _NSOpenGLViewBackingLayer for the whole window, which would
-            // intercept the CALayer/IOSurface content and composite it 4x (2x2)
-            // when DPR scaling is active. If 10-bit presentation regresses with
-            // the docked diagnostics visible, host DiagnosticsView in a separate
-            // top-level window on the Metal path instead.
         }
         else
         {
             // --- OpenGL (8-bit) fallback ---
+            createGLView();
+        }
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+        // --- Backend selection: Vulkan for 10-bit, OpenGL otherwise ---
+        const bool want10bit = (opts.dispRedBits == 10 && opts.dispGreenBits == 10 && opts.dispBlueBits == 10 && opts.dispAlphaBits == 2);
+
+        bool useVulkan = false;
+        if (want10bit)
+        {
+            useVulkan = VulkanView::supports10BitPresentation();
+        }
+
+        if (useVulkan)
+        {
+            // --- Vulkan path ---
+            m_vulkanView = new VulkanView(this, this, true);
+            m_viewWidget = m_vulkanView;
+        }
+        else
+        {
+            // --- OpenGL path ---
             createGLView();
         }
 #else
