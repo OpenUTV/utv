@@ -152,21 +152,25 @@ Once complete, copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin
 
 ## Support OpenUTV
 
-OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project!
+OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project:
 
-- **[Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card/Apple Pay)
+- **[GitHub Sponsors](https://github.com/sponsors/mcoliver)** (Monthly or one-time)
+- **[Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card / Apple Pay)
 
-**Crypto Donations:**
+<details>
+<summary><b>Cryptocurrency Addresses (BTC / ETH / SOL)</b></summary>
+
+<br />
 
 | Bitcoin (BTC) | Ethereum (ETH) | Solana (SOL) |
 | :---: | :---: | :---: |
 | <img src="docs/images/qr_btc.png" alt="BTC QR" width="100"/> | <img src="docs/images/qr_eth.png" alt="ETH QR" width="100"/> | <img src="docs/images/qr_sol.png" alt="SOL QR" width="100"/> |
 
-*(Full addresses below for copy/pasting)*
-
 - **BTC:** `bc1qwpd4nmz409xx3x5n9z76avnv7rqucu8w53aejy`
 - **ETH:** `0xB9Ab3823a967804EdE427541F36E785912b67f98`
 - **SOL:** `9EdidyxKi9rwx35yvi5FVr7bDkFMPUUKMhFCdp4ASNG7`
+
+</details>
 
 ---
 

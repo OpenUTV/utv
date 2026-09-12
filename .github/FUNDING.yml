@@ -1,7 +1,5 @@
 # These are supported funding model platforms
+github: [mcoliver]
 
 custom:
   - https://donate.stripe.com/eVqbJ29K73to7446oNdAk00
-  - https://github.com/OpenUTV/utv/blob/main/docs/images/qr_btc.png
-  - https://github.com/OpenUTV/utv/blob/main/docs/images/qr_eth.png
-  - https://github.com/OpenUTV/utv/blob/main/docs/images/qr_sol.png
