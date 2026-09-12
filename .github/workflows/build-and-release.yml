@@ -115,15 +115,69 @@ jobs:
           ./build.sh --release --clean --version $CLEAN_VERSION
         shell: bash
 
-      - name: Apply Ad-Hoc macOS Code Signature
+      - name: Sign & Notarize macOS App
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
         run: |
-          codesign --force --deep --sign - _build/stage/app/UTV.app
-        shell: bash
+          ENTITLEMENTS="${PWD}/src/bin/nsapps/UTV/entitlements.plist"
+          APP_PATH="_build/stage/app/UTV.app"
+          ZIP_NAME="UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip"
 
-      - name: Package macOS App
-        run: |
-          cd _build/stage/app
-          zip -ry UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip UTV.app
+          if [ -n "${MACOS_CERTIFICATE}" ] && [ -n "${MACOS_CERTIFICATE_PWD}" ]; then
+            echo "--- Importing Developer ID Certificate ---"
+            KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+            CERT_PATH=$RUNNER_TEMP/certificate.p12
+            echo "$MACOS_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+            security import "$CERT_PATH" -P "$MACOS_CERTIFICATE_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed -e 's/^[[:space:]]*//' | tr -d '"')
+
+            # Determine Signing Identity
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | awk -F'"' '{print $2}')
+            if [ -z "$SIGNING_IDENTITY" ]; then
+              SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -n 1 | awk -F'"' '{print $2}')
+            fi
+            echo "Using Signing Identity: $SIGNING_IDENTITY"
+
+            echo "--- Signing UTV.app with Hardened Runtime ---"
+            codesign --force --deep --options runtime --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+
+            cd _build/stage/app
+            zip -ry "$ZIP_NAME" UTV.app
+
+            if [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ] && [ -n "${APPLE_API_KEY}" ]; then
+              echo "--- Submitting to Apple Notary Service ---"
+              KEY_FILE=$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8
+              echo "$APPLE_API_KEY" | base64 --decode > "$KEY_FILE"
+
+              xcrun notarytool submit "$ZIP_NAME" \
+                --key "$KEY_FILE" \
+                --key-id "$APPLE_API_KEY_ID" \
+                --issuer "$APPLE_API_ISSUER" \
+                --wait
+
+              echo "--- Stapling Notarization Ticket ---"
+              xcrun stapler staple UTV.app
+              rm -f "$ZIP_NAME"
+              zip -ry "$ZIP_NAME" UTV.app
+            else
+              echo "Apple Notary API credentials not configured; skipping notarization submission."
+            fi
+          else
+            echo "No Developer ID certificate configured. Applying Ad-Hoc code signature."
+            codesign --force --deep --sign - "$APP_PATH"
+            cd _build/stage/app
+            zip -ry "$ZIP_NAME" UTV.app
+          fi
         shell: bash
 
       - name: Upload Artifact
