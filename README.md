@@ -23,10 +23,10 @@ Originally forked from visual effects industry software [OpenRV](https://github.
 
 ### Why OpenUTV?
 
-- **⚡ Blazing Fast Build Times**: A clean build from scratch on an M4 MacBook Air takes just **4:30 minutes**; cached incremental rebuilds take under **50 seconds** (compared to hours for legacy enterprise VFX builds).
-- **📦 Lightweight & Redistributable**: We prioritize a zero-config, portable distribution with an intelligent native trampoline launcher that guides missing dependencies instead of crashing.
-- **🔄 Always-Current Dependencies**: All libraries (OpenEXR, OpenColorIO, OpenTimelineIO, Qt, FFmpeg, Imath, LibRaw, Boost, etc.) track the **latest published releases** from their respective upstream authors. You get modern features, performance boosts, and critical security patches immediately—without waiting for multi-year enterprise reference platform cycles.
-- **🚀 Community-Driven Velocity**: OpenUTV is built for and by the creative community. We prioritize rapid review and merging of community pull requests, shipping updates with agility and momentum.
+- **Fast Build Times**: A clean build from scratch on an M4 MacBook Air takes just **4:30 minutes**; cached incremental rebuilds take under **50 seconds** (compared to hours for legacy enterprise VFX builds).
+- **Lightweight & Redistributable**: We prioritize a zero-config, portable distribution with an intelligent native trampoline launcher that guides missing dependencies instead of crashing.
+- **Always-Current Dependencies**: All libraries (OpenEXR, OpenColorIO, OpenTimelineIO, Qt, FFmpeg, Imath, LibRaw, Boost, etc.) track the **latest published releases** from their respective upstream authors. You get modern features, performance boosts, and critical security patches immediately—without waiting for multi-year enterprise reference platform cycles.
+- **Community-Driven Velocity**: OpenUTV is built for and by the creative community. We prioritize rapid review and merging of community pull requests, shipping updates with agility and momentum.
 
 ---
 
@@ -42,12 +42,12 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ## Key Features & Capabilities
 
-- **🎨 Modern 10-Bit Color Pipeline**: Native 10-bit Metal presentation on macOS (Extended Dynamic Range / EDR) and 10-bit Vulkan presentation on Linux & Windows, plus an integrated 10-bit diagnostic test pattern suite.
-- **🚀 Hardware-Accelerated Video**: Native Apple Silicon VideoToolbox hardware decoding enabled by default for silky-smooth high-bitrate 4K/8K playback.
-- **🎬 Native Apple ProRes RAW**: Out-of-the-box 16-bit half-float ProRes RAW decoding via AVFoundation and FFmpeg.
-- **📄 Multi-Page PDF Document Viewing**: Review storyboards, scripts, lookbooks, and contact sheets natively alongside video and sequence assets, complete with automatic margin auto-cropping.
-- **📡 Professional Video I/O**: Dynamic runtime support for NDI 6, Blackmagic Design DeckLink, and AJA Video Systems without licensing lock-in or bloated SDK dependencies.
-- **🖼️ Comprehensive Format Support**: OpenEXR (multi-part & deep), DPX, Cineon, TIFF, PNG, JPEG, JPEG 2000 (HTJ2K), WebP, Targa, RAW camera files (CR2, NEF, ARW), and modern video containers.
+- **Modern 10-Bit Color Pipeline**: Native 10-bit Metal presentation on macOS (Extended Dynamic Range / EDR) and 10-bit Vulkan presentation on Linux & Windows, plus an integrated 10-bit diagnostic test pattern suite.
+- **Hardware-Accelerated Video**: Native Apple Silicon VideoToolbox hardware decoding enabled by default for silky-smooth high-bitrate 4K/8K playback.
+- **Native Apple ProRes RAW**: Out-of-the-box 16-bit half-float ProRes RAW decoding via AVFoundation and FFmpeg.
+- **Multi-Page PDF Document Viewing**: Review storyboards, scripts, lookbooks, and contact sheets natively alongside video and sequence assets, complete with automatic margin auto-cropping.
+- **Professional Video I/O**: Dynamic runtime support for NDI 6, Blackmagic Design DeckLink, and AJA Video Systems without licensing lock-in or bloated SDK dependencies.
+- **Comprehensive Format Support**: OpenEXR (multi-part & deep), DPX, Cineon, TIFF, PNG, JPEG, JPEG 2000 (HTJ2K), WebP, Targa, RAW camera files (CR2, NEF, ARW), and modern video containers.
 
 ---
 
@@ -119,11 +119,11 @@ UTV dynamically links to **FFmpeg** at runtime to provide broad playback support
 
 ---
 
-## 💖 Support OpenUTV
+## Support OpenUTV
 
 OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project!
 
-- **[💳 Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card/Apple Pay)
+- **[Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card/Apple Pay)
 
 **Crypto Donations:**
 
