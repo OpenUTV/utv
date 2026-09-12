@@ -193,6 +193,11 @@ jobs:
             echo "--- Stripping pre-existing linker signatures ---"
             codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
 
+            echo "--- Removing legacy symlinks and empty directories from bundle ---"
+            find "$APP_PATH/Contents/MacOS" -type l -delete
+            rmdir "$APP_PATH/Contents/include" 2>/dev/null || true
+            rmdir "$APP_PATH/Contents/src" 2>/dev/null || true
+
             echo "--- Signing nested components inside-out with Hardened Runtime ---"
             if [ -d "$APP_PATH/Contents/Helpers" ]; then
               find "$APP_PATH/Contents/Helpers" -maxdepth 1 -name "*.app" -type d 2>/dev/null | while read -r helper; do
@@ -210,14 +215,14 @@ jobs:
             echo "Signing dynamic libraries and Python extensions"
             find "$APP_PATH/Contents" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
+            echo "Signing PlugIns subcomponents"
+            find "$APP_PATH/Contents/PlugIns" -type f ! -name "*.dylib" ! -name "*.so" -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
             echo "Signing auxiliary executables in Contents/MacOS"
             find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
-            echo "Signing main executable $MAIN_EXE"
-            codesign --force --deep --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH/Contents/MacOS/$MAIN_EXE"
-
             echo "Signing outer bundle UTV.app"
-            codesign --force --deep --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+            codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
 
             echo "--- Verifying signature ---"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
