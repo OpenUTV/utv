@@ -632,7 +632,9 @@ int main(int argc, char* argv[])
         bundle.setEnvVar("UTV_APP_UTVIO", rvioPath);
     }
 
-    string rvPath = bundle.executableFile("UTV");
+    string rvPath = bundle.executableFile("UTV-bin");
+    if (rvPath.empty())
+        rvPath = bundle.executableFile("UTV");
     if (rvPath.empty())
         rvPath = bundle.executableFile("RV");
     bundle.setEnvVar("RV_APP_RV", rvPath);
