@@ -111,11 +111,12 @@ Write-Host "`n--- Checking OpenUTVDeps MSI ---" -ForegroundColor Cyan
 if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
     Write-Host "Using existing Python from environment: $env:pythonLocation" -ForegroundColor Gray
     $PythonPath = $env:pythonLocation
-} else {
+}
+else {
     $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
     if (-not $DepsDir -and -not $SkipBootstrapping) {
         Write-Host "OpenUTVDeps MSI not found. Downloading latest release..." -ForegroundColor Yellow
-        $ReleaseUrl = "https://api.github.com/repos/mcoliver4/utv-dependencies/releases/latest"
+        $ReleaseUrl = "https://api.github.com/repos/openutv/utv-dependencies/releases/latest"
         $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
         $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
         if ($Asset) {
@@ -127,7 +128,8 @@ if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
             if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
                 Write-Host "MSI installed successfully." -ForegroundColor Green
                 $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
-            } else {
+            }
+            else {
                 Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
             }
         }
@@ -157,7 +159,8 @@ Write-Host "`n--- Checking Qt 6.11.0 ---" -ForegroundColor Cyan
 if ($env:QT_HOME -and (Test-Path $env:QT_HOME)) {
     $QtPath = $env:QT_HOME
     Write-Host "Using existing Qt from environment: $QtPath" -ForegroundColor Gray
-} else {
+}
+else {
     $QtVersion = "6.11.0"
     $QtTargetDir = "C:\Qt"
     $QtPath = Join-Path $QtTargetDir "$QtVersion\msvc2022_64"
