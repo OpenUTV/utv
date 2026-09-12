@@ -148,8 +148,33 @@ jobs:
             fi
             echo "Using Signing Identity: $SIGNING_IDENTITY"
 
-            echo "--- Signing UTV.app with Hardened Runtime ---"
-            codesign --force --deep --options runtime --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+            MAIN_EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "UTV")
+
+            echo "--- Signing nested components inside-out with Hardened Runtime ---"
+            if [ -d "$APP_PATH/Contents/Helpers" ]; then
+              find "$APP_PATH/Contents/Helpers" -maxdepth 1 -name "*.app" -type d 2>/dev/null | while read -r helper; do
+                echo "Signing helper app: $helper"
+                find "$helper/Contents/MacOS" -type f -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+                codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$helper"
+              done
+            fi
+
+            if [ -d "$APP_PATH/Contents/Frameworks" ]; then
+              echo "Signing frameworks"
+              find "$APP_PATH/Contents/Frameworks" -type d -name "*.framework" -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+            fi
+
+            echo "Signing dynamic libraries and Python extensions"
+            find "$APP_PATH/Contents" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
+            echo "Signing auxiliary executables in Contents/MacOS"
+            find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
+            echo "Signing outer bundle UTV.app"
+            codesign --force --deep --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+
+            echo "--- Verifying signature ---"
+            codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
             cd _build/stage/app
             zip -ry "$ZIP_NAME" UTV.app
@@ -159,14 +184,37 @@ jobs:
               KEY_FILE=$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8
               echo "$APPLE_API_KEY" | base64 --decode > "$KEY_FILE"
 
-              xcrun notarytool submit "$ZIP_NAME" \
+              set +e
+              SUBMIT_OUTPUT=$(xcrun notarytool submit "$ZIP_NAME" \
                 --key "$KEY_FILE" \
                 --key-id "$APPLE_API_KEY_ID" \
                 --issuer "$APPLE_API_ISSUER" \
-                --wait
+                --wait 2>&1)
+              SUBMIT_EXIT=$?
+              set -e
+
+              echo "$SUBMIT_OUTPUT"
+
+              SUBMISSION_ID=$(echo "$SUBMIT_OUTPUT" | grep -E "id: [0-9a-f-]+" | head -n 1 | awk '{print $2}')
+              if [ -n "$SUBMISSION_ID" ]; then
+                echo "Submission ID: $SUBMISSION_ID"
+              fi
+
+              if [ $SUBMIT_EXIT -ne 0 ] || echo "$SUBMIT_OUTPUT" | grep -q -i "status: Invalid"; then
+                echo "::error::Notarization failed!"
+                if [ -n "$SUBMISSION_ID" ]; then
+                  echo "--- Fetching Notarization Log ---"
+                  xcrun notarytool log "$SUBMISSION_ID" \
+                    --key "$KEY_FILE" \
+                    --key-id "$APPLE_API_KEY_ID" \
+                    --issuer "$APPLE_API_ISSUER" || true
+                fi
+                exit 1
+              fi
 
               echo "--- Stapling Notarization Ticket ---"
               xcrun stapler staple UTV.app
+              xcrun stapler validate UTV.app
               rm -f "$ZIP_NAME"
               zip -ry "$ZIP_NAME" UTV.app
             else
