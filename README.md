@@ -69,7 +69,20 @@ This automatically installs `UTV.app` along with all required multimedia depende
 You can also download the standalone `UTV-<version>-macOS-arm64.zip` directly from our **[Releases](https://github.com/OpenUTV/utv/releases)** page:
 
 1. Unzip `UTV.app` and drag it to `/Applications`.
-2. Open `UTV.app`. If any Homebrew dependencies are missing, UTV’s built-in **Dependency Assistant** will automatically detect them and offer to install them for you with a single click.
+2. Launch `UTV.app`. Because OpenUTV is currently ad-hoc signed, macOS Gatekeeper may present a dialog stating that the app cannot be opened.
+3. Open **System Settings** -> **Privacy & Security**, scroll down to the **Security** section, and click **Open Anyway** next to the prompt stating *"UTV.app" was blocked to protect your Mac*.
+
+<p align="center">
+  <img src="docs/images/settings-security-open-anyway.png" alt="macOS Security Open Anyway" width="650" />
+</p>
+
+4. Alternatively, you can clear the quarantine attribute via Terminal:
+
+```bash
+xattr -cr /Applications/UTV.app
+```
+
+5. When UTV launches, its built-in **Dependency Assistant** will verify your installed Homebrew libraries and offer to install any missing ones with a single click.
 
 *(Native installers for Linux (`.deb`/`.rpm`) and Windows (`.msi`/`.exe`) are actively in progress!)*
 
