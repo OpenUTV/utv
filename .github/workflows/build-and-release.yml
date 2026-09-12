@@ -173,8 +173,11 @@ jobs:
             echo "Signing auxiliary executables in Contents/MacOS"
             find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
+            echo "Signing main executable $MAIN_EXE"
+            codesign --force --deep --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH/Contents/MacOS/$MAIN_EXE"
+
             echo "Signing outer bundle UTV.app"
-            codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+            codesign --force --deep --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
 
             echo "--- Verifying signature ---"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
