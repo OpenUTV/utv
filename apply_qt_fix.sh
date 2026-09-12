@@ -19,7 +19,7 @@ fi
 
 if [ -z "$QT_HOME" ]; then
     echo "Error: QT_HOME environment variable is not set."
-    echo "Please set it to your Qt installation directory (e.g., /Users/moliver/Qt)."
+    echo "Please set it to your Qt installation directory (e.g., \$HOME/Qt)."
     exit 1
 fi
 

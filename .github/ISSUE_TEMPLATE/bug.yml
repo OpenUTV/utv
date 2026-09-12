@@ -6,9 +6,6 @@ title: "[Bug]: <title>"
 
 labels: ["bug"]
 
-assignees:
-  - AcademySoftwareFoundation/rvos-committers
-
 body:
   - type: markdown
     attributes:

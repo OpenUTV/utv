@@ -3,7 +3,7 @@
 > [!TIP]
 > **Recommended Approach**: For the fastest build experience that matches our CI pipeline, please see the [Windows Rapid Build Path](rapid_build_windows.md). This path uses our pre-compiled dependencies MSI to skip hours of compilation.
 
-UTV 2025 can be built for Windows using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/AcademySoftwareFoundation/UTV/tree/main/cmake/defaults)
+UTV 2025 can be built for Windows using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/OpenUTV/utv/tree/main/cmake/defaults)
 
 Select your VFX reference platform by clicking on the appropriate tab. Install instructions follows.
 

@@ -6,11 +6,11 @@ Thank you for your interest in contributing to UTV. We are looking forward to co
 
 Please read this document to learn how to contribute to UTV.
 
-Start by getting familiar with the [GOVERNANCE](GOVERNANCE.md) document. It details the rules and responsibilities for Contributors, Committers, and Technical Steering Committee members.
+Start by getting familiar with the [GOVERNANCE](../docs/GOVERNANCE.md) document. It details the rules and responsibilities for Contributors, Committers, and Technical Steering Committee members.
 
 ## Committers
 
-The UTV Open Source Project Committers are listed in alphabetical order, by first name, in [COMMITERS](COMMITERS.md)
+The UTV Open Source Project Committers are listed in alphabetical order, by first name, in [COMMITERS](../docs/COMMITERS.md)
 
 ## Coding Conventions
 

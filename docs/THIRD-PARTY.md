@@ -1,4 +1,4 @@
-See [LICENSE](LICENSE) for the main open source license of original
+See [LICENSE](../LICENSE) for the main open source license of original
 code written for the UTV project as well as the open source licensing
 details of other projects that have been imported, incorporated into, or
 derived into parts of UTV.
@@ -19,6 +19,6 @@ Please refer to the NDI&reg; SDK license agreement.
 
 ---------------------------------------------------------------------
 
-See [Notice.txt](Notice.txt) for license information of other open-source third-party components used by UTV.
+See [Notice.txt](../Notice.txt) for license information of other open-source third-party components used by UTV.
 
 If we have left anything out, it is unintentional. Please let us know.

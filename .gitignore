@@ -51,3 +51,12 @@ about_rv.cpp
 logs/
 
 vcpkg/
+
+# Credentials, Keys, and Certificates
+*.p12
+*.p8
+*.key
+*.pem
+*.cer
+.env
+.env.*

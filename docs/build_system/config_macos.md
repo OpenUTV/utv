@@ -1,6 +1,6 @@
 # Preparing UTV on macOS
 
-UTV 2025 can be built for macOS using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/AcademySoftwareFoundation/UTV/tree/main/cmake/defaults)
+UTV 2025 can be built for macOS using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/OpenUTV/utv/tree/main/cmake/defaults)
 
 Select your VFX reference platform by clicking on the appropriate tab. Install instructions follows.
 

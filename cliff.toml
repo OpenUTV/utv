@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.\n
 """
 body = """
 {%- macro remote_url() -%}
-  https://github.com/AcademySoftwareFoundation/UTV
+  https://github.com/OpenUTV/utv
 {%- endmacro -%}
 
 {% if version -%}
@@ -35,7 +35,7 @@ filter_unconventional = true
 split_commits = false
 protect_breaking_commits = false
 filter_commits = false
-tag_pattern = "v[0-9].*"
+tag_pattern = "[0-9].*"
 sort_commits = "newest"
 commit_parsers = [
     { message = "^feat", group = "<!-- 0 -->Features" },
@@ -52,4 +52,4 @@ commit_parsers = [
 
 [remote.github]
 owner = "OpenUTV"
-repo = "UTV"
+repo = "utv"

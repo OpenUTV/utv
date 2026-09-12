@@ -10,14 +10,14 @@ Clone the UTV repository. Typically, this will create an "UTV" directory from yo
 
 ```bash
 # If using a password-protected SSH key:
-git clone --recursive git@github.com:AcademySoftwareFoundation/UTV.git
-cd UTV
+git clone --recursive git@github.com:OpenUTV/utv.git
+cd utv
 ```
 
 ```bash
 # Or if using the web URL:
-git clone --recursive https://github.com/AcademySoftwareFoundation/UTV.git
-cd UTV
+git clone --recursive https://github.com/OpenUTV/utv.git
+cd utv
 ```
 
 If you cloned the repo without setting the `--recursive` flag, you can initialize the submodule in another step with the following command:
@@ -26,7 +26,7 @@ If you cloned the repo without setting the `--recursive` flag, you can initializ
 git submodule update --init --recursive
 ```
 
-**Note: If you plan to contribute and submit pull requests for review** you should create a GitHub account and follow the standard GitHub fork model for submitting PRs. This involves creating your own github account, forking the Academy Software Foundation's UTV repository, making your changes in a branch of your forked version, and then submitting pull requests from your forked repository (don't forget to sync your fork regularly!). In that case, substitute the above repository URL above with the URL of your own fork.
+**Note: If you plan to contribute and submit pull requests for review** you should create a GitHub account and follow the standard GitHub fork model for submitting PRs. This involves creating your own GitHub account, forking the OpenUTV repository, making your changes in a branch of your forked version, and then submitting pull requests from your forked repository (don't forget to sync your fork regularly!). In that case, substitute the above repository URL above with the URL of your own fork.
 
 #### 1.2 Configuring Git to use the ignore file with `git blame`
 

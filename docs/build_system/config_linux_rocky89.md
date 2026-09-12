@@ -1,6 +1,6 @@
 # Preparing UTV on Rocky 8 and 9
 
-UTV 2025 can be built for Rocky 8 and Rocky 9, using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/AcademySoftwareFoundation/UTV/tree/main/cmake/defaults), with only minor differences for the config manager repo and the requirement for Perl-CPAN.
+UTV 2025 can be built for Rocky 8 and Rocky 9, using the [VFX reference platform](https://vfxplatform.com/). Dependencies can be viewed in the `cmake/defaults/` folder. eg [cmake/defaults/CY2026.cmake](https://github.com/OpenUTV/utv/tree/main/cmake/defaults), with only minor differences for the config manager repo and the requirement for Perl-CPAN.
 
 Select your VFX reference platform by clicking on the appropriate tab. Install instructions follows.
 
