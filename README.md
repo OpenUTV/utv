@@ -111,11 +111,29 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 
 ## FFmpeg & Codec Architecture
 
-UTV dynamically links to **FFmpeg** at runtime to provide broad playback support across professional multimedia formats:
+UTV dynamically links to **FFmpeg** at runtime to provide broad playback support across professional multimedia formats without licensing or redistribution restrictions. Because UTV resolves FFmpeg dynamically, updating or replacing your local FFmpeg installation directly enables hardware encoding/decoding and extended codec support without recompiling UTV:
 
 - **macOS**: UTV leverages Homebrew's `ffmpeg-full` formula, automatically installed when using `brew install --cask utv`. This provides extensive codec support (H.264, H.265/HEVC, VP9, AV1, ProRes, DNxHD, etc.) without requiring custom compilation. In addition, Apple Silicon Macs benefit from native **VideoToolbox** hardware decoding and native **AVFoundation ProRes RAW** decoding out of the box.
-- **Windows**: The companion `OpenUTVDeps` package supplies pre-compiled FFmpeg libraries that are automatically discovered via your system `PATH`.
-- **Custom FFmpeg Builds**: Because UTV resolves FFmpeg dynamically at runtime, power users requiring specialized builds (e.g., specific hardware encoders or proprietary filters) can install or build a customized FFmpeg package and UTV will dynamically load it without requiring application modifications.
+- **Windows**: The default distribution discovers FFmpeg DLLs via your system `PATH` or directly alongside `UTV.exe`.
+
+### Fully Loaded FFmpeg on Windows (Hardware Acceleration & Custom Codecs)
+
+For Windows environments requiring full hardware acceleration (NVIDIA NVDEC/NVENC, Intel QSV, AMD AMF) and non-free codecs (such as FDK-AAC, x264, x265, and DeckLink I/O), you can supply a fully loaded FFmpeg build using either approach below:
+
+#### Option A: Pre-Built Shared Build
+
+1. Download a pre-compiled **shared** release (e.g., `ffmpeg-release-full-shared.7z` from [Gyan.dev](https://www.gyan.dev/ffmpeg/builds/) or [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases)).
+2. Extract the archive and copy the `.dll` files from the `bin/` directory directly into the folder where `UTV.exe` is installed (or add the `bin/` directory to your system `PATH`).
+
+#### Option B: Compile via vcpkg
+
+If you have Visual Studio Build Tools and [vcpkg](https://github.com/microsoft/vcpkg) installed, you can compile a full-featured shared build with custom hardware modules:
+
+```powershell
+vcpkg install ffmpeg[nvcodec,qsv,amf,decklink,fdk-aac,x264,x265]:x64-windows
+```
+
+Once complete, copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin` directly into your UTV installation directory.
 
 ---
 
