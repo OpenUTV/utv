@@ -111,6 +111,11 @@ namespace TwkApp
 
         addPathToEnvVar("PYTHONPATH", m_pyhome.absoluteFilePath("lib-dynload").toUtf8().constData(), forceToFront);
         addPathToEnvVar("PYTHONPATH", m_pyhome.absolutePath().toUtf8().constData(), forceToFront);
+        QDir bundledSitePackages(m_pyhome.absoluteFilePath("site-packages"));
+        if (bundledSitePackages.exists())
+        {
+            addPathToEnvVar("PYTHONPATH", bundledSitePackages.absolutePath().toUtf8().constData(), forceToFront);
+        }
 
         if (const char* c = getenv("RV_SUPPORT_PATH"))
         {

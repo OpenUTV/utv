@@ -6,14 +6,17 @@
 from rv import commands, extra_commands
 import opentimelineio as otio
 
-import six
+try:
+    import six
+except ImportError:
+    six = None
 import math
 import sys
 
 
 def hook_function(in_timeline, argument_map):
     def is_close(v1, v2, rel_tol=1e-05, abs_tol=0.0):
-        if six.PY2:
+        if six and six.PY2:
             return abs(v1 - v2) <= max(rel_tol * max(abs(v1), abs(v2)), abs_tol)
         return math.isclose(v1, v2, rel_tol=rel_tol, abs_tol=abs_tol)
 

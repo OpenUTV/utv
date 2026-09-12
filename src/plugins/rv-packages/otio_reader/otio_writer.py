@@ -5,7 +5,11 @@
 #
 import math
 import numbers
-import six
+
+try:
+    import six
+except ImportError:
+    six = None
 import os
 import re
 
@@ -525,7 +529,7 @@ def is_equal(a, b, rel_tol=1e-05, abs_tol=0.0):
     def compare(v1, v2, rel_t, abs_t):
         if not isinstance(v1, numbers.Number):
             return v1 == v2
-        if six.PY2:
+        if six and six.PY2:
             return abs(v1 - v2) <= max(rel_t * max(abs(v1), abs(v2)), abs_t)
         return math.isclose(v1, v2, rel_tol=rel_t, abs_tol=abs_t)
 

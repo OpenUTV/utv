@@ -48,7 +48,12 @@ SET(RV_PYTHON3_SITE_PACKAGES
     CACHE INTERNAL "Python Site Packages"
 )
 
-# Install requirements using uv
+SET(RV_DEPS_PYTHON3_VERSION
+    "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+    CACHE INTERNAL "Python Version"
+)
+
+# Install requirements into the active Python environment using uv
 FIND_PROGRAM(UV_EXECUTABLE uv)
 IF(NOT UV_EXECUTABLE)
   # If uv is not found on PATH, check if it's in the Python Scripts directory
@@ -89,5 +94,28 @@ ELSE()
   EXECUTE_PROCESS(
     COMMAND ${Python3_EXECUTABLE} -m pip install -r ${PROJECT_SOURCE_DIR}/requirements.txt
     RESULT_VARIABLE pip_result
+  )
+ENDIF()
+
+# Stage python requirements directly into the app bundle / install prefix site-packages
+SET(RV_STAGE_PYTHON_SITE_PACKAGES
+    "${RV_STAGE_LIB_DIR}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages"
+    CACHE INTERNAL "Staged Python Site Packages"
+)
+FILE(MAKE_DIRECTORY "${RV_STAGE_PYTHON_SITE_PACKAGES}")
+
+IF(UV_EXECUTABLE
+   AND EXISTS "${UV_EXECUTABLE}"
+)
+  MESSAGE(STATUS "Staging Python packages to ${RV_STAGE_PYTHON_SITE_PACKAGES} using uv...")
+  EXECUTE_PROCESS(
+    COMMAND ${UV_EXECUTABLE} pip install --python ${Python3_EXECUTABLE} --target "${RV_STAGE_PYTHON_SITE_PACKAGES}" -r ${PROJECT_SOURCE_DIR}/requirements.txt
+    RESULT_VARIABLE uv_stage_result
+  )
+ELSE()
+  MESSAGE(STATUS "Staging Python packages to ${RV_STAGE_PYTHON_SITE_PACKAGES} using pip...")
+  EXECUTE_PROCESS(
+    COMMAND ${Python3_EXECUTABLE} -m pip install --target "${RV_STAGE_PYTHON_SITE_PACKAGES}" -r ${PROJECT_SOURCE_DIR}/requirements.txt
+    RESULT_VARIABLE pip_stage_result
   )
 ENDIF()

@@ -372,6 +372,24 @@ echo "Building main_executable target..."
 cmake --build "${BUILD_DIR}" --config "${BUILD_TYPE}" --parallel "${PARALLELISM}" --target main_executable
 
 # 6. Sanitize Homebrew Links
+echo "--- Staging Python Dependencies into App Bundle ---"
+ACTUAL_PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null || echo "${PYTHON_VERSION}")
+PYTHON_STAGING_DIR=""
+if [[ "$OSTYPE" == "darwin"* ]] && [ -d "${BUILD_DIR}/stage/app/UTV.app" ]; then
+    PYTHON_STAGING_DIR="${BUILD_DIR}/stage/app/UTV.app/Contents/lib/python${ACTUAL_PY_VER}/site-packages"
+elif [ -d "${BUILD_DIR}/stage/app/lib" ]; then
+    PYTHON_STAGING_DIR="${BUILD_DIR}/stage/app/lib/python${ACTUAL_PY_VER}/site-packages"
+fi
+
+if [ -n "${PYTHON_STAGING_DIR}" ]; then
+    mkdir -p "${PYTHON_STAGING_DIR}"
+    if command -v uv >/dev/null 2>&1; then
+        uv pip install --python python3 --target "${PYTHON_STAGING_DIR}" -r "${PROJECT_ROOT}/requirements.txt"
+    else
+        python3 -m pip install --target "${PYTHON_STAGING_DIR}" -r "${PROJECT_ROOT}/requirements.txt"
+    fi
+fi
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "--- Sanitizing Homebrew Links ---"
     python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${BUILD_DIR}/stage"

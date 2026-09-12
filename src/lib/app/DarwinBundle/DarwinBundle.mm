@@ -160,9 +160,29 @@ DarwinBundle::DarwinBundle(const FileName& appName,
     NSArray *paths = [[NSString stringWithUTF8String:SYSTEM_PYTHONPATH] componentsSeparatedByString:@":"];
     for (NSString *p in paths)
     {
-        addPathToEnvVar("PYTHONPATH", [p UTF8String], forceToFront);
+        if (fileExists([p UTF8String]))
+        {
+            addPathToEnvVar("PYTHONPATH", [p UTF8String], forceToFront);
+        }
     }
 #endif
+
+    // Add bundled site-packages from Contents/lib/pythonX.Y/site-packages
+    NSString *bundleContents = [[m_bundle->bundle bundlePath] stringByAppendingPathComponent:@"Contents"];
+    NSString *bundleLib = [bundleContents stringByAppendingPathComponent:@"lib"];
+#ifdef PYTHON_VERSION
+    NSString *bundledPyDir = [NSString stringWithFormat:@"python%s", PYTHON_VERSION];
+    NSString *bundledSitePackages = [[bundleLib stringByAppendingPathComponent:bundledPyDir] stringByAppendingPathComponent:@"site-packages"];
+    if (fileExists([bundledSitePackages UTF8String]))
+    {
+        addPathToEnvVar("PYTHONPATH", [bundledSitePackages UTF8String], forceToFront);
+    }
+#endif
+    NSString *bundledSitePackagesDirect = [bundleLib stringByAppendingPathComponent:@"site-packages"];
+    if (fileExists([bundledSitePackagesDirect UTF8String]))
+    {
+        addPathToEnvVar("PYTHONPATH", [bundledSitePackagesDirect UTF8String], forceToFront);
+    }
 
     NSString* versionStr = [[NSString alloc] initWithUTF8String: str.str().c_str()];
 

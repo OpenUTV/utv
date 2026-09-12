@@ -10,7 +10,11 @@ from rv import extra_commands
 import os
 import re
 import platform
-from six.moves.urllib.parse import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from six.moves.urllib.parse import urlparse
 
 
 def groupMemberOfType(node, memberType):

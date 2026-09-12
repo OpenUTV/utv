@@ -13,27 +13,52 @@ sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_NOW)
 
 import site  # noqa: E402
 
-# Find the UTV project root relative to the executable
-utv_root = os.path.abspath(os.path.join(os.path.dirname(sys.executable), "..", "..", "..", "..", "..", ".."))
-venv_fallback = os.path.join(utv_root, ".venv")
-
-possible_venvs = []
-if "VIRTUAL_ENV" in os.environ:
-    possible_venvs.append(os.environ["VIRTUAL_ENV"])
-if os.path.exists(venv_fallback):
-    possible_venvs.append(venv_fallback)
-
 py_version = f"python{sys.version_info.major}.{sys.version_info.minor}"
-for venv_path in possible_venvs:
-    site_packages = os.path.join(venv_path, "lib", py_version, "site-packages")
-    if os.path.exists(site_packages):
-        site.addsitedir(site_packages)
-        break
+exec_dir = os.path.dirname(os.path.abspath(sys.executable))
 
-# Add homebrew python path explicitly just in case
-homebrew_path = f"/opt/homebrew/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
-if os.path.exists(homebrew_path):
-    site.addsitedir(homebrew_path)
+# 1. Check for bundled site-packages inside macOS .app bundle or Linux install prefix
+bundle_root = os.path.abspath(os.path.join(exec_dir, ".."))
+candidate_dirs = [
+    # macOS bundle structure: Contents/lib/pythonX.Y/site-packages
+    os.path.join(bundle_root, "lib", py_version, "site-packages"),
+    os.path.join(bundle_root, "lib", "site-packages"),
+    os.path.join(bundle_root, "Resources", "python", "site-packages"),
+    os.path.join(bundle_root, "PlugIns", "Python", "site-packages"),
+    # Linux structure: ../lib/pythonX.Y/site-packages
+    os.path.join(bundle_root, "lib", py_version, "site-packages"),
+    os.path.join(bundle_root, "lib64", py_version, "site-packages"),
+]
+
+# 2. Virtual environments (VIRTUAL_ENV or repo root .venv for local development)
+if "VIRTUAL_ENV" in os.environ:
+    candidate_dirs.append(os.path.join(os.environ["VIRTUAL_ENV"], "lib", py_version, "site-packages"))
+
+utv_root_dev = os.path.abspath(os.path.join(exec_dir, "..", "..", "..", "..", "..", ".."))
+candidate_dirs.append(os.path.join(utv_root_dev, ".venv", "lib", py_version, "site-packages"))
+
+# 3. System / Homebrew locations (macOS ARM64 & Intel)
+candidate_dirs.extend(
+    [
+        f"/opt/homebrew/lib/{py_version}/site-packages",
+        f"/opt/homebrew/Frameworks/Python.framework/Versions/{sys.version_info.major}.{sys.version_info.minor}/lib/{py_version}/site-packages",
+        f"/usr/local/lib/{py_version}/site-packages",
+        f"/usr/local/Frameworks/Python.framework/Versions/{sys.version_info.major}.{sys.version_info.minor}/lib/{py_version}/site-packages",
+    ]
+)
+
+# 4. User site-packages (~/.local/lib/pythonX.Y/site-packages)
+try:
+    user_site = site.getusersitepackages()
+    if isinstance(user_site, str):
+        candidate_dirs.append(user_site)
+    elif isinstance(user_site, (list, tuple)):
+        candidate_dirs.extend(user_site)
+except (AttributeError, OSError):
+    pass
+
+for p in candidate_dirs:
+    if os.path.isdir(p) and p not in sys.path:
+        site.addsitedir(p)
 
 print("UTV SYS.PATH:", sys.path)
 

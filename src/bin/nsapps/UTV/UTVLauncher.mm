@@ -14,13 +14,14 @@
 
 struct DepCheck {
     const char *formula;
-    const char *paths[3]; // NULL terminated relative paths under brew prefix
+    const char *paths[4]; // NULL terminated relative paths under brew prefix
 };
 
 static const struct DepCheck kRequiredDependencies[] = {
     {"qt", {"opt/qt", "opt/qtbase", NULL}},
     {"boost", {"opt/boost", NULL}},
     {"ffmpeg-full", {"opt/ffmpeg-full", "opt/ffmpeg", NULL}},
+    {"python@3.14", {"opt/python@3.14", "opt/python3", "opt/python", NULL}},
     {"opencolorio", {"opt/opencolorio", NULL}},
     {"openimageio", {"opt/openimageio", NULL}},
     {"openexr", {"opt/openexr", NULL}},
