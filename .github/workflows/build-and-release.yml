@@ -148,6 +148,11 @@ jobs:
             fi
             echo "Using Signing Identity: $SIGNING_IDENTITY"
 
+            MAIN_EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "UTV")
+
+            echo "--- Stripping pre-existing linker signatures ---"
+            codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
+
             echo "--- Signing nested components inside-out with Hardened Runtime ---"
             if [ -d "$APP_PATH/Contents/Helpers" ]; then
               find "$APP_PATH/Contents/Helpers" -maxdepth 1 -name "*.app" -type d 2>/dev/null | while read -r helper; do
@@ -165,8 +170,8 @@ jobs:
             echo "Signing dynamic libraries and Python extensions"
             find "$APP_PATH/Contents" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
-            echo "Signing all executables in Contents/MacOS"
-            find "$APP_PATH/Contents/MacOS" -type f ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+            echo "Signing auxiliary executables in Contents/MacOS"
+            find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
             echo "Signing outer bundle UTV.app"
             codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
