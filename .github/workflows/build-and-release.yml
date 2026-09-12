@@ -115,6 +115,46 @@ jobs:
           ./build.sh --release --clean --version $CLEAN_VERSION
         shell: bash
 
+      - name: Archive Unsigned App
+        run: |
+          mkdir -p _build/stage/unsigned
+          tar -czf _build/stage/unsigned/UTV.app.tar.gz -C _build/stage/app UTV.app
+        shell: bash
+
+      - name: Upload Unsigned App Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: utv-app-unsigned-${{ steps.versioning.outputs.version }}
+          path: _build/stage/unsigned/UTV.app.tar.gz
+          retention-days: 1
+
+  sign-and-notarize:
+    name: Sign & Notarize macOS
+    needs: build
+    runs-on: macos-26 # arm64
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download Unsigned App Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: utv-app-unsigned-${{ needs.build.outputs.version }}
+          path: _build/stage/unsigned
+
+      - name: Extract Unsigned App
+        run: |
+          mkdir -p _build/stage/app
+          ARCHIVE=$(find _build/stage/unsigned -name "UTV.app.tar.gz" | head -n 1)
+          if [ -z "$ARCHIVE" ]; then
+            echo "::error::Could not find UTV.app.tar.gz in _build/stage/unsigned"
+            ls -laR _build/stage/unsigned
+            exit 1
+          fi
+          echo "Extracting $ARCHIVE into _build/stage/app..."
+          tar -xzf "$ARCHIVE" -C _build/stage/app
+        shell: bash
+
       - name: Sign & Notarize macOS App
         env:
           MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
@@ -125,7 +165,7 @@ jobs:
         run: |
           ENTITLEMENTS="${PWD}/src/bin/nsapps/UTV/entitlements.plist"
           APP_PATH="_build/stage/app/UTV.app"
-          ZIP_NAME="UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip"
+          ZIP_NAME="UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
 
           if [ -n "${MACOS_CERTIFICATE}" ] && [ -n "${MACOS_CERTIFICATE_PWD}" ]; then
             echo "--- Importing Developer ID Certificate ---"
@@ -234,16 +274,16 @@ jobs:
           fi
         shell: bash
 
-      - name: Upload Artifact
+      - name: Upload Signed Artifact
         uses: actions/upload-artifact@v7
         with:
-          name: UTV-${{ steps.versioning.outputs.version }}-macOS-arm64
-          path: _build/stage/app/UTV-${{ steps.versioning.outputs.version }}-macOS-arm64.zip
+          name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
+          path: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
           retention-days: 7
 
   release:
     name: Release
-    needs: build
+    needs: [build, sign-and-notarize]
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     steps:
@@ -269,7 +309,16 @@ jobs:
 
       - name: Update Homebrew Cask Formula
         run: |
-          ZIP_FILE="_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
+          ZIP_FILE=$(find _build/stage/app -name "UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "::error::Could not find UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip in _build/stage/app"
+            ls -laR _build/stage/app
+            exit 1
+          fi
+          if [ "$ZIP_FILE" != "_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip" ]; then
+            cp "$ZIP_FILE" "_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
+            ZIP_FILE="_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
+          fi
           SHA256_HASH=$(sha256sum "$ZIP_FILE" | awk '{print $1}')
           
           # Update version and sha256 in Cask formula
