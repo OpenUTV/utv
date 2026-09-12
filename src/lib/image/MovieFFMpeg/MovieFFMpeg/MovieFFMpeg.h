@@ -258,6 +258,9 @@ namespace TwkMovie
                               SwsContext*& imgConvertContext);
 
         FrameBuffer* jpeg2000Decode(int inframe, VideoTrack* track);
+#if defined(__APPLE__)
+        FrameBuffer* avfProResRawDecode(int inframe, VideoTrack* track);
+#endif
 
         //
         // Data Members

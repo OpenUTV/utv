@@ -38,6 +38,9 @@ namespace TwkFB
     /// @return fb
     FrameBuffer* decodeHTJ2K(ojph::infile_base* infile, FrameBuffer* fb = NULL);
 
+    /// @brief Check if the given JPEG 2000 data has High-Throughput (HTJ2K) capability
+    bool isHTJ2K(const uint8_t* data, size_t size);
+
 } // namespace TwkFB
 
 #endif // __IOhtj2k__IOhtj2k__h__

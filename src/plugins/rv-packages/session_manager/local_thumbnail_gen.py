@@ -251,7 +251,14 @@ class LocalThumbnailGen(rvtypes.MinorMode):
         return hashlib.sha256(media_path.encode()).hexdigest()[:16]
 
     def _get_rvio_bin(self) -> str | None:
-        rvio = os.getenv("RV_APP_RVIO")
+        rvio = os.getenv("RV_APP_RVIO") or os.getenv("UTV_APP_UTVIO")
+        if not rvio:
+            exe_dir = Path(sys.executable).parent
+            for candidate in ("utvio", "rvio", "utvio.exe", "rvio.exe"):
+                p = exe_dir / candidate
+                if p.is_file() and os.access(p, os.X_OK):
+                    rvio = str(p)
+                    break
         if not rvio:
             logger.warning("RV_APP_RVIO not set")
             return None

@@ -360,6 +360,17 @@ namespace Rv
     int parseSendEvents(int, char**);
     const char* getDebugCategories();
 
+    //
+    //  The OpenEXR global thread-pool size to use when the "Automatic" EXR
+    //  thread count is selected (opts.exrcpus == 0). On high-core machines this
+    //  caps the pool at half the logical cores so decode threads cannot starve
+    //  the main/UI, audio and caching threads (which caused dropped frames,
+    //  especially with slow DWA/DWAB frames). Overridable via the
+    //  RV_EXR_AUTO_MAX_THREADS environment variable.
+    //
+
+    int automaticExrThreadCount();
+
 } // namespace Rv
 
 //
@@ -562,6 +573,7 @@ namespace Rv
         ARG_FLAG(&opt.bakeURL), "Fully bake the command line as an rvlink URL, print, and exit", "-sendEvent",                             \
         ARG_SUBR(&Rv::parseSendEvents), "Send external events e.g. -sendEvent 'name' 'content'", "-flags", ARG_SUBR(&Rv::parseMuFlags),    \
         "Arbitrary flags (flag, or 'name=value') for use in Mu code", "-debug", ARG_SUBR(&Rv::parseDebugKeyWords),                         \
-        Rv::getDebugCategories(), "-version", ARG_FLAG(&opt.showVersion), "Show RV version number"
+        Rv::getDebugCategories(), "-version", ARG_FLAG(&opt.showVersion), "Show RV version number", "--version",                           \
+        ARG_FLAG(&opt.showVersion), "Show RV version number"
 
 #endif // __RV__Options__h__

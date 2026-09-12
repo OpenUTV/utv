@@ -38,7 +38,6 @@ struct FormatDescription
 static FormatDescription formats[] =
 { 
     {"bmp", "Windows Bitmap"},
-    {"pdf", "Portable Document Format"},
     {"pict", "Apple PICT Image"},
     {"pic",  "Pixar Image"},
     {"eps",  "Encapsulated Postscript"},
@@ -93,6 +92,7 @@ IONSImage::IONSImage() : FrameBufferIO("NSImage", "o") // after OIIO (n)
     {
         string s = [[array objectAtIndex: i] UTF8String];
         if (s[0] >= 'A' && s[0] <= 'Z' || s[0] == '\'') continue;
+        if (s == "pdf" || s == "PDF") continue;
 
         const char* desc = "";
         

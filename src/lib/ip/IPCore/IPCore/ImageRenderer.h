@@ -177,6 +177,7 @@ namespace IPCore
             TextureDescription()
                 : uploaded(false)
                 , age(-1)
+                , expandRGBToRGBA(false)
             {
             }
 
@@ -201,6 +202,13 @@ namespace IPCore
             GLuint alignment;
             size_t pixelSize; // in byte
             bool swapBytes;
+
+            //  When true the source FrameBuffer is 3-channel RGB but the GPU
+            //  texture is allocated as 4-channel RGBA (native fast-DMA format);
+            //  uploadPlane() expands RGB->RGBA (opaque alpha) during upload.
+            //  channels/format/internalFormat/pixelSize below describe the
+            //  RGBA destination; the source stride comes from the FrameBuffer.
+            bool expandRGBToRGBA;
 
             int uncropWidth; // display window size for uncropped
             int uncropHeight;
@@ -678,9 +686,14 @@ namespace IPCore
 
         static bool useThreadedUpload() { return m_useThreadedUpload && m_hasThreadedUpload; }
 
-        static void reportGL(bool b) { m_reportGL = b; }
+        static void debugGpu(bool b) { m_debugGpu = b; }
 
-        static bool reportGL() { return m_reportGL; }
+        static bool debugGpu() { return m_debugGpu; }
+
+        // Deprecated — use debugGpu() instead.
+        static void reportGL(bool b) { debugGpu(b); }
+
+        static bool reportGL() { return debugGpu(); }
 
         static void setPBOs(bool b) { m_pixelBuffers = b; }
 
@@ -1019,7 +1032,7 @@ namespace IPCore
         static bool m_drawPixelsOnly;
         static bool m_defaultAllowPBOs;
         static bool m_ycbcrApple;
-        static bool m_reportGL;
+        static bool m_debugGpu;
         static bool m_nonPowerOf2;
         static bool m_softwareGLRenderer;
         static int m_ALUinsnLimit;

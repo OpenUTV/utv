@@ -26,6 +26,9 @@
 #include <openjph/ojph_file.h>
 #include <openjph/ojph_codestream.h>
 #include <openjph/ojph_params.h>
+#include <openjph/ojph_message.h>
+#include <openjpeg.h>
+#include <cstdarg>
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
@@ -36,28 +39,285 @@ namespace TwkFB
     using namespace TwkUtil;
     using namespace TwkMath;
 
+    class QuietOjphError : public ojph::message_error
+    {
+    public:
+        void operator()(int error_code, const char* file_name, int line_num, const char* fmt, ...) override
+        {
+            char buf[512];
+            va_list args;
+            va_start(args, fmt);
+            vsnprintf(buf, sizeof(buf), fmt, args);
+            va_end(args);
+            throw runtime_error(buf);
+        }
+    };
+
+    static QuietOjphError g_quietOjphError;
+    static bool g_quietOjphConfigured = false;
+
+    static void ensureQuietOjph()
+    {
+        if (!g_quietOjphConfigured)
+        {
+            ojph::configure_error(&g_quietOjphError);
+            g_quietOjphConfigured = true;
+        }
+    }
+
+    static void opjQuietInfo(const char*, void*) {}
+
+    static void opjQuietWarn(const char*, void*) {}
+
+    static void opjQuietError(const char*, void*) {}
+
+    bool isHTJ2K(const uint8_t* data, size_t size)
+    {
+        if (!data || size < 8)
+            return false;
+        // Direct codestream
+        if (data[0] == 0xFF && data[1] == 0x4F)
+        {
+            if (data[2] == 0xFF && data[3] == 0x51 && size >= 8)
+            {
+                uint16_t rsiz = (static_cast<uint16_t>(data[6]) << 8) | data[7];
+                return (rsiz & 0x4000) != 0;
+            }
+        }
+        // Scan for 'jph ' brand or 'jp2c' codestream box
+        size_t limit = (size > 16384) ? 16384 : size;
+        if (limit >= 8)
+        {
+            for (size_t i = 0; i + 4 <= limit; ++i)
+            {
+                if (data[i] == 'j' && data[i + 1] == 'p' && data[i + 2] == 'h' && data[i + 3] == ' ')
+                    return true;
+
+                if (data[i] == 'j' && data[i + 1] == 'p' && data[i + 2] == '2' && data[i + 3] == 'c')
+                {
+                    size_t cs = i + 4;
+                    if (cs + 8 <= size && data[cs] == 0xFF && data[cs + 1] == 0x4F && data[cs + 2] == 0xFF && data[cs + 3] == 0x51)
+                    {
+                        uint16_t rsiz = (static_cast<uint16_t>(data[cs + 6]) << 8) | data[cs + 7];
+                        return (rsiz & 0x4000) != 0;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    static bool isHTJ2KFile(const string& filename)
+    {
+        FILE* f = TwkUtil::fopen(filename.c_str(), "rb");
+        if (!f)
+            return false;
+        uint8_t buf[16384];
+        size_t n = fread(buf, 1, sizeof(buf), f);
+        fclose(f);
+        return isHTJ2K(buf, n);
+    }
+
+    static void getImageInfoOpenJPEG(const string& filename, FBInfo& fbi)
+    {
+        FILE* f = TwkUtil::fopen(filename.c_str(), "rb");
+        if (!f)
+            TWK_THROW_STREAM(IOException, "Cannot open file " << filename);
+
+        unsigned char magic[12];
+        size_t n = fread(magic, 1, 12, f);
+        fclose(f);
+
+        bool isJP2 = (n >= 12 && magic[0] == 0 && magic[1] == 0 && magic[2] == 0 && magic[3] == 12 && magic[4] == 'j' && magic[5] == 'P'
+                      && magic[6] == ' ' && magic[7] == ' ');
+        OPJ_CODEC_FORMAT fmt = isJP2 ? OPJ_CODEC_JP2 : OPJ_CODEC_J2K;
+
+        opj_stream_t* stream = opj_stream_create_default_file_stream(filename.c_str(), OPJ_TRUE);
+        if (!stream)
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to create stream for " << filename);
+
+        opj_codec_t* codec = opj_create_decompress(fmt);
+        if (!codec)
+        {
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to create decompressor for " << filename);
+        }
+
+        opj_set_info_handler(codec, opjQuietInfo, nullptr);
+        opj_set_warning_handler(codec, opjQuietWarn, nullptr);
+        opj_set_error_handler(codec, opjQuietError, nullptr);
+
+        opj_dparameters_t core;
+        opj_set_default_decoder_parameters(&core);
+
+        if (!opj_setup_decoder(codec, &core))
+        {
+            opj_destroy_codec(codec);
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to setup decoder for " << filename);
+        }
+
+        opj_image_t* image = nullptr;
+        if (!opj_read_header(stream, codec, &image) || !image)
+        {
+            opj_destroy_codec(codec);
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to read header from " << filename);
+        }
+
+        fbi.width = image->x1 - image->x0;
+        fbi.height = image->y1 - image->y0;
+        fbi.numChannels = image->numcomps;
+        fbi.pixelAspect = 1.0;
+        fbi.orientation = FrameBuffer::NATURAL;
+
+        int prec = (image->numcomps > 0) ? image->comps[0].prec : 8;
+        if (prec <= 8)
+            fbi.dataType = FrameBuffer::UCHAR;
+        else
+            fbi.dataType = FrameBuffer::USHORT;
+
+        opj_image_destroy(image);
+        opj_destroy_codec(codec);
+        opj_stream_destroy(stream);
+    }
+
+    static void readImageOpenJPEG(FrameBuffer& fb, const string& filename)
+    {
+        FILE* f = TwkUtil::fopen(filename.c_str(), "rb");
+        if (!f)
+            TWK_THROW_STREAM(IOException, "Cannot open file " << filename);
+
+        unsigned char magic[12];
+        size_t n = fread(magic, 1, 12, f);
+        fclose(f);
+
+        bool isJP2 = (n >= 12 && magic[0] == 0 && magic[1] == 0 && magic[2] == 0 && magic[3] == 12 && magic[4] == 'j' && magic[5] == 'P'
+                      && magic[6] == ' ' && magic[7] == ' ');
+        OPJ_CODEC_FORMAT fmt = isJP2 ? OPJ_CODEC_JP2 : OPJ_CODEC_J2K;
+
+        opj_stream_t* stream = opj_stream_create_default_file_stream(filename.c_str(), OPJ_TRUE);
+        if (!stream)
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to create stream for " << filename);
+
+        opj_codec_t* codec = opj_create_decompress(fmt);
+        if (!codec)
+        {
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to create decompressor for " << filename);
+        }
+
+        opj_set_info_handler(codec, opjQuietInfo, nullptr);
+        opj_set_warning_handler(codec, opjQuietWarn, nullptr);
+        opj_set_error_handler(codec, opjQuietError, nullptr);
+
+        opj_dparameters_t core;
+        opj_set_default_decoder_parameters(&core);
+
+        if (!opj_setup_decoder(codec, &core))
+        {
+            opj_destroy_codec(codec);
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to setup decoder for " << filename);
+        }
+
+        opj_image_t* image = nullptr;
+        if (!opj_read_header(stream, codec, &image) || !image)
+        {
+            opj_destroy_codec(codec);
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to read header from " << filename);
+        }
+
+        if (!opj_decode(codec, stream, image) || !opj_end_decompress(codec, stream))
+        {
+            opj_image_destroy(image);
+            opj_destroy_codec(codec);
+            opj_stream_destroy(stream);
+            TWK_THROW_STREAM(IOException, "OpenJPEG: failed to decode " << filename);
+        }
+
+        const int w = image->x1 - image->x0;
+        const int h = image->y1 - image->y0;
+        const int ch = image->numcomps;
+        const int prec = (ch > 0) ? image->comps[0].prec : 8;
+
+        FrameBuffer::DataType dtype = (prec <= 8) ? FrameBuffer::UCHAR : FrameBuffer::USHORT;
+
+        fb.restructure(w, h, 0, ch, dtype);
+        fb.setOrientation(FrameBuffer::TOPLEFT);
+        fb.newAttribute("fileBitDepth", prec);
+
+        int bit_offset = 0;
+        if (prec == 10)
+            bit_offset = 6;
+        else if (prec == 12)
+            bit_offset = 4;
+
+        if (dtype == FrameBuffer::UCHAR)
+        {
+            for (int y = 0; y < h; ++y)
+            {
+                unsigned char* dout = fb.scanline<unsigned char>(y);
+                for (int x = 0; x < w; ++x)
+                {
+                    for (int c = 0; c < ch; ++c)
+                    {
+                        int dx = image->comps[c].dx;
+                        int dy = image->comps[c].dy;
+                        int cw = image->comps[c].w;
+                        int val = image->comps[c].data[(y / dy) * cw + (x / dx)];
+                        if (image->comps[c].sgnd)
+                            val += (1 << (prec - 1));
+                        dout[x * ch + c] = static_cast<unsigned char>(val);
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int y = 0; y < h; ++y)
+            {
+                unsigned short* dout = fb.scanline<unsigned short>(y);
+                for (int x = 0; x < w; ++x)
+                {
+                    for (int c = 0; c < ch; ++c)
+                    {
+                        int dx = image->comps[c].dx;
+                        int dy = image->comps[c].dy;
+                        int cw = image->comps[c].w;
+                        int val = image->comps[c].data[(y / dy) * cw + (x / dx)];
+                        if (image->comps[c].sgnd)
+                            val += (1 << (prec - 1));
+                        dout[x * ch + c] = static_cast<unsigned short>(val << bit_offset);
+                    }
+                }
+            }
+        }
+
+        opj_image_destroy(image);
+        opj_destroy_codec(codec);
+        opj_stream_destroy(stream);
+    }
+
     IOhtj2k::IOhtj2k(IOType type, size_t chunkSize, int maxAsync)
         : StreamingFrameBufferIO("IOhtj2k", "m7", type, chunkSize, maxAsync)
-    // Note for the sortKey we need to be sooner than OpenImageIO since that will be the fallback.
     {
-        //
-        //  Indicate which extensions this plugin will handle The
-        //  comparison against. The extensions are case-insensitive so
-        //  there's no reason to provide upper case versions.
-        //
-
         StringPairVector codecs;
+        unsigned int cap = ImageRead | BruteForceIO;
 
-        unsigned int cap = ImageRead;
-
-        addType("j2c", "J2C Image", cap, codecs);
+        addType("j2c", "JPEG 2000 Codestream", cap, codecs);
+        addType("j2k", "JPEG 2000 Codestream", cap, codecs);
+        addType("jp2", "JPEG 2000 Image", cap, codecs);
+        addType("jpf", "JPEG 2000 Part 2 Image", cap, codecs);
+        addType("jph", "High-Throughput JPEG 2000 Image", cap, codecs);
     }
 
     IOhtj2k::~IOhtj2k() {}
 
-    string IOhtj2k::about() const { return "HTJ2K (OpenJPH)"; }
+    string IOhtj2k::about() const { return "JPEG 2000 (OpenJPH / OpenJPEG)"; }
 
-    void IOhtj2k::getImageInfo(const std::string& filename, FBInfo& fbi) const
+    static void getImageInfoHTJ2K(const string& filename, FBInfo& fbi)
     {
         ojph::j2c_infile j2c_file;
         j2c_file.open(filename.c_str());
@@ -65,7 +325,6 @@ namespace TwkFB
         ojph::codestream codestream;
         codestream.read_headers(&j2c_file);
 
-        // codestream.enable_resilience();
         ojph::param_siz siz = codestream.access_siz();
         ojph::param_nlt nlt = codestream.access_nlt();
         bool nlt_is_signed;
@@ -74,7 +333,6 @@ namespace TwkFB
         bool has_nlt = nlt.get_nonlinear_transform(0, nlt_bit_depth, nlt_is_signed, nl_type);
         bool is_signed = siz.is_signed(0);
 
-        // Signed and notlinear transforms are not supported, but it could be added in the future.
         if (is_signed)
             TWK_THROW_STREAM(UnsupportedException, "HTJ2K: unsupported signed jpeg2000 file " << filename);
 
@@ -102,6 +360,24 @@ namespace TwkFB
         default:
             TWK_THROW_STREAM(UnsupportedException, "HTJ2K: unsupported bitdepth " << filename);
         }
+    }
+
+    void IOhtj2k::getImageInfo(const std::string& filename, FBInfo& fbi) const
+    {
+        ensureQuietOjph();
+        if (isHTJ2KFile(filename))
+        {
+            try
+            {
+                getImageInfoHTJ2K(filename, fbi);
+                return;
+            }
+            catch (...)
+            {
+                // Fall through to OpenJPEG fallback
+            }
+        }
+        getImageInfoOpenJPEG(filename, fbi);
     }
 
     void copyScanLine(ojph::codestream* codestream, ojph::ui32 width, ojph::ui32 channels, ojph::ui32 row, ojph::ui32 component,
@@ -216,13 +492,22 @@ namespace TwkFB
 
     void IOhtj2k::readImage(FrameBuffer& fb, const std::string& filename, const ReadRequest& request) const
     {
-        // The other case where we are decoding is in IOffmpeg where we are decoding from memory, so are using a different reader
-        // but both modules then call decodeHTJ2K
-
-        ojph::j2c_infile j2c_file;
-        j2c_file.open(filename.c_str());
-
-        decodeHTJ2K(&j2c_file, &fb);
+        ensureQuietOjph();
+        if (isHTJ2KFile(filename))
+        {
+            try
+            {
+                ojph::j2c_infile j2c_file;
+                j2c_file.open(filename.c_str());
+                decodeHTJ2K(&j2c_file, &fb);
+                return;
+            }
+            catch (...)
+            {
+                // Fall through to OpenJPEG fallback
+            }
+        }
+        readImageOpenJPEG(fb, filename);
     }
 
 } // namespace TwkFB

@@ -258,7 +258,13 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 if [ ! -d "${VENV_DIR}" ]; then
-    uv venv "${VENV_DIR}" --python ${PYTHON_VERSION}
+    if [[ "$OSTYPE" == "darwin"* ]] && [ -x "/opt/homebrew/bin/python3" ]; then
+        uv venv "${VENV_DIR}" --python "/opt/homebrew/bin/python3" --system-site-packages
+    elif command -v python3 >/dev/null 2>&1; then
+        uv venv "${VENV_DIR}" --python "$(command -v python3)" --system-site-packages
+    else
+        uv venv "${VENV_DIR}" --python ${PYTHON_VERSION} --system-site-packages
+    fi
 fi
 source "${VENV_DIR}/bin/activate"
 uv pip install -r "${PROJECT_ROOT}/requirements.txt"

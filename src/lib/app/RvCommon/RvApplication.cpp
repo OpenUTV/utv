@@ -813,17 +813,48 @@ namespace Rv
 
         auto isVirtualDesktop = [&screens, primaryScreen]() -> bool
         {
-            // Not a virtual desktop if there is only one screen.
-            if (screens.size() <= 1)
+            // Not a virtual desktop if there is only one screen, or if
+            // we have no primary screen to compare against.
+            if (screens.size() <= 1 || primaryScreen == nullptr)
                 return false;
 
             QRect totalGeometry;
             for (const auto& screen : screens)
             {
+                if (screen == nullptr)
+                    continue;
                 totalGeometry = totalGeometry.united(screen->geometry());
             }
 
             return totalGeometry != primaryScreen->geometry();
+        };
+
+        //
+        //  Find the screen index for a given global point. Prefer Qt's
+        //  QGuiApplication::screenAt() which handles edge cases (such as
+        //  monitors whose top edges are not aligned, leaving gaps in the
+        //  virtual desktop bounding box) more robustly than a manual
+        //  QRect::contains() check.
+        //
+        auto getScreenFromPoint = [&screens](const QPoint& point) -> int
+        {
+            QScreen* s = QGuiApplication::screenAt(point);
+            if (s != nullptr)
+            {
+                const int idx = screens.indexOf(s);
+                if (idx >= 0)
+                    return idx;
+            }
+
+            for (int i = 0; i < screens.size(); ++i)
+            {
+                if (screens[i] != nullptr && screens[i]->geometry().contains(point))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         };
 
         //
@@ -834,7 +865,7 @@ namespace Rv
         {
             if (opts.screen != -1 && isVirtualDesktop())
             {
-                if (opts.screen < screens.size())
+                if (opts.screen >= 0 && opts.screen < screens.size() && screens[opts.screen] != nullptr)
                 {
                     QRect r = screens[opts.screen]->geometry();
                     opts.x += r.x();
@@ -852,23 +883,19 @@ namespace Rv
             }
         }
 
-        auto getScreenFromPoint = [&screens](const QPoint& point) -> int
-        {
-            for (int i = 0; i < screens.size(); ++i)
-            {
-                if (screens[i]->geometry().contains(point))
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        };
-
         int screen = getScreenFromPoint(QCursor::pos());
         if (opts.screen != -1)
         {
-            screen = opts.screen;
+            //
+            //  Honor the user/preference-supplied screen index only when
+            //  it refers to an actual screen. A stale preference (or a
+            //  command-line value larger than the current monitor count)
+            //  must not be propagated as an out-of-bounds index.
+            //
+            if (opts.screen >= 0 && opts.screen < screens.size())
+            {
+                screen = opts.screen;
+            }
         }
 
         int oldX = doc->pos().x();
@@ -876,15 +903,16 @@ namespace Rv
 
         int oldScreen = getScreenFromPoint(QPoint(oldX, oldY));
 
-        if (screen != -1 && oldScreen != -1 && isVirtualDesktop() && screen != oldScreen)
+        if (screen >= 0 && screen < screens.size() && oldScreen >= 0 && oldScreen < screens.size() && screens[screen] != nullptr
+            && screens[oldScreen] != nullptr && isVirtualDesktop() && screen != oldScreen)
         //
         //  The application is going to come up on the wrong screen, so figure
         //  out our our relative position on the current screen, and move to the
         //  same relative position on the correct screen.
         //
         {
-            QRect rnew = QGuiApplication::screens().at(screen)->geometry();
-            QRect rold = QGuiApplication::screens().at(oldScreen)->geometry();
+            QRect rnew = screens[screen]->geometry();
+            QRect rold = screens[oldScreen]->geometry();
 
             int xoff = oldX - rold.x();
             int yoff = oldY - rold.y();
@@ -904,11 +932,19 @@ namespace Rv
 
         if (videoModules().empty())
         {
-            doc->view()->makeCurrent();
+            // With a non-OpenGL presentation backend view() returns null — no
+            // GL context to make current; presentation handles it per-frame.
+            if (doc->view())
+                doc->view()->makeCurrent();
 
             try
             {
-                addVideoModule(m_desktopModule = new DesktopVideoModule(0, doc->view()->videoDevice()));
+                // With a non-OpenGL presentation backend view() is null — pass
+                // nullptr as the GL share device.  DesktopVideoDevice can still
+                // be created; it only needs the share device when open() is
+                // called later.
+                QTGLVideoDevice* shareDevice = doc->view() ? doc->view()->videoDevice() : nullptr;
+                addVideoModule(m_desktopModule = new DesktopVideoModule(0, shareDevice));
             }
             catch (...)
             {
@@ -934,7 +970,14 @@ namespace Rv
         //  we're on (video device) so make sure the primary display group is
         //  correct.
         //
-        doc->session()->graph().setPrimaryDisplayGroup(doc->view()->videoDevice());
+        // Use the session's control device — valid for any presentation backend.
+        // setPrimaryDisplayGroup() dereferences the device (->physicalDevice())
+        // with no null check, and controlVideoDevice() is briefly null while a
+        // view is being (re)built, so guard against it here.
+        if (const TwkApp::VideoDevice* controlDevice = doc->session()->controlVideoDevice())
+        {
+            doc->session()->graph().setPrimaryDisplayGroup(controlDevice);
+        }
 
         if (RvApp()->documents().size() == 1 && opts.present)
         {
@@ -985,7 +1028,10 @@ namespace Rv
         if (!m->isOpen())
         {
             RvDocument* doc = reinterpret_cast<RvDocument*>(documents().front()->opaquePointer());
-            doc->view()->makeCurrent();
+            // With a non-OpenGL presentation backend view() is null — no GL
+            // context to make current.
+            if (doc->view())
+                doc->view()->makeCurrent();
             m->open();
             //
             //  The open() may have added video devices, so make sure each
@@ -1730,7 +1776,9 @@ namespace Rv
 #endif
 
                 string optionArgs = setVideoDeviceStateFromSettings(d);
-                rvDoc->view()->videoDevice()->makeCurrent();
+                // With a non-OpenGL presentation backend view() is null — skip GL makeCurrent.
+                if (rvDoc->view())
+                    rvDoc->view()->videoDevice()->makeCurrent();
 
                 try
                 {

@@ -1,0 +1,49 @@
+#
+# Copyright (C) 2026 OpenUTV Authors. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+INCLUDE(cxx_defaults)
+
+SET(_target
+    "mio_pdf"
+)
+
+SET(_sources
+    init.cpp
+)
+
+ADD_LIBRARY(
+  ${_target} SHARED
+  ${_sources}
+)
+
+TARGET_LINK_LIBRARIES(
+  ${_target}
+  PRIVATE MoviePDF
+)
+
+IF(RV_TARGET_DARWIN)
+  FIND_LIBRARY(COREGRAPHICS_FRAMEWORK CoreGraphics REQUIRED)
+  FIND_LIBRARY(COREFOUNDATION_FRAMEWORK CoreFoundation REQUIRED)
+  FIND_LIBRARY(APPLICATIONSERVICES_FRAMEWORK ApplicationServices REQUIRED)
+  TARGET_LINK_LIBRARIES(
+    ${_target}
+    PRIVATE ${COREGRAPHICS_FRAMEWORK} ${COREFOUNDATION_FRAMEWORK} ${APPLICATIONSERVICES_FRAMEWORK}
+  )
+ENDIF()
+
+FIND_PACKAGE(
+  ${RV_QT_PACKAGE_NAME}
+  COMPONENTS Pdf Gui Core
+  QUIET
+)
+IF(TARGET ${RV_QT_PACKAGE_NAME}::Pdf)
+  TARGET_LINK_LIBRARIES(
+    ${_target}
+    PRIVATE ${RV_QT_PACKAGE_NAME}::Pdf ${RV_QT_PACKAGE_NAME}::Gui ${RV_QT_PACKAGE_NAME}::Core
+  )
+ENDIF()
+
+RV_STAGE(TYPE "MOVIE_FORMAT" TARGET ${_target})

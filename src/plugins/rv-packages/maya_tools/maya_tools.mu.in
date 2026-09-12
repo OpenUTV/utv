@@ -367,13 +367,19 @@ class: MayaTools : MinorMode
 	    return;
 	}
 
+	let pushCmd = system.getenv ("RV_APP_RVPUSH");
+	if (pushCmd eq nil || pushCmd eq "")
+	{
+	    pushCmd = regex.replace ("(RV[64]*|UTV)$", system.getenv ("RV_APP_RV"), "rvpush");
+	}
+
 	let contents = """
 	global proc playblastWithRV (string $file, string $fps)
 	{
 	    $cmd = "unset QT_MAC_NO_NATIVE_MENUBAR; %s -tag playblast" + " merge [ " + $file + " -fps " + $fps + " ]";
 	    system ($cmd);
 	}
-	""" % regex.replace ("RV[64]*$", system.getenv ("RV_APP_RV"), "rvpush");
+	""" % pushCmd;
 
 	io.print (newScriptStream, contents);
 

@@ -171,14 +171,22 @@ void RvPusher::attemptConnection()
             //
             //  Assume that rv we'll run is in same dir as rvpush.
             //
-            rvExe = QCoreApplication::applicationDirPath();
-
+            QString dir = QCoreApplication::applicationDirPath();
 #if defined(PLATFORM_WINDOWS)
-            rvExe += "/rv.exe";
+            if (QFileInfo(dir + "/utv.exe").isExecutable())
+                rvExe = dir + "/utv.exe";
+            else
+                rvExe = dir + "/rv.exe";
 #elif defined(PLATFORM_DARWIN)
-            rvExe += "/RV";
+            if (QFileInfo(dir + "/UTV").isExecutable())
+                rvExe = dir + "/UTV";
+            else
+                rvExe = dir + "/RV";
 #else
-            rvExe += "/rv";
+            if (QFileInfo(dir + "/utv").isExecutable())
+                rvExe = dir + "/utv";
+            else
+                rvExe = dir + "/rv";
 #endif
         }
 

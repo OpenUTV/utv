@@ -541,7 +541,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        Imf::setGlobalThreadCount(TwkUtil::SystemInfo::numCPUs() > 1 ? (TwkUtil::SystemInfo::numCPUs() - 1) : 1);
+        Imf::setGlobalThreadCount(Rv::automaticExrThreadCount());
     }
 
     //
@@ -615,13 +615,51 @@ int main(int argc, char* argv[])
     //      5) ./rvrc.mu
     //
 
-    if (getenv("RV_APP_RVIO"))
+    if (getenv("RV_APP_RVIO") || getenv("UTV_APP_UTVIO"))
+    {
         bundle.setEnvVar("RV_APP_RVIO_SET_BY_USER", "true");
+        if (getenv("RV_APP_RVIO") && !getenv("UTV_APP_UTVIO"))
+            bundle.setEnvVar("UTV_APP_UTVIO", getenv("RV_APP_RVIO"));
+        else if (getenv("UTV_APP_UTVIO") && !getenv("RV_APP_RVIO"))
+            bundle.setEnvVar("RV_APP_RVIO", getenv("UTV_APP_UTVIO"));
+    }
     else
-        bundle.setEnvVar("RV_APP_RVIO", bundle.executableFile("rvio"));
+    {
+        string rvioPath = bundle.executableFile("utvio");
+        if (rvioPath.empty())
+            rvioPath = bundle.executableFile("rvio");
+        bundle.setEnvVar("RV_APP_RVIO", rvioPath);
+        bundle.setEnvVar("UTV_APP_UTVIO", rvioPath);
+    }
 
-    bundle.setEnvVar("RV_APP_RV", bundle.executableFile("RV"));
-    bundle.setEnvVar("RV_APP_RV_SHORT_NAME", "RV");
+    string rvPath = bundle.executableFile("UTV-bin");
+    if (rvPath.empty())
+        rvPath = bundle.executableFile("UTV");
+    if (rvPath.empty())
+        rvPath = bundle.executableFile("RV");
+    bundle.setEnvVar("RV_APP_RV", rvPath);
+    bundle.setEnvVar("RV_APP_RV_SHORT_NAME", "UTV");
+    bundle.setEnvVar("UTV_APP_UTV", rvPath);
+    bundle.setEnvVar("UTV_APP_UTV_SHORT_NAME", "UTV");
+
+    string rvpushPath = bundle.executableFile("utvpush");
+    if (rvpushPath.empty())
+        rvpushPath = bundle.executableFile("rvpush");
+    bundle.setEnvVar("RV_APP_RVPUSH", rvpushPath);
+    bundle.setEnvVar("UTV_APP_UTVPUSH", rvpushPath);
+
+    string rvpkgPath = bundle.executableFile("utvpkg");
+    if (rvpkgPath.empty())
+        rvpkgPath = bundle.executableFile("rvpkg");
+    bundle.setEnvVar("RV_APP_RVPKG", rvpkgPath);
+    bundle.setEnvVar("UTV_APP_UTVPKG", rvpkgPath);
+
+    string rvlsPath = bundle.executableFile("utvls");
+    if (rvlsPath.empty())
+        rvlsPath = bundle.executableFile("rvls");
+    bundle.setEnvVar("RV_APP_RVLS", rvlsPath);
+    bundle.setEnvVar("UTV_APP_UTVLS", rvlsPath);
+
     bundle.setEnvVar("RV_APP_MANUAL", bundle.resource("rv_manual", "pdf"));
     bundle.setEnvVar("RV_APP_MANUAL_HTML", bundle.resource("rv_manual", "html"));
     bundle.setEnvVar("RV_APP_SDI_MANUAL", bundle.resource("rvsdi_manual", "pdf"));
@@ -638,10 +676,18 @@ int main(int argc, char* argv[])
     //  Find the init file
     //
 
-    string muInitFile = bundle.rcfile("rvrc", "mu", "RV_INIT");
-    string pyInitFile = bundle.rcfile("rvrc", "py", "RV_PYINIT");
+    string muInitFile = bundle.rcfile("utvrc", "mu", "UTV_INIT");
+    if (muInitFile.empty())
+        muInitFile = bundle.rcfile("rvrc", "mu", "RV_INIT");
+
+    string pyInitFile = bundle.rcfile("utvrc", "py", "UTV_PYINIT");
+    if (pyInitFile.empty())
+        pyInitFile = bundle.rcfile("rvrc", "py", "RV_PYINIT");
+
     bundle.setEnvVar("RV_APP_INIT", muInitFile.c_str());
     bundle.setEnvVar("RV_APP_PYINIT", pyInitFile.c_str());
+    bundle.setEnvVar("UTV_APP_INIT", muInitFile.c_str());
+    bundle.setEnvVar("UTV_APP_PYINIT", pyInitFile.c_str());
 
     // RV third party optional customization
 #if defined(RV_THIRD_PARTY_CUSTOMIZATION)

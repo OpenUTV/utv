@@ -13,6 +13,13 @@ SET(_target
 )
 
 LIST(APPEND _sources MovieFFMpeg.cpp)
+IF(APPLE)
+  LIST(APPEND _sources AVFProResRawReader.mm)
+  SET_SOURCE_FILES_PROPERTIES(
+    AVFProResRawReader.mm
+    PROPERTIES COMPILE_FLAGS "-fobjc-arc"
+  )
+ENDIF()
 IF(RV_DEPS_APPLE_PRORES_SDK_ZIP_PATH)
   LIST(APPEND _sources AppleProRes.cpp)
 ENDIF()
@@ -57,6 +64,13 @@ IF(RV_FFMPEG_USE_VIDEOTOOLBOX)
   TARGET_LINK_LIBRARIES(
     ${_target}
     PRIVATE DarwinBundle "-framework VideoToolbox"
+  )
+ENDIF()
+
+IF(APPLE)
+  TARGET_LINK_LIBRARIES(
+    ${_target}
+    PUBLIC "-framework AVFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework Accelerate"
   )
 ENDIF()
 

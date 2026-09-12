@@ -39,6 +39,7 @@
 #include <TwkUtil/Timer.h>
 #include <TwkAudio/Audio.h>
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <stl_ext/string_algo.h>
@@ -71,7 +72,8 @@ namespace Rv
         else if (name == "threads")
             stl_ext::thread_group::debug_all(true);
         else if (name == "gpu")
-            ImageRenderer::reportGL(true);
+            // Enables GLView format baseline, ImageRenderer GL reporting, and Vulkan presentation/interop diagnostics.
+            ImageRenderer::debugGpu(true);
         else if (name == "audio")
         {
             AudioRenderer::setDebug(true);
@@ -161,6 +163,32 @@ namespace Rv
                "imagefbolog, "
                "nodes, "
                "plugins";
+    }
+
+    int automaticExrThreadCount()
+    {
+        //  Explicit override wins (for tuning without a rebuild).
+        if (const char* v = getenv("RV_EXR_AUTO_MAX_THREADS"))
+        {
+            const int n = atoi(v);
+            if (n > 0)
+                return n;
+        }
+
+        const int cores = static_cast<int>(TwkUtil::SystemInfo::numCPUs());
+        if (cores <= 1)
+            return 1;
+
+        //  On high-core machines, reserve ~half the logical cores for the
+        //  main/UI, audio, caching and compositor threads so EXR decode (which
+        //  shares one global OpenEXR pool) cannot starve them and drop frames.
+        //  numCPUs() is the logical count, so on hyper-threaded systems this is
+        //  roughly the physical core count. Smaller machines keep the previous
+        //  behavior (all but one core).
+        if (cores > 16)
+            return cores / 2;
+
+        return cores - 1;
     }
 
     int collectParams(Options::Params& p, const Options::Files& inputFiles, int index)

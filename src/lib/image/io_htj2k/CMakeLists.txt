@@ -24,7 +24,7 @@ SET_TARGET_PROPERTIES(
 
 TARGET_LINK_LIBRARIES(
   ${_target}
-  PRIVATE IOhtj2k OpenJph::OpenJph
+  PRIVATE IOhtj2k OpenJph::OpenJph OpenJpeg::OpenJpeg
 )
 
 RV_STAGE(TYPE "IMAGE_FORMAT" TARGET ${_target})

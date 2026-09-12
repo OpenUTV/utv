@@ -46,6 +46,10 @@
 #include <VideoToolbox/VideoToolbox.h>
 #endif
 
+#if defined(__APPLE__)
+#include "AVFProResRawReader.h"
+#endif
+
 extern "C"
 {
 #include <libavcodec/avcodec.h>
@@ -285,6 +289,10 @@ namespace TwkMovie
             , isOpen(false)
             , useOpenJPH(false)
             , useAppleProRes(false)
+#if defined(__APPLE__)
+            , useAVFProResRaw(false)
+            , avfReader(nullptr)
+#endif
             , rotate(false)
             , colrType("")
             , avCodecContext(0)
@@ -318,6 +326,13 @@ namespace TwkMovie
                 av_frame_free(&videoFrame);
             av_frame_free(&inPicture);
             av_frame_free(&outPicture);
+#if defined(__APPLE__)
+            if (avfReader)
+            {
+                delete avfReader;
+                avfReader = nullptr;
+            }
+#endif
         };
 
         VideoTrack& initFrom(const VideoTrack* t)
@@ -332,6 +347,14 @@ namespace TwkMovie
 #if defined(RV_USE_APPLE_PRORES_SDK)
             appleProResCtx = t->appleProResCtx;
 #endif
+#if defined(__APPLE__)
+            useAVFProResRaw = t->useAVFProResRaw;
+            if (useAVFProResRaw && t->avfReader)
+            {
+                avfReader = new AVFProResRawReader();
+                avfReader->open(t->avfReader->filePath(), t->number, t->avfReader->fps());
+            }
+#endif
             return *this;
         }
 
@@ -343,6 +366,10 @@ namespace TwkMovie
         int lastEncodedVideo;
         bool useOpenJPH;
         bool useAppleProRes;
+#if defined(__APPLE__)
+        bool useAVFProResRaw;
+        AVFProResRawReader* avfReader;
+#endif
         set<int64_t> tsSet;
         FrameBuffer fb;
         struct SwsContext* imgConvertContext;
@@ -686,10 +713,20 @@ namespace TwkMovie
                                                        "wmv3image"sv,
                                                        "xith"sv,
                                                        "xvid"sv,
-                                                       "libdav1d"sv
+                                                       "libdav1d"sv,
+                                                       "mpeg1video"sv,
+                                                       "mpeg2video"sv,
+                                                       "hevc"sv,
+                                                       "h265"sv,
+                                                       "vp8"sv,
+                                                       "vp9"sv,
+                                                       "av1"sv,
+                                                       "theora"sv,
+                                                       "wmv1"sv,
+                                                       "wmv2"sv
 #if defined(RV_FFMPEG_USE_VIDEOTOOLBOX) || defined(RV_USE_APPLE_PRORES_SDK)
                                                        ,
-                                                       "prores"sv
+                                                       "prores"sv,
                                                        "prores_aw"sv,
                                                        "prores_ks"sv,
                                                        "prores_raw"sv
@@ -723,6 +760,11 @@ namespace TwkMovie
 
         void avLogCallback(void* ptr, int level, const char* fmt, va_list vargs)
         {
+            if (strstr(fmt, "Header missing") != nullptr)
+            {
+                return;
+            }
+
             if ((string(fmt).substr(0, 51) == "Encoder did not produce proper pts, making some up.")
                 || (string(fmt).substr(0, 47) == "No accelerated colorspace conversion found from")
                 || (string(fmt).substr(0, 28) == "Increasing reorder buffer to")
@@ -731,7 +773,9 @@ namespace TwkMovie
                     == "deprecated pixel format used, make sure you did set "
                        "range correctly")
                 || (string(fmt).substr(0, 20) == "overread end of atom") || (string(fmt).substr(0, 19) == "Timecode frame rate")
-                || (string(fmt).substr(0, 32) == "unsupported color_parameter_type"))
+                || (string(fmt).substr(0, 32) == "unsupported color_parameter_type")
+                || (string(fmt).substr(0, 40) == "Could not find codec parameters for stre")
+                || (string(fmt).substr(0, 47) == "Consider increasing the value for the 'analyzed"))
             {
                 return;
             }
@@ -1446,8 +1490,18 @@ namespace TwkMovie
                                []()
                                {
                                    std::cout << "WARNING: Hardware decoder is not available "
-                                                "or failed to intialize."
+                                                "or failed to initialize."
                                              << std::endl;
+                               });
+            }
+            else
+            {
+                static std::once_flag infoOnce;
+                std::call_once(infoOnce,
+                               [&avCodec]()
+                               {
+                                   std::cout << "INFO: Using Apple VideoToolbox hardware acceleration for '" << avCodec->name
+                                             << "' decoding." << std::endl;
                                });
             }
         }
@@ -1456,6 +1510,10 @@ namespace TwkMovie
         // Open the codec
         (*avCodecContext)->thread_count = m_io->codecThreads();
         (*avCodecContext)->thread_type = FF_THREAD_SLICE;
+        if (avStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
+        {
+            (*avCodecContext)->apply_cropping = 0;
+        }
         if (avcodec_open2(*avCodecContext, avCodec, nullptr) < 0)
         {
             std::cerr << "ERROR: MovieFFMpeg: Failed to open codec '" << avCodec->name << "' for " << m_filename << '\n';
@@ -2209,6 +2267,9 @@ namespace TwkMovie
 #if defined(RV_USE_APPLE_PRORES_SDK)
         bool isProRes = false;
 #endif
+#if defined(__APPLE__)
+        bool isProResRaw = false;
+#endif
         string lang = "und";
         map<string, set<int>> chLangMap;
         map<pair<int, int>, vector<int>> resTrackMap;
@@ -2243,6 +2304,12 @@ namespace TwkMovie
                 else if (tsStream->codecpar->codec_id == AV_CODEC_ID_PRORES)
                 {
                     isProRes = true;
+                }
+#endif
+#if defined(__APPLE__)
+                else if (tsStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
+                {
+                    isProResRaw = true;
                 }
 #endif
             }
@@ -2343,6 +2410,9 @@ namespace TwkMovie
 #if defined(RV_USE_APPLE_PRORES_SDK)
                     track->useAppleProRes = isProRes;
 #endif
+#if defined(__APPLE__)
+                    track->useAVFProResRaw = isProResRaw;
+#endif
                     if (isJ2K)
                     {
                         track->number = i;
@@ -2426,6 +2496,46 @@ namespace TwkMovie
                                 avctx->sw_pix_fmt = avctx->pix_fmt;
                             }
                         }
+                    }
+#endif
+#if defined(__APPLE__)
+                    else if (isProResRaw &&
+                             [&]()
+                             {
+                                 track->avfReader = new AVFProResRawReader();
+                                 if (track->avfReader->open(m_filename, i, m_info.fps))
+                                 {
+                                     openAVCodec(i, &track->avCodecContext, &track->hardwareContext);
+                                     track->number = i;
+                                     ostringstream trackName;
+                                     trackName << "track " << m_videoTracks.size() + 1;
+                                     track->name = trackName.str();
+                                     track->isOpen = true;
+                                     m_videoTracks.push_back(track);
+
+                                     FBInfo::ViewInfo vinfo;
+                                     vinfo.name = trackName.str();
+                                     m_info.viewInfos.push_back(vinfo);
+                                     m_info.views.push_back(trackName.str());
+                                     ostringstream trk;
+                                     trk << "Track" << i;
+                                     snagMetadata(tsStream->metadata, trk.str(), &m_info.proxy);
+
+                                     static std::once_flag infoOnce;
+                                     std::call_once(infoOnce,
+                                                    [this]()
+                                                    {
+                                                        std::cout << "INFO: Using Apple AVFoundation ProRes RAW decoder for '" << m_filename
+                                                                  << "'." << std::endl;
+                                                    });
+                                     return true;
+                                 }
+                                 delete track->avfReader;
+                                 track->avfReader = nullptr;
+                                 track->useAVFProResRaw = false;
+                                 return false;
+                             }())
+                    {
                     }
 #endif
                     else
@@ -2613,9 +2723,22 @@ namespace TwkMovie
             AVStream* videoStream = m_avFormatContext->streams[track->number];
             AVCodecContext* videoCodecContext = track->avCodecContext;
 
+            const AVCodecDescriptor* desc = avcodec_descriptor_get(videoStream->codecpar->codec_id);
+            bool isInterFrame = (desc && !(desc->props & AV_CODEC_PROP_INTRA_ONLY));
+            bool isMpegContainer = false;
+            if (m_avFormatContext->iformat && m_avFormatContext->iformat->name)
+            {
+                string ifmtName = m_avFormatContext->iformat->name;
+                if (ifmtName.find("mpeg") != string::npos || ifmtName.find("vob") != string::npos)
+                {
+                    isMpegContainer = true;
+                }
+            }
+
             // Tell RV to restrict caching to one thread
-            bool slowTrackRandomAccess =
-                (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name)) || TwkUtil::pathIsURL(m_filename);
+            bool slowTrackRandomAccess = isInterFrame || isMpegContainer
+                                         || (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name))
+                                         || TwkUtil::pathIsURL(m_filename);
             slowRandomAccess = slowTrackRandomAccess || slowRandomAccess;
 
             // Make sure the orientation/rotation matches for each track
@@ -2637,16 +2760,37 @@ namespace TwkMovie
         AVCodecContext* firstVideoCodecContext = m_videoTracks[0]->avCodecContext;
         AVPixelFormat nativeFormat = firstVideoCodecContext->pix_fmt;
 
-        // Fallback for formats where the initial pix_fmt might be AV_PIX_FMT_NONE
-        if (nativeFormat == AV_PIX_FMT_NONE)
+#if defined(__APPLE__)
+        if (m_videoTracks[0]->useAVFProResRaw)
         {
-            nativeFormat = AV_PIX_FMT_RGB24;
+            nativeFormat = AV_PIX_FMT_RGBA64LE;
         }
+        else
+#endif
+            // Fallback for formats where the initial pix_fmt might be AV_PIX_FMT_NONE
+            if (nativeFormat == AV_PIX_FMT_NONE)
+            {
+                if (firstVideoStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
+                {
+                    nativeFormat = AV_PIX_FMT_RGB48;
+                }
+                else
+                {
+                    nativeFormat = AV_PIX_FMT_RGB24;
+                }
+            }
 
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         int bitSize = desc->comp[0].depth - desc->comp[0].shift;
         m_info.numChannels = desc->nb_components;
-        m_info.dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+#if defined(__APPLE__)
+        if (m_videoTracks[0]->useAVFProResRaw)
+        {
+            m_info.dataType = FrameBuffer::HALF;
+        }
+        else
+#endif
+            m_info.dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
 
         const char* fmtname_raw = av_get_pix_fmt_name(nativeFormat);
         string fmtname = string(fmtname_raw ? fmtname_raw : "none");
@@ -2677,6 +2821,15 @@ namespace TwkMovie
 
         double cWidth = firstVideoCodecContext->width;
         double cHeight = firstVideoCodecContext->height;
+#if defined(__APPLE__)
+        if (m_videoTracks[0]->useAVFProResRaw && m_videoTracks[0]->avfReader)
+        {
+            if (cWidth <= 0)
+                cWidth = m_videoTracks[0]->avfReader->width();
+            if (cHeight <= 0)
+                cHeight = m_videoTracks[0]->avfReader->height();
+        }
+#endif
         double pixelAspect = av_q2d(firstVideoStream->sample_aspect_ratio);
         if ((width > cWidth && cWidth > 0) || (height > cHeight && cHeight > 0))
         {
@@ -3427,9 +3580,13 @@ namespace TwkMovie
                                            << " start: " << track->start << " desired: " << track->desired);
 
                     if (track->bufferStart > track->start + track->desired)
+                    {
+                        track->lastDecodedAudio = track->start + track->desired - 1;
                         return track->desired;
+                    }
                     if (track->bufferStart > track->start)
                     {
+                        track->lastDecodedAudio = track->bufferStart - 1;
                         return track->bufferStart - track->start;
                     }
                     if (track->bufferEnd < track->start)
@@ -3687,6 +3844,38 @@ namespace TwkMovie
         return decodeHTJ2K(&infile);
     }
 
+#if defined(__APPLE__)
+    FrameBuffer* MovieFFMpegReader::avfProResRawDecode(int inframe, VideoTrack* track)
+    {
+        int width = track->avfReader->width();
+        int height = track->avfReader->height();
+        if (width <= 0 || height <= 0)
+        {
+            width = (track->rotate) ? m_info.height : m_info.width;
+            height = (track->rotate) ? m_info.width : m_info.height;
+        }
+
+        FrameBuffer::StringVector chans(4);
+        chans[0] = "R";
+        chans[1] = "G";
+        chans[2] = "B";
+        chans[3] = "A";
+
+        FrameBuffer* out = new FrameBuffer(width, height, 4, FrameBuffer::HALF, NULL, &chans);
+
+        // RV inframe is 1-based, AVFoundation frameIndex is 0-based
+        int64_t frameIndex = inframe - 1;
+        if (!track->avfReader->readFrame(frameIndex, out->pixels<uint8_t>(), width * 8, width, height))
+        {
+            delete out;
+            TWK_THROW_EXC_STREAM("AVFoundation failed to decode ProRes RAW frame at: " << inframe);
+        }
+
+        track->lastDecodedVideo = inframe;
+        return out;
+    }
+#endif
+
     bool MovieFFMpegReader::findImageWithBestTimestamp(int inframe, double frameDur, AVStream* videoStream, VideoTrack* track)
     {
         // The goal timestamp is the same as the seek target adjusted
@@ -3699,6 +3888,16 @@ namespace TwkMovie
         {
             // First we need to read a packet from the stream.
             readPacketFromStream(inframe, track);
+
+            // If track was marked for OpenJPH because codec is JPEG2000, verify
+            // that the packet is indeed HTJ2K. If not, use standard FFmpeg decoding.
+            if (track->useOpenJPH && track->videoPacket && track->videoPacket->data && track->videoPacket->size > 0)
+            {
+                if (!TwkFB::isHTJ2K(track->videoPacket->data, track->videoPacket->size))
+                {
+                    track->useOpenJPH = false;
+                }
+            }
 
             // Then we need to send the packet as input to the decoder.
             // but we don't do it if we are using OpenJPH or Apple's ProRes
@@ -3793,6 +3992,12 @@ namespace TwkMovie
 
     FrameBuffer* MovieFFMpegReader::decodeImageAtFrame(int inframe, VideoTrack* track)
     {
+#if defined(__APPLE__)
+        if (track->useAVFProResRaw && track->avfReader)
+        {
+            return avfProResRawDecode(inframe, track);
+        }
+#endif
         if (m_mustReadFirstFrame)
         {
             // Force reading of the first frame of the stream to ensure
@@ -3833,7 +4038,12 @@ namespace TwkMovie
         // videoCodecContext->gop_size because it is initialized by default by
         // FFmpeg with a default value of 12 even for intra-frame compression
         // codecs (such as Apple Pro Res for example).
-        const int nearFrameThreshold = (m_info.slowRandomAccess && videoCodecContext->gop_size != 0) ? videoCodecContext->gop_size : 1;
+        int gopSize = videoCodecContext->gop_size;
+        if (gopSize <= 0)
+        {
+            gopSize = (m_info.fps > 0.0) ? static_cast<int>(round(m_info.fps)) : 30;
+        }
+        const int nearFrameThreshold = m_info.slowRandomAccess ? gopSize : 1;
         if (track->lastDecodedVideo == -1 || track->lastDecodedVideo >= inframe || track->lastDecodedVideo < (inframe - nearFrameThreshold))
         {
             seekToFrame(inframe, frameDur, videoStream, track);
@@ -3934,7 +4144,8 @@ namespace TwkMovie
         //
 
         AVFrame* outFrame = av_frame_alloc();
-        AVPixelFormat nativeFormat = videoCodecContext->sw_pix_fmt;
+        AVPixelFormat nativeFormat = (videoFrame && videoFrame->format != AV_PIX_FMT_NONE) ? static_cast<AVPixelFormat>(videoFrame->format)
+                                                                                           : videoCodecContext->sw_pix_fmt;
         outFrame->format = nativeFormat;
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         if (!desc && nativeFormat == AV_PIX_FMT_NONE)
@@ -6108,6 +6319,8 @@ namespace TwkMovie
         formats["gif"] = make_pair("Graphics Interchange Format", vidcap);
         formats["m3u8"] = make_pair("M3U8 Stream Metadata", vidcap);
         formats["m4v"] = make_pair("iTunes Video Format (from MPEG-4)", vidcap);
+        formats["mj2"] = make_pair("Motion JPEG 2000", vidcap);
+        formats["mjp2"] = make_pair("Motion JPEG 2000", vidcap);
         formats["mkv"] = make_pair("Matroska Video", vidcap);
         formats["mov"] = make_pair("Quicktime Movie", vidcap);
         formats["mp4"] = make_pair("MPEG-4 Movie Container", vidcap);

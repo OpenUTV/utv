@@ -29,6 +29,20 @@ IF(APPLE)
         "/usr/local/opt/ffmpeg-full/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}"
     )
   ENDIF()
+
+  IF(RV_TARGET_APPLE_ARM64
+     OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64"
+     OR CMAKE_OSX_ARCHITECTURES MATCHES "arm64"
+  )
+    SET(RV_FFMPEG_USE_VIDEOTOOLBOX_DEFAULT
+        ON
+    )
+  ELSE()
+    SET(RV_FFMPEG_USE_VIDEOTOOLBOX_DEFAULT
+        OFF
+    )
+  ENDIF()
+  OPTION(RV_FFMPEG_USE_VIDEOTOOLBOX "Use Apple VideoToolbox hardware acceleration for ProRes decoding" ${RV_FFMPEG_USE_VIDEOTOOLBOX_DEFAULT})
 ENDIF()
 
 FIND_PACKAGE(PkgConfig REQUIRED)

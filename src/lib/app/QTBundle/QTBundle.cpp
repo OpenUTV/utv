@@ -89,9 +89,25 @@ namespace TwkApp
         m_pyhome.cd("python" PYTHON_VERSION);
         bool setPythonHome = !(getenv("PYTHONHOME") && getenv("RV_ALLOW_SITE_PYTHONHOME"));
         if (setPythonHome)
+        {
+            // When using system python, set the python home to the absolute prefix it was built with
+#ifdef SYSTEM_PYTHONHOME
+            setEnvVar("PYTHONHOME", SYSTEM_PYTHONHOME, true);
+#else
             setEnvVar("PYTHONHOME", m_root.absolutePath().toUtf8().constData(), true);
+#endif
+        }
 
         bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
+
+#ifdef SYSTEM_PYTHONPATH
+        // Add the system site-packages so PySide6 and other modules can be found
+        QStringList paths = QString(SYSTEM_PYTHONPATH).split(":", Qt::SkipEmptyParts);
+        for (const QString& p : paths)
+        {
+            addPathToEnvVar("PYTHONPATH", p.toUtf8().constData(), forceToFront);
+        }
+#endif
 
         addPathToEnvVar("PYTHONPATH", m_pyhome.absoluteFilePath("lib-dynload").toUtf8().constData(), forceToFront);
         addPathToEnvVar("PYTHONPATH", m_pyhome.absolutePath().toUtf8().constData(), forceToFront);

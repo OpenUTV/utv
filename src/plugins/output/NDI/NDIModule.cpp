@@ -72,8 +72,14 @@ namespace NDI
                 dlclose(hNDILib);
 #endif
                 hNDILib = nullptr;
+                // Only print if we found the library but it's an old version
+                std::cout << "INFO: NDI runtime found, but it does not support v6 (NDIlib_v6_load missing). NDI disabled." << std::endl;
             }
-            std::cout << "Failed to find NDIlib_v6_load in the NDI runtime." << std::endl;
+            else
+            {
+                // Optional debug print for missing NDI entirely, but keeping it silent avoids spam on systems without NDI
+                // std::cout << "INFO: NDI runtime (libndi) not installed. NDI disabled." << std::endl;
+            }
             return nullptr;
         }
         return load_func();

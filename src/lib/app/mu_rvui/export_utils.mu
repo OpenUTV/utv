@@ -146,6 +146,7 @@ module: export_utils
     \: rvio (ExternalProcess; string name, string[] inargs, (void;) cleanup = nil)
     {
         let cmd = system.getenv("RV_APP_RVIO");
+        if (cmd eq nil || cmd eq "") cmd = system.getenv("UTV_APP_UTVIO");
         string[] args = {"-v", "-err-to-out" };
         [string] argList;
 

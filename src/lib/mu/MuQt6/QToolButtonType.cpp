@@ -523,6 +523,21 @@ namespace Mu
         arg0->setMenu(arg1);
     }
 
+    void qt_QToolButton_setPopupMode_void_QToolButton_int(Mu::Thread& NODE_THREAD, Pointer param_this, int param_mode)
+    {
+        MuLangContext* c = static_cast<MuLangContext*>(NODE_THREAD.context());
+        QToolButton* arg0 = object<QToolButton>(param_this);
+        QToolButton::ToolButtonPopupMode arg1 = (QToolButton::ToolButtonPopupMode)(param_mode);
+        arg0->setPopupMode(arg1);
+    }
+
+    int qt_QToolButton_popupMode_int_QToolButton(Mu::Thread& NODE_THREAD, Pointer param_this)
+    {
+        MuLangContext* c = static_cast<MuLangContext*>(NODE_THREAD.context());
+        QToolButton* arg0 = object<QToolButton>(param_this);
+        return int(arg0->popupMode());
+    }
+
     Pointer qt_QToolButton_minimumSizeHint_QSize_QToolButton(Mu::Thread& NODE_THREAD, Pointer param_this)
     {
         MuLangContext* c = static_cast<MuLangContext*>(NODE_THREAD.context());
@@ -717,6 +732,16 @@ namespace Mu
         qt_QToolButton_setMenu_void_QToolButton_QMenu(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer), NODE_ARG(1, Pointer));
     }
 
+    static NODE_IMPLEMENTATION(_n_setPopupMode0, void)
+    {
+        qt_QToolButton_setPopupMode_void_QToolButton_int(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer), NODE_ARG(1, int));
+    }
+
+    static NODE_IMPLEMENTATION(_n_popupMode0, int)
+    {
+        NODE_RETURN(qt_QToolButton_popupMode_int_QToolButton(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer)));
+    }
+
     static NODE_IMPLEMENTATION(_n_minimumSizeHint0, Pointer)
     {
         NODE_RETURN(qt_QToolButton_minimumSizeHint_QSize_QToolButton(NODE_THREAD, NONNIL_NODE_ARG(0, Pointer)));
@@ -832,6 +857,9 @@ namespace Mu
 
         addSymbols(
             // enums
+            new SymbolicConstant(c, "DelayedPopup", "int", Value(int(QToolButton::DelayedPopup))),
+            new SymbolicConstant(c, "MenuButtonPopup", "int", Value(int(QToolButton::MenuButtonPopup))),
+            new SymbolicConstant(c, "InstantPopup", "int", Value(int(QToolButton::InstantPopup))),
             // member functions
             new Function(c, "QToolButton", _n_QToolButton0, None, Compiled, qt_QToolButton_QToolButton_QToolButton_QToolButton_QWidget,
                          Return, "qt.QToolButton", Parameters, new Param(c, "this", "qt.QToolButton"), new Param(c, "parent", "qt.QWidget"),
@@ -842,14 +870,16 @@ namespace Mu
                          "qt.QAction", Parameters, new Param(c, "this", "qt.QToolButton"), End),
             new Function(c, "menu", _n_menu0, None, Compiled, qt_QToolButton_menu_QMenu_QToolButton, Return, "qt.QMenu", Parameters,
                          new Param(c, "this", "qt.QToolButton"), End),
-            // PROP: popupMode (flags QToolButton::ToolButtonPopupMode;
-            // QToolButton this) PROP: setArrowType (void; QToolButton this,
+            new Function(c, "popupMode", _n_popupMode0, None, Compiled, qt_QToolButton_popupMode_int_QToolButton, Return, "int", Parameters,
+                         new Param(c, "this", "qt.QToolButton"), End),
+            // PROP: setArrowType (void; QToolButton this,
             // flags Qt::ArrowType type) PROP: setAutoRaise (void; QToolButton
             // this, bool enable)
             new Function(c, "setMenu", _n_setMenu0, None, Compiled, qt_QToolButton_setMenu_void_QToolButton_QMenu, Return, "void",
                          Parameters, new Param(c, "this", "qt.QToolButton"), new Param(c, "menu", "qt.QMenu"), End),
-            // PROP: setPopupMode (void; QToolButton this, flags
-            // QToolButton::ToolButtonPopupMode mode) PROP: toolButtonStyle
+            new Function(c, "setPopupMode", _n_setPopupMode0, None, Compiled, qt_QToolButton_setPopupMode_void_QToolButton_int, Return,
+                         "void", Parameters, new Param(c, "this", "qt.QToolButton"), new Param(c, "mode", "int"), End),
+            // PROP: toolButtonStyle
             // (flags Qt::ToolButtonStyle; QToolButton this)
             _func[0] = new MemberFunction(c, "minimumSizeHint", _n_minimumSizeHint0, None, Compiled,
                                           qt_QToolButton_minimumSizeHint_QSize_QToolButton, Return, "qt.QSize", Parameters,

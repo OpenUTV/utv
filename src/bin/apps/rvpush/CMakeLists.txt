@@ -44,3 +44,12 @@ TARGET_INCLUDE_DIRECTORIES(
 TARGET_LINK_LIBRARIES(${_target} TwkQtChat Qt::Core Qt::Network Qt::Core)
 
 RV_STAGE(TYPE "EXECUTABLE_WITH_PLUGINS" TARGET ${_target})
+
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvpush
+    COMMENT "Creating rvpush symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()
