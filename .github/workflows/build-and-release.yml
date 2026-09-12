@@ -190,6 +190,10 @@ jobs:
 
             MAIN_EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "UTV")
 
+            echo "--- Normalizing Info.plist metadata ---"
+            /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.OpenUTV.UTV" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 11.0.0" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
+
             echo "--- Stripping pre-existing linker signatures ---"
             codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
 
@@ -226,9 +230,11 @@ jobs:
 
             echo "--- Verifying signature ---"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+            codesign -dvvv "$APP_PATH/Contents/MacOS/$MAIN_EXE"
+            codesign -dvvv "$APP_PATH"
 
             cd _build/stage/app
-            zip -ry "$ZIP_NAME" UTV.app
+            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
 
             if [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ] && [ -n "${APPLE_API_KEY}" ]; then
               echo "--- Submitting to Apple Notary Service ---"
@@ -267,7 +273,7 @@ jobs:
               xcrun stapler staple UTV.app
               xcrun stapler validate UTV.app
               rm -f "$ZIP_NAME"
-              zip -ry "$ZIP_NAME" UTV.app
+              /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
             else
               echo "Apple Notary API credentials not configured; skipping notarization submission."
             fi
@@ -275,7 +281,7 @@ jobs:
             echo "No Developer ID certificate configured. Applying Ad-Hoc code signature."
             codesign --force --deep --sign - "$APP_PATH"
             cd _build/stage/app
-            zip -ry "$ZIP_NAME" UTV.app
+            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
           fi
         shell: bash
 
