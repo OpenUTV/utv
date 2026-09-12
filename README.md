@@ -82,35 +82,13 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 
 ---
 
-## Advanced FFmpeg (Non-Free Codecs & Hardware I/O)
+## FFmpeg & Codec Architecture
 
-To comply with open-source licensing distributions, the default binaries of UTV are shipped with a standard LGPL version of FFmpeg. This natively supports playback of most standard codecs (H.264, MP4, etc.) without restriction.
+UTV dynamically links to **FFmpeg** at runtime to provide broad playback support across professional multimedia formats:
 
-However, professional pipelines often require proprietary features such as **ProRes** encoding, **FDK-AAC** audio, hardware-accelerated **NVENC**, or direct FFmpeg **DeckLink** integration. Compiling FFmpeg with these features requires the `--enable-nonfree` flag, which makes the resulting binary legally un-redistributable.
-
-**The Solution ("Bring Your Own FFmpeg"):**
-If you require these proprietary features, you can easily compile a "Pro" version of FFmpeg yourself and drop the resulting dynamic libraries (`.dll`, `.dylib`, or `.so`) into your UTV installation directory. Because UTV dynamically links to FFmpeg at runtime, it will automatically adopt the new capabilities!
-
-### Windows (via vcpkg)
-
-If you have Visual Studio Build Tools and [vcpkg](https://github.com/microsoft/vcpkg) installed, you can compile a full-featured FFmpeg using the following command. The `[feature]` brackets tell `vcpkg` exactly which non-free features to enable:
-
-```powershell
-vcpkg install ffmpeg[nvcodec,decklink,fdk-aac,x264,x265]:x64-windows
-```
-
-Once complete, simply copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin` directly into the folder where `UTV.exe` is installed.
-
-### macOS (via Homebrew)
-
-On macOS, you can use the incredible community-maintained `homebrew-ffmpeg` tap to build a customized version from source:
-
-```bash
-brew tap homebrew-ffmpeg/ffmpeg
-brew install homebrew-ffmpeg/ffmpeg/ffmpeg --with-decklink --with-fdk-aac --with-openh264 --with-x265
-```
-
-After installation, you can use the `macdeployqt` and `install_name_tool` utilities to re-link your `UTV.app` bundle to the newly compiled `/opt/homebrew/opt/ffmpeg/` libraries.
+- **macOS**: UTV leverages Homebrew's `ffmpeg-full` formula, automatically installed when using `brew install --cask utv`. This provides extensive codec support (H.264, H.265/HEVC, VP9, AV1, ProRes, DNxHD, etc.) without requiring custom compilation. In addition, Apple Silicon Macs benefit from native **VideoToolbox** hardware decoding and native **AVFoundation ProRes RAW** decoding out of the box.
+- **Windows**: The companion `OpenUTVDeps` package supplies pre-compiled FFmpeg libraries that are automatically discovered via your system `PATH`.
+- **Custom FFmpeg Builds**: Because UTV resolves FFmpeg dynamically at runtime, power users requiring specialized builds (e.g., specific hardware encoders or proprietary filters) can install or build a customized FFmpeg package and UTV will dynamically load it without requiring application modifications.
 
 ---
 
