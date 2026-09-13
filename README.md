@@ -155,6 +155,7 @@ Once complete, copy the `.dll` files from `vcpkg/packages/ffmpeg_x64-windows/bin
 OpenUTV is completely free and open-source. If you use UTV in your studio pipeline or freelance workflows and want to support its ongoing development, you can help fund the project:
 
 - **[GitHub Sponsors](https://github.com/sponsors/mcoliver)** (Monthly or one-time)
+- **[Support on Patreon](https://www.patreon.com/c/OpenUTV)**
 - **[Donate via Stripe](https://donate.stripe.com/eVqbJ29K73to7446oNdAk00)** (Credit Card / Apple Pay)
 
 <details>
