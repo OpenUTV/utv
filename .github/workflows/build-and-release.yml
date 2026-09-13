@@ -11,6 +11,11 @@ on:
         options:
           - 'self-hosted'
           - 'macos-26'
+      version_override:
+        description: 'Version to build (e.g. 2026.2). Leave blank for next version.'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: write
@@ -58,20 +63,24 @@ jobs:
       - name: Determine Next Semantic Version
         id: versioning
         run: |
-          YEAR=$(date +%Y)
-          LATEST_TAG=$(git tag -l "${YEAR}.*" | sort -V | tail -n 1)
-          if [ -z "$LATEST_TAG" ]; then
-            NEW_VERSION="${YEAR}.1"
+          if [ -n "${{ inputs.version_override }}" ]; then
+            NEW_VERSION="${{ inputs.version_override }}"
           else
-            MINOR=$(echo $LATEST_TAG | cut -d'.' -f2)
-            NEW_VERSION="${YEAR}.$((MINOR + 1))"
-          fi
-          
-          # If it's a pull request, append PR number
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            NEW_VERSION="${NEW_VERSION}-PR${{ github.event.pull_request.number }}"
-          elif [ "${{ github.event_name }}" == "push" ]; then
-            NEW_VERSION="${NEW_VERSION}-dev"
+            YEAR=$(date +%Y)
+            LATEST_TAG=$(git tag -l "${YEAR}.*" | sort -V | tail -n 1)
+            if [ -z "$LATEST_TAG" ]; then
+              NEW_VERSION="${YEAR}.1"
+            else
+              MINOR=$(echo $LATEST_TAG | cut -d'.' -f2)
+              NEW_VERSION="${YEAR}.$((MINOR + 1))"
+            fi
+            
+            # If it's a pull request, append PR number
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              NEW_VERSION="${NEW_VERSION}-PR${{ github.event.pull_request.number }}"
+            elif [ "${{ github.event_name }}" == "push" ]; then
+              NEW_VERSION="${NEW_VERSION}-dev"
+            fi
           fi
           
           echo "Next version is: $NEW_VERSION"
@@ -378,8 +387,8 @@ jobs:
 
       - name: Create and Push Tag
         run: |
-          git tag ${{ needs.build.outputs.version }}
-          git push origin ${{ needs.build.outputs.version }}
+          git tag -f ${{ needs.build.outputs.version }}
+          git push origin ${{ needs.build.outputs.version }} --force
         shell: bash
 
       - name: Publish GitHub Release
@@ -391,5 +400,6 @@ jobs:
           files: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
           draft: false
           prerelease: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
