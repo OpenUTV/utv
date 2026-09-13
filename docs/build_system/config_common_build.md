@@ -202,18 +202,20 @@ Example:
 By default, the ProRes decode via the SDK will use all available system threads.  To use a fixed maximum number of threads, set the
 environment variable `RV_PREF_GLOBAL_PRORES_DECODER_THREADS` to a positive value.
 
-On Apple Silicon machines, UTV supports hardware decoding through Apple's VideoToolbox framework. This feature is enabled by default
-but can be controlled using the `-DRV_FFMPEG_USE_VIDEOTOOLBOX` option. Set this option to `ON` to enable or `OFF` to disable VideoToolbox
-hardware decoding.
+On Apple Silicon machines, UTV supports hardware video decoding through Apple's VideoToolbox framework for H.264, HEVC (H.265), Apple ProRes, VP9, and AV1. This feature is enabled by default at compile time via the `-DRV_FFMPEG_USE_VIDEOTOOLBOX` option.
 
-To enable decoding of ProRes media files, you must also specify the following option during the configuration step:
+At runtime, hardware decoding can be configured via:
 
-```bash
--DRV_FFMPEG_NON_FREE_DECODERS_TO_ENABLE="prores"
-```
+1. **Preferences Dialog**: Under `Preferences -> Caching -> Hardware Video Decoding`, users can select between:
+   - `Auto (All Supported Codecs)` (default)
+   - `ProRes Only`
+   - `Disabled (Software CPU)`
+2. **Environment Variable**: Setting `OPENUTV_HWACCEL` (or `UTV_HWACCEL`) to:
+   - `all` or `auto` or `1`: Accelerate all supported codecs (default).
+   - `prores`: Accelerate Apple ProRes only.
+   - `none` or `off` or `0`: Force CPU software decoding for all codecs.
 
-Note that you should always have `-DRV_FFMPEG_USE_VIDEOTOOLBOX` enabled when decoding Apple ProRes videos on Apple Silicon machines.
-Failure to do so will result in performance issues and is not compliant with Apple's licensing requirements.
+If hardware decoding fails to initialize or hits system stream limits, UTV automatically and seamlessly falls back to CPU software decoding.
 
 **Important:** Before enabling ProRes decoding on Linux/Windows, you are required to obtain a proper license agreement and the SDK from
 Apple by contacting [ProRes@apple.com](mailto:ProRes@apple.com).

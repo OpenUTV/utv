@@ -176,6 +176,7 @@ namespace Rv
         int useAppleClientStorage;
         int useThreadedUpload;
         int readerThreads;
+        int hwDecodeMode;
         int workItemThreads;
         int apple;
         int allowYUV;

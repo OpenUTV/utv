@@ -320,6 +320,7 @@ namespace Rv
         maxbwait = 5.0;  // seconds
         lookback = 25.0; // percent
         readerThreads = (numLogicalCPUs > 4) ? std::min(numLogicalCPUs / 4, 4) : 1;
+        hwDecodeMode = 0; // 0 = Auto, 1 = ProRes, 2 = Disabled
         workItemThreads = (numLogicalCPUs > 4) ? std::min(numLogicalCPUs / 4, 4) : 1;
         cacheOutsideRegion = 0;
         apple = 0;
@@ -1251,6 +1252,7 @@ namespace Rv
                                           "rangeOffset",
                                           "rangeStart",
                                           "readerThreads",
+                                          "hardwareDecodeMode",
                                           "workItemThreads",
                                           "rec709",
                                           "resetPrefs",
@@ -1396,6 +1398,7 @@ namespace Rv
                                static_cast<size_t>((char*)(&this->rangeOffset) - (char*)this),
                                static_cast<size_t>((char*)(&this->rangeStart) - (char*)this),
                                static_cast<size_t>((char*)(&this->readerThreads) - (char*)this),
+                               static_cast<size_t>((char*)(&this->hwDecodeMode) - (char*)this),
                                static_cast<size_t>((char*)(&this->workItemThreads) - (char*)this),
                                static_cast<size_t>((char*)(&this->rec709) - (char*)this),
                                static_cast<size_t>((char*)(&this->resetPrefs) - (char*)this),

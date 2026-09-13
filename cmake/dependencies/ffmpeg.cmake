@@ -42,7 +42,7 @@ IF(APPLE)
         OFF
     )
   ENDIF()
-  OPTION(RV_FFMPEG_USE_VIDEOTOOLBOX "Use Apple VideoToolbox hardware acceleration for ProRes decoding" ${RV_FFMPEG_USE_VIDEOTOOLBOX_DEFAULT})
+  OPTION(RV_FFMPEG_USE_VIDEOTOOLBOX "Use Apple VideoToolbox hardware acceleration for video decoding" ${RV_FFMPEG_USE_VIDEOTOOLBOX_DEFAULT})
 ENDIF()
 
 FIND_PACKAGE(PkgConfig REQUIRED)

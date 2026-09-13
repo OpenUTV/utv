@@ -785,6 +785,52 @@
            </property>
           </widget>
          </item>
+         <item row="7" column="0">
+          <widget class="QLabel" name="label_hardwareDecode">
+           <property name="text">
+            <string>Hardware Video Decoding</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_hwDecode">
+           <item>
+            <widget class="QComboBox" name="hardwareDecodeCombo">
+             <item>
+              <property name="text">
+               <string>Auto (All Supported Codecs)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>ProRes Only</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Disabled (Software CPU)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_hwDecode">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
         </layout>
        </item>
        <item>

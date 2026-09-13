@@ -400,6 +400,27 @@ namespace Rv
         m_ui.fpsEdit->setText(s);
         s.setNum(opts.readerThreads);
         m_ui.rthreadEdit->setText(s);
+
+        QString hwEnv = QString::fromLocal8Bit(qgetenv("OPENUTV_HWACCEL"));
+        if (hwEnv.isEmpty())
+            hwEnv = QString::fromLocal8Bit(qgetenv("UTV_HWACCEL"));
+        if (hwEnv.isEmpty())
+            hwEnv = QString::fromLocal8Bit(qgetenv("RV_HWACCEL"));
+        if (!hwEnv.isEmpty())
+        {
+            QString sHw = hwEnv.toLower();
+            if (sHw == "none" || sHw == "0" || sHw == "off" || sHw == "disabled" || sHw == "false" || sHw == "cpu")
+                m_ui.hardwareDecodeCombo->setCurrentIndex(2);
+            else if (sHw == "prores")
+                m_ui.hardwareDecodeCombo->setCurrentIndex(1);
+            else
+                m_ui.hardwareDecodeCombo->setCurrentIndex(0);
+        }
+        else
+        {
+            m_ui.hardwareDecodeCombo->setCurrentIndex(opts.hwDecodeMode);
+        }
+
         m_ui.networkHostEdit->setText(opts.networkHost ? opts.networkHost : "");
         m_ui.autoRetimeToggle->setCheckState(opts.autoRetime ? Qt::Checked : Qt::Unchecked);
         m_ui.useCrashReporterToggle->setCheckState(Qt::Unchecked);
@@ -843,6 +864,17 @@ namespace Rv
         opts.networkHostBuf = settings.value("networkHost", (opts.networkHost) ? opts.networkHost : "").toString().toUtf8().data();
         opts.networkHost = (char*)((opts.networkHostBuf.empty()) ? 0 : opts.networkHostBuf.c_str());
         opts.readerThreads = settings.value("readerThreads", opts.readerThreads).toInt();
+        opts.hwDecodeMode = settings.value("hardwareDecodeMode", opts.hwDecodeMode).toInt();
+        if (qEnvironmentVariableIsEmpty("OPENUTV_HWACCEL") && qEnvironmentVariableIsEmpty("UTV_HWACCEL")
+            && qEnvironmentVariableIsEmpty("RV_HWACCEL"))
+        {
+            if (opts.hwDecodeMode == 2)
+                qputenv("OPENUTV_HWACCEL", "none");
+            else if (opts.hwDecodeMode == 1)
+                qputenv("OPENUTV_HWACCEL", "prores");
+            else
+                qputenv("OPENUTV_HWACCEL", "all");
+        }
         opts.autoRetime = int(settings.value("autoRetime", opts.autoRetime ? true : false).toBool());
         opts.useCrashReporter = int(settings.value("useCrashReporter", opts.useCrashReporter ? true : false).toBool());
 
@@ -1164,6 +1196,14 @@ namespace Rv
         settings.setValue("fps", m_ui.fpsEdit->text().toDouble());
         settings.setValue("networkHost", m_ui.networkHostEdit->text());
         settings.setValue("readerThreads", m_ui.rthreadEdit->text().toInt());
+        int hwMode = m_ui.hardwareDecodeCombo->currentIndex();
+        settings.setValue("hardwareDecodeMode", hwMode);
+        if (hwMode == 2)
+            qputenv("OPENUTV_HWACCEL", "none");
+        else if (hwMode == 1)
+            qputenv("OPENUTV_HWACCEL", "prores");
+        else
+            qputenv("OPENUTV_HWACCEL", "all");
         settings.setValue("autoRetime", m_ui.autoRetimeToggle->checkState() == Qt::Checked);
         settings.setValue("useCrashReporter", m_ui.useCrashReporterToggle->checkState() == Qt::Checked);
         settings.setValue("fontSize1", m_ui.fontSizeSpinBox->value());
