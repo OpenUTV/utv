@@ -129,6 +129,86 @@ class: UTVHelpMenuMinorMode : MinorMode
     }
 
 
+    \: findHelperScript (string; string scriptName)
+    {
+        try
+        {
+            let rv = system.getenv("RV_APP_RV");
+            if (rv neq nil && rv != "")
+            {
+                let base = io.path.basename(rv);
+                let dir = rv.substr(0, rv.size() - base.size());
+                let p = io.path.join(dir, scriptName);
+                if (io.path.exists(p)) return p;
+            }
+        }
+        catch (...) {}
+
+        let p1 = "/Applications/UTV.app/Contents/MacOS/" + scriptName;
+        if (io.path.exists(p1)) return p1;
+
+        let p2 = "/Applications/UTV.app/Contents/Resources/" + scriptName + ".sh";
+        if (io.path.exists(p2)) return p2;
+
+        return "";
+    }
+
+    \: reportIssue (void; Event ev)
+    {
+        try
+        {
+            let script = findHelperScript("openutv-diagnostics");
+            if (script != "")
+            {
+                string[] args = { script };
+                qt.QProcess.startDetached("/bin/bash", args);
+            }
+            else
+            {
+                openUrl("https://github.com/OpenUTV/utv/issues/new?template=bug.yml");
+            }
+        }
+        catch (...)
+        {
+            openUrl("https://github.com/OpenUTV/utv/issues/new?template=bug.yml");
+        }
+    }
+
+    \: collectDiagnostics (void; Event ev)
+    {
+        try
+        {
+            let script = findHelperScript("openutv-diagnostics");
+            if (script != "")
+            {
+                string[] args = { script, "--no-browser" };
+                qt.QProcess.startDetached("/bin/bash", args);
+            }
+        }
+        catch (...) {}
+    }
+
+    \: checkUpdates (void; Event ev)
+    {
+        try
+        {
+            let script = findHelperScript("openutv-check-updates");
+            if (script != "")
+            {
+                string[] args = { script, "--interactive" };
+                qt.QProcess.startDetached("/bin/bash", args);
+            }
+            else
+            {
+                openUrl("https://github.com/OpenUTV/utv/releases/latest");
+            }
+        }
+        catch (...)
+        {
+            openUrl("https://github.com/OpenUTV/utv/releases/latest");
+        }
+    }
+
     \: inactiveState (int;) { DisabledMenuState; }
 
     method: UTVHelpMenuMinorMode (UTVHelpMenuMinorMode;)
@@ -142,11 +222,14 @@ class: UTVHelpMenuMinorMode : MinorMode
                 menuItem("   GTO File Format (.rv files)", "", "help_category", opUrl(,"https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-gto.md"), enabledItem),
                 menuSeparator(),
                 menuItem("   OpenUTV on GitHub", "", "help_category", opUrl(,"https://github.com/OpenUTV/utv"), enabledItem),
+                menuItem("   Report Issue on GitHub...", "", "help_category", reportIssue, enabledItem),
+                menuItem("   Check for Updates...", "", "help_category", checkUpdates, enabledItem),
                 menuSeparator(),
                 menuText("Other Resource"),
                 menuItem("   Mu Command API Browser...", "", "help_category", docbrowser, enabledItem),
                 menuSeparator(),
                 menuText("Utilities"),
+                menuItem("   Collect Diagnostics Package...", "", "help_category", collectDiagnostics, enabledItem),
                 menuItem("   Describe...", "key-down--?", "help_category", describeHelp, enabledItem),
                 menuItem("   Describe Key Binding...", "", "help_category", describeKeyBinding, enabledItem),
                 menuItem("   Show Current Bindings", "", "help_category", dumpBindings, enabledItem),

@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "description": "OpenUTV required Homebrew dependencies and configuration manifest",
+  "formulae": [
+    {
+      "name": "qt",
+      "paths": ["opt/qt", "opt/qtbase"]
+    },
+    {
+      "name": "boost",
+      "paths": ["opt/boost"]
+    },
+    {
+      "name": "ffmpeg-full",
+      "paths": ["opt/ffmpeg-full", "opt/ffmpeg"]
+    },
+    {
+      "name": "python@3.14",
+      "paths": ["opt/python@3.14", "opt/python3", "opt/python"]
+    },
+    {
+      "name": "opencolorio",
+      "paths": ["opt/opencolorio"]
+    },
+    {
+      "name": "openimageio",
+      "paths": ["opt/openimageio"]
+    },
+    {
+      "name": "openexr",
+      "paths": ["opt/openexr"]
+    },
+    {
+      "name": "imath",
+      "paths": ["opt/imath"]
+    },
+    {
+      "name": "libpng",
+      "paths": ["opt/libpng"]
+    },
+    {
+      "name": "libtiff",
+      "paths": ["opt/libtiff"]
+    },
+    {
+      "name": "jpeg-turbo",
+      "paths": ["opt/jpeg-turbo"]
+    },
+    {
+      "name": "libraw",
+      "paths": ["opt/libraw"]
+    },
+    {
+      "name": "openjpeg",
+      "paths": ["opt/openjpeg"]
+    },
+    {
+      "name": "openjph",
+      "paths": ["opt/openjph"]
+    },
+    {
+      "name": "webp",
+      "paths": ["opt/webp"]
+    },
+    {
+      "name": "yaml-cpp",
+      "paths": ["opt/yaml-cpp"]
+    },
+    {
+      "name": "spdlog",
+      "paths": ["opt/spdlog"]
+    },
+    {
+      "name": "icu4c",
+      "paths": ["opt/icu4c"]
+    },
+    {
+      "name": "pyside",
+      "paths": ["opt/pyside", "opt/pyside@6"]
+    }
+  ],
+  "post_install_commands": [
+    "brew link --overwrite ffmpeg-full 2>/dev/null || true"
+  ],
+  "repair_commands": [
+    "brew link --overwrite ffmpeg-full 2>/dev/null || true",
+    "brew reinstall boost boost-python3 2>/dev/null || true"
+  ]
+}
