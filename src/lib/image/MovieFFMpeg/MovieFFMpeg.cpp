@@ -670,68 +670,13 @@ namespace TwkMovie
         //  Put anything we know about in here: some of these we don't
         //  actually support. But just in case ....
         //
-        constexpr std::array slowRandomAccessCodecs = {"3iv2"sv,
-                                                       "3ivd"sv,
-                                                       "ap41"sv,
-                                                       "avc1"sv,
-                                                       "div1"sv,
-                                                       "div2"sv,
-                                                       "div3"sv,
-                                                       "div4"sv,
-                                                       "div5"sv,
-                                                       "div6"sv,
-                                                       "divx"sv,
-                                                       "dnxhd"sv,
-                                                       "dx50"sv,
-                                                       "h263"sv,
-                                                       "h264"sv,
-                                                       "i263"sv,
-                                                       "iv31"sv,
-                                                       "iv32"sv,
-                                                       "m4s2"sv,
-                                                       "mp42"sv,
-                                                       "mp43"sv,
-                                                       "mp4s"sv,
-                                                       "mp4v"sv,
-                                                       "apv"sv,
-                                                       "mpeg4"sv,
-                                                       "mpg1"sv,
-                                                       "mpg3"sv,
-                                                       "mpg4"sv,
-                                                       "pim1"sv,
-                                                       "png"sv,
-                                                       "s263"sv,
-                                                       "svq1"sv,
-                                                       "svq3"sv,
-                                                       "u263"sv,
-                                                       "vc1"sv,
-                                                       "vc1_vdpau"sv,
-                                                       "vc1image"sv,
-                                                       "viv1"sv,
-                                                       "wmv3"sv,
-                                                       "wmv3_vdpau"sv,
-                                                       "wmv3image"sv,
-                                                       "xith"sv,
-                                                       "xvid"sv,
-                                                       "libdav1d"sv,
-                                                       "mpeg1video"sv,
-                                                       "mpeg2video"sv,
-                                                       "hevc"sv,
-                                                       "h265"sv,
-                                                       "vp8"sv,
-                                                       "vp9"sv,
-                                                       "av1"sv,
-                                                       "theora"sv,
-                                                       "wmv1"sv,
-                                                       "wmv2"sv
-#if defined(RV_FFMPEG_USE_VIDEOTOOLBOX) || defined(RV_USE_APPLE_PRORES_SDK)
-                                                       ,
-                                                       "prores"sv,
-                                                       "prores_aw"sv,
-                                                       "prores_ks"sv,
-                                                       "prores_raw"sv
-#endif
-        };
+        constexpr std::array slowRandomAccessCodecs = {
+            "3iv2"sv, "3ivd"sv,       "ap41"sv,      "avc1"sv, "div1"sv,   "div2"sv,     "div3"sv,       "div4"sv,       "div5"sv,
+            "div6"sv, "divx"sv,       "dx50"sv,      "h263"sv, "h264"sv,   "i263"sv,     "iv31"sv,       "iv32"sv,       "m4s2"sv,
+            "mp42"sv, "mp43"sv,       "mp4s"sv,      "mp4v"sv, "mpeg4"sv,  "mpg1"sv,     "mpg3"sv,       "mpg4"sv,       "pim1"sv,
+            "png"sv,  "s263"sv,       "svq1"sv,      "svq3"sv, "u263"sv,   "vc1"sv,      "vc1_vdpau"sv,  "vc1image"sv,   "viv1"sv,
+            "wmv3"sv, "wmv3_vdpau"sv, "wmv3image"sv, "xith"sv, "xvid"sv,   "libdav1d"sv, "mpeg1video"sv, "mpeg2video"sv, "hevc"sv,
+            "h265"sv, "vp8"sv,        "vp9"sv,       "av1"sv,  "theora"sv, "wmv1"sv,     "wmv2"sv};
 
         const char* supportedEncodingCodecsArray[] = {"dvvideo", "libx264", "mjpeg", "pcm_s16be", "rawvideo", 0};
 
@@ -2859,9 +2804,26 @@ namespace TwkMovie
             }
 
             // Tell RV to restrict caching to one thread
-            bool slowTrackRandomAccess = isInterFrame || isMpegContainer
-                                         || (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name))
-                                         || TwkUtil::pathIsURL(m_filename);
+            const bool isIntraOnly = (desc && (desc->props & AV_CODEC_PROP_INTRA_ONLY));
+            const bool isAppleProRes = track->useAVFProResRaw
+#if defined(RV_USE_APPLE_PRORES_SDK)
+                                       || track->useAppleProRes
+#endif
+                                       || (desc
+                                           && (videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES
+                                               || videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW));
+
+            bool slowTrackRandomAccess = false;
+            if (isIntraOnly || isAppleProRes)
+            {
+                slowTrackRandomAccess = false;
+            }
+            else
+            {
+                slowTrackRandomAccess = isInterFrame || isMpegContainer
+                                        || (videoCodecContext->codec && codecHasSlowAccess(videoCodecContext->codec->name))
+                                        || TwkUtil::pathIsURL(m_filename);
+            }
             slowRandomAccess = slowTrackRandomAccess || slowRandomAccess;
 
             // Make sure the orientation/rotation matches for each track

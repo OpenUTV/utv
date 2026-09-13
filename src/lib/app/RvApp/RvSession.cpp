@@ -1688,17 +1688,36 @@ namespace Rv
                     detectedMediaDesc = "image sequence";
                     break;
                 }
-                else if (minfo.slowRandomAccess)
+
+                std::string codecName;
+                if (minfo.proxy.hasAttribute("VideoCodec"))
                 {
-                    hasInterFrameVideo = true;
-                    detectedMediaDesc = "inter-frame compressed video (MPEG/H.264)";
+                    codecName = minfo.proxy.attribute<std::string>("VideoCodec");
                 }
-                else
+                std::string lowerCodec = codecName;
+                boost::algorithm::to_lower(lowerCodec);
+
+                bool isKnownFastIntra =
+                    (lowerCodec.find("prores") != std::string::npos || lowerCodec.find("dnx") != std::string::npos
+                     || lowerCodec.find("jpeg 2000") != std::string::npos || lowerCodec.find("mjpeg") != std::string::npos
+                     || lowerCodec.find("motion jpeg") != std::string::npos);
+
+                if (isKnownFastIntra || !minfo.slowRandomAccess)
                 {
                     hasIntraFrameVideo = true;
                     if (detectedMediaDesc.empty())
                     {
-                        detectedMediaDesc = "fast intra-frame video (ProRes/DNxHR)";
+                        detectedMediaDesc =
+                            !codecName.empty() ? ("fast intra-frame video (" + codecName + ")") : "fast intra-frame video (ProRes/DNxHR)";
+                    }
+                }
+                else
+                {
+                    hasInterFrameVideo = true;
+                    if (detectedMediaDesc.empty())
+                    {
+                        detectedMediaDesc =
+                            !codecName.empty() ? ("inter-frame video (" + codecName + ")") : "inter-frame compressed video (MPEG/H.264)";
                     }
                 }
             }
