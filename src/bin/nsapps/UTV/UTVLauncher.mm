@@ -355,6 +355,8 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "\nTo install the missing dependencies with Homebrew, run:\n");
             fprintf(stderr, "  brew install %s && brew link --overwrite ffmpeg-full\n\n", [missingList UTF8String]);
             fprintf(stderr, "Or install UTV using Homebrew Cask (installs all dependencies automatically):\n");
+            fprintf(stderr, "  brew tap OpenUTV/utv https://github.com/OpenUTV/utv\n");
+            fprintf(stderr, "  brew trust OpenUTV/utv\n");
             fprintf(stderr, "  brew install --cask utv\n\n");
             fprintf(stderr, "For more information or to report issues, visit: https://github.com/OpenUTV/utv\n");
             fprintf(stderr, "================================================================================\n\n");
