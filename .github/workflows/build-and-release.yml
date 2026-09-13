@@ -2,6 +2,15 @@ name: Build and Release macOS
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Runner to execute macOS jobs on'
+        required: true
+        default: 'self-hosted'
+        type: choice
+        options:
+          - 'self-hosted'
+          - 'macos-26'
 
 permissions:
   contents: write
@@ -36,7 +45,7 @@ jobs:
   build:
     name: Build macOS
     needs: lint
-    runs-on: macos-26 # arm64
+    runs-on: ${{ fromJSON(inputs.runner == 'macos-26' && '["macos-26"]' || '["self-hosted", "macOS", "ARM64"]') }}
     outputs:
       version: ${{ steps.versioning.outputs.version }}
     steps:
@@ -133,7 +142,7 @@ jobs:
   sign-and-notarize:
     name: Sign & Notarize macOS
     needs: build
-    runs-on: macos-26 # arm64
+    runs-on: ${{ fromJSON(inputs.runner == 'macos-26' && '["macos-26"]' || '["self-hosted", "macOS", "ARM64"]') }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -175,6 +184,7 @@ jobs:
             echo "--- Importing Developer ID Certificate ---"
             KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
             KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
             security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
             security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
             security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -298,6 +308,16 @@ jobs:
           name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
           path: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
           retention-days: 7
+
+      - name: Clean up Keychain and Secrets
+        if: always()
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/AuthKey_"*.p8 2>/dev/null || true
+        shell: bash
 
   release:
     name: Release
