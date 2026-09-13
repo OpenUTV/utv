@@ -3,14 +3,6 @@ name: Build and Release macOS
 on:
   workflow_dispatch:
     inputs:
-      runner:
-        description: 'Runner to execute macOS jobs on'
-        required: true
-        default: 'self-hosted'
-        type: choice
-        options:
-          - 'self-hosted'
-          - 'macos-26'
       version_override:
         description: 'Version to build (e.g. 2026.2). Leave blank for next version.'
         required: false
@@ -50,7 +42,7 @@ jobs:
   build:
     name: Build macOS
     needs: lint
-    runs-on: ${{ fromJSON(inputs.runner == 'macos-26' && '["macos-26"]' || '["self-hosted", "macOS", "ARM64"]') }}
+    runs-on: macos-26
     outputs:
       version: ${{ steps.versioning.outputs.version }}
     steps:
@@ -151,7 +143,7 @@ jobs:
   sign-and-notarize:
     name: Sign & Notarize macOS
     needs: build
-    runs-on: ${{ fromJSON(inputs.runner == 'macos-26' && '["macos-26"]' || '["self-hosted", "macOS", "ARM64"]') }}
+    runs-on: macos-26
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
