@@ -318,12 +318,18 @@ jobs:
 
       - name: Generate Release Notes
         id: release-notes
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -f ".github/RELEASE_NOTES.md" ]; then
+            echo "Using curated release notes from .github/RELEASE_NOTES.md"
+            EOF=$(openssl rand -hex 8)
+            echo "content<<$EOF" >> $GITHUB_OUTPUT
+            cat .github/RELEASE_NOTES.md >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_OUTPUT
+            echo "$EOF" >> $GITHUB_OUTPUT
+          else
+            echo "content=UTV Release ${{ needs.build.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
 
       - name: Update Homebrew Cask Formula
         run: |
