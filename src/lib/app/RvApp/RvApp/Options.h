@@ -150,6 +150,7 @@ namespace Rv
         int useCache;
         int useLCache;
         int useNoCache;
+        int autoCacheMode;
         int showFormats;
         int fullscreen;
         int usecli;
@@ -434,7 +435,8 @@ namespace Rv
 
 #define RV_ARG_PARSE_OPTIONS(opt)                                                                                                          \
     "-c", ARG_FLAG(&opt.useCache), "Use region frame cache", "-l", ARG_FLAG(&opt.useLCache), "Use look-ahead cache", "-nc",                \
-        ARG_FLAG(&opt.useNoCache), "Use no caching", "-s %f", &opt.scale, "Image scale reduction", "-ns", ARG_FLAG(&opt.nukeSequence),     \
+        ARG_FLAG(&opt.useNoCache), "Use no caching", "-ac", ARG_FLAG(&opt.autoCacheMode), "Use auto smart media caching", "-s %f",         \
+        &opt.scale, "Image scale reduction", "-ns", ARG_FLAG(&opt.nukeSequence),                                                           \
         "Nuke style sequence notation (deprecated and ignored -- no longer "                                                               \
         "needed)",                                                                                                                         \
         "-noRanges", ARG_FLAG(&opt.noRanges), "No separate frame ranges (i.e. 1-10 will be considered a file)", "-sessionType %S",         \

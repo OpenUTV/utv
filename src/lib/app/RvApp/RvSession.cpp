@@ -894,6 +894,10 @@ namespace Rv
             setCaching(RvSession::GreedyCache);
         else if (opts.useLCache)
             setCaching(RvSession::BufferCache);
+        else if (opts.useNoCache)
+            setCaching(RvSession::NeverCache);
+        else if (opts.autoCacheMode)
+            determineAndApplyAutoCacheMode();
 
         // setFrame(1);
 
@@ -1650,6 +1654,73 @@ namespace Rv
                 if (graph().hasAudio())
                     ensureAudioRenderer();
             }
+
+            if (Options::sharedOptions().autoCacheMode)
+            {
+                determineAndApplyAutoCacheMode();
+            }
+        }
+    }
+
+    void RvSession::determineAndApplyAutoCacheMode()
+    {
+        const RvGraph::Sources& sources = rvgraph().imageSources();
+        if (sources.empty())
+            return;
+
+        bool hasImageSequence = false;
+        bool hasInterFrameVideo = false;
+        bool hasIntraFrameVideo = false;
+        std::string detectedMediaDesc;
+
+        for (size_t i = 0; i < sources.size(); ++i)
+        {
+            SourceIPNode* src = sources[i];
+            if (!src || src->numMedia() == 0)
+                continue;
+
+            try
+            {
+                const SourceIPNode::MovieInfo& minfo = src->mediaMovieInfo(0);
+                if (!minfo.video)
+                {
+                    hasImageSequence = true;
+                    detectedMediaDesc = "image sequence";
+                    break;
+                }
+                else if (minfo.slowRandomAccess)
+                {
+                    hasInterFrameVideo = true;
+                    detectedMediaDesc = "inter-frame compressed video (MPEG/H.264)";
+                }
+                else
+                {
+                    hasIntraFrameVideo = true;
+                    if (detectedMediaDesc.empty())
+                    {
+                        detectedMediaDesc = "fast intra-frame video (ProRes/DNxHR)";
+                    }
+                }
+            }
+            catch (...)
+            {
+            }
+        }
+
+        if (hasImageSequence)
+        {
+            setCaching(RvSession::BufferCache);
+            cout << "INFO: Auto-caching: Detected image sequence; activated Look-Ahead Cache." << endl;
+        }
+        else if (hasInterFrameVideo)
+        {
+            setCaching(RvSession::BufferCache);
+            cout << "INFO: Auto-caching: Detected " << detectedMediaDesc << "; activated Look-Ahead Cache for smooth playback." << endl;
+        }
+        else if (hasIntraFrameVideo)
+        {
+            setCaching(RvSession::NeverCache);
+            cout << "INFO: Auto-caching: Detected " << detectedMediaDesc << "; activated No Caching for instant realtime playback." << endl;
         }
     }
 

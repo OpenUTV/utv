@@ -156,6 +156,7 @@ namespace Rv
         IPCore::SourceIPNode* addImageSource(const std::string&, const TwkMovie::MovieInfo&);
 
         void newMediaLoaded(IPCore::SourceIPNode*);
+        void determineAndApplyAutoCacheMode();
 
         //
         //  Delete a node. This can be a source (group) node or whatever

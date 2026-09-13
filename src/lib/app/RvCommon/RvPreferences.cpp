@@ -467,11 +467,15 @@ namespace Rv
         //----------------------------------------------------------------------
         settings.beginGroup("Caching");
 
-        n = 0;
-        if (opts.useCache)
+        n = 3;
+        if (opts.useNoCache)
+            n = 0;
+        else if (opts.useCache)
             n = 1;
-        if (opts.useLCache)
+        else if (opts.useLCache)
             n = 2;
+        else if (opts.autoCacheMode)
+            n = 3;
 
         m_ui.cacheModeCombo->setCurrentIndex(settings.value("cacheMode", n).toInt());
 
@@ -935,21 +939,27 @@ namespace Rv
 
         //----------------------------------------------------------------------
         settings.beginGroup("Caching");
-        int cacheMode = settings.value("cacheMode", 2 /*Look-Ahead Cache*/).toInt();
+        int cacheMode = settings.value("cacheMode", 3 /*Auto (Smart Media Detection)*/).toInt();
 
+        opts.useNoCache = false;
         opts.useCache = false;
         opts.useLCache = false;
+        opts.autoCacheMode = false;
 
         switch (cacheMode)
         {
-        default:
         case 0:
+            opts.useNoCache = true;
             break;
         case 1:
             opts.useCache = true;
             break;
         case 2:
             opts.useLCache = true;
+            break;
+        case 3:
+        default:
+            opts.autoCacheMode = true;
             break;
         }
 
@@ -1293,7 +1303,12 @@ namespace Rv
         //----------------------------------------------------------------------
 
         settings.beginGroup("Caching");
-        settings.setValue("cacheMode", m_ui.cacheModeCombo->currentIndex());
+        int cm = m_ui.cacheModeCombo->currentIndex();
+        settings.setValue("cacheMode", cm);
+        opts.useNoCache = (cm == 0);
+        opts.useCache = (cm == 1);
+        opts.useLCache = (cm == 2);
+        opts.autoCacheMode = (cm == 3);
 
 // Use the setting from the running architecture as the shared setting for
 // backwards compatibility.

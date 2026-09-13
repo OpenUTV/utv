@@ -294,8 +294,9 @@ namespace Rv
         fps = 0.0;
         defaultfps = 24.0; // no command line for this one
         useCache = 0;
-        useLCache = 1; // Use 'Look-Ahead Cache' by default
+        useLCache = 0;
         useNoCache = 0;
+        autoCacheMode = 1; // Default to Auto (Smart Media Detection)
         showFormats = 0;
         fullscreen = 0;
         noBorders = 0;
@@ -317,7 +318,7 @@ namespace Rv
         totalcram = 0.2 * (double(usableMemory) / 1024.0 / 1024.0 / 1024.0);
         maxcram = 1.0;   // 1 GB
         maxlram = 1.0;   // 1 GB
-        maxbwait = 5.0;  // seconds
+        maxbwait = 0.0;  // 0.0 seconds (never stall playback on lookahead overrun)
         lookback = 25.0; // percent
         readerThreads = (numLogicalCPUs > 4) ? std::min(numLogicalCPUs / 4, 4) : 1;
         hwDecodeMode = 0; // 0 = Auto, 1 = ProRes, 2 = Disabled
@@ -934,6 +935,10 @@ namespace Rv
                 else
                     useLCache = 0;
             }
+            if (useNoCache || useCache || useLCache)
+            {
+                autoCacheMode = 0;
+            }
             defaultfps = prefs->defaultfps;
         }
 
@@ -1272,6 +1277,7 @@ namespace Rv
                                           "urlsReuseSession",
                                           "useCache",
                                           "useLCache",
+                                          "autoCacheMode",
                                           "usecli",
                                           "vsync",
                                           "wipes",
@@ -1418,6 +1424,7 @@ namespace Rv
                                static_cast<size_t>((char*)(&this->urlsReuseSession) - (char*)this),
                                static_cast<size_t>((char*)(&this->useCache) - (char*)this),
                                static_cast<size_t>((char*)(&this->useLCache) - (char*)this),
+                               static_cast<size_t>((char*)(&this->autoCacheMode) - (char*)this),
                                static_cast<size_t>((char*)(&this->usecli) - (char*)this),
                                static_cast<size_t>((char*)(&this->vsync) - (char*)this),
                                static_cast<size_t>((char*)(&this->wipes) - (char*)this),
