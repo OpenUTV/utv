@@ -612,9 +612,17 @@ namespace Rv
 
         vector<char> temp;
         temp.reserve(2048);
-        sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
-                TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME,
-                COPYRIGHT_TEXT);
+        if (TWK_DEPLOY_PATCH_LEVEL() == 0)
+        {
+            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
+                    TWK_DEPLOY_MINOR_VERSION(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
+        }
+        else
+        {
+            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
+                    TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME,
+                    COPYRIGHT_TEXT);
+        }
 
         const TwkApp::Document* doc = TwkApp::Document::activeDocument();
         QWidget* parent = 0;

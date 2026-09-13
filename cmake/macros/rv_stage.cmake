@@ -711,6 +711,18 @@ FUNCTION(rv_stage)
     ADD_DEPENDENCIES(main_executable ${arg_TARGET})
 
     IF(RV_TARGET_DARWIN)
+      IF(RV_REVISION_NUMBER
+         AND NOT RV_REVISION_NUMBER EQUAL 0
+      )
+        SET(_MACOSX_BUNDLE_VER
+            "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
+        )
+      ELSE()
+        SET(_MACOSX_BUNDLE_VER
+            "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}"
+        )
+      ENDIF()
+
       SET_TARGET_PROPERTIES(
         ${arg_TARGET}
         PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_APP_ROOT}"
@@ -720,8 +732,8 @@ FUNCTION(rv_stage)
                    MACOSX_BUNDLE_EXECUTABLE_NAME ${_target}
                    RESOURCE "${arg_FILES}"
                    MACOSX_BUNDLE_GUI_IDENTIFIER "com.OpenUTV.${_target}"
-                   MACOSX_BUNDLE_SHORT_VERSION_STRING "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
-                   MACOSX_BUNDLE_BUNDLE_VERSION "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
+                   MACOSX_BUNDLE_SHORT_VERSION_STRING "${_MACOSX_BUNDLE_VER}"
+                   MACOSX_BUNDLE_BUNDLE_VERSION "${_MACOSX_BUNDLE_VER}"
                    MACOSX_BUNDLE_ICON_FILE "${_target}.icns"
                    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
       )

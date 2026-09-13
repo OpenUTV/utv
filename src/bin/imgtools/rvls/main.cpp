@@ -682,7 +682,10 @@ int utf8Main(int argc, char** argv)
 
     if (showVersion)
     {
-        cout << MAJOR_VERSION << "." << MINOR_VERSION << "." << REVISION_NUMBER << endl;
+        if (REVISION_NUMBER == 0)
+            cout << MAJOR_VERSION << "." << MINOR_VERSION << endl;
+        else
+            cout << MAJOR_VERSION << "." << MINOR_VERSION << "." << REVISION_NUMBER << endl;
 
         exit(0);
     }

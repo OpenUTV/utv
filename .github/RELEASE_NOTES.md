@@ -14,6 +14,22 @@
   - Added a new **Hardware Video Decoding** preference under **Preferences -> Caching** (`Auto (All Supported Codecs)`, `ProRes Only`, `Disabled (Software CPU)`).
   - Added pipeline environment variable control via `OPENUTV_HWACCEL` / `UTV_HWACCEL` (`all`, `prores`, `none`).
 
+### Intelligent Caching & Memory Architecture
+
+- **Auto Smart Media Caching**: Introduced an intelligent auto-caching engine (`Auto (Smart Media Detection)`) in Preferences and CLI (`-ac`):
+  - **Fast Intra-Frame Video** (Apple ProRes, ProRes RAW, Avid DNxHR/DNxHD, JPEG 2000, Motion JPEG): Automatically routes to **No Caching** (`NeverCache`) for instant real-time playback without RAM saturation.
+  - **Image Sequences** (EXR, DPX, TIFF, etc.) & **Inter-Frame Video** (MPEG-1/2, H.264, HEVC, AV1, VP9): Automatically engages **Look-Ahead Cache** (`BufferCache`) to ensure smooth playback and prevent audio clock drops.
+  - Emits informative console logs identifying the media format and the selected caching strategy.
+- **Zero-Wait Buffer Overrun (`0.0s`)**: Set default Look-Ahead wait time to `0.0s` across preferences and CLI options, allowing playback to decode on-the-fly when cache buffers are overrun rather than pausing.
+- **Hardware Memory Protection**: Query physical RAM on Apple Silicon dynamically using `sysctl HW_MEMSIZE` and clamp cache allocations to a safe ceiling of 85% of physical memory to prevent system freezes.
+- **Playback Stall Notifications**: Added rate-limited console notices with actionable troubleshooting tips if buffer starvation ever interrupts playback.
+- **Intra-Frame Seek Optimization**: Cleaned FFmpeg slow random access classifications, ensuring NLE codecs are recognized as fast random access and eliminating erroneous slow access flags.
+
+### Application Versioning & Metadata Alignment
+
+- **Dynamic Release Version Resolution**: Replaced the legacy hardcoded `2026.9.10` placeholder in `CMakeLists.txt` with dynamic Git tag resolution matching semantic releases (e.g. `2026.2`).
+- **Clean Version Display**: Updated the About dialog, CLI tools (`-version`), and macOS bundle metadata (`CFBundleShortVersionString`, `CFBundleVersion`) to cleanly display `2026.2` without appending redundant patch numbers when the patch level is 0.
+
 ### Bundled Python Runtime & Packaging
 
 - **Self-Contained Site-Packages**: Bundled all runtime Python dependencies (`opentimelineio`, `six`, `numpy`, `PyOpenGL`, `requests`, `certifi`, `pydantic`, etc.) directly into `UTV.app/Contents/lib/python3.14/site-packages/`.

@@ -348,10 +348,21 @@ if [ -n "$PRORES_SDK" ]; then
     CMAKE_ARGS+=("-DRV_DEPS_APPLE_PRORES_SDK_ZIP_PATH=${PRORES_SDK}")
 fi
 
+if [ -z "$CUSTOM_VERSION" ]; then
+    LATEST_GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    if [[ "$LATEST_GIT_TAG" =~ ^([0-9]+)\.([0-9]+)(\.([0-9]+))? ]]; then
+        CUSTOM_VERSION="$LATEST_GIT_TAG"
+    fi
+fi
+
 if [ -n "$CUSTOM_VERSION" ]; then
     MAJOR=$(echo "$CUSTOM_VERSION" | cut -d'.' -f1)
     MINOR=$(echo "$CUSTOM_VERSION" | cut -d'.' -f2)
-    CMAKE_ARGS+=("-DRV_MAJOR_VERSION=${MAJOR}" "-DRV_MINOR_VERSION=${MINOR}" "-DRV_VERSION_YEAR=${MAJOR}")
+    PATCH=$(echo "$CUSTOM_VERSION" | cut -d'.' -f3)
+    if [ -z "$PATCH" ]; then
+        PATCH="0"
+    fi
+    CMAKE_ARGS+=("-DRV_MAJOR_VERSION=${MAJOR}" "-DRV_MINOR_VERSION=${MINOR}" "-DRV_REVISION_NUMBER=${PATCH}" "-DRV_VERSION_YEAR=${MAJOR}")
 fi
 
 # Add Windows specifics if running in MSYS/Cygwin
