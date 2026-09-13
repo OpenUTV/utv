@@ -21,6 +21,20 @@ UTV is a highly performant, lightweight, and modern image and sequence viewer.
 
 Originally forked from visual effects industry software [OpenRV](https://github.com/AcademySoftwareFoundation/OpenRV), UTV is designed to be a **distributable framecycler that anyone can install and run instantly**. We have stripped away massive legacy build times and enterprise reference platform constraints to build a streamlined, cutting-edge tool for artists, editors, supervisors, and studios alike.
 
+### Initial Release: We Need Your Help
+
+UTV is currently in its initial public release. While our modern build architecture and core playback engine are moving quickly, there will be issues, edge cases, and rough edges as we scale across diverse studio workflows, operating systems, and media formats.
+
+We need the community's help to stress-test UTV and report what you find:
+
+- **What is broken or crashing**
+- **Which codecs or formats fail to decode, display incorrect colors, or exhibit visual glitches**
+- **Performance bottlenecks, frame drops, or playback stutter**
+- **UX behaviors or tools that do not work as expected**
+- **New features, integrations, or workflows you want to see**
+
+All bug reports and feature requests are tracked publicly via **[GitHub Issues](https://github.com/OpenUTV/utv/issues)**. If you run into any issue or have an idea, please **[submit an issue](https://github.com/OpenUTV/utv/issues/new/choose)** with details about your operating system, hardware, and sample file specifications.
+
 ### Why OpenUTV?
 
 - **Fast Build Times**: A clean build from scratch on an M4 MacBook Air takes just **4:30 minutes**; cached incremental rebuilds take under **50 seconds** (compared to hours for legacy enterprise VFX builds).
