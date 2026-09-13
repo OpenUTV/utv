@@ -1641,6 +1641,8 @@ namespace Rv
 
                 for (size_t q = 0; q < entries.size(); q++)
                 {
+                    if (entries[q].fileName().startsWith("._"))
+                        continue;
                     if (entries[q].fileName().endsWith(".zip") || entries[q].fileName().endsWith("rvpkg")
                         || entries[q].fileName().endsWith("rvpkgs"))
                     {

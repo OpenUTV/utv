@@ -36,6 +36,7 @@ static const struct DepCheck kRequiredDependencies[] = {
     {"yaml-cpp", {"opt/yaml-cpp", NULL}},
     {"spdlog", {"opt/spdlog", NULL}},
     {"icu4c", {"opt/icu4c", NULL}},
+    {"pyside", {"opt/pyside", "opt/pyside@6", NULL}},
     {NULL, {NULL}}
 };
 

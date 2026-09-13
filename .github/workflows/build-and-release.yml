@@ -90,7 +90,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           brew install --formula \
-               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
         shell: bash
 
@@ -117,6 +117,8 @@ jobs:
 
       - name: Archive Unsigned App
         run: |
+          export COPYFILE_DISABLE=1
+          find _build/stage/app/UTV.app -name "._*" -delete
           mkdir -p _build/stage/unsigned
           tar -czf _build/stage/unsigned/UTV.app.tar.gz -C _build/stage/app UTV.app
         shell: bash
@@ -144,6 +146,7 @@ jobs:
 
       - name: Extract Unsigned App
         run: |
+          export COPYFILE_DISABLE=1
           mkdir -p _build/stage/app
           ARCHIVE=$(find _build/stage/unsigned -name "UTV.app.tar.gz" | head -n 1)
           if [ -z "$ARCHIVE" ]; then
@@ -153,6 +156,7 @@ jobs:
           fi
           echo "Extracting $ARCHIVE into _build/stage/app..."
           tar -xzf "$ARCHIVE" -C _build/stage/app
+          find _build/stage/app/UTV.app -name "._*" -delete
         shell: bash
 
       - name: Sign & Notarize macOS App
@@ -197,8 +201,9 @@ jobs:
             echo "--- Stripping pre-existing linker signatures ---"
             codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
 
-            echo "--- Removing legacy symlinks and empty directories from bundle ---"
+            echo "--- Removing legacy symlinks, AppleDouble files, and empty directories from bundle ---"
             find "$APP_PATH/Contents/MacOS" -type l -delete
+            find "$APP_PATH" -name "._*" -delete
             rmdir "$APP_PATH/Contents/include" 2>/dev/null || true
             rmdir "$APP_PATH/Contents/src" 2>/dev/null || true
 
@@ -233,6 +238,8 @@ jobs:
             codesign -dvvv "$APP_PATH/Contents/MacOS/$MAIN_EXE"
             codesign -dvvv "$APP_PATH"
 
+            export COPYFILE_DISABLE=1
+            find "$APP_PATH" -name "._*" -delete
             cd _build/stage/app
             /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
 

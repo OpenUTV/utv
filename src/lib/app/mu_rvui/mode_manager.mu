@@ -272,6 +272,7 @@ class: ModeManagerMode : MinorMode
         if (is_nil(pymodule))
         {
             print("ERROR: python module %s could not be imported\n" % pymodname);
+            PyErr_Print();
             return nil;
         }
 

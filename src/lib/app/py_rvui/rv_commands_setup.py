@@ -18,12 +18,20 @@ exec_dir = os.path.dirname(os.path.abspath(sys.executable))
 
 # 1. Check for bundled site-packages inside macOS .app bundle or Linux install prefix
 bundle_root = os.path.abspath(os.path.join(exec_dir, ".."))
+this_dir = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else exec_dir
+file_bundle_root = os.path.abspath(os.path.join(this_dir, "..", ".."))
+
 candidate_dirs = [
-    # macOS bundle structure: Contents/lib/pythonX.Y/site-packages
+    # macOS bundle structure anchored to sys.executable
     os.path.join(bundle_root, "lib", py_version, "site-packages"),
     os.path.join(bundle_root, "lib", "site-packages"),
     os.path.join(bundle_root, "Resources", "python", "site-packages"),
     os.path.join(bundle_root, "PlugIns", "Python", "site-packages"),
+    # macOS bundle structure anchored to __file__ (e.g. inside PlugIns/Python)
+    os.path.join(file_bundle_root, "lib", py_version, "site-packages"),
+    os.path.join(file_bundle_root, "lib", "site-packages"),
+    os.path.join(file_bundle_root, "Resources", "python", "site-packages"),
+    os.path.join(file_bundle_root, "PlugIns", "Python", "site-packages"),
     # Linux structure: ../lib/pythonX.Y/site-packages
     os.path.join(bundle_root, "lib", py_version, "site-packages"),
     os.path.join(bundle_root, "lib64", py_version, "site-packages"),
