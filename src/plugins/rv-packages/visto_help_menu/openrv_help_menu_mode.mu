@@ -142,7 +142,7 @@ class: UTVHelpMenuMinorMode : MinorMode
                 if (io.path.exists(p)) return p;
             }
         }
-        catch (...) {}
+        catch (...) { ; }
 
         let p1 = "/Applications/UTV.app/Contents/MacOS/" + scriptName;
         if (io.path.exists(p1)) return p1;
@@ -160,7 +160,7 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-diagnostics");
             if (script != "")
             {
-                string[] args = { script };
+                string[] args = string[] { script };
                 qt.QProcess.startDetached("/bin/bash", args);
             }
             else
@@ -181,11 +181,11 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-diagnostics");
             if (script != "")
             {
-                string[] args = { script, "--no-browser" };
+                string[] args = string[] { script, "--no-browser" };
                 qt.QProcess.startDetached("/bin/bash", args);
             }
         }
-        catch (...) {}
+        catch (...) { ; }
     }
 
     \: checkUpdates (void; Event ev)
@@ -195,7 +195,7 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-check-updates");
             if (script != "")
             {
-                string[] args = { script, "--interactive" };
+                string[] args = string[] { script, "--interactive" };
                 qt.QProcess.startDetached("/bin/bash", args);
             }
             else
