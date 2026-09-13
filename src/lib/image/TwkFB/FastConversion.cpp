@@ -858,9 +858,6 @@ void planarP210_to_planarYUV422P16(size_t width, size_t height, const uint16_t* 
     uint16_t* FASTMEMCPYRESTRICT startOutCb = outCb;
     uint16_t* FASTMEMCPYRESTRICT startOutCr = outCr;
 
-    constexpr uint32_t bit_mask = 0xFFC0;
-    constexpr int bit_shift = 6;
-
     for (size_t i = 0; i < height; ++i)
     {
         inY = startInY + i * inStrideY / 2;
@@ -868,21 +865,13 @@ void planarP210_to_planarYUV422P16(size_t width, size_t height, const uint16_t* 
         outY = startOutY + i * outStrideY / 2;
         outCb = startOutCb + i * outStrideCb / 2;
         outCr = startOutCr + i * outStrideCr / 2;
+
+        memcpy(outY, inY, width * sizeof(uint16_t));
+
         for (size_t j = 0; j < nbPixelGroups; ++j)
         {
-            *outY = denormalizeY16(normalizeY10(((*inY) & bit_mask) >> bit_shift));
-            ++outY;
-            ++inY;
-            *outY = denormalizeY16(normalizeY10(((*inY) & bit_mask) >> bit_shift));
-            ++outY;
-            ++inY;
-
-            *outCb = denormalizeY16(normalizeY10(((*inCbCr) & bit_mask) >> bit_shift));
-            ++outCb;
-            ++inCbCr;
-            *outCr = denormalizeY16(normalizeY10(((*inCbCr) & bit_mask) >> bit_shift));
-            ++outCr;
-            ++inCbCr;
+            *outCb++ = *inCbCr++;
+            *outCr++ = *inCbCr++;
         }
     }
 }

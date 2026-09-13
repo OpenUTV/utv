@@ -3716,11 +3716,11 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYUVA();
             const FrameBuffer* U = fb->nextPlane();
-            const FrameBuffer* V = fb->nextPlane();
+            const FrameBuffer* V = U ? U->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(U->width()) / float(fb->width()), float(U->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(V->width()) / float(fb->width()), float(V->height()) / float(fb->height()));
+            const Vec2f r1 = Vec2f(float((V ? V : U)->width()) / float(fb->width()), float((V ? V : U)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -3757,11 +3757,11 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYUVAUncrop();
             const FrameBuffer* U = fb->nextPlane();
-            const FrameBuffer* V = fb->nextPlane();
+            const FrameBuffer* V = U ? U->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(U->width()) / float(fb->width()), float(U->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(V->width()) / float(fb->width()), float(V->height()) / float(fb->height()));
+            const Vec2f r1 = Vec2f(float((V ? V : U)->width()) / float(fb->width()), float((V ? V : U)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -3801,11 +3801,11 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYUV();
             const FrameBuffer* U = fb->nextPlane();
-            const FrameBuffer* V = fb->nextPlane();
+            const FrameBuffer* V = U ? U->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(U->width()) / float(fb->width()), float(U->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(V->width()) / float(fb->width()), float(V->height()) / float(fb->height()));
+            const Vec2f r1 = Vec2f(float((V ? V : U)->width()) / float(fb->width()), float((V ? V : U)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -3895,11 +3895,11 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYUVUncrop();
             const FrameBuffer* U = fb->nextPlane();
-            const FrameBuffer* V = fb->nextPlane();
+            const FrameBuffer* V = U ? U->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(U->width()) / float(fb->width()), float(U->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(V->width()) / float(fb->width()), float(V->height()) / float(fb->height()));
+            const Vec2f r1 = Vec2f(float((V ? V : U)->width()) / float(fb->width()), float((V ? V : U)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -3938,11 +3938,12 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYRYBY();
             const FrameBuffer* RY = fb->nextPlane();
-            const FrameBuffer* BY = fb->nextPlane();
+            const FrameBuffer* BY = RY ? RY->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(RY->width()) / float(fb->width()), float(RY->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(BY->width()) / float(fb->width()), float(BY->height()) / float(fb->height()));
+            const Vec2f r1 =
+                Vec2f(float((BY ? BY : RY)->width()) / float(fb->width()), float((BY ? BY : RY)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -3977,11 +3978,12 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYRYBYUncrop();
             const FrameBuffer* RY = fb->nextPlane();
-            const FrameBuffer* BY = fb->nextPlane();
+            const FrameBuffer* BY = RY ? RY->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(RY->width()) / float(fb->width()), float(RY->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(BY->width()) / float(fb->width()), float(BY->height()) / float(fb->height()));
+            const Vec2f r1 =
+                Vec2f(float((BY ? BY : RY)->width()) / float(fb->width()), float((BY ? BY : RY)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -4188,11 +4190,12 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYRYBYA();
             const FrameBuffer* RY = fb->nextPlane();
-            const FrameBuffer* BY = fb->nextPlane();
+            const FrameBuffer* BY = RY ? RY->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(RY->width()) / float(fb->width()), float(RY->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(BY->width()) / float(fb->width()), float(BY->height()) / float(fb->height()));
+            const Vec2f r1 =
+                Vec2f(float((BY ? BY : RY)->width()) / float(fb->width()), float((BY ? BY : RY)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;
@@ -4229,11 +4232,12 @@ namespace IPCore
             const FrameBuffer* fb = img->fb;
             const Function* F = sourcePlanarYRYBYAUncrop();
             const FrameBuffer* RY = fb->nextPlane();
-            const FrameBuffer* BY = fb->nextPlane();
+            const FrameBuffer* BY = RY ? RY->nextPlane() : nullptr;
 
             const Vec2f r0 = Vec2f(float(RY->width()) / float(fb->width()), float(RY->height()) / float(fb->height()));
 
-            const Vec2f r1 = Vec2f(float(BY->width()) / float(fb->width()), float(BY->height()) / float(fb->height()));
+            const Vec2f r1 =
+                Vec2f(float((BY ? BY : RY)->width()) / float(fb->width()), float((BY ? BY : RY)->height()) / float(fb->height()));
 
             ArgumentVector args(F->parameters().size());
             size_t i = 0;

@@ -870,7 +870,7 @@ namespace TwkMovie
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(native);
             if (!desc)
                 return AV_PIX_FMT_RGB24;
-            int bitSize = desc->comp[0].depth - desc->comp[0].shift;
+            int bitSize = desc->comp[0].depth;
             bool hasAlpha = true; //(desc->flags & AV_PIX_FMT_FLAG_ALPHA);
             return (hasAlpha) ? ((bitSize > 8) ? AV_PIX_FMT_RGBA64 : AV_PIX_FMT_RGBA)
                               : ((bitSize > 8) ? AV_PIX_FMT_RGB48 : AV_PIX_FMT_RGB24);
@@ -892,7 +892,20 @@ namespace TwkMovie
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(native);
             if (!desc)
                 return AV_PIX_FMT_RGB24;
-            int bitSize = desc->comp[0].depth - desc->comp[0].shift;
+
+            // Handle VideoToolbox and semi-planar formats
+            if (native == AV_PIX_FMT_P210LE)
+                return AV_PIX_FMT_YUV422P16LE;
+            if (native == AV_PIX_FMT_P416LE)
+                return AV_PIX_FMT_YUV444P16LE;
+            if (native == AV_PIX_FMT_AYUV64LE)
+                return AV_PIX_FMT_YUVA444P16LE;
+            if (native == AV_PIX_FMT_NV12)
+                return AV_PIX_FMT_YUV420P;
+            if (native == AV_PIX_FMT_P010LE)
+                return AV_PIX_FMT_YUV420P16LE;
+
+            int bitSize = desc->comp[0].depth;
             bool hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
             bool isPlanar = (desc->flags & AV_PIX_FMT_FLAG_PLANAR);
             bool isRGB = (desc->flags & AV_PIX_FMT_FLAG_RGB);
@@ -2781,7 +2794,7 @@ namespace TwkMovie
             }
 
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
-        int bitSize = desc->comp[0].depth - desc->comp[0].shift;
+        int bitSize = desc->comp[0].depth;
         m_info.numChannels = desc->nb_components;
 #if defined(__APPLE__)
         if (m_videoTracks[0]->useAVFProResRaw)
@@ -4168,7 +4181,7 @@ namespace TwkMovie
             desc = av_pix_fmt_desc_get(nativeFormat);
         }
 
-        int bitSize = desc->comp[0].depth - desc->comp[0].shift;
+        int bitSize = desc->comp[0].depth;
         int numPlanes = 0;
         bool hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
         bool isPlanar = (desc->flags & AV_PIX_FMT_FLAG_PLANAR);
@@ -4219,21 +4232,29 @@ namespace TwkMovie
         default:
             nativeFormat = getBestRVFormat(nativeFormat);
             outFrame->format = nativeFormat;
+            desc = av_pix_fmt_desc_get(nativeFormat);
+            bitSize = desc->comp[0].depth;
+            hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
+            isPlanar = (desc->flags & AV_PIX_FMT_FLAG_PLANAR);
+            isRGB = (desc->flags & AV_PIX_FMT_FLAG_RGB);
+            dataType = (bitSize > 8) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+
             if (isPlanar && !isRGB)
             {
-                convertFormat = (bitSize != 8);
+                convertFormat = (videoFrame->format != nativeFormat);
                 numPlanes = av_pix_fmt_count_planes(nativeFormat);
                 int log2w, log2h;
                 av_pix_fmt_get_chroma_sub_sample(nativeFormat, &log2w, &log2h);
                 int usampling = int(pow(2.0f, log2w));
                 int vsampling = int(pow(2.0f, log2h));
+                av_image_fill_arrays(outFrame->data, outFrame->linesize, nullptr, nativeFormat, width, height, 1);
                 out = configureYUVPlanes(dataType, width, height, outFrame->linesize[0], outFrame->linesize[1], usampling, vsampling,
                                          hasAlpha, track->fb.orientation());
             }
             else
             {
                 convertFormat = true;
-                av_image_fill_arrays(outFrame->data, outFrame->linesize, 0, nativeFormat, width, height, 1);
+                av_image_fill_arrays(outFrame->data, outFrame->linesize, nullptr, nativeFormat, width, height, 1);
                 out = new FrameBuffer(width, height, (hasAlpha) ? 4 : 3, dataType);
             }
             break;
@@ -4241,10 +4262,12 @@ namespace TwkMovie
 
         // Assign the AVFrame data to our frame buffer
         outFrame->data[0] = out->pixels<unsigned char>();
+        outFrame->linesize[0] = static_cast<int>(out->scanlinePaddedSize());
         FrameBuffer* fb = out->nextPlane();
         for (int p = 1; p < numPlanes && fb; p++, fb = fb->nextPlane())
         {
             outFrame->data[p] = fb->pixels<unsigned char>();
+            outFrame->linesize[p] = static_cast<int>(fb->scanlinePaddedSize());
         }
 
 #if DB_TIMING & DB_LEVEL
@@ -4753,7 +4776,7 @@ namespace TwkMovie
 
             AVPixelFormat requestFormat = (m_canControlRequest) ? getBestAVFormat(avCodecContext->pix_fmt) : RV_OUTPUT_FFMPEG_FMT;
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(requestFormat);
-            int bitSize = desc->comp[0].depth - desc->comp[0].shift;
+            int bitSize = desc->comp[0].depth;
             bool hasAlpha = (desc->flags & AV_PIX_FMT_FLAG_ALPHA);
 
             // XXX might need to set avCodecContext->bits_per_raw_sample to
