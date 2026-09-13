@@ -581,7 +581,7 @@
       <key>CFBundleExecutable</key>
       <string>${RV_INTERNAL_APPLICATION_NAME}</string>
       <key>CFBundleGetInfoString</key>
-      <string>${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}, Copyright ${RV_VERSION_YEAR} Autodesk, Inc.</string>
+      <string>${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}, Copyright © ${RV_VERSION_YEAR} OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.</string>
       <key>CFBundleIconFile</key>
       <string>UTV.icns</string>
       <key>CFBundleIdentifier</key>
@@ -603,7 +603,7 @@
       <key>NSAppleScriptEnabled</key>
       <string>0</string>
       <key>NSHumanReadableCopyright</key>
-      <string>Copyright ${RV_VERSION_YEAR} Autodesk, Inc.</string>
+      <string>Copyright © ${RV_VERSION_YEAR} OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.</string>
       <key>NSMainNibFile</key>
       <string>MainMenu</string>
       <key>NSPrincipalClass</key>

@@ -30,10 +30,11 @@ SET_TARGET_PROPERTIES(
              OUTPUT_NAME ${_target}
              MACOSX_BUNDLE_BUNDLE_NAME "${_target}"
              MACOSX_BUNDLE_EXECUTABLE_NAME ${_target}
-             MACOSX_BUNDLE_GUI_IDENTIFIER "com.autodesk.${_target}.${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
+             MACOSX_BUNDLE_GUI_IDENTIFIER "com.OpenUTV.${_target}.${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
              MACOSX_BUNDLE_SHORT_VERSION_STRING "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
              MACOSX_BUNDLE_BUNDLE_VERSION "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
-             MACOSX_BUNDLE_COPYRIGHT "Copyright Autodesk ${RV_VERSION_YEAR}"
+             MACOSX_BUNDLE_COPYRIGHT
+             "Copyright © ${RV_VERSION_YEAR} OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software."
              MACOSX_BUNDLE_ICON_FILE "${_target}.icns"
              MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
 )

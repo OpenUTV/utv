@@ -258,6 +258,6 @@ IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 ENDIF()
 
 SET(RV_COPYRIGHT_TEXT
-    "Copyright Contributors to the UTV Project"
+    "Copyright Contributors to the OpenUTV Project. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software."
     CACHE STRING "RV's copyright text."
 )

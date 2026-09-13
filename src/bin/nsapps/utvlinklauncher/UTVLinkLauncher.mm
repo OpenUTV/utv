@@ -86,7 +86,7 @@
     @try {
         NSTask *task = [[NSTask alloc] init];
         [task setLaunchPath:@"/usr/bin/mdfind"];
-        [task setArguments:@[ @"kMDItemCFBundleIdentifier == 'com.autodesk.RV'" ]];
+        [task setArguments:@[ @"kMDItemCFBundleIdentifier == 'com.OpenUTV.UTV' || kMDItemCFBundleIdentifier == 'com.autodesk.RV'" ]];
 
         NSPipe *pipe = [NSPipe pipe];
         [task setStandardOutput:pipe];
@@ -129,7 +129,8 @@
         NSString *bundleID = [bundle bundleIdentifier];
         
         // Skip RVLinkLauncher apps - we don't want users selecting the launcher itself
-        if ([displayName containsString:@"RVLinkLauncher"] || 
+        if ([displayName containsString:@"LinkLauncher"] || 
+            [bundleID isEqualToString:@"com.OpenUTV.UTVLinkLauncher"] ||
             [bundleID isEqualToString:@"com.autodesk.RVLinkLauncher"]) {
             NSLog(@"  Skipping RVLinkLauncher: %@ | Bundle ID: %@", displayName, bundleID);
             continue;
