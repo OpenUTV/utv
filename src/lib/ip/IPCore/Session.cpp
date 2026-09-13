@@ -42,6 +42,7 @@
 #include <TwkUtil/PlaybackDiagnostics.h>
 #include <Mu/GarbageCollector.h>
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <limits>
@@ -2091,9 +2092,23 @@ namespace IPCore
         //  cache under-ran and playback is pausing to let it refill. Frequent
         //  buffering events indicate image (e.g. EXR) decode throughput can't
         //  keep up. Captured under RV_PLAYBACK_DIAG regardless of -debug flags.
-        if (eventData == "buffering" && TwkUtil::PlaybackDiagnostics::enabled())
+        if (eventData == "buffering")
         {
-            TwkUtil::PlaybackDiagnostics::instance().record("buffering", -1, m_frame, m_cacheStats.lookAheadSeconds * 1000.0);
+            if (TwkUtil::PlaybackDiagnostics::enabled())
+            {
+                TwkUtil::PlaybackDiagnostics::instance().record("buffering", -1, m_frame, m_cacheStats.lookAheadSeconds * 1000.0);
+            }
+
+            static auto lastNoticeTime = std::chrono::steady_clock::time_point::min();
+            auto now = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastNoticeTime).count() >= 10)
+            {
+                lastNoticeTime = now;
+                std::cout << "INFO: Playback paused to refill look-ahead cache (at frame " << m_frame << ").\n"
+                          << "      Tip: To prevent pausing on cache overrun, set 'Max Look-Ahead Wait Time' to 0s in Preferences -> "
+                             "Caching, or switch to 'No Caching' if your media decodes in realtime."
+                          << std::endl;
+            }
         }
 
         m_timer.stop();

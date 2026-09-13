@@ -481,6 +481,17 @@ namespace Rv
         double max32cram = settings.value("regionCacheSize32New", opts.maxcram).toDouble();
         double max64cram = settings.value("regionCacheSize64New", opts.maxcram).toDouble();
 
+        size_t physTotal = 0;
+        if (TwkUtil::SystemInfo::getSystemMemoryInfo(&physTotal, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)
+            && physTotal > 0)
+        {
+            double maxSafeGigs = (static_cast<double>(physTotal) * 0.85) / (1024.0 * 1024.0 * 1024.0);
+            if (max64lram > maxSafeGigs)
+                max64lram = maxSafeGigs;
+            if (max64cram > maxSafeGigs)
+                max64cram = maxSafeGigs;
+        }
+
         // ...and populate the preference fields
         // s.setNum(max32lram, 'g', 3);
         // m_ui.lookAheadCacheSize32Edit->setText(s);
@@ -496,6 +507,27 @@ namespace Rv
         m_ui.lookBehindFracEdit->setText(s);
 
         m_ui.cacheOutsideRegionToggle->setCheckState(opts.cacheOutsideRegion ? Qt::Checked : Qt::Unchecked);
+
+        m_ui.cacheModeCombo->setToolTip(
+            "Default caching strategy:\n"
+            "  - No Caching: Evaluates frames on demand without pre-caching (best for fast local video like ProRes).\n"
+            "  - Region Cache: Caches marked in/out regions or full media in RAM.\n"
+            "  - Look-Ahead Cache: Pre-caches a sliding window of frames ahead of the playhead (best for EXRs and image sequences).");
+
+        m_ui.lookAheadCacheSize64Edit->setToolTip(
+            "Look-ahead cache size in GB.\n"
+            "Note: OpenRV caches uncompressed raster frames (e.g. 4K 16-bit half RGBA is ~72 MB/frame).\n"
+            "Values are safely clamped to 85% of physical RAM to prevent system freezing.");
+
+        m_ui.regionCacheSize64Edit->setToolTip("Region cache maximum size in GB.\n"
+                                               "Values are safely clamped to 85% of physical RAM to prevent system freezing.");
+
+        m_ui.bufferWaitEdit->setToolTip("Max Look-Ahead Wait Time (seconds):\n"
+                                        "Time to pause playback to refill the look-ahead cache when playback overruns the buffer.\n"
+                                        "Tip: Set to 0 to NEVER pause playback on cache overrun and decode on the fly instead.");
+
+        m_ui.lookBehindFracEdit->setToolTip(
+            "Percentage of look-ahead cache reserved for frames behind the playhead (for scrubbing backwards).");
 
         settings.endGroup();
 
@@ -942,6 +974,17 @@ namespace Rv
             opts.maxcram = settings.value("regionCacheSizeNew", opts.maxcram).toDouble();
         else
             opts.maxcram = tmpcram;
+
+        size_t physTotal = 0;
+        if (TwkUtil::SystemInfo::getSystemMemoryInfo(&physTotal, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)
+            && physTotal > 0)
+        {
+            double maxSafeGigs = (static_cast<double>(physTotal) * 0.85) / (1024.0 * 1024.0 * 1024.0);
+            if (opts.maxlram > maxSafeGigs)
+                opts.maxlram = maxSafeGigs;
+            if (opts.maxcram > maxSafeGigs)
+                opts.maxcram = maxSafeGigs;
+        }
 
         opts.maxbwait = settings.value("bufferWait", opts.maxbwait).toDouble();
         opts.lookback = settings.value("lookBehindFraction", opts.lookback).toDouble();
@@ -1668,6 +1711,19 @@ namespace Rv
         if (gigs < 0.01)
             gigs = 0.01;
 
+        //
+        //  Clamp cache size to 85% of physical RAM to avoid swapping
+        //  and system-freezing out-of-memory states.
+        //
+        size_t physTotal = 0;
+        if (TwkUtil::SystemInfo::getSystemMemoryInfo(&physTotal, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)
+            && physTotal > 0)
+        {
+            float maxSafeGigs = (static_cast<double>(physTotal) * 0.85) / (1024.0 * 1024.0 * 1024.0);
+            if (gigs > maxSafeGigs)
+                gigs = maxSafeGigs;
+        }
+
         size_t bytes = size_t(double(gigs) * 1024.0 * 1024.0 * 1024.0);
 
         if (m == IPGraph::BufferCache)
@@ -1693,12 +1749,18 @@ namespace Rv
     {
         float gigs = (dynamic_cast<QLineEdit*>(QObject::sender()))->text().toFloat();
         newCacheSize(gigs, IPGraph::BufferCache);
+        QString s;
+        s.setNum(Options::sharedOptions().maxlram, 'g', 3);
+        m_ui.lookAheadCacheSize64Edit->setText(s);
     }
 
     void RvPreferences::regionCacheSizeFinisihed()
     {
         float gigs = (dynamic_cast<QLineEdit*>(QObject::sender()))->text().toFloat();
         newCacheSize(gigs, IPGraph::GreedyCache);
+        QString s;
+        s.setNum(Options::sharedOptions().maxcram, 'g', 3);
+        m_ui.regionCacheSize64Edit->setText(s);
     }
 
     void RvPreferences::bufferWaitFinished()

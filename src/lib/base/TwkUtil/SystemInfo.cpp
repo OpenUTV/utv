@@ -57,16 +57,27 @@ namespace TwkUtil
     {
         if (!m_useableMemory)
         {
-            vm_statistics_data_t vminfo;
-            int n = HOST_VM_INFO_COUNT;
-
-            if (host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vminfo, (mach_msg_type_number_t*)&n) != KERN_SUCCESS)
+            size_t physTotal = 0;
+            if (getSystemMemoryInfo(&physTotal, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr) && physTotal > 0)
             {
-                throw SystemCallFailedException();
+                m_useableMemory = physTotal;
             }
             else
             {
-                m_useableMemory = (vminfo.free_count + vminfo.active_count + vminfo.inactive_count) * static_cast<size_t>(PAGE_SIZE);
+                vm_statistics_data_t vminfo;
+                int n = HOST_VM_INFO_COUNT;
+
+                if (host_statistics(mach_host_self(), HOST_VM_INFO, (host_info_t)&vminfo, (mach_msg_type_number_t*)&n) != KERN_SUCCESS)
+                {
+                    throw SystemCallFailedException();
+                }
+                else
+                {
+                    mach_port_t port = mach_host_self();
+                    vm_size_t pageSize = 4096;
+                    host_page_size(port, &pageSize);
+                    m_useableMemory = (vminfo.free_count + vminfo.active_count + vminfo.inactive_count) * static_cast<size_t>(pageSize);
+                }
             }
         }
 
