@@ -3,6 +3,7 @@
 //
 // Native Objective-C Trampoline Launcher for UTV
 // Verifies required Homebrew dependencies before dyld execution.
+// Supports dynamic remote manifests, native Terminal execution, and diagnostics packaging.
 //
 
 #import <Cocoa/Cocoa.h>
@@ -84,7 +85,45 @@ static BOOL isBrewInstalled(void) {
     return NO;
 }
 
-static NSArray<NSString *> *findMissingDependencies(NSString *brewPrefix) {
+static NSDictionary *fetchRemoteManifest(void) {
+    if (getenv("UTV_SKIP_REMOTE_MANIFEST") != NULL) {
+        return nil;
+    }
+    NSURL *url = [NSURL URLWithString:@"https://raw.githubusercontent.com/OpenUTV/utv/main/deploy/dependencies.json"];
+    NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:url
+                                                       cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                   timeoutInterval:1.5];
+    [req setValue:@"OpenUTV-Launcher" forHTTPHeaderField:@"User-Agent"];
+
+    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+    __block NSData *resultData = nil;
+
+    NSURLSessionConfiguration *config = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+    config.timeoutIntervalForRequest = 1.5;
+    config.timeoutIntervalForResource = 1.5;
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:config];
+
+    [[session dataTaskWithRequest:req completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        if (!error && [(NSHTTPURLResponse *)response statusCode] == 200) {
+            resultData = data;
+        }
+        dispatch_semaphore_signal(sema);
+    }] resume];
+
+    dispatch_semaphore_wait(sema, dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)));
+    [session finishTasksAndInvalidate];
+
+    if (resultData) {
+        NSError *jsonErr = nil;
+        id json = [NSJSONSerialization JSONObjectWithData:resultData options:0 error:&jsonErr];
+        if ([json isKindOfClass:[NSDictionary class]]) {
+            return (NSDictionary *)json;
+        }
+    }
+    return nil;
+}
+
+static NSArray<NSString *> *findMissingDependencies(NSString *brewPrefix, NSDictionary *manifest) {
     if (getenv("UTV_SKIP_DEP_CHECK") != NULL) {
         return @[];
     }
@@ -92,18 +131,40 @@ static NSArray<NSString *> *findMissingDependencies(NSString *brewPrefix) {
     NSMutableArray<NSString *> *missing = [NSMutableArray array];
     NSFileManager *fm = [NSFileManager defaultManager];
 
-    for (int i = 0; kRequiredDependencies[i].formula != NULL; ++i) {
-        BOOL found = NO;
-        for (int j = 0; kRequiredDependencies[i].paths[j] != NULL; ++j) {
-            NSString *relPath = [NSString stringWithUTF8String:kRequiredDependencies[i].paths[j]];
-            NSString *fullPath = [brewPrefix stringByAppendingPathComponent:relPath];
-            if ([fm fileExistsAtPath:fullPath]) {
-                found = YES;
-                break;
+    NSArray *remoteFormulae = manifest[@"formulae"];
+    if ([remoteFormulae isKindOfClass:[NSArray class]] && [remoteFormulae count] > 0) {
+        for (NSDictionary *entry in remoteFormulae) {
+            if (![entry isKindOfClass:[NSDictionary class]]) continue;
+            NSString *formulaName = entry[@"name"];
+            NSArray *paths = entry[@"paths"];
+            if (!formulaName || ![paths isKindOfClass:[NSArray class]]) continue;
+
+            BOOL found = NO;
+            for (NSString *relPath in paths) {
+                NSString *fullPath = [brewPrefix stringByAppendingPathComponent:relPath];
+                if ([fm fileExistsAtPath:fullPath]) {
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                [missing addObject:formulaName];
             }
         }
-        if (!found) {
-            [missing addObject:[NSString stringWithUTF8String:kRequiredDependencies[i].formula]];
+    } else {
+        for (int i = 0; kRequiredDependencies[i].formula != NULL; ++i) {
+            BOOL found = NO;
+            for (int j = 0; kRequiredDependencies[i].paths[j] != NULL; ++j) {
+                NSString *relPath = [NSString stringWithUTF8String:kRequiredDependencies[i].paths[j]];
+                NSString *fullPath = [brewPrefix stringByAppendingPathComponent:relPath];
+                if ([fm fileExistsAtPath:fullPath]) {
+                    found = YES;
+                    break;
+                }
+            }
+            if (!found) {
+                [missing addObject:[NSString stringWithUTF8String:kRequiredDependencies[i].formula]];
+            }
         }
     }
 
@@ -113,7 +174,8 @@ static NSArray<NSString *> *findMissingDependencies(NSString *brewPrefix) {
         [missing addObjectsFromArray:items];
     }
 
-    return missing;
+    // Deduplicate while preserving order
+    return [[NSOrderedSet orderedSetWithArray:missing] array];
 }
 
 static NSString *findRealBinary(void) {
@@ -141,21 +203,104 @@ static NSString *findRealBinary(void) {
     return nil;
 }
 
-static void runTerminalCommand(NSString *command) {
-    NSString *escaped = [command stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
-    escaped = [escaped stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+static void launchTerminalSetup(NSArray<NSString *> *missing, NSArray<NSString *> *postInstallCmds, BOOL needsBrew) {
+    NSString *missingList = [missing componentsJoinedByString:@" "];
+    NSString *appBundlePath = [[NSBundle mainBundle] bundlePath];
 
-    NSString *appleScriptSource = [NSString stringWithFormat:
-        @"tell application \"Terminal\"\n"
-        @"    activate\n"
-        @"    do script \"%@\"\n"
-        @"end tell", escaped];
+    // 1. Copy command to pasteboard for user convenience
+    NSString *clipCmd = [NSString stringWithFormat:@"brew install %@ && brew link --overwrite ffmpeg-full", missingList];
+    NSPasteboard *pb = [NSPasteboard generalPasteboard];
+    [pb clearContents];
+    [pb setString:clipCmd forType:NSPasteboardTypeString];
 
-    NSAppleScript *script = [[NSAppleScript alloc] initWithSource:appleScriptSource];
-    NSDictionary *err = nil;
-    [script executeAndReturnError:&err];
-    if (err) {
-        NSLog(@"UTVLauncher: Failed to launch Terminal via AppleScript: %@", err);
+    // 2. Generate standalone .command script
+    NSMutableString *script = [NSMutableString string];
+    [script appendString:@"#!/bin/bash\n"];
+    [script appendString:@"# OpenUTV Dependency Setup Script\n\n"];
+    [script appendString:@"clear 2>/dev/null || true\n"];
+    [script appendString:@"echo '================================================================='\n"];
+    [script appendString:@"echo '  OpenUTV: Setting Up Multimedia Dependencies'\n"];
+    [script appendString:@"echo '================================================================='\n"];
+    [script appendString:@"echo ''\n\n"];
+
+    [script appendString:@"# Ensure Homebrew is on PATH\n"];
+    [script appendString:@"if [ -f \"/opt/homebrew/bin/brew\" ]; then\n"];
+    [script appendString:@"    eval \"$(/opt/homebrew/bin/brew shellenv)\"\n"];
+    [script appendString:@"elif [ -f \"/usr/local/bin/brew\" ]; then\n"];
+    [script appendString:@"    eval \"$(/usr/local/bin/brew shellenv)\"\n"];
+    [script appendString:@"fi\n\n"];
+
+    if (needsBrew) {
+        [script appendString:@"if ! command -v brew &>/dev/null; then\n"];
+        [script appendString:@"    echo 'Homebrew is not installed on your system.'\n"];
+        [script appendString:@"    echo 'Installing Homebrew now (you may be prompted for your password)...'\n"];
+        [script appendString:@"    echo ''\n"];
+        [script appendString:@"    /bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"\n"];
+        [script appendString:@"    if [ -f \"/opt/homebrew/bin/brew\" ]; then\n"];
+        [script appendString:@"        eval \"$(/opt/homebrew/bin/brew shellenv)\"\n"];
+        [script appendString:@"    elif [ -f \"/usr/local/bin/brew\" ]; then\n"];
+        [script appendString:@"        eval \"$(/usr/local/bin/brew shellenv)\"\n"];
+        [script appendString:@"    fi\n"];
+        [script appendString:@"fi\n\n"];
+    }
+
+    if ([missing count] > 0) {
+        [script appendString:[NSString stringWithFormat:@"echo '--> Installing packages: %@'\n", missingList]];
+        [script appendString:[NSString stringWithFormat:@"brew install %@\n\n", missingList]];
+    }
+
+    [script appendString:@"echo '--> Linking packages and resolving conflicts...'\n"];
+    if (postInstallCmds && [postInstallCmds count] > 0) {
+        for (NSString *cmd in postInstallCmds) {
+            [script appendFormat:@"%@\n", cmd];
+        }
+    } else {
+        [script appendString:@"brew link --overwrite ffmpeg-full 2>/dev/null || true\n"];
+    }
+
+    [script appendString:@"\necho ''\n"];
+    [script appendString:@"echo '================================================================='\n"];
+    [script appendString:@"echo '  Setup completed! You can now run OpenUTV.'\n"];
+    [script appendString:@"echo '================================================================='\n"];
+    [script appendString:@"echo ''\n"];
+
+    if (appBundlePath && [appBundlePath hasSuffix:@".app"]) {
+        [script appendFormat:@"read -r -p 'Press [Enter] to launch OpenUTV now, or close this window... '\n"];
+        [script appendFormat:@"open -a \"%@\" 2>/dev/null || true\n", appBundlePath];
+        [script appendString:@"exit 0\n"];
+    } else {
+        [script appendString:@"read -n 1 -s -r -p 'Press any key to close...' && exit 0\n"];
+    }
+
+    NSString *tempDir = NSTemporaryDirectory();
+    NSString *scriptPath = [tempDir stringByAppendingPathComponent:@"openutv_setup_dependencies.command"];
+    NSError *writeErr = nil;
+    [script writeToFile:scriptPath atomically:YES encoding:NSUTF8StringEncoding error:&writeErr];
+    if (writeErr) {
+        NSLog(@"UTVLauncher: Failed to write command script: %@", writeErr);
+        return;
+    }
+    chmod([scriptPath UTF8String], 0755);
+
+    // Launch via NSWorkspace. macOS opens Terminal.app and executes the script directly without TCC issues
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:scriptPath]];
+}
+
+static void runDiagnostics(void) {
+    NSString *bundleRes = [[NSBundle mainBundle] resourcePath];
+    NSString *scriptPath = [bundleRes stringByAppendingPathComponent:@"openutv-diagnostics.sh"];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:scriptPath]) {
+        NSString *binDir = [[[NSBundle mainBundle] executablePath] stringByDeletingLastPathComponent];
+        scriptPath = [binDir stringByAppendingPathComponent:@"openutv-diagnostics"];
+    }
+
+    if ([[NSFileManager defaultManager] fileExistsAtPath:scriptPath]) {
+        NSTask *task = [[NSTask alloc] init];
+        task.launchPath = @"/bin/bash";
+        task.arguments = @[scriptPath];
+        [task launch];
+    } else {
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://github.com/OpenUTV/utv/issues/new?template=bug.yml"]];
     }
 }
 
@@ -177,7 +322,9 @@ static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         NSString *brewPrefix = detectBrewPrefix();
-        NSArray<NSString *> *missing = findMissingDependencies(brewPrefix);
+        NSDictionary *manifest = fetchRemoteManifest();
+        NSArray<NSString *> *missing = findMissingDependencies(brewPrefix, manifest);
+        NSArray<NSString *> *postInstallCmds = manifest[@"post_install_commands"];
 
         // All dependencies satisfied -> launch real binary immediately
         if ([missing count] == 0) {
@@ -206,10 +353,10 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "  • %s\n", [formula UTF8String]);
             }
             fprintf(stderr, "\nTo install the missing dependencies with Homebrew, run:\n");
-            fprintf(stderr, "  brew install %s\n\n", [missingList UTF8String]);
+            fprintf(stderr, "  brew install %s && brew link --overwrite ffmpeg-full\n\n", [missingList UTF8String]);
             fprintf(stderr, "Or install UTV using Homebrew Cask (installs all dependencies automatically):\n");
             fprintf(stderr, "  brew install --cask utv\n\n");
-            fprintf(stderr, "For more information, visit: https://github.com/OpenUTV/utv\n");
+            fprintf(stderr, "For more information or to report issues, visit: https://github.com/OpenUTV/utv\n");
             fprintf(stderr, "================================================================================\n\n");
             return 1;
         }
@@ -242,21 +389,14 @@ int main(int argc, char *argv[]) {
 
             [alert addButtonWithTitle:@"Install with Homebrew"];
             [alert addButtonWithTitle:@"Copy Command"];
+            [alert addButtonWithTitle:@"Report Issue / Diagnostics"];
             [alert addButtonWithTitle:@"Quit"];
 
             NSModalResponse response = [alert runModal];
             if (response == NSAlertFirstButtonReturn) {
-                NSString *installCmd = [NSString stringWithFormat:
-                    @"echo 'Installing UTV dependencies via Homebrew...'; "
-                    @"brew install %@; "
-                    @"echo ''; "
-                    @"echo '================================================================='; "
-                    @"echo '  Dependencies installed! You can now launch UTV.'; "
-                    @"echo '================================================================='; "
-                    @"read -n 1 -s -r -p 'Press any key to close...' && exit", missingList];
-                runTerminalCommand(installCmd);
+                launchTerminalSetup(missing, postInstallCmds, NO);
             } else if (response == NSAlertSecondButtonReturn) {
-                NSString *cmd = [NSString stringWithFormat:@"brew install %@", missingList];
+                NSString *cmd = [NSString stringWithFormat:@"brew install %@ && brew link --overwrite ffmpeg-full", missingList];
                 NSPasteboard *pb = [NSPasteboard generalPasteboard];
                 [pb clearContents];
                 [pb setString:cmd forType:NSPasteboardTypeString];
@@ -267,6 +407,8 @@ int main(int argc, char *argv[]) {
                 [copiedAlert setInformativeText:[NSString stringWithFormat:@"The following command has been copied to your clipboard:\n\n%@", cmd]];
                 [copiedAlert addButtonWithTitle:@"OK"];
                 [copiedAlert runModal];
+            } else if (response == NSAlertThirdButtonReturn) {
+                runDiagnostics();
             }
         } else {
             // Homebrew not installed at all
@@ -286,23 +428,18 @@ int main(int argc, char *argv[]) {
                 @"UTV requires multimedia dependencies managed via Homebrew (Qt 6, FFmpeg, OpenColorIO, OpenEXR, etc.), but Homebrew was not found on your Mac.\n\n"
                 @"Would you like to install Homebrew and UTV dependencies now?"];
 
-            [alert addButtonWithTitle:@"Install Homebrew"];
+            [alert addButtonWithTitle:@"Install Homebrew & Setup"];
             [alert addButtonWithTitle:@"Visit brew.sh"];
+            [alert addButtonWithTitle:@"Report Issue / Diagnostics"];
             [alert addButtonWithTitle:@"Quit"];
 
             NSModalResponse response = [alert runModal];
             if (response == NSAlertFirstButtonReturn) {
-                NSString *installCmd = [NSString stringWithFormat:
-                    @"/bin/bash -c \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\" && "
-                    @"brew install %@ && "
-                    @"echo '' && "
-                    @"echo '=================================================================' && "
-                    @"echo '  Homebrew and dependencies installed! You can now launch UTV.' && "
-                    @"echo '=================================================================' && "
-                    @"read -n 1 -s -r -p 'Press any key to close...' && exit", missingList];
-                runTerminalCommand(installCmd);
+                launchTerminalSetup(missing, postInstallCmds, YES);
             } else if (response == NSAlertSecondButtonReturn) {
                 [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://brew.sh"]];
+            } else if (response == NSAlertThirdButtonReturn) {
+                runDiagnostics();
             }
         }
 
