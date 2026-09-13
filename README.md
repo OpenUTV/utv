@@ -73,6 +73,7 @@ Install the pre-compiled native macOS (Apple Silicon) binary directly from our c
 
 ```bash
 brew tap OpenUTV/utv https://github.com/OpenUTV/utv
+brew trust OpenUTV/utv
 brew install --cask utv
 ```
 
