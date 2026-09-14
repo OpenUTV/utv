@@ -152,6 +152,25 @@ else {
 $env:pythonLocation = $PythonPath
 $env:OPENUTV_DEPS_ROOT = $DepsDir.FullName
 
+# Ensure Python C-extension modules (.pyd files like _socket.pyd) exist
+$DllsPath = Join-Path $PythonPath "DLLs"
+if (-not (Test-Path "$PythonPath\_socket.pyd") -and -not (Test-Path "$DllsPath\_socket.pyd")) {
+    Write-Host "Fetching Python 3.14.7 standard extension modules..." -ForegroundColor Yellow
+    New-Item -ItemType Directory -Force -Path $DllsPath | Out-Null
+    $PyEmbedZip = Join-Path $env:TEMP "pyembed.zip"
+    $PyEmbedDir = Join-Path $env:TEMP "pyembed"
+    Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip" -OutFile $PyEmbedZip
+    Expand-Archive -Path $PyEmbedZip -DestinationPath $PyEmbedDir -Force
+    $BinPath = Join-Path $DepsDir.FullName "bin"
+    Get-ChildItem -Path $PyEmbedDir | Where-Object { ($_.Extension -eq ".pyd" -or $_.Extension -eq ".dll") -and $_.Name -notin @("python.exe", "pythonw.exe", "python314.dll") } | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination $DllsPath -Force
+        Copy-Item -Path $_.FullName -Destination $PythonPath -Force
+        if (Test-Path $BinPath) {
+            Copy-Item -Path $_.FullName -Destination $BinPath -Force
+        }
+    }
+}
+
 # Bootstrap pip into the bundled Python if missing
 $hasPip = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('pip') else 'MISSING')"
 if ($hasPip -ne "OK") {

@@ -96,6 +96,29 @@ runs:
                 Write-Host "Configuring bundled Python at $PythonPath"
                 "pythonLocation=$PythonPath" | Add-Content -Path $env:GITHUB_ENV
                 
+                # Ensure Python C-extension modules (.pyd files like _socket.pyd) exist
+                $DllsPath = Join-Path $PythonPath "DLLs"
+                if (-not (Test-Path "$PythonPath\_socket.pyd") -and -not (Test-Path "$DllsPath\_socket.pyd")) {
+                    Write-Host "Fetching Python 3.14.7 standard extension modules..."
+                    New-Item -ItemType Directory -Force -Path $DllsPath | Out-Null
+                    Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip" -OutFile "$env:TEMP\pyembed.zip"
+                    Expand-Archive -Path "$env:TEMP\pyembed.zip" -DestinationPath "$env:TEMP\pyembed" -Force
+                    $BinPath = Join-Path $DepsDir.FullName "bin"
+                    Get-ChildItem -Path "$env:TEMP\pyembed" | Where-Object { ($_.Extension -eq ".pyd" -or $_.Extension -eq ".dll") -and $_.Name -notin @("python.exe", "pythonw.exe", "python314.dll") } | ForEach-Object {
+                        Copy-Item -Path $_.FullName -Destination $DllsPath -Force
+                        Copy-Item -Path $_.FullName -Destination $PythonPath -Force
+                        if (Test-Path $BinPath) {
+                            Copy-Item -Path $_.FullName -Destination $BinPath -Force
+                        }
+                    }
+                }
+
+                # Install standalone uv toolchain
+                Write-Host "Installing standalone uv..."
+                powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+                "$env:USERPROFILE\.local\bin" | Add-Content -Path $env:GITHUB_PATH
+                $env:PATH = "$env:USERPROFILE\.local\bin;$env:PATH"
+
                 # Bootstrap pip into the bundled Python if missing
                 $hasPip = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('pip') else 'MISSING')"
                 if ($hasPip -ne "OK") {
@@ -182,10 +205,21 @@ runs:
 
     - name: Install Python dependencies
       run: |
-        # Use uv to sync requirements into the bundled python environment
-        # We use --system to install into the bundled Python site-packages directly
+        $ReqPath = Join-Path $env:GITHUB_WORKSPACE "requirements.txt"
+        if (-not (Test-Path $ReqPath)) {
+            $ReqPath = Join-Path $env:GITHUB_WORKSPACE "utv\requirements.txt"
+        }
+        Write-Host "Installing Python dependencies from $ReqPath"
         & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
-        & "$env:pythonLocation\Scripts\uv.exe" pip install --python "$env:pythonLocation\python.exe" --system -r "$env:GITHUB_WORKSPACE\utv\requirements.txt"
+        $uvBin = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
+        if (-not (Test-Path $uvBin)) {
+            $uvBin = Join-Path $env:pythonLocation "Scripts\uv.exe"
+        }
+        if (Test-Path $uvBin) {
+            & $uvBin pip install --python "$env:pythonLocation\python.exe" --system -r "$ReqPath"
+        } else {
+            & "$env:pythonLocation\python.exe" -m pip install -r "$ReqPath"
+        }
       shell: powershell
 
     - name: Setup sccache
@@ -197,12 +231,13 @@ runs:
       with:
         version: "v0.15.0"
 
-    - name: Configure sccache for bash
+    - name: Configure sccache for bash and powershell
       run: |
         # sccache is installed to cargo bin
-        export PATH="/c/Users/runneradmin/.cargo/bin:$PATH"
-        sccache --version || echo "WARNING: sccache not found in PATH"
-      shell: bash
+        if (Test-Path "C:\Users\runneradmin\.cargo\bin") {
+            "C:\Users\runneradmin\.cargo\bin" | Add-Content -Path $env:GITHUB_PATH
+        }
+      shell: powershell
 
     - name: Configure UTV
       run: |
@@ -228,11 +263,11 @@ runs:
       shell: powershell
 
     - name: Build UTV dependencies
-      run: cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$(& "$env:pythonLocation\python.exe" -c 'import os; print(os.cpu_count())') -v
+      run: cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$env:NUMBER_OF_PROCESSORS -v
       shell: powershell
 
     - name: Build UTV main executable
-      run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$(& "$env:pythonLocation\python.exe" -c 'import os; print(os.cpu_count())') -v
+      run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$env:NUMBER_OF_PROCESSORS -v
       shell: powershell
 
     - name: Tests
