@@ -71,7 +71,14 @@ runs:
         $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
         if ($DepsDir) {
             Write-Host "Found OpenUTVDeps at $($DepsDir.FullName)"
+            $DepsSlash = $DepsDir.FullName.Replace('\', '/')
             "OPENUTV_DEPS_ROOT=$($DepsDir.FullName)" | Add-Content -Path $env:GITHUB_ENV
+            "OPENUTV_DEPS_ROOT_SLASH=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
+            "CMAKE_PREFIX_PATH=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
+            "ZLIB_ROOT=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
+            "CMAKE_ARGS=-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
+            "INCLUDE=$($DepsDir.FullName)\include;$env:INCLUDE" | Add-Content -Path $env:GITHUB_ENV
+            "LIB=$($DepsDir.FullName)\lib;$env:LIB" | Add-Content -Path $env:GITHUB_ENV
             $BinPath = Join-Path $DepsDir.FullName "bin"
             if (-not (Test-Path $BinPath)) {
                 $BinPath = Join-Path $DepsDir.FullName "installed\x64-windows\bin"
@@ -222,6 +229,14 @@ runs:
             $ReqPath = Join-Path $env:GITHUB_WORKSPACE "utv\requirements.txt"
         }
         Write-Host "Installing Python dependencies from $ReqPath"
+        if ($env:OPENUTV_DEPS_ROOT) {
+            $DepsSlash = $env:OPENUTV_DEPS_ROOT.Replace('\', '/')
+            $env:CMAKE_PREFIX_PATH = "$DepsSlash;$env:CMAKE_PREFIX_PATH"
+            $env:ZLIB_ROOT = $DepsSlash
+            $env:CMAKE_ARGS = "-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash"
+            $env:INCLUDE = "$env:OPENUTV_DEPS_ROOT\include;$env:INCLUDE"
+            $env:LIB = "$env:OPENUTV_DEPS_ROOT\lib;$env:LIB"
+        }
         & "$env:pythonLocation\python.exe" -m pip install --upgrade uv
         $uvBin = Join-Path $env:USERPROFILE ".local\bin\uv.exe"
         if (-not (Test-Path $uvBin)) {

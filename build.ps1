@@ -174,6 +174,12 @@ else {
 # Sync pythonLocation for CMake
 $env:pythonLocation = $PythonPath
 $env:OPENUTV_DEPS_ROOT = $DepsDir.FullName
+$DepsSlash = $DepsDir.FullName.Replace('\', '/')
+$env:CMAKE_PREFIX_PATH = "$DepsSlash;$env:CMAKE_PREFIX_PATH"
+$env:ZLIB_ROOT = $DepsSlash
+$env:CMAKE_ARGS = "-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash"
+$env:INCLUDE = "$($DepsDir.FullName)\include;$env:INCLUDE"
+$env:LIB = "$($DepsDir.FullName)\lib;$env:LIB"
 
 # Ensure Python C-extension modules (.pyd files like _socket.pyd) exist
 $DllsPath = Join-Path $PythonPath "DLLs"
