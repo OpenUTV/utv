@@ -801,7 +801,7 @@ int utf8Main(int argc, char* argv[])
     if (!opts.qtstyle || !strcmp(opts.qtstyle, "RV"))
     {
         bundle.setEnvVar("RV_DARK", "1", true);
-        app->setStyle(QStyleFactory::create("Cleanlooks"));
+        app->setStyle(QStyleFactory::create("Fusion"));
     }
     else
     {

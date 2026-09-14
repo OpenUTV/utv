@@ -42,7 +42,7 @@ runs:
     - name: Download and Install Prebuilt Dependencies
       shell: powershell
       run: |
-        $ReleaseUrl = "https://api.github.com/repos/mcoliver4/utv-dependencies/releases/latest"
+        $ReleaseUrl = "https://api.github.com/repos/OpenUTV/utv-dependencies/releases/latest"
         $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
         $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
         if (-not $Asset) {
@@ -63,7 +63,11 @@ runs:
         $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
         if ($DepsDir) {
             Write-Host "Found OpenUTVDeps at $($DepsDir.FullName)"
-            $BinPath = Join-Path $DepsDir.FullName "installed\x64-windows\bin"
+            "OPENUTV_DEPS_ROOT=$($DepsDir.FullName)" | Add-Content -Path $env:GITHUB_ENV
+            $BinPath = Join-Path $DepsDir.FullName "bin"
+            if (-not (Test-Path $BinPath)) {
+                $BinPath = Join-Path $DepsDir.FullName "installed\x64-windows\bin"
+            }
             # Add dependencies bin to PATH
             "$BinPath" | Add-Content -Path $env:GITHUB_PATH
         } else {
@@ -81,7 +85,13 @@ runs:
         # Look for Bundled Python in the OpenUTVDeps directory
         $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
         if ($DepsDir) {
-            $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
+            $PythonPath = Join-Path $DepsDir.FullName "tools\python3"
+            if (-not (Test-Path "$PythonPath\python.exe")) {
+                $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
+            }
+            if (-not (Test-Path "$PythonPath\python.exe")) {
+                $PythonPath = Join-Path $DepsDir.FullName "bin"
+            }
             if (Test-Path "$PythonPath\python.exe") {
                 Write-Host "Configuring bundled Python at $PythonPath"
                 "pythonLocation=$PythonPath" | Add-Content -Path $env:GITHUB_ENV
@@ -196,12 +206,16 @@ runs:
 
     - name: Configure UTV
       run: |
+        $PrefixPaths = "C:/Qt/${{ inputs.qt-version }}/msvc2022_64"
+        if ($env:OPENUTV_DEPS_ROOT) {
+            $PrefixPaths += ";$env:OPENUTV_DEPS_ROOT"
+        }
         $CmakeArgs = @(
             "-B", "_build",
             "-G", "Visual Studio 17 2022",
             "-A", "x64",
             "-DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin",
-            "-DCMAKE_PREFIX_PATH=C:/Qt/${{ inputs.qt-version }}/msvc2022_64",
+            "-DCMAKE_PREFIX_PATH=$PrefixPaths",
             "-DCMAKE_BUILD_TYPE=${{ inputs.build-type }}",
             "-DPython3_ROOT_DIR=$env:pythonLocation",
             "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
