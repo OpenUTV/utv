@@ -274,6 +274,17 @@ $CmakeArgs = @(
     "-DRV_USE_SYSTEM_DEPS=ON"
 )
 
+if ($env:VULKAN_SDK) {
+    $VulkanSlash = $env:VULKAN_SDK.Replace('\', '/')
+    $CmakeArgs += "-DVulkan_ROOT=$VulkanSlash"
+} else {
+    $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+    if ($VulkanDir) {
+        $VulkanSlash = $VulkanDir.FullName.Replace('\', '/')
+        $CmakeArgs += "-DVulkan_ROOT=$VulkanSlash"
+    }
+}
+
 if (Get-Command sccache -ErrorAction SilentlyContinue) {
     Write-Host "Enabling sccache..."
     $CmakeArgs += "-DCMAKE_C_COMPILER_LAUNCHER=sccache"

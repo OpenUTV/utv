@@ -169,10 +169,18 @@ runs:
       run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
-    - name: Install build tools (JOM, flex, bison, nasm, patch, pkg-config)
+    - name: Install build tools (JOM, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
-        choco install jom winflexbison3 nasm patch pkgconfiglite --yes --no-progress
+        choco install jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
+        $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+        if ($VulkanDir) {
+            Write-Host "Found Vulkan SDK at $($VulkanDir.FullName)"
+            $VulkanSlash = $VulkanDir.FullName.Replace('\', '/')
+            "VULKAN_SDK=$($VulkanDir.FullName)" | Add-Content -Path $env:GITHUB_ENV
+            "Vulkan_ROOT=$VulkanSlash" | Add-Content -Path $env:GITHUB_ENV
+            "$($VulkanDir.FullName)\Bin" | Add-Content -Path $env:GITHUB_PATH
+        }
       shell: powershell
 
     - name: Set PATH environment variable
@@ -289,6 +297,10 @@ runs:
         )
         if ($env:MSVC_COMPILER_VERSION) {
             $CmakeArgs += "-T", "v143,version=$env:MSVC_COMPILER_VERSION"
+        }
+        if ($env:VULKAN_SDK) {
+            $VulkanSlash = $env:VULKAN_SDK.Replace('\', '/')
+            $CmakeArgs += "-DVulkan_ROOT=$VulkanSlash"
         }
         & cmake $CmakeArgs
       shell: powershell
