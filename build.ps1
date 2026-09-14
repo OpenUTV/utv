@@ -139,11 +139,18 @@ else {
         Write-Error "OpenUTVDeps MSI is required but not found. Please install it manually."
         exit 1
     }
-    $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
+    $PythonPath = Join-Path $DepsDir.FullName "tools\python3"
+    if (-not (Test-Path "$PythonPath\python.exe")) {
+        $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
+    }
+    if (-not (Test-Path "$PythonPath\python.exe")) {
+        $PythonPath = Join-Path $DepsDir.FullName "bin"
+    }
 }
 
 # Sync pythonLocation for CMake
 $env:pythonLocation = $PythonPath
+$env:OPENUTV_DEPS_ROOT = $DepsDir.FullName
 
 # Bootstrap pip into the bundled Python if missing
 $hasPip = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('pip') else 'MISSING')"
@@ -200,13 +207,18 @@ if (Test-Path "C:\ProgramData\chocolatey\lib\jom\tools") {
     $env:PATH = "C:\ProgramData\chocolatey\lib\jom\tools;$env:PATH"
 }
 
+$PrefixPaths = $env:QT_HOME
+if ($env:OPENUTV_DEPS_ROOT) {
+    $PrefixPaths += ";$env:OPENUTV_DEPS_ROOT"
+}
+
 $CmakeArgs = @(
     "-B", $BuildDir,
     "-G", "Visual Studio 17 2022",
     "-A", "x64",
     "-DCMAKE_BUILD_TYPE=$BuildType",
     "-DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin",
-    "-DCMAKE_PREFIX_PATH=$env:QT_HOME",
+    "-DCMAKE_PREFIX_PATH=$PrefixPaths",
     "-DPython3_ROOT_DIR=$PythonPath",
     "-DRV_VFX_PLATFORM=CY2026",
     "-DRV_USE_SYSTEM_DEPS=ON"
