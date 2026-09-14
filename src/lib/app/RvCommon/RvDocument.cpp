@@ -1056,6 +1056,78 @@ namespace Rv
     }
 #endif
 
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+    VulkanView* RvDocument::vulkanView() const { return m_vulkanView; }
+
+    void RvDocument::fallbackVulkanToGLView()
+    {
+        // Swap a live VulkanView for an 8-bit OpenGL GLView after a runtime Vulkan
+        // failure. Invoked (queued) from VulkanWindow::requestGLFallback() when
+        // Vulkan initialization or presentation fails, so the user gets a working
+        // window instead of a permanently black one. Mirrors fallbackMetalToGLView()
+        // and reuses the device-rewiring sequence from rebuildGLView().
+        if (!m_vulkanView)
+        {
+            // Already on the GL path
+            return;
+        }
+
+        if (m_currentlyClosing || m_closeEventReceived)
+        {
+            // Document is tearing down; nothing to present
+            return;
+        }
+
+        if (!m_session)
+        {
+            // Nothing to rewire devices on without a session
+            return;
+        }
+
+        cerr << "INFO: RvDocument: switching from Vulkan to OpenGL presentation." << endl;
+
+        VulkanView* oldView = m_vulkanView;
+        oldView->stopProcessingEvents();
+
+        // Build the GL view; this sets m_glView and m_viewWidget = m_glView.
+        createGLView();
+
+        m_stackedLayout->addWidget(m_glView);
+        m_stackedLayout->removeWidget(oldView);
+        m_vulkanView = nullptr;
+
+        m_glView->show();
+        m_glView->setFocus(Qt::OtherFocusReason);
+
+        m_topViewToolBar->setDevice(m_glView->videoDevice());
+
+        // Rewire the session's control/output devices from the Vulkan device to the GL device.
+        bool same = m_session->outputVideoDevice() == m_session->controlVideoDevice();
+        m_session->setEventVideoDevice(0);
+        m_session->setOutputVideoDevice(0);
+        m_session->setControlVideoDevice(m_glView->videoDevice());
+        if (same)
+            m_session->setOutputVideoDevice(m_glView->videoDevice());
+
+        m_glView->videoDevice()->sendEvent(TwkApp::RenderContextChangeEvent("gl-context-changed", m_glView->videoDevice()));
+
+        if (DesktopVideoModule* m = RvApp()->desktopVideoModule())
+        {
+            const TwkApp::VideoModule::VideoDevices& devices = m->devices();
+            for (size_t i = 0; i < devices.size(); i++)
+            {
+                if (DesktopVideoDevice* d = dynamic_cast<DesktopVideoDevice*>(devices[i]))
+                    d->setShareDevice(m_glView->videoDevice());
+            }
+        }
+
+        // Defer deletion: avoid destroying the VulkanView while it may still have
+        // queued events in this event-loop cycle.
+        oldView->hide();
+        oldView->deleteLater();
+    }
+#endif
+
     void RvDocument::showDiagnostics()
     {
         if (m_diagnosticsDock)
