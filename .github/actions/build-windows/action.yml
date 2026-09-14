@@ -317,7 +317,7 @@ runs:
       continue-on-error: true
       run: |
         ls -al _build/stage/app/bin
-        ctest --test-dir _build -C ${{ inputs.build-type }} --extra-verbose
+        ctest --test-dir _build -C ${{ inputs.build-type }} --extra-verbose --timeout 60
       shell: bash
 
     - name: Install UTV

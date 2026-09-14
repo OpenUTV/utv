@@ -56,12 +56,9 @@ RV_STAGE(TYPE "EXECUTABLE_WITH_PLUGINS" TARGET ${_target})
 ADD_CUSTOM_COMMAND(
   COMMENT "Generating .pyc for ${RV_STAGE_PLUGINS_PYTHON_DIR}"
   OUTPUT ${RV_STAGE_PLUGINS_PYTHON_DIR}/.compiled
-  COMMAND
-    ${CMAKE_COMMAND} -E env "PYTHONHOME=/opt/homebrew/opt/python@3.13/Frameworks/Python.framework/Versions/3.13"
-    "QT_PLUGIN_PATH=${RV_DEPS_QT_LOCATION}/plugins$<IF:$<BOOL:${RV_TARGET_WINDOWS}>,;,:>${RV_DEPS_QT_LOCATION}/share/qt/plugins" QT_QPA_PLATFORM=minimal
-    $<TARGET_FILE:${_target}> -m compileall -f ${RV_STAGE_PLUGINS_PYTHON_DIR}
+  COMMAND "${Python3_EXECUTABLE}" -m compileall -q -f "${RV_STAGE_PLUGINS_PYTHON_DIR}"
   COMMAND ${CMAKE_COMMAND} -E touch ${RV_STAGE_PLUGINS_PYTHON_DIR}/.compiled
-  DEPENDS ${_target} python_source_modules installed_packages
+  DEPENDS python_source_modules installed_packages
 )
 
 ADD_CUSTOM_TARGET(
