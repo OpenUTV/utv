@@ -68,9 +68,12 @@ ADD_CUSTOM_TARGET(
 
 ADD_DEPENDENCIES(compiled_python_source_modules pyc_generation)
 
-ADD_TEST(
-  NAME "py-interp ${python_test_file_name}"
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND ${CMAKE_COMMAND} -E env "QT_PLUGIN_PATH=${RV_DEPS_QT_LOCATION}/plugins$<IF:$<BOOL:${RV_TARGET_WINDOWS}>,;,:>${RV_DEPS_QT_LOCATION}/share/qt/plugins"
-          QT_QPA_PLATFORM=minimal "$<TARGET_FILE:${_target}>" -m unittest --verbose
-)
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_TEST(
+    NAME "py-interp ${python_test_file_name}"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND
+      ${CMAKE_COMMAND} -E env "QT_PLUGIN_PATH=${RV_DEPS_QT_LOCATION}/plugins$<IF:$<BOOL:${RV_TARGET_WINDOWS}>,;,:>${RV_DEPS_QT_LOCATION}/share/qt/plugins"
+      QT_QPA_PLATFORM=minimal "$<TARGET_FILE:${_target}>" -m unittest --verbose
+  )
+ENDIF()

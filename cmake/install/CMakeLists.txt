@@ -15,9 +15,12 @@ FOREACH(
   ${_variableNames}
 )
   IF(_variableName MATCHES "^RV_")
-    IF(${_variableName})
+    IF(DEFINED ${_variableName}
+       AND NOT "${${_variableName}}" STREQUAL ""
+    )
+      STRING(REPLACE "\\" "/" _escapedValue "${${_variableName}}")
       MESSAGE(STATUS "Adding VARIABLE ${_variableName} to INSTALL")
-      INSTALL(CODE "SET(${_variableName} ${${_variableName}})")
+      INSTALL(CODE "SET(${_variableName} \"${_escapedValue}\")")
     ENDIF()
   ENDIF()
 ENDFOREACH()
