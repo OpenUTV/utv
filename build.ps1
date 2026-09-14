@@ -88,11 +88,12 @@ if (-not $vsInstalled -and -not $SkipBootstrapping) {
 
 # --- 3. System Build Tools ---
 Write-Host "`n--- Checking Build Tools ---" -ForegroundColor Cyan
-$requiredTools = @("jom", "winflexbison3", "nasm", "patch", "vswhere")
+$requiredTools = @("jom", "winflexbison3", "nasm", "patch", "vswhere", "pkgconfiglite")
 $missingTools = @()
 
 foreach ($tool in $requiredTools) {
-    if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+    $cmd = if ($tool -eq "pkgconfiglite") { "pkg-config" } else { $tool }
+    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
         $missingTools += $tool
     }
 }
@@ -177,6 +178,7 @@ $env:OPENUTV_DEPS_ROOT = $DepsDir.FullName
 $DepsSlash = $DepsDir.FullName.Replace('\', '/')
 $env:CMAKE_PREFIX_PATH = "$DepsSlash;$env:CMAKE_PREFIX_PATH"
 $env:ZLIB_ROOT = $DepsSlash
+$env:PKG_CONFIG_PATH = "$DepsSlash/lib/pkgconfig;$env:PKG_CONFIG_PATH"
 $env:CMAKE_ARGS = "-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash"
 $env:INCLUDE = "$($DepsDir.FullName)\include;$env:INCLUDE"
 $env:LIB = "$($DepsDir.FullName)\lib;$env:LIB"

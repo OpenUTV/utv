@@ -76,6 +76,7 @@ runs:
             "OPENUTV_DEPS_ROOT_SLASH=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
             "CMAKE_PREFIX_PATH=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
             "ZLIB_ROOT=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
+            "PKG_CONFIG_PATH=$DepsSlash/lib/pkgconfig" | Add-Content -Path $env:GITHUB_ENV
             "CMAKE_ARGS=-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash" | Add-Content -Path $env:GITHUB_ENV
             "INCLUDE=$($DepsDir.FullName)\include;$env:INCLUDE" | Add-Content -Path $env:GITHUB_ENV
             "LIB=$($DepsDir.FullName)\lib;$env:LIB" | Add-Content -Path $env:GITHUB_ENV
@@ -168,9 +169,9 @@ runs:
       run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
-    - name: Install build tools (JOM, flex, bison, nasm, patch)
+    - name: Install build tools (JOM, flex, bison, nasm, patch, pkg-config)
       run: |
-        choco install jom winflexbison3 nasm patch --yes --no-progress
+        choco install jom winflexbison3 nasm patch pkgconfiglite --yes --no-progress
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
       shell: powershell
 
@@ -185,6 +186,7 @@ runs:
         which python
         python --version
         which cmake
+        which pkg-config || echo "pkg-config not found in bash PATH"
       shell: bash
 
     - name: Prepare Qt folder and 7-Zip
@@ -271,6 +273,8 @@ runs:
         $PrefixPaths = "C:/Qt/${{ inputs.qt-version }}/msvc2022_64"
         if ($env:OPENUTV_DEPS_ROOT) {
             $PrefixPaths += ";$env:OPENUTV_DEPS_ROOT"
+            $DepsSlash = $env:OPENUTV_DEPS_ROOT.Replace('\', '/')
+            $env:PKG_CONFIG_PATH = "$DepsSlash/lib/pkgconfig;$env:PKG_CONFIG_PATH"
         }
         $CmakeArgs = @(
             "-B", "_build",
