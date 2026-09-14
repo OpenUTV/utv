@@ -172,8 +172,13 @@ runs:
         which cmake
       shell: bash
 
-    - name: Prepare Qt folder
-      run: mkdir -p /c/qt
+    - name: Prepare Qt folder and 7-Zip
+      run: |
+        mkdir -p /c/qt
+        if [ -d "/c/Program Files/7-Zip" ]; then
+          echo "/c/Program Files/7-Zip" >> $GITHUB_PATH
+          echo "C:\Program Files\7-Zip" >> $GITHUB_PATH
+        fi
       shell: bash
 
     - name: Install Qt ${{ inputs.qt-version }}
@@ -189,7 +194,6 @@ runs:
         archives: ${{ inputs.windows_qt6_archives }}
         cache: 'true'
         setup-python: 'true'
-        tools: 'tools_qtcreator'
         set-env: 'true'
         tools-only: 'false'
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
