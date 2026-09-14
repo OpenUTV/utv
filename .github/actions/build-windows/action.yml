@@ -41,20 +41,28 @@ runs:
   steps:
     - name: Download and Install Prebuilt Dependencies
       shell: powershell
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
-        $ReleaseUrl = "https://api.github.com/repos/OpenUTV/utv-dependencies/releases/latest"
-        $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
-        $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
-        if (-not $Asset) {
-            Write-Error "Could not find MSI asset in the release."
+        Write-Host "Downloading OpenUTVDeps MSI via gh release download..."
+        try {
+            gh release download --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
+        } catch {
+            Write-Warning "gh release download encountered an error, checking for direct download fallback..."
+        }
+        $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
+        if (-not $MsiFile) {
+            Write-Host "Downloading direct asset from GitHub Releases..."
+            Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.2/OpenUTVDeps-26.2-win64.msi" -OutFile "OpenUTVDeps-26.2-win64.msi"
+            $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
+        }
+        if (-not $MsiFile) {
+            Write-Error "Could not find or download OpenUTVDeps MSI asset."
             exit 1
         }
-        $DownloadUrl = $Asset.browser_download_url
-        Write-Host "Downloading $DownloadUrl..."
-        Invoke-WebRequest -Uri $DownloadUrl -OutFile "OpenUTVDeps.msi"
-        Write-Host "Installing MSI..."
+        Write-Host "Installing MSI: $($MsiFile.FullName)..."
         # Use Start-Process with /passive for better non-interactive behavior
-        $msiProcess = Start-Process msiexec.exe -ArgumentList "/i OpenUTVDeps.msi /qn /passive" -Wait -PassThru -NoNewWindow
+        $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$($MsiFile.FullName)`" /qn /passive" -Wait -PassThru -NoNewWindow
         if ($msiProcess.ExitCode -ne 0 -and $msiProcess.ExitCode -ne 3010) {
             Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
             exit 1

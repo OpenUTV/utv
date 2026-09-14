@@ -116,15 +116,38 @@ else {
     $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
     if (-not $DepsDir -and -not $SkipBootstrapping) {
         Write-Host "OpenUTVDeps MSI not found. Downloading latest release..." -ForegroundColor Yellow
-        $ReleaseUrl = "https://api.github.com/repos/openutv/utv-dependencies/releases/latest"
-        $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
-        $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
-        if ($Asset) {
-            $MsiPath = Join-Path $env:TEMP "OpenUTVDeps.msi"
-            Write-Host "Downloading $($Asset.name)..."
-            Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $MsiPath
+        $MsiPath = Join-Path $env:TEMP "OpenUTVDeps.msi"
+        $downloadSuccess = $false
+        if (Get-Command gh -ErrorAction SilentlyContinue) {
+            try {
+                & gh release download --repo OpenUTV/utv-dependencies --pattern "*.msi" --dir $env:TEMP --clobber
+                $downloaded = Get-ChildItem -Path $env:TEMP -Filter "*OpenUTVDeps*.msi" | Select-Object -First 1
+                if ($downloaded) {
+                    $MsiPath = $downloaded.FullName
+                    $downloadSuccess = $true
+                }
+            } catch {
+                Write-Warning "gh release download failed, trying HTTP download..."
+            }
+        }
+        if (-not $downloadSuccess) {
+            try {
+                $ReleaseUrl = "https://api.github.com/repos/openutv/utv-dependencies/releases/latest"
+                $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
+                $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
+                if ($Asset) {
+                    Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $MsiPath
+                    $downloadSuccess = $true
+                }
+            } catch {
+                Write-Warning "GitHub API rate limit or error, using direct release download URL..."
+                Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.2/OpenUTVDeps-26.2-win64.msi" -OutFile $MsiPath
+                $downloadSuccess = $true
+            }
+        }
+        if ($downloadSuccess -and (Test-Path $MsiPath)) {
             Write-Host "Installing MSI (this may take a minute)..."
-            $msiProcess = Start-Process msiexec.exe -ArgumentList "/i $MsiPath /qn /passive" -Wait -PassThru
+            $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$MsiPath`" /qn /passive" -Wait -PassThru
             if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
                 Write-Host "MSI installed successfully." -ForegroundColor Green
                 $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
