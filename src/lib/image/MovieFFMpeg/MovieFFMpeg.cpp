@@ -2805,13 +2805,15 @@ namespace TwkMovie
 
             // Tell RV to restrict caching to one thread
             const bool isIntraOnly = (desc && (desc->props & AV_CODEC_PROP_INTRA_ONLY));
-            const bool isAppleProRes = track->useAVFProResRaw
-#if defined(RV_USE_APPLE_PRORES_SDK)
-                                       || track->useAppleProRes
+            const bool isAppleProRes =
+#if defined(__APPLE__)
+                track->useAVFProResRaw ||
 #endif
-                                       || (desc
-                                           && (videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES
-                                               || videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW));
+#if defined(RV_USE_APPLE_PRORES_SDK)
+                track->useAppleProRes ||
+#endif
+                (desc
+                 && (videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES || videoStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW));
 
             bool slowTrackRandomAccess = false;
             if (isIntraOnly || isAppleProRes)
