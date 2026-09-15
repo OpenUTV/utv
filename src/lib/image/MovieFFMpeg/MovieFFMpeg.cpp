@@ -274,8 +274,10 @@ namespace TwkMovie
 
     struct HardwareContext
     {
-        AVPixelFormat pixelFormat;
-        AVBufferRef* deviceContext;
+        AVPixelFormat pixelFormat = AV_PIX_FMT_NONE;
+        AVBufferRef* deviceContext = nullptr;
+        AVHWDeviceType deviceType = AV_HWDEVICE_TYPE_NONE;
+        std::string deviceName;
     };
 
     struct VideoTrack
@@ -296,7 +298,7 @@ namespace TwkMovie
             , rotate(false)
             , colrType("")
             , avCodecContext(0)
-            , hardwareContext({AV_PIX_FMT_NONE, nullptr})
+            , hardwareContext()
         {
             videoFrame = av_frame_alloc();
             videoPacket = av_packet_alloc();
@@ -318,6 +320,10 @@ namespace TwkMovie
                 videoFrame->linesize[i] = 0;
             }
 
+            if (hardwareContext.deviceContext)
+            {
+                av_buffer_unref(&hardwareContext.deviceContext);
+            }
             if (imgConvertContext)
                 sws_freeContext(imgConvertContext);
             if (videoPacket)
@@ -1009,28 +1015,25 @@ namespace TwkMovie
             }
         }
 
-        int hardwareDecoderInit(AVCodecContext* codecContext, const AVHWDeviceType deviceType)
+        int hardwareDecoderInit(AVCodecContext* codecContext, const AVHWDeviceType deviceType, HardwareContext* hardwareContext)
         {
-            HardwareContext* hardwareContext = static_cast<HardwareContext*>(codecContext->opaque);
             if (hardwareContext == nullptr)
             {
                 return -1;
             }
 
-            AVBufferRef* hardwareDeviceContext = hardwareContext->deviceContext;
-
+            AVBufferRef* hardwareDeviceContext = nullptr;
             const int result = av_hwdevice_ctx_create(&hardwareDeviceContext, deviceType, nullptr, nullptr, 0);
 
             if (result < 0)
             {
-                std::cerr << "ERROR: Failed to create specified hardware "
-                             "device type.\n";
                 return result;
             }
 
+            hardwareContext->deviceContext = hardwareDeviceContext;
             codecContext->hw_device_ctx = av_buffer_ref(hardwareDeviceContext);
 
-            return result;
+            return 0;
         }
 
         AVPixelFormat getHardwareFormat(AVCodecContext* codecContext, const AVPixelFormat* pixelFormats)
@@ -1059,6 +1062,7 @@ namespace TwkMovie
 
 #ifndef kCMVideoCodecType_VP9
 #define kCMVideoCodecType_VP9 'vp09'
+#endif
 #endif
 
         enum class HwDecodeMode
@@ -1112,94 +1116,249 @@ namespace TwkMovie
                     || codecId == AV_CODEC_ID_VP9 || codecId == AV_CODEC_ID_AV1);
         }
 
-        bool videoToolboxInit(const AVCodec* avCodec, AVCodecContext** avCodecContext, HardwareContext* hardwareContext)
+        std::vector<AVHWDeviceType> getCandidateHardwareDeviceTypes()
+        {
+            std::vector<AVHWDeviceType> candidates;
+
+            const char* env = getenv("OPENUTV_HWACCEL");
+            if (!env)
+                env = getenv("UTV_HWACCEL");
+            if (!env)
+                env = getenv("RV_HWACCEL");
+
+            if (env != nullptr)
+            {
+                std::string s(env);
+                std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (s == "none" || s == "0" || s == "off" || s == "disabled" || s == "false" || s == "cpu")
+                {
+                    return candidates;
+                }
+                if (s == "nvdec" || s == "nvidia")
+                {
+                    s = "cuda";
+                }
+                AVHWDeviceType specificType = av_hwdevice_find_type_by_name(s.c_str());
+                if (specificType != AV_HWDEVICE_TYPE_NONE)
+                {
+                    candidates.push_back(specificType);
+                    return candidates;
+                }
+            }
+
+#if defined(_WIN32)
+            static const char* winTypes[] = {"cuda", "d3d11va", "dxva2", "qsv"};
+            for (const char* name : winTypes)
+            {
+                AVHWDeviceType t = av_hwdevice_find_type_by_name(name);
+                if (t != AV_HWDEVICE_TYPE_NONE)
+                    candidates.push_back(t);
+            }
+#elif defined(__APPLE__)
+            AVHWDeviceType vtType = av_hwdevice_find_type_by_name("videotoolbox");
+            if (vtType != AV_HWDEVICE_TYPE_NONE)
+                candidates.push_back(vtType);
+#else
+            static const char* linuxTypes[] = {"cuda", "vaapi", "vulkan", "qsv"};
+            for (const char* name : linuxTypes)
+            {
+                AVHWDeviceType t = av_hwdevice_find_type_by_name(name);
+                if (t != AV_HWDEVICE_TYPE_NONE)
+                    candidates.push_back(t);
+            }
+#endif
+            return candidates;
+        }
+
+        bool initHardwareAcceleration(const AVCodec* avCodec, AVCodecContext** avCodecContext, HardwareContext* hardwareContext)
         {
             if (avCodec == nullptr || avCodecContext == nullptr || *avCodecContext == nullptr || hardwareContext == nullptr)
             {
-                std::cerr << "ERROR: MovieFFMpeg: Invalid codec or context\n";
                 return false;
             }
 
-            // Check if the codec is supported by the hardware decoder on this machine
-            if (avCodec->id == AV_CODEC_ID_PRORES)
+            std::vector<AVHWDeviceType> candidates = getCandidateHardwareDeviceTypes();
+            if (candidates.empty())
             {
-                if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_AppleProRes4444)
-                    && !VTIsHardwareDecodeSupported(kCMVideoCodecType_AppleProRes422))
-                {
-                    return false;
-                }
+                return false;
             }
-            else if (avCodec->id == AV_CODEC_ID_H264)
+
+            for (AVHWDeviceType deviceType : candidates)
             {
-                if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_H264))
+#if defined(RV_FFMPEG_USE_VIDEOTOOLBOX)
+                if (deviceType == AV_HWDEVICE_TYPE_VIDEOTOOLBOX)
                 {
-                    return false;
+                    if (avCodec->id == AV_CODEC_ID_PRORES)
+                    {
+                        if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_AppleProRes4444)
+                            && !VTIsHardwareDecodeSupported(kCMVideoCodecType_AppleProRes422))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (avCodec->id == AV_CODEC_ID_H264)
+                    {
+                        if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_H264))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (avCodec->id == AV_CODEC_ID_HEVC)
+                    {
+                        if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (avCodec->id == AV_CODEC_ID_VP9)
+                    {
+                        if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9))
+                        {
+                            continue;
+                        }
+                    }
+                    else if (avCodec->id == AV_CODEC_ID_AV1)
+                    {
+                        if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1))
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
-            }
-            else if (avCodec->id == AV_CODEC_ID_HEVC)
-            {
-                if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC))
+#endif
+
+                const AVCodecHWConfig* config = nullptr;
+                for (int i = 0;; i++)
                 {
-                    return false;
+                    const AVCodecHWConfig* c = avcodec_get_hw_config(avCodec, i);
+                    if (!c)
+                        break;
+                    if ((c->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) != 0 && c->device_type == deviceType)
+                    {
+                        config = c;
+                        break;
+                    }
                 }
-            }
-            else if (avCodec->id == AV_CODEC_ID_VP9)
-            {
-                if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9))
+
+                if (config == nullptr)
                 {
-                    return false;
+                    continue;
                 }
-            }
-            else if (avCodec->id == AV_CODEC_ID_AV1)
-            {
-                if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1))
+
+                hardwareContext->pixelFormat = config->pix_fmt;
+                hardwareContext->deviceType = deviceType;
+                const char* typeName = av_hwdevice_get_type_name(deviceType);
+                hardwareContext->deviceName = (typeName != nullptr) ? typeName : "unknown";
+
+                (*avCodecContext)->opaque = hardwareContext;
+                (*avCodecContext)->get_format = getHardwareFormat;
+
+                if (hardwareDecoderInit(*avCodecContext, deviceType, hardwareContext) < 0)
                 {
-                    return false;
+                    (*avCodecContext)->opaque = nullptr;
+                    (*avCodecContext)->get_format = nullptr;
+                    hardwareContext->pixelFormat = AV_PIX_FMT_NONE;
+                    hardwareContext->deviceType = AV_HWDEVICE_TYPE_NONE;
+                    hardwareContext->deviceName.clear();
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        bool isHardwareEncoderName(const string& name)
+        {
+            return (name.find("_nvenc") != string::npos || name.find("_videotoolbox") != string::npos || name.find("_qsv") != string::npos
+                    || name.find("_amf") != string::npos || name.find("_vaapi") != string::npos || name.find("_mf") != string::npos);
+        }
+
+        string getSoftwareFallbackEncoder(const string& name)
+        {
+            if (name.find("h264") != string::npos)
+            {
+                if (avcodec_find_encoder_by_name("libx264"))
+                    return "libx264";
+                return "h264";
+            }
+            if (name.find("hevc") != string::npos || name.find("h265") != string::npos)
+            {
+                if (avcodec_find_encoder_by_name("libx265"))
+                    return "libx265";
+                return "hevc";
+            }
+            if (name.find("av1") != string::npos)
+            {
+                if (avcodec_find_encoder_by_name("libsvtav1"))
+                    return "libsvtav1";
+                return "av1";
+            }
+            if (name.find("prores") != string::npos)
+            {
+                if (avcodec_find_encoder_by_name("prores_ks"))
+                    return "prores_ks";
+                if (avcodec_find_encoder_by_name("prores_aw"))
+                    return "prores_aw";
+                return "prores";
+            }
+            return "";
+        }
+
+        bool testHardwareEncoder(const AVCodec* avCodec, int width, int height)
+        {
+            if (!avCodec)
+                return false;
+            AVCodecContext* ctx = avcodec_alloc_context3(avCodec);
+            if (!ctx)
+                return false;
+
+            ctx->width = (width > 0) ? width : 1920;
+            ctx->height = (height > 0) ? height : 1080;
+            ctx->time_base = AVRational{1, 24};
+            ctx->framerate = AVRational{24, 1};
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
+            const enum AVPixelFormat* pix_fmts = NULL;
+            int retFmt = avcodec_get_supported_config(ctx, avCodec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void**)&pix_fmts, NULL);
+            if (retFmt >= 0 && pix_fmts)
+            {
+                ctx->pix_fmt = AV_PIX_FMT_NONE;
+                for (int f = 0; pix_fmts[f] != AV_PIX_FMT_NONE; f++)
+                {
+                    const AVPixFmtDescriptor* d = av_pix_fmt_desc_get(pix_fmts[f]);
+                    if (d && !(d->flags & AV_PIX_FMT_FLAG_HWACCEL))
+                    {
+                        ctx->pix_fmt = pix_fmts[f];
+                        break;
+                    }
+                }
+                if (ctx->pix_fmt == AV_PIX_FMT_NONE)
+                {
+                    ctx->pix_fmt = pix_fmts[0];
                 }
             }
             else
             {
-                return false;
+                ctx->pix_fmt = AV_PIX_FMT_YUV420P;
             }
+#else
+            ctx->pix_fmt = (avCodec->pix_fmts) ? avCodec->pix_fmts[0] : AV_PIX_FMT_YUV420P;
+#endif
 
-            const AVHWDeviceType deviceType = av_hwdevice_find_type_by_name("videotoolbox");
-            if (deviceType == AV_HWDEVICE_TYPE_NONE)
-            {
-                return false;
-            }
+            int prevLogLevel = av_log_get_level();
+            av_log_set_level(AV_LOG_QUIET);
+            int ret = avcodec_open2(ctx, avCodec, nullptr);
+            av_log_set_level(prevLogLevel);
 
-            const AVCodecHWConfig* config = nullptr;
-            for (int i = 0;; i++)
-            {
-                const AVCodecHWConfig* c = avcodec_get_hw_config(avCodec, i);
-                if (!c)
-                    break;
-                if ((c->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX) != 0 && c->device_type == deviceType)
-                {
-                    config = c;
-                    break;
-                }
-            }
-
-            if (config == nullptr)
-            {
-                return false;
-            }
-
-            hardwareContext->pixelFormat = config->pix_fmt;
-            (*avCodecContext)->opaque = hardwareContext;
-            (*avCodecContext)->get_format = getHardwareFormat;
-
-            if (hardwareDecoderInit(*avCodecContext, deviceType) < 0)
-            {
-                (*avCodecContext)->opaque = nullptr;
-                (*avCodecContext)->get_format = nullptr;
-                return false;
-            }
-
-            return true;
+            avcodec_free_context(&ctx);
+            return (ret >= 0);
         }
-#endif // defined(RV_FFMPEG_USE_VIDEOTOOLBOX)
 
     } // namespace
 
@@ -1532,29 +1691,24 @@ namespace TwkMovie
             return false;
         }
 
-#if defined(RV_FFMPEG_USE_VIDEOTOOLBOX)
         bool hwAttempted = false;
         if (isCodecEligibleForHardwareDecode(avStream->codecpar->codec_id))
         {
-            hwAttempted = true;
-            if (!videoToolboxInit(avCodec, avCodecContext, hardwareContext))
+            if (initHardwareAcceleration(avCodec, avCodecContext, hardwareContext))
             {
-                hwAttempted = false;
-            }
-            else
-            {
-                static std::set<AVCodecID> hwAnnouncedCodecs;
+                hwAttempted = true;
+                static std::set<std::pair<AVCodecID, std::string>> hwAnnouncedCodecs;
                 static std::mutex hwAnnouncedMutex;
                 std::lock_guard<std::mutex> lock(hwAnnouncedMutex);
-                if (hwAnnouncedCodecs.find(avStream->codecpar->codec_id) == hwAnnouncedCodecs.end())
+                auto key = std::make_pair(avStream->codecpar->codec_id, hardwareContext->deviceName);
+                if (hwAnnouncedCodecs.find(key) == hwAnnouncedCodecs.end())
                 {
-                    hwAnnouncedCodecs.insert(avStream->codecpar->codec_id);
-                    std::cout << "INFO: Using Apple VideoToolbox hardware acceleration for '" << avCodec->name << "' decoding."
-                              << std::endl;
+                    hwAnnouncedCodecs.insert(key);
+                    std::cout << "INFO: Using " << hardwareContext->deviceName << " hardware acceleration for '" << avCodec->name
+                              << "' decoding." << std::endl;
                 }
             }
         }
-#endif
 
         // Open the codec
         (*avCodecContext)->thread_count = m_io->codecThreads();
@@ -1565,14 +1719,19 @@ namespace TwkMovie
         }
         if (avcodec_open2(*avCodecContext, avCodec, nullptr) < 0)
         {
-#if defined(RV_FFMPEG_USE_VIDEOTOOLBOX)
             if (hwAttempted && (*avCodecContext)->hw_device_ctx != nullptr)
             {
+                std::cerr << "WARNING: MovieFFMpeg: " << hardwareContext->deviceName << " hardware decoder failed to open for '"
+                          << avCodec->name << "'. Falling back to CPU software decoding.\n";
                 av_buffer_unref(&(*avCodecContext)->hw_device_ctx);
                 if (hardwareContext->deviceContext)
                 {
                     av_buffer_unref(&hardwareContext->deviceContext);
                 }
+                hardwareContext->deviceContext = nullptr;
+                hardwareContext->pixelFormat = AV_PIX_FMT_NONE;
+                hardwareContext->deviceType = AV_HWDEVICE_TYPE_NONE;
+                hardwareContext->deviceName.clear();
                 (*avCodecContext)->opaque = nullptr;
                 (*avCodecContext)->get_format = nullptr;
                 if (avcodec_open2(*avCodecContext, avCodec, nullptr) >= 0)
@@ -1580,14 +1739,11 @@ namespace TwkMovie
                     goto codec_opened;
                 }
             }
-#endif
             std::cerr << "ERROR: MovieFFMpeg: Failed to open codec '" << avCodec->name << "' for " << m_filename << '\n';
             avcodec_free_context(avCodecContext);
             return false;
         }
-#if defined(RV_FFMPEG_USE_VIDEOTOOLBOX)
     codec_opened:
-#endif
 
         // Check if this is a valid Video Pixel Format
         if ((*avCodecContext)->codec_type == AVMEDIA_TYPE_VIDEO)
@@ -4255,9 +4411,14 @@ namespace TwkMovie
                 result = av_hwframe_transfer_data(softwareFrame, track->videoFrame, 0);
                 if (result < 0)
                 {
-                    std::cerr << "ERROR: Failed to transfer data to system memory\n";
+                    std::cerr << "WARNING: MovieFFMpeg: Failed to transfer hardware frame to system memory (error " << result << ")\n";
+                    av_frame_free(&softwareFrame);
                 }
-                videoFrame = softwareFrame;
+                else
+                {
+                    av_frame_copy_props(softwareFrame, track->videoFrame);
+                    videoFrame = softwareFrame;
+                }
             }
         }
 
@@ -4845,7 +5006,20 @@ namespace TwkMovie
                     avcodec_get_supported_config(avCodecContext, avCodec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void**)&pix_fmts, NULL);
                 if (ret >= 0 && pix_fmts)
                 {
-                    avCodecContext->pix_fmt = pix_fmts[0];
+                    avCodecContext->pix_fmt = AV_PIX_FMT_NONE;
+                    for (int f = 0; pix_fmts[f] != AV_PIX_FMT_NONE; f++)
+                    {
+                        const AVPixFmtDescriptor* d = av_pix_fmt_desc_get(pix_fmts[f]);
+                        if (d && !(d->flags & AV_PIX_FMT_FLAG_HWACCEL))
+                        {
+                            avCodecContext->pix_fmt = pix_fmts[f];
+                            break;
+                        }
+                    }
+                    if (avCodecContext->pix_fmt == AV_PIX_FMT_NONE)
+                    {
+                        avCodecContext->pix_fmt = pix_fmts[0];
+                    }
                 }
                 else
                 {
@@ -4983,6 +5157,46 @@ namespace TwkMovie
         applyCodecParameters(avCodecContext, removeAppliedCodecParametersFromTheList);
 
         int ret = avcodec_open2(avCodecContext, avCodec, NULL);
+        if (ret < 0 && isVideo && isHardwareEncoderName(codec))
+        {
+            string swCodec = getSoftwareFallbackEncoder(codec);
+            const AVCodec* swAvCodec = avcodec_find_encoder_by_name(swCodec.c_str());
+            if (swAvCodec)
+            {
+                std::cerr << "WARNING: MovieFFMpegWriter: Hardware encoder '" << codec << "' failed to open (" << avErr2Str(ret)
+                          << "). Falling back to software encoder '" << swCodec << "'.\n";
+                avCodec = swAvCodec;
+                avCodecContext->codec_id = swAvCodec->id;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
+                const enum AVPixelFormat* pix_fmts = NULL;
+                int retFmt =
+                    avcodec_get_supported_config(avCodecContext, avCodec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void**)&pix_fmts, NULL);
+                if (retFmt >= 0 && pix_fmts)
+                {
+                    avCodecContext->pix_fmt = AV_PIX_FMT_NONE;
+                    for (int f = 0; pix_fmts[f] != AV_PIX_FMT_NONE; f++)
+                    {
+                        const AVPixFmtDescriptor* d = av_pix_fmt_desc_get(pix_fmts[f]);
+                        if (d && !(d->flags & AV_PIX_FMT_FLAG_HWACCEL))
+                        {
+                            avCodecContext->pix_fmt = pix_fmts[f];
+                            break;
+                        }
+                    }
+                    if (avCodecContext->pix_fmt == AV_PIX_FMT_NONE)
+                    {
+                        avCodecContext->pix_fmt = pix_fmts[0];
+                    }
+                }
+#else
+                if (avCodec->pix_fmts)
+                {
+                    avCodecContext->pix_fmt = avCodec->pix_fmts[0];
+                }
+#endif
+                ret = avcodec_open2(avCodecContext, avCodec, NULL);
+            }
+        }
         if (ret < 0)
         {
             TWK_THROW_EXC_STREAM("Could not open codec: " << avErr2Str(ret));
@@ -5874,10 +6088,100 @@ namespace TwkMovie
 
         if (m_writeVideo)
         {
+            vector<string> rawGuesses;
+            if (!m_request.codec.empty())
+                rawGuesses.push_back(m_request.codec);
+            rawGuesses.push_back(RV_OUTPUT_VIDEO_CODEC);
+            if (m_avFormatContext->oformat->video_codec != AV_CODEC_ID_NONE)
+            {
+                const char* defaultName = avcodec_get_name(m_avFormatContext->oformat->video_codec);
+                if (defaultName)
+                    rawGuesses.push_back(string(defaultName));
+            }
+
             vector<string> guesses;
-            guesses.push_back(m_request.codec);
-            guesses.push_back(RV_OUTPUT_VIDEO_CODEC);
-            guesses.push_back(string(avcodec_get_name(m_avFormatContext->oformat->video_codec)));
+            bool hwAllowed = (getHardwareDecodeMode() != HwDecodeMode::Disabled);
+
+            for (const string& g : rawGuesses)
+            {
+                if (g.empty())
+                    continue;
+
+                if (!hwAllowed || isHardwareEncoderName(g))
+                {
+                    guesses.push_back(g);
+                    continue;
+                }
+
+                string lowerG = g;
+                std::transform(lowerG.begin(), lowerG.end(), lowerG.begin(), [](unsigned char c) { return std::tolower(c); });
+
+                if (lowerG == "h264")
+                {
+#if defined(_WIN32)
+                    guesses.push_back("h264_nvenc");
+                    guesses.push_back("h264_d3d11va");
+                    guesses.push_back("h264_qsv");
+                    guesses.push_back("h264_amf");
+                    guesses.push_back("h264_mf");
+#elif defined(__APPLE__)
+                    guesses.push_back("h264_videotoolbox");
+#else
+                    guesses.push_back("h264_nvenc");
+                    guesses.push_back("h264_vaapi");
+                    guesses.push_back("h264_qsv");
+#endif
+                    guesses.push_back("libx264");
+                    guesses.push_back("h264");
+                }
+                else if (lowerG == "hevc" || lowerG == "h265")
+                {
+#if defined(_WIN32)
+                    guesses.push_back("hevc_nvenc");
+                    guesses.push_back("hevc_qsv");
+                    guesses.push_back("hevc_amf");
+                    guesses.push_back("hevc_mf");
+#elif defined(__APPLE__)
+                    guesses.push_back("hevc_videotoolbox");
+#else
+                    guesses.push_back("hevc_nvenc");
+                    guesses.push_back("hevc_vaapi");
+                    guesses.push_back("hevc_qsv");
+#endif
+                    guesses.push_back("libx265");
+                    guesses.push_back("hevc");
+                }
+                else if (lowerG == "av1")
+                {
+#if defined(_WIN32)
+                    guesses.push_back("av1_nvenc");
+                    guesses.push_back("av1_qsv");
+                    guesses.push_back("av1_amf");
+#elif defined(__APPLE__)
+                    guesses.push_back("av1_videotoolbox");
+#else
+                    guesses.push_back("av1_nvenc");
+                    guesses.push_back("av1_vaapi");
+                    guesses.push_back("av1_qsv");
+#endif
+                    guesses.push_back("libsvtav1");
+                    guesses.push_back("av1");
+                }
+                else if (lowerG == "prores")
+                {
+#if defined(__APPLE__)
+                    guesses.push_back("prores_videotoolbox");
+#endif
+                    guesses.push_back("prores_ks");
+                    guesses.push_back("prores_aw");
+                    guesses.push_back("prores");
+                }
+                else
+                {
+                    guesses.push_back(g);
+                }
+            }
+
             *videoCodec = getWriterCodec("video", guesses);
         }
 
@@ -5890,7 +6194,7 @@ namespace TwkMovie
             *audioCodec = getWriterCodec("audio", guesses);
         }
 
-        DBL(DB_WRITE, "video codec: '" << videoCodec << "' audio codec: " << audioCodec << "'");
+        DBL(DB_WRITE, "video codec: '" << *videoCodec << "' audio codec: '" << *audioCodec << "'");
     }
 
     string MovieFFMpegWriter::getWriterCodec(std::string type, vector<string> guesses)
@@ -5905,7 +6209,7 @@ namespace TwkMovie
             // Check if we allow this (aka we are licensed)
             if (!m_io->codecIsAllowed(guess, false))
             {
-                if (i == 0)
+                if (i == 0 && guesses.size() == 1)
                     TWK_THROW_EXC_STREAM("Unsupported codec: " << guess);
                 continue;
             }
@@ -5914,7 +6218,7 @@ namespace TwkMovie
             const AVCodec* avCodec = avcodec_find_encoder_by_name(guess.c_str());
             if (!avCodec || avCodec->type != avType)
             {
-                if (i == 0)
+                if (i == 0 && guesses.size() == 1)
                     TWK_THROW_EXC_STREAM("Invalid " << type << " codec: " << guess);
                 continue;
             }
@@ -5922,9 +6226,23 @@ namespace TwkMovie
             // Check if the output format support it
             if (!avformat_query_codec(m_avOutputFormat, avCodec->id, FF_COMPLIANCE_NORMAL))
             {
-                if (i == 0)
+                if (i == 0 && guesses.size() == 1)
                     TWK_THROW_EXC_STREAM("Format does not support codec: " << guess);
                 continue;
+            }
+
+            // If this is a hardware encoder, verify that the hardware device/driver is actually operational
+            if (avType == AVMEDIA_TYPE_VIDEO && isHardwareEncoderName(guess))
+            {
+                if (!testHardwareEncoder(avCodec, m_info.width, m_info.height))
+                {
+                    DBL(DB_WRITE, "Hardware encoder '" << guess << "' unavailable or failed test. Skipping.");
+                    continue;
+                }
+                else
+                {
+                    std::cout << "INFO: Using hardware encoder '" << guess << "' for video export." << std::endl;
+                }
             }
 
             return guess;

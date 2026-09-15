@@ -61,6 +61,10 @@ namespace TwkFB
         addType("pbm", "Portable Network Graphics", rw, codecs);
         addType("pgm", "Portable Network Graphics", rw, codecs);
         addType("ppm", "Portable Network Grapics", rw, codecs);
+        addType("heic", "High Efficiency Image File", rw, codecs);
+        addType("heif", "High Efficiency Image File", rw, codecs);
+        addType("avif", "AV1 Image File", rw, codecs);
+        addType("jxl", "JPEG XL Image", rw, codecs);
 
         // These are handled by their respective plugins
         // io_<something> in RV. This code is here to
