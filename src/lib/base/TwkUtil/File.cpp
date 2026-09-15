@@ -733,7 +733,8 @@ namespace TwkUtil
         LPCTSTR lpDirectory = (directory.empty()) ? NULL : directory.c_str();
         int nShowCmd = SW_SHOWNA;
 
-        int result = (int)ShellExecute(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd);
+        int result =
+            static_cast<int>(reinterpret_cast<INT_PTR>(ShellExecute(hwnd, lpOperation, lpFile, lpParameters, lpDirectory, nShowCmd)));
         return result;
     }
 

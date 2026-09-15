@@ -11,9 +11,7 @@
 #include <TwkMath/Iostream.h>
 #include <TwkUtil/MemPool.h>
 #include <iostream>
-#ifndef PLATFORM_WINDOWS
-#include <stdint.h>
-#endif
+#include <cstdint>
 #include <assert.h>
 #include <TwkFB/FrameBuffer.h>
 #include <TwkFB/Exception.h>
@@ -424,7 +422,7 @@ namespace TwkFB
     {
         // cout << "RESTRUCTURE " << this << " : " << identifier() << endl;
 
-        assert(m_data != (unsigned char*)0xdeadc0de);
+        assert(m_data != (unsigned char*)(uintptr_t)0xdeadc0de);
         assert(dataType >= 0 && dataType < __NUM_TYPES__);
 
         if (height == 0)
@@ -711,7 +709,7 @@ namespace TwkFB
 
     FrameBuffer::~FrameBuffer()
     {
-        assert(m_nextPlane != (FrameBuffer*)0xdeadc0de);
+        assert(m_nextPlane != (FrameBuffer*)(uintptr_t)0xdeadc0de);
         // cout << "FB DELETE: " << this << " : " << identifier() << endl;
 
         clear();
@@ -744,10 +742,10 @@ namespace TwkFB
         m_uncropX = 0x99;
         m_uncropY = 0x99;
 
-        m_previousPlane = (FrameBuffer*)0xdeadc0de;
-        m_nextPlane = (FrameBuffer*)0xdeadc0de;
-        m_firstPlane = (FrameBuffer*)0xdeadc0de;
-        m_data = (unsigned char*)0xdeadc0de;
+        m_previousPlane = (FrameBuffer*)(uintptr_t)0xdeadc0de;
+        m_nextPlane = (FrameBuffer*)(uintptr_t)0xdeadc0de;
+        m_firstPlane = (FrameBuffer*)(uintptr_t)0xdeadc0de;
+        m_data = (unsigned char*)(uintptr_t)0xdeadc0de;
     }
 
     size_t FrameBuffer::totalImageSize() const
@@ -2390,10 +2388,10 @@ namespace TwkFB
 
     void FrameBuffer::ownData()
     {
-        assert(m_data != (unsigned char*)0xdeadc0de);
-        assert(m_nextPlane != (FrameBuffer*)0xdeadc0de);
-        assert(m_previousPlane != (FrameBuffer*)0xdeadc0de);
-        assert(m_firstPlane != (FrameBuffer*)0xdeadc0de);
+        assert(m_data != (unsigned char*)(uintptr_t)0xdeadc0de);
+        assert(m_nextPlane != (FrameBuffer*)(uintptr_t)0xdeadc0de);
+        assert(m_previousPlane != (FrameBuffer*)(uintptr_t)0xdeadc0de);
+        assert(m_firstPlane != (FrameBuffer*)(uintptr_t)0xdeadc0de);
 
         // If this FrameBuffer is a proxy buffer, ie.: if its data is a
         // reference to another FrameBuffer's data, it can't be made owner of
@@ -2422,7 +2420,7 @@ namespace TwkFB
 
     void FrameBuffer::relinquishDataAndReset()
     {
-        assert(m_data != (unsigned char*)0xdeadc0de);
+        assert(m_data != (unsigned char*)(uintptr_t)0xdeadc0de);
 
         m_data = 0;
         m_width = 0;
@@ -2440,7 +2438,7 @@ namespace TwkFB
     {
         if (!fb)
             return;
-        assert(nextPlane() != (FrameBuffer*)0xdeadc0de);
+        assert(nextPlane() != (FrameBuffer*)(uintptr_t)0xdeadc0de);
 
         if (fb->previousPlane())
         {

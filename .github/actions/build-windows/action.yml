@@ -169,9 +169,9 @@ runs:
       run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
-    - name: Install build tools (JOM, flex, bison, nasm, patch, pkg-config, Vulkan)
+    - name: Install build tools (Ninja, JOM, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
-        choco install jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress
+        choco install ninja jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
         $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
         if ($VulkanDir) {
@@ -286,8 +286,7 @@ runs:
         }
         $CmakeArgs = @(
             "-B", "_build",
-            "-G", "Visual Studio 17 2022",
-            "-A", "x64",
+            "-G", "Ninja",
             "-DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin",
             "-DCMAKE_PREFIX_PATH=$PrefixPaths",
             "-DCMAKE_BUILD_TYPE=${{ inputs.build-type }}",
@@ -295,9 +294,6 @@ runs:
             "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
             "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
         )
-        if ($env:MSVC_COMPILER_VERSION) {
-            $CmakeArgs += "-T", "v143,version=$env:MSVC_COMPILER_VERSION"
-        }
         if ($env:VULKAN_SDK) {
             $VulkanSlash = $env:VULKAN_SDK.Replace('\', '/')
             $CmakeArgs += "-DVulkan_ROOT=$VulkanSlash"
@@ -306,20 +302,25 @@ runs:
       shell: powershell
 
     - name: Build UTV dependencies
-      run: cmake --build _build --config ${{ inputs.build-type }} --target dependencies --parallel=$env:NUMBER_OF_PROCESSORS -v
+      run: cmake --build _build --target dependencies --parallel=$env:NUMBER_OF_PROCESSORS -v
       shell: powershell
 
     - name: Build UTV main executable
-      run: cmake --build _build --config ${{ inputs.build-type }} --target main_executable --parallel=$env:NUMBER_OF_PROCESSORS -v
+      run: cmake --build _build --target main_executable --parallel=$env:NUMBER_OF_PROCESSORS -v
       shell: powershell
 
     - name: Tests
       continue-on-error: true
       run: |
         ls -al _build/stage/app/bin
-        ctest --test-dir _build -C ${{ inputs.build-type }} --extra-verbose --timeout 60
+        ctest --test-dir _build --extra-verbose --timeout 60
       shell: bash
 
     - name: Install UTV
-      run: cmake --install _build --prefix $(pwd)/_install --config ${{ inputs.build-type }}
+      run: cmake --install _build --prefix $(pwd)/_install
       shell: bash
+
+    - name: Sccache Statistics
+      if: always()
+      run: sccache --show-stats
+      shell: powershell

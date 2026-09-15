@@ -16,6 +16,7 @@
 #include <TwkApp/VideoDevice.h>
 #include <TwkMath/Frustum.h>
 #include <iostream>
+#include <cstdint>
 #include <stl_ext/replace_alloc.h>
 #include <sstream>
 #include <boost/functional/hash.hpp>
@@ -148,15 +149,15 @@ namespace IPCore
     IPImage::~IPImage()
     {
         // cout << "delete ipimage " << this << endl;
-        assert(this != (IPImage*)0xdeadc0de);
-        assert(next != (IPImage*)0xdeadc0de);     // this was already deleted
-        assert(children != (IPImage*)0xdeadc0de); // this was already deleted
+        assert(this != (IPImage*)(uintptr_t)0xdeadc0de);
+        assert(next != (IPImage*)(uintptr_t)0xdeadc0de);     // this was already deleted
+        assert(children != (IPImage*)(uintptr_t)0xdeadc0de); // this was already deleted
         delete children;
         delete next;
-        children = (IPImage*)0xdeadc0de;
-        next = (IPImage*)0xdeadc0de;
+        children = (IPImage*)(uintptr_t)0xdeadc0de;
+        next = (IPImage*)(uintptr_t)0xdeadc0de;
         clear();
-        fb = (FrameBuffer*)0xdeadc0de;
+        fb = (FrameBuffer*)(uintptr_t)0xdeadc0de;
         commands.clear();
     }
 

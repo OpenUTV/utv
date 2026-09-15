@@ -5377,11 +5377,7 @@ namespace IPCore
             }
         }
 
-#ifdef PLATFORM_WINDOWS
-#define PAD "%06d"
-#else
-#define PAD "%06zd"
-#endif
+#define PAD "%06zu"
 
         string uniqueName(string name, Session::NameSet& disallowedNames)
         {

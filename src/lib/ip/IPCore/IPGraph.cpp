@@ -89,11 +89,7 @@ namespace IPCore
     using namespace TwkAudio;
     using namespace boost;
 
-#ifdef PLATFORM_WINDOWS
-#define PAD "%06d"
-#else
-#define PAD "%06zd"
-#endif
+#define PAD "%06zu"
 
 #if 0
 #define DB_GENERAL 0x01

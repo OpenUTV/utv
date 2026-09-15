@@ -29,7 +29,7 @@ SET(RV_DEPS_PYTHON3_EXECUTABLE
 )
 
 EXECUTE_PROCESS(
-  COMMAND ${Python3_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
+  COMMAND ${Python3_EXECUTABLE} -c "import sys; print(sys.base_prefix.replace('\\\\', '/'))"
   OUTPUT_VARIABLE _RV_PYTHON3_BASE_PREFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
@@ -39,7 +39,8 @@ SET(RV_PYTHON3_BASE_PREFIX
 )
 
 EXECUTE_PROCESS(
-  COMMAND ${Python3_EXECUTABLE} -c "import sys; import site; print(':'.join(site.getsitepackages([sys.prefix, sys.base_prefix])))"
+  COMMAND ${Python3_EXECUTABLE} -c
+          "import sys, os, site; print(os.pathsep.join([p.replace('\\\\', '/') for p in site.getsitepackages([sys.prefix, sys.base_prefix])]))"
   OUTPUT_VARIABLE _RV_PYTHON3_SITE_PACKAGES
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )

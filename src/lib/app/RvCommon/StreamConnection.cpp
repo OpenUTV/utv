@@ -101,7 +101,8 @@ namespace Rv
     void StreamConnection::dumpStream(const string& fileName)
     {
         m_streamFile = new QFile(fileName.c_str());
-        m_streamFile->open(QIODevice::ReadOnly);
+        if (!m_streamFile->open(QIODevice::ReadOnly))
+            return;
         m_streamDataStream = new QDataStream(m_streamFile);
 
         int version = validateStreamConnection(m_streamDataStream, fileName, true);

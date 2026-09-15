@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 #include <algorithm>
+#include <cstdint>
 
 #ifdef PLATFORM_WINDOWS
 #include <time.h>
@@ -29,6 +30,12 @@ namespace stl_ext
     using namespace std;
 
     bool thread_group::_debug_all = false;
+
+#ifdef PLATFORM_WINDOWS
+    static inline void* thread_to_ptr(pthread_t t) { return t.p; }
+#else
+    static inline void* thread_to_ptr(pthread_t t) { return (void*)(uintptr_t)t; }
+#endif
 
 #ifdef PLATFORM_WINDOWS
     static int currentTime(struct timeval* tv)
@@ -120,7 +127,7 @@ namespace stl_ext
                 if (int err = _api.join(_join_thread, NULL))
                 {
                     pthread_t thread = pthread_self();
-                    printf("~thread_group: %p -- join: %s", thread, strerror(err));
+                    printf("~thread_group: %p -- join: %s", thread_to_ptr(thread), strerror(err));
                 }
             }
             /* AJG - This WILL break something */
@@ -179,7 +186,8 @@ namespace stl_ext
             struct timeval tv;
             int t = currentTime(&tv);
 
-            fprintf(stderr, "%d %d %p/%p/%d/%lu: ", (int)tv.tv_sec, (int)tv.tv_usec, this, thread, worker_num + 1, _threads.size());
+            fprintf(stderr, "%d %d %p/%p/%d/%zu: ", (int)tv.tv_sec, (int)tv.tv_usec, this, thread_to_ptr(thread), worker_num + 1,
+                    _threads.size());
 #endif
             vfprintf(stderr, c, ap);
             fprintf(stderr, "\n");
@@ -285,7 +293,7 @@ namespace stl_ext
         if (int err = pthread_mutex_lock(&mutex))
         {
             pthread_t thread = pthread_self();
-            printf("%p -- unable to lock: %s", thread, strerror(err));
+            printf("%p -- unable to lock: %s", thread_to_ptr(thread), strerror(err));
             fflush(stdout);
         }
     }
@@ -295,7 +303,7 @@ namespace stl_ext
         if (int err = pthread_mutex_unlock(&mutex))
         {
             pthread_t thread = pthread_self();
-            printf("%p -- unable to unlock: %s", thread, strerror(err));
+            printf("%p -- unable to unlock: %s", thread_to_ptr(thread), strerror(err));
             fflush(stdout);
         }
     }
@@ -305,7 +313,7 @@ namespace stl_ext
         if (int err = pthread_cond_signal(&cond))
         {
             pthread_t thread = pthread_self();
-            printf("%p -- signal: %s", thread, strerror(err));
+            printf("%p -- signal: %s", thread_to_ptr(thread), strerror(err));
             fflush(stdout);
         }
     }
@@ -315,7 +323,7 @@ namespace stl_ext
         if (int err = pthread_cond_broadcast(&cond))
         {
             pthread_t thread = pthread_self();
-            printf("%p -- broadcast: %s\n", thread, strerror(err));
+            printf("%p -- broadcast: %s\n", thread_to_ptr(thread), strerror(err));
             fflush(stdout);
         }
     }
@@ -325,7 +333,7 @@ namespace stl_ext
         if (int err = pthread_cond_wait(&cond, &mutex))
         {
             pthread_t thread = pthread_self();
-            printf("%p -- cond_wait: %s\n", thread, strerror(err));
+            printf("%p -- cond_wait: %s\n", thread_to_ptr(thread), strerror(err));
             fflush(stdout);
         }
     }
@@ -368,7 +376,7 @@ namespace stl_ext
             if (err != ETIMEDOUT)
             {
                 pthread_t thread = pthread_self();
-                printf("ERROR: %p -- cond_wait_timed: %s\n", thread, strerror(err));
+                printf("ERROR: %p -- cond_wait_timed: %s\n", thread_to_ptr(thread), strerror(err));
                 fflush(stdout);
             }
             //  fprintf (stderr, "err %d %s\n", err, strerror(err));
@@ -661,7 +669,7 @@ namespace stl_ext
             //  We need to set _func to something, so that the wait
             //  loop below functions as intended.
             //
-            _func = (thread_function)0xdeadc0de;
+            _func = (thread_function)(uintptr_t)0xdeadc0de;
             _data = 0;
         }
         else
@@ -707,7 +715,7 @@ namespace stl_ext
                 //  We need to set _func to something, so that the wait
                 //  loop below functions as intended.
                 //
-                _func = (thread_function)0xdeadc0de;
+                _func = (thread_function)(uintptr_t)0xdeadc0de;
                 _data = 0;
             }
             else
@@ -797,7 +805,7 @@ namespace stl_ext
                 //  We need to set _func to something, so that the wait
                 //  loop below functions as intended.
                 //
-                _func = (thread_function)0xdeadc0de;
+                _func = (thread_function)(uintptr_t)0xdeadc0de;
 
                 release_worker();
 

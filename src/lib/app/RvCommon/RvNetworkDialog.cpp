@@ -420,17 +420,19 @@ namespace Rv
         QFile portFile(tmp.absolutePath() + "/" + pid + tagString);
 
         DB("    opening portfile '" << portFile.fileName().toUtf8().constData() << "'");
-        portFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
-        portFile.setPermissions(QFile::ReadOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther | QFile::WriteOwner
-                                | QFile::WriteUser | QFile::WriteGroup | QFile::WriteOther);
+        if (portFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        {
+            portFile.setPermissions(QFile::ReadOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther | QFile::WriteOwner
+                                    | QFile::WriteUser | QFile::WriteGroup | QFile::WriteOther);
 
-        QString portNum;
-        portNum.setNum(myPort());
-        portNum += "\n";
-        portFile.write(portNum.toUtf8());
-        portFile.close();
+            QString portNum;
+            portNum.setNum(myPort());
+            portNum += "\n";
+            portFile.write(portNum.toUtf8());
+            portFile.close();
 
-        m_portFile = portFile.fileName();
+            m_portFile = portFile.fileName();
+        }
     }
 
     void RvNetworkDialog::deletePortNumberFile()

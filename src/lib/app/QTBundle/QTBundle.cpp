@@ -102,7 +102,7 @@ namespace TwkApp
 
 #ifdef SYSTEM_PYTHONPATH
         // Add the system site-packages so PySide6 and other modules can be found
-        QStringList paths = QString(SYSTEM_PYTHONPATH).split(":", Qt::SkipEmptyParts);
+        QStringList paths = QString(SYSTEM_PYTHONPATH).split(SEP, Qt::SkipEmptyParts);
         for (const QString& p : paths)
         {
             addPathToEnvVar("PYTHONPATH", p.toUtf8().constData(), forceToFront);

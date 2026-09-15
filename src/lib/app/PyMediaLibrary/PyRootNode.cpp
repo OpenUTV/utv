@@ -71,10 +71,9 @@ namespace
                     bool valid = true;
                     for (const auto& func : PLUGIN_FUNCTIONS)
                     {
-                        valid &= PyObject_HasAttrString(pluginObj, func.data());
-
-                        if (!valid)
+                        if (PyObject_HasAttrString(pluginObj, func.data()) != 1)
                         {
+                            valid = false;
                             std::cerr << "Plug-In " << pluginImportPath << "(" << pluginFile << ") does not have " << func.data()
                                       << " function. Skipped." << std::endl;
                             break;

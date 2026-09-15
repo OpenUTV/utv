@@ -57,7 +57,7 @@ ADD_COMPILE_OPTIONS(
   -utf-8
   -Zc:forScope
   -Zc:sizedDealloc-
-  -Zi
+  -Z7
 )
 
 # Increasing default stack size to 8MB which would be on par with Linux and most macOS versions. Visual Studio usually sets a 1MB default stack size which is

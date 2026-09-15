@@ -8,6 +8,7 @@
 #include <TwkGLF/GLVideoDevice.h>
 #include <TwkGLF/GLFBO.h>
 #include <TwkGLF/GL.h>
+#include <cstdint>
 
 namespace TwkGLF
 {
@@ -29,7 +30,7 @@ namespace TwkGLF
             TwkGLText::GLtext::deleteContext(m_textContext);
         }
 
-        m_textContext = (void*)0xdeadc0de;
+        m_textContext = (void*)(uintptr_t)0xdeadc0de;
         m_textContextOwner = false;
         delete m_fbo;
     }

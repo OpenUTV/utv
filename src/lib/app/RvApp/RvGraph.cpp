@@ -67,11 +67,7 @@ namespace Rv
     using namespace TwkAudio;
     using namespace boost;
 
-#ifdef PLATFORM_WINDOWS
-#define PAD "%06d"
-#else
-#define PAD "%06zd"
-#endif
+#define PAD "%06zu"
 
     // Note that the new fast add source mechanism postpones the default views
     // input connection until all the new sources have been added.
