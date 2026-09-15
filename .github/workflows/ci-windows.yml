@@ -36,20 +36,10 @@ jobs:
         with:
           submodules: recursive
       - uses: ./.github/actions/build-windows
-      - name: Package Windows Artifact
-        shell: powershell
-        run: |
-          if (Test-Path "_install") {
-            Write-Host "Compressing _install directory into utv-windows-x64.zip..."
-            Compress-Archive -Path "_install/*" -DestinationPath "utv-windows-x64.zip" -Force
-          } else {
-            Write-Error "_install directory not found"
-            exit 1
-          }
       - name: Upload Windows Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: utv-windows-x64
-          path: utv-windows-x64.zip
+          path: _install/
           retention-days: 7
 

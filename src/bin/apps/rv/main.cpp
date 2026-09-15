@@ -694,6 +694,18 @@ int utf8Main(int argc, char* argv[])
     bundle.setEnvVar("RV_APP_RVLS", rvlsPath);
     bundle.setEnvVar("UTV_APP_UTVLS", rvlsPath);
 
+    string rvshellPath = bundle.executableFile("utvshell");
+    if (rvshellPath.empty())
+        rvshellPath = bundle.executableFile("rvshell");
+    bundle.setEnvVar("RV_APP_RVSHELL", rvshellPath);
+    bundle.setEnvVar("UTV_APP_UTVSHELL", rvshellPath);
+
+    string rvprofPath = bundle.executableFile("utvprof");
+    if (rvprofPath.empty())
+        rvprofPath = bundle.executableFile("rvprof");
+    bundle.setEnvVar("RV_APP_RVPROF", rvprofPath);
+    bundle.setEnvVar("UTV_APP_UTVPROF", rvprofPath);
+
     bundle.setEnvVar("RV_APP_MANUAL", bundle.resource("rv_manual", "pdf"));
     bundle.setEnvVar("RV_APP_MANUAL_HTML", bundle.resource("rv_manual", "html"));
     bundle.setEnvVar("RV_APP_SDI_MANUAL", bundle.resource("rvsdi_manual", "pdf"));

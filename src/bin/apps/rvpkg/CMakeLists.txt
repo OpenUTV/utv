@@ -78,6 +78,13 @@ IF(NOT RV_TARGET_WINDOWS)
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvpkg
     COMMENT "Creating rvpkg symlink in ${RV_STAGE_BIN_DIR}"
   )
+ELSE()
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_target}> ${RV_STAGE_BIN_DIR}/rvpkg.exe
+    COMMENT "Creating rvpkg.exe copy in ${RV_STAGE_BIN_DIR}"
+  )
 ENDIF()
 
 ADD_CUSTOM_COMMAND(

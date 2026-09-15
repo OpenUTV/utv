@@ -1,35 +1,35 @@
-Each provided .reg contains a REPLACE_ME_FOR_RV_HOME placeholder that must be replaced with the location of the application.
-Also included is a .bat version of each .reg files. Each .bat file sets the registry entry and automatically updates REPLACE_ME_FOR_RV_HOME with the location of the application.
+Each provided .reg contains a REPLACE_ME_FOR_UTV_HOME (or REPLACE_ME_FOR_RV_HOME) placeholder that must be replaced with the location of the application.
+Also included is a .bat version of each .reg file. Each .bat file sets the registry entry and automatically configures paths with the location of the application.
 
 The "standard" windows registry files here are:
 
     openwith.reg / openwith.reg.bat
 
-        Launch RV when double-clicking on media files.
+        Launch UTV when double-clicking on media files.
 
     rvlink.reg / rvlink.reg.bat
 
-        Register RV as the handler for the "rvlink://" custom protocol.  Docs on the rvlink protocol here:
+        Register UTV as the handler for "utvlink://" and "rvlink://" custom protocols.  Docs on the protocol here:
 
             https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/rv-user-manual-chapter-c.md
 
 
-The "rvpush" files are alternates to support different workflows.  RVPUSH
-is an executable we provide that allows you to communicate with a running RV
+The "utvpush" / "rvpush" files are alternates to support different workflows.  UTVPUSH (rvpush)
+is an executable we provide that allows you to communicate with a running UTV
 from the command line.  Docs here:
 
     https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/rv-user-manual-chapter-eighteen.md
 
-It's a general utility, but it's used here in the .reg files to avoid the RV
-startup time when loading media by using a running RV if one is available.
+It is a general utility, but it is used here in the .reg files to avoid UTV
+startup time when loading media by using a running UTV if one is available.
 
 In particular:
 
     rvlink_rvpush.reg / rvlink_rvpush.reg.bat
 
-        This one uses RVPUSH to handle URLs, IE the first one will open a new
-        RV (tagged as the URL handler) and if that RV is still running when
-        next you click on a URL, that will be handled by the running RV instead
+        This one uses UTVPUSH to handle URLs (both utvlink:// and rvlink://), i.e. the first one will open a new
+        UTV (tagged as the URL handler) and if that UTV is still running when
+        next you click on a URL, that will be handled by the running UTV instead
         of a new one.
 
     openwith_rvpush_set.reg / openwith_rvpush_set.reg.bat
@@ -38,7 +38,7 @@ In particular:
 
     openwith_rvpush_merge.reg / openwith_rvpush_merge.reg.bat
     
-        This uses the "merge" action instead of the "set" action for RVPUSH,
+        This uses the "merge" action instead of the "set" action for UTVPUSH,
         which means that double-clicking on a second file after you have
-        already opened one will merge that media into the running RV instead of
+        already opened one will merge that media into the running UTV instead of
         replacing the previous media.

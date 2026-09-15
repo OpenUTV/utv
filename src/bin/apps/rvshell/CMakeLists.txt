@@ -7,7 +7,7 @@
 INCLUDE(cxx_defaults)
 
 SET(_target
-    "rvshell"
+    "utvshell"
 )
 
 SET(CMAKE_AUTOUIC
@@ -52,3 +52,19 @@ TARGET_LINK_LIBRARIES(
 )
 
 RV_STAGE(TYPE "EXECUTABLE_WITH_PLUGINS" TARGET ${_target})
+
+IF(NOT RV_TARGET_WINDOWS)
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvshell
+    COMMENT "Creating rvshell symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ELSE()
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_target}> ${RV_STAGE_BIN_DIR}/rvshell.exe
+    COMMENT "Creating rvshell.exe copy in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()
