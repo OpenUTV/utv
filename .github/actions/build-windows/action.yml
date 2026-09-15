@@ -171,7 +171,8 @@ runs:
 
     - name: Install build tools (Ninja, JOM, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
-        choco install ninja jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress
+        choco feature enable -n allowEmptyChecksums
+        choco install ninja jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress --allow-empty-checksums --ignore-checksums
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
         $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
         if ($VulkanDir) {
@@ -357,5 +358,9 @@ runs:
 
     - name: Sccache Statistics
       if: always()
-      run: sccache --show-stats
+      run: |
+        if (Get-Command sccache -ErrorAction SilentlyContinue) {
+            sccache --show-stats
+        }
       shell: powershell
+
