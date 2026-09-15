@@ -157,7 +157,7 @@ DarwinBundle::DarwinBundle(const FileName& appName,
     bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
 #ifdef SYSTEM_PYTHONPATH
     // Add the system site-packages so PySide6 and other modules can be found
-    NSArray *paths = [[NSString stringWithUTF8String:SYSTEM_PYTHONPATH] componentsSeparatedByString:@":"];
+    NSArray *paths = [[NSString stringWithUTF8String:SYSTEM_PYTHONPATH] componentsSeparatedByString:@"|"];
     for (NSString *p in paths)
     {
         if (fileExists([p UTF8String]))
