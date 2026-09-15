@@ -6779,20 +6779,33 @@ namespace TwkMovie
         formats["mov"] = make_pair("Quicktime Movie", vidcap);
         formats["mp4"] = make_pair("MPEG-4 Movie Container", vidcap);
         formats["mpg"] = make_pair("MPEG Format", vidcap);
+        formats["mpeg"] = make_pair("MPEG Format", vidcap);
         formats["mxf"] = make_pair("Material eXchange Format", vidcap);
-        //    formats["ogv"]  = make_pair("OGG Video", vidcap);
-        //    formats["webm"] = make_pair("WEBM Video", vidcap);
+        formats["ogv"] = make_pair("OGG Video", vidcap);
+        formats["webm"] = make_pair("WEBM Video", vidcap);
+        formats["ts"] = make_pair("MPEG Transport Stream", vidcap);
+        formats["mts"] = make_pair("AVCHD Video", vidcap);
+        formats["m2ts"] = make_pair("Blu-ray / AVCHD Video", vidcap);
+        formats["vob"] = make_pair("DVD Video Object", vidcap);
+        formats["wmv"] = make_pair("Windows Media Video", vidcap);
+        formats["asf"] = make_pair("Advanced Systems Format", vidcap);
+        formats["y4m"] = make_pair("YUV4MPEG2 Video", vidcap);
+        formats["ivf"] = make_pair("On2 / VP8 / VP9 / AV1 Video (IVF)", vidcap);
 
         // Audio
-        //    formats["aac"]  = make_pair("Advanced Audio Codec", audcap);
+        formats["aac"] = make_pair("Advanced Audio Codec", audcap);
         formats["aif"] = make_pair("Apple AIFF audio file", audcap);
         formats["aifc"] = make_pair("Apple AIFC compressed audio file", audcap);
         formats["aiff"] = make_pair("Apple AIFF audio file", audcap);
         formats["au"] = make_pair("SUN Micosystems audio file", audcap);
+        formats["flac"] = make_pair("Free Lossless Audio Codec", audcap);
+        formats["m4a"] = make_pair("Apple MPEG-4 Audio", audcap);
         formats["mp3"] = make_pair("MPEG-3 Audio Container", audcap);
         formats["ogg"] = make_pair("Ogg audio file", audcap);
+        formats["opus"] = make_pair("Opus audio file", audcap);
         formats["snd"] = make_pair("NeXT audio file", audcap);
         formats["wav"] = make_pair("Microsoft WAVE audio file", audcap);
+        formats["wma"] = make_pair("Windows Media Audio", audcap);
 
         return formats;
     }

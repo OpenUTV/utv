@@ -63,12 +63,14 @@ namespace TwkFB
         addType("ppm", "Portable Network Grapics", rw, codecs);
         addType("heic", "High Efficiency Image File", rw, codecs);
         addType("heif", "High Efficiency Image File", rw, codecs);
+        addType("hif", "High Efficiency Image File", rw, codecs);
         addType("avif", "AV1 Image File", rw, codecs);
         addType("jxl", "JPEG XL Image", rw, codecs);
         addType("hdr", "Radiance HDR", rw, codecs);
         addType("rgbe", "Radiance HDR", rw, codecs);
         addType("z", "Pixar Z-Depth", r, codecs);
         addType("png", "Portable Network Graphics Image", rw, codecs);
+        addType("qoi", "Quite OK Image", rw, codecs);
 
         // These are handled by their dedicated optimized streaming plugins:
         // IOexr ("m0"), IOtiff ("m1"), IOjpeg ("m2"), IOhtj2k ("m7")

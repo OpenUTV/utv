@@ -151,9 +151,15 @@ namespace TwkFB
         addType("pxn", "Fotoman RAW", capabilities, codecs);
         addType("raf", "Fuji RAW", capabilities, codecs); // tested
         addType("raw", "Panasonic/Casio/Leica RAW", capabilities, codecs);
+        addType("rw2", "Panasonic Lumix RAW", capabilities, codecs);
         addType("rdc", "Ricoh RAW", capabilities, codecs);
         addType("rwl", "Leica RAW", capabilities, codecs);
         addType("srf", "Sony/Minolta RAW 2", capabilities, codecs);
+        addType("sr2", "Sony RAW", capabilities, codecs);
+        addType("3fr", "Hasselblad RAW", capabilities, codecs);
+        addType("iiq", "Phase One RAW", capabilities, codecs);
+        addType("srw", "Samsung RAW", capabilities, codecs);
+        addType("nrw", "Nikon Coolpix RAW", capabilities, codecs);
         //    addType("x3f", "Sigma RAW", capabilities, codecs); // forbiden
         addType("rmf", "Canon Raw Media Format", capabilities, codecs);
     }
