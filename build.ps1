@@ -142,7 +142,7 @@ else {
                 }
             } catch {
                 Write-Warning "GitHub API rate limit or error, using direct release download URL..."
-                Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.2/OpenUTVDeps-26.2-win64.msi" -OutFile $MsiPath
+                Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.3/OpenUTVDeps-26.3-win64.msi" -OutFile $MsiPath
                 $downloadSuccess = $true
             }
         }

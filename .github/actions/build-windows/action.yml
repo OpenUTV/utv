@@ -53,7 +53,7 @@ runs:
         $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
         if (-not $MsiFile) {
             Write-Host "Downloading direct asset from GitHub Releases..."
-            Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.2/OpenUTVDeps-26.2-win64.msi" -OutFile "OpenUTVDeps-26.2-win64.msi"
+            Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.3/OpenUTVDeps-26.3-win64.msi" -OutFile "OpenUTVDeps-26.3-win64.msi"
             $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
         }
         if (-not $MsiFile) {
@@ -331,14 +331,18 @@ runs:
             Write-Warning "windeployqt.exe not found at $QtBin"
         }
         if ($env:VCToolsRedistDir) {
-            Write-Host "Locating MSVC CRT Redistributable DLLs in $env:VCToolsRedistDir..."
-            $CrtDll = Get-ChildItem -Path "$env:VCToolsRedistDir" -Recurse -Filter "msvcp140.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+            Write-Host "Locating MSVC x64 CRT Redistributable DLLs in $env:VCToolsRedistDir\x64..."
+            $CrtDll = Get-ChildItem -Path "$env:VCToolsRedistDir\x64" -Recurse -Filter "msvcp140.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $CrtDll) {
+                # Fallback if VCToolsRedistDir structure varies
+                $CrtDll = Get-ChildItem -Path "$env:VCToolsRedistDir" -Recurse -Filter "msvcp140.dll" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -like "*x64*" -and $_.FullName -notlike "*arm64*" -and $_.FullName -notlike "*x86*" } | Select-Object -First 1
+            }
             if ($CrtDll) {
                 $CrtDir = $CrtDll.DirectoryName
-                Write-Host "Deploying MSVC CRT Redistributable DLLs from $CrtDir to _install\bin..."
+                Write-Host "Deploying MSVC x64 CRT Redistributable DLLs from $CrtDir to _install\bin..."
                 Copy-Item -Path "$CrtDir\*.dll" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
             } else {
-                Write-Warning "msvcp140.dll not found under VCToolsRedistDir: $env:VCToolsRedistDir"
+                Write-Warning "msvcp140.dll for x64 not found under VCToolsRedistDir: $env:VCToolsRedistDir"
             }
         }
         if ($env:OPENUTV_DEPS_ROOT) {
