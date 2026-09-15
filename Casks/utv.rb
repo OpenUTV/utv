@@ -16,6 +16,7 @@ cask "utv" do
   depends_on formula: "jpeg-turbo"
   depends_on formula: "libpng"
   depends_on formula: "libraw"
+  depends_on formula: "libspng"
   depends_on formula: "libtiff"
   depends_on formula: "opencolorio"
   depends_on formula: "openexr"

@@ -13,6 +13,9 @@
 #include <TwkMath/Iostream.h>
 #include <TwkUtil/File.h>
 #include <png.h>
+#ifdef HAVE_LIBSPNG
+#include <spng.h>
+#endif
 
 namespace TwkFB
 {
@@ -30,8 +33,13 @@ namespace TwkFB
 
     string IOpng::about() const
     {
-        char temp[80];
+        char temp[128];
+#ifdef HAVE_LIBSPNG
+        sprintf(temp, "PNG (libspng %d.%d.%d, fallback libpng %s)", SPNG_VERSION_MAJOR, SPNG_VERSION_MINOR, SPNG_VERSION_PATCH,
+                PNG_LIBPNG_VER_STRING);
+#else
         sprintf(temp, "PNG (libpng %s)", PNG_LIBPNG_VER_STRING);
+#endif
         return temp;
     }
 
@@ -178,6 +186,68 @@ namespace TwkFB
 
     void IOpng::getImageInfo(const string& filename, FBInfo& fbi) const
     {
+#ifdef HAVE_LIBSPNG
+        spng_ctx* spng_read_ctx = spng_ctx_new(0);
+        if (spng_read_ctx)
+        {
+            FILE* sfp = TwkUtil::fopen(filename.c_str(), "rb");
+            if (sfp)
+            {
+                if (spng_set_png_file(spng_read_ctx, sfp) == SPNG_OK)
+                {
+                    struct spng_ihdr ihdr;
+                    if (spng_get_ihdr(spng_read_ctx, &ihdr) == SPNG_OK)
+                    {
+                        fbi.width = ihdr.width;
+                        fbi.height = ihdr.height;
+                        fbi.uncropWidth = ihdr.width;
+                        fbi.uncropHeight = ihdr.height;
+                        fbi.uncropX = 0;
+                        fbi.uncropY = 0;
+                        fbi.orientation = FrameBuffer::TOPLEFT;
+                        fbi.dataType = (ihdr.bit_depth == 16) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+
+                        int channels = 4;
+                        if (ihdr.color_type == SPNG_COLOR_TYPE_GRAYSCALE)
+                            channels = 1;
+                        else if (ihdr.color_type == SPNG_COLOR_TYPE_GRAYSCALE_ALPHA)
+                            channels = 2;
+                        else if (ihdr.color_type == SPNG_COLOR_TYPE_TRUECOLOR)
+                            channels = 3;
+                        else if (ihdr.color_type == SPNG_COLOR_TYPE_INDEXED)
+                        {
+                            struct spng_trns trns;
+                            channels = (spng_get_trns(spng_read_ctx, &trns) == SPNG_OK) ? 4 : 3;
+                        }
+                        fbi.numChannels = channels;
+
+                        struct spng_phys phys;
+                        if (spng_get_phys(spng_read_ctx, &phys) == SPNG_OK && phys.unit_specifier == 1 && phys.ppu_x > 0 && phys.ppu_y > 0)
+                        {
+                            fbi.pixelAspect = ((float)phys.ppu_y) / ((float)phys.ppu_x);
+                        }
+                        else
+                        {
+                            fbi.pixelAspect = 1.0f;
+                        }
+
+                        uint8_t srgb_intent = 0;
+                        if (spng_get_srgb(spng_read_ctx, &srgb_intent) == SPNG_OK)
+                        {
+                            fbi.proxy.setPrimaryColorSpace(ColorSpace::Rec709());
+                            fbi.proxy.setTransferFunction(ColorSpace::sRGB());
+                        }
+
+                        spng_ctx_free(spng_read_ctx);
+                        fclose(sfp);
+                        return;
+                    }
+                }
+                fclose(sfp);
+            }
+            spng_ctx_free(spng_read_ctx);
+        }
+#endif
         FILE* fp = TwkUtil::fopen(filename.c_str(), "rb");
         if (!fp)
         {
@@ -303,6 +373,95 @@ namespace TwkFB
 
     void IOpng::readImage(FrameBuffer& fb, const std::string& filename, const ReadRequest& request) const
     {
+#ifdef HAVE_LIBSPNG
+        spng_ctx* spng_read_ctx = spng_ctx_new(0);
+        if (spng_read_ctx)
+        {
+            FILE* sfp = TwkUtil::fopen(filename.c_str(), "rb");
+            if (sfp)
+            {
+                if (spng_set_png_file(spng_read_ctx, sfp) == SPNG_OK)
+                {
+                    struct spng_ihdr ihdr;
+                    if (spng_get_ihdr(spng_read_ctx, &ihdr) == SPNG_OK)
+                    {
+                        int fmt = SPNG_FMT_RGBA8;
+                        FrameBuffer::DataType dt = FrameBuffer::UCHAR;
+                        int components = 4;
+
+                        if (ihdr.color_type == SPNG_COLOR_TYPE_GRAYSCALE)
+                        {
+                            fmt = (ihdr.bit_depth == 16) ? SPNG_FMT_RGBA16 : SPNG_FMT_G8;
+                            dt = (ihdr.bit_depth == 16) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+                            components = (ihdr.bit_depth == 16) ? 4 : 1;
+                        }
+                        else if (ihdr.color_type == SPNG_COLOR_TYPE_GRAYSCALE_ALPHA)
+                        {
+                            fmt = (ihdr.bit_depth == 16) ? SPNG_FMT_GA16 : SPNG_FMT_GA8;
+                            dt = (ihdr.bit_depth == 16) ? FrameBuffer::USHORT : FrameBuffer::UCHAR;
+                            components = 2;
+                        }
+                        else if (ihdr.bit_depth == 16)
+                        {
+                            fmt = SPNG_FMT_RGBA16;
+                            dt = FrameBuffer::USHORT;
+                            components = 4;
+                        }
+                        else
+                        {
+                            fmt = SPNG_FMT_RGBA8;
+                            dt = FrameBuffer::UCHAR;
+                            components = 4;
+                        }
+
+                        size_t out_size = 0;
+                        if (spng_decoded_image_size(spng_read_ctx, fmt, &out_size) == SPNG_OK)
+                        {
+                            fb.restructure(ihdr.width, ihdr.height, 0, components, dt);
+                            fb.setOrientation(FrameBuffer::TOPLEFT);
+
+                            struct spng_phys phys;
+                            if (spng_get_phys(spng_read_ctx, &phys) == SPNG_OK && phys.unit_specifier == 1 && phys.ppu_x > 0
+                                && phys.ppu_y > 0)
+                            {
+                                fb.setPixelAspectRatio(((float)phys.ppu_y) / ((float)phys.ppu_x));
+                            }
+
+                            uint8_t srgb_intent = 0;
+                            if (spng_get_srgb(spng_read_ctx, &srgb_intent) == SPNG_OK)
+                            {
+                                fb.setPrimaryColorSpace(ColorSpace::Rec709());
+                                fb.setTransferFunction(ColorSpace::sRGB());
+                            }
+
+                            double gamma = 0.0;
+                            if (spng_get_gama(spng_read_ctx, &gamma) == SPNG_OK && gamma > 0.0)
+                            {
+                                fb.newAttribute("PNG/Gamma", gamma);
+                            }
+
+                            struct spng_iccp iccp;
+                            if (spng_get_iccp(spng_read_ctx, &iccp) == SPNG_OK && iccp.profile_len > 0)
+                            {
+                                fb.setICCprofile((unsigned char*)iccp.profile, iccp.profile_len);
+                            }
+
+                            int decode_flags = SPNG_DECODE_TRNS;
+                            int decode_ret = spng_decode_image(spng_read_ctx, fb.scanline<unsigned char>(0), out_size, fmt, decode_flags);
+                            if (decode_ret == SPNG_OK)
+                            {
+                                spng_ctx_free(spng_read_ctx);
+                                fclose(sfp);
+                                return;
+                            }
+                        }
+                    }
+                }
+                fclose(sfp);
+            }
+            spng_ctx_free(spng_read_ctx);
+        }
+#endif
         FILE* fp = TwkUtil::fopen(filename.c_str(), "rb");
         if (!fp)
         {

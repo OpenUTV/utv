@@ -77,6 +77,10 @@
     {
       "name": "pyside",
       "paths": ["opt/pyside", "opt/pyside@6"]
+    },
+    {
+      "name": "libspng",
+      "paths": ["opt/libspng"]
     }
   ],
   "post_install_commands": [
