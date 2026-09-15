@@ -370,16 +370,16 @@ class MediaInfoMinorMode(rvtypes.MinorMode):
 
     def __init__(self):
         super().__init__()
-        self.init("media_info", None, None, None)
-        self.dialog = None
-
+        globalBindings = [
+            ("key-down--control--i", self.showDialog, "Show Media Information"),
+            ("show-media-info-dialog", self.showDialog, "Show Media Information"),
+            ("new-source", self.onSourceChanged, "Update Media Info"),
+            ("source-modified", self.onSourceChanged, "Update Media Info"),
+        ]
         # Define menu under Window > Media Information...
-        menu = [("Window", [("_", None), ("Media Information...", self.showDialog, "Meta-i", None)])]
-        commands.defineModeMenu("media_info", menu, True)
-
-        # Bind events to update info dynamically
-        commands.bind("media_info", "global", "new-source", self.onSourceChanged, "Update Media Info")
-        commands.bind("media_info", "global", "source-modified", self.onSourceChanged, "Update Media Info")
+        menu = [("Window", [("_", None), ("Media Information...", self.showDialog, "key-down--control--i", None)])]
+        self.init("media_info", globalBindings, None, menu)
+        self.dialog = None
 
     def ensureDialog(self):
         if self.dialog is None:

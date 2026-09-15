@@ -200,8 +200,6 @@ IONSImage::readImage(FrameBuffer& fb,
         NSBitmapImageRep* rep = [NSBitmapImageRep 
                                     imageRepWithData: [image TIFFRepresentation]];
 
-        [image autorelease];
-
 	NSSize size             = [rep size];
 	unsigned char* buffer   = [rep bitmapData];
 	int samples             = [rep samplesPerPixel];
@@ -321,45 +319,56 @@ IONSImage::readImage(FrameBuffer& fb,
 	if ([item isKindOfClass: [NSBitmapImageRep class]])
         {
 #if 1
-            if (NSDictionary* d = [item valueForProperty: NSImageEXIFData])
+            @try
             {
-                NSEnumerator *e = [d keyEnumerator];
-                NSString* key;
-                
-                while (key = [e nextObject]) 
+                if (NSDictionary* d = [item valueForProperty: NSImageEXIFData])
                 {
-                    id val = [d objectForKey: key];
-                    //Class c = [val class];
-                    //cout << "key is " << [key UTF8String]
-                         //<< "for val of type " << c->name << endl;
+                    NSEnumerator *e = [d keyEnumerator];
+                    NSString* key;
+                    
+                    while ((key = [e nextObject])) 
+                    {
+                        id val = [d objectForKey: key];
 
-                    if ([val isKindOfClass: [NSNumber class]])
-                    {
-                        NSString* sv = [val stringValue];
-                        fb.newAttribute(std::string([key UTF8String]),
-                                        std::string([sv UTF8String]));
-                    }
-                    else if ([val isKindOfClass: [NSString class]])
-                    {
-                        NSString* sv = val;
-                        fb.newAttribute(std::string([key UTF8String]),
-                                        std::string([sv UTF8String]));
-                    }
-                    else if ([val isKindOfClass: [NSArray class]])
-                    {
-                        NSArray* a = val;
-                        NSString* v0 = [[a objectAtIndex: 0] stringValue];
-                        NSString* v1 = [[a objectAtIndex: 1] stringValue];
-                        string v = [v0 UTF8String];
-                        v += ".";
-                        v += [v1 UTF8String];
-
-                        fb.newAttribute(std::string([key UTF8String]), v);
+                        if ([val isKindOfClass: [NSNumber class]])
+                        {
+                            NSString* sv = [val stringValue];
+                            fb.newAttribute(std::string([key UTF8String]),
+                                            std::string([sv UTF8String]));
+                        }
+                        else if ([val isKindOfClass: [NSString class]])
+                        {
+                            NSString* sv = val;
+                            fb.newAttribute(std::string([key UTF8String]),
+                                            std::string([sv UTF8String]));
+                        }
+                        else if ([val isKindOfClass: [NSArray class]])
+                        {
+                            NSArray* a = val;
+                            string v = "";
+                            for (NSUInteger ai = 0; ai < [a count]; ++ai)
+                            {
+                                id elem = [a objectAtIndex: ai];
+                                NSString* sv = [elem respondsToSelector: @selector(stringValue)] ? [elem stringValue] : [elem description];
+                                if (sv)
+                                {
+                                    if (ai > 0) v += ", ";
+                                    v += [sv UTF8String];
+                                }
+                            }
+                            fb.newAttribute(std::string([key UTF8String]), v);
+                        }
                     }
                 }
             }
+            @catch (NSException* ex)
+            {
+                // Gracefully ignore any EXIF parsing issues
+            }
 #endif
         }
+
+        [image autorelease];
     }
 
     if (pool) [pool release];

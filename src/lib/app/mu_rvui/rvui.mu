@@ -6253,8 +6253,8 @@ global bool debugGC = false;
     Menu mainMenu_part1 = newMenu(MenuItem[] {
         subMenu("File", MenuItem[] {
             menuItem("New Session", "", "media_category", \: (void; Event ev) { newSession(nil); }, newSessionState),
-            menuItem("Open...", "key-down--control--i", "media_category", addMovieOrImageSources(,true,false), enabledItem),
-            menuItem("Merge...", "key-down--control--o", "media_category", addMovieOrImageSources(,true,true), enabledItem),
+            menuItem("Open...", "key-down--control--o", "media_category", addMovieOrImageSources(,true,false), enabledItem),
+            menuItem("Merge...", "", "media_category", addMovieOrImageSources(,true,true), enabledItem),
             menuItem("Open into Layer...", "", "media_category", addMovieOrImage(,addToClosestSource(,"explicit"),false), sourcesExistState),
             menuItem("Open in New Session...", "key-down--control--O", "media_category", openMovieOrImage, newSessionState),
             menuSeparator(),
@@ -6370,6 +6370,7 @@ global bool debugGC = false;
                 menuItem("Timeline", "key-down--f2", "info_category", ~toggleTimeline, timelineShown),
                 menuItem("Timeline Magnifier", "key-down--f3", "info_category", ~toggleMotionScope, motionScopeShown),
                 menuItem("Image Info", "key-down--f4", "info_category", ~toggleInfo, infoShown),
+                menuItem("Media Information...", "key-down--control--i", "info_category", \: (void; Event ev) { sendInternalEvent("show-media-info-dialog", ""); }, enabledItem),
                 menuItem("Color Inspector", "key-down--f5", "info_category", ~toggleColorInspector, colorInspectorShown),
                 menuItem("Wipes", "key-down--f6", "wipes_category", ~toggleWipe, wipeShown),
                 menuItem("Info Strip", "key-down--f7", "info_category", ~toggleInfoStrip, infoStripShown),
@@ -6924,6 +6925,7 @@ global bool debugGC = false;
     // bound by menuItem("Jump To Beginning") // bind("key-down--home", beginning, "Go to Beginning of In/Out Range");
     // bound by menuItem("Reset All Color") // bind("key-down--shift--home", resetAllColorParameters, "Reset All Color");
     bind("key-down--i", "info_category", toggleInfo, "Toggle Heads-Up Image Info");
+    bind("key-down--control--i", "info_category", \: (void; Event ev) { sendInternalEvent("show-media-info-dialog", ""); }, "Show Media Information Dialog");
     // bound by menuItem("Luminance") // bind("key-down--l", showChannel(5), "Show Image Luminance");
     // bound by menuItem("Step Backward") // bind("key-down--left", stepBackward1, "Move Back One Frame");
     // bound by menuItem("Mark Frame") // bind("key-down--m", toggleMark, "Toggle Mark At Frame");
