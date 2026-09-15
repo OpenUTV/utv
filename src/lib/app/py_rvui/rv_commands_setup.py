@@ -208,6 +208,7 @@ all_mu_commands = [
     "isCaching",
     "getCurrentImageSize",
     "putUrlOnClipboard",
+    "putStringOnClipboard",
     "eventToImageSpace",
     "loadTotal",
     "myNetworkPort",

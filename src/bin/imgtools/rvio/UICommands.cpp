@@ -139,6 +139,9 @@ namespace RVIO
             new Function(c, "putUrlOnClipboard", putUrlOnClipboard, None, Return, "void", Parameters, new Param(c, "url", "string"),
                          new Param(c, "title", "string"), new Param(c, "doEncode", "bool", Value(true)), End),
 
+            new Function(c, "putStringOnClipboard", putStringOnClipboard, None, Return, "void", Parameters, new Param(c, "text", "string"),
+                         End),
+
             new Function(c, "myNetworkPort", myNetworkPort, None, Return, "int", End),
 
             new Function(c, "myNetworkHost", myNetworkHost, None, Return, "string", End),
@@ -223,6 +226,8 @@ namespace RVIO
     NODE_DECLARATION(sessionFromUrl, void) {}
 
     NODE_DECLARATION(putUrlOnClipboard, void) {}
+
+    NODE_DECLARATION(putStringOnClipboard, void) {}
 
     NODE_DECLARATION(myNetworkPort, int) { NODE_RETURN(0); }
 

@@ -3066,9 +3066,48 @@ namespace TwkMovie
         track->fb.setPixelAspectRatio(m_info.pixelAspect);
         const char* fmt_name = av_get_pix_fmt_name(videoCodecContext->pix_fmt);
         track->fb.newAttribute("VideoPixelFormat", string(fmt_name ? fmt_name : "none"));
+        track->fb.newAttribute("PixelFormat", string(fmt_name ? fmt_name : "none"));
 
         const char* codec_name = videoCodecContext->codec ? videoCodecContext->codec->long_name : nullptr;
-        track->fb.newAttribute("VideoCodec", string(codec_name ? codec_name : "unknown"));
+        const char* codec_short_name = videoCodecContext->codec ? videoCodecContext->codec->name : nullptr;
+        track->fb.newAttribute("VideoCodec", string(codec_name ? codec_name : (codec_short_name ? codec_short_name : "unknown")));
+        track->fb.newAttribute("Codec", string(codec_name ? codec_name : (codec_short_name ? codec_short_name : "unknown")));
+        if (codec_short_name)
+            track->fb.newAttribute("CodecName", string(codec_short_name));
+
+        const char* spc_name = av_color_space_name(videoCodecContext->colorspace);
+        if (spc_name && string(spc_name) != "unknown")
+            track->fb.newAttribute("ColorSpace", string(spc_name));
+
+        const char* pri_name = av_color_primaries_name(videoCodecContext->color_primaries);
+        if (pri_name && string(pri_name) != "unknown")
+            track->fb.newAttribute("ColorPrimaries", string(pri_name));
+
+        const char* trc_name = av_color_transfer_name(videoCodecContext->color_trc);
+        if (trc_name && string(trc_name) != "unknown")
+            track->fb.newAttribute("ColorTransfer", string(trc_name));
+
+        const char* rng_name = av_color_range_name(videoCodecContext->color_range);
+        if (rng_name && string(rng_name) != "unknown")
+            track->fb.newAttribute("ColorRange", string(rng_name));
+
+        if (m_avFormatContext && m_avFormatContext->iformat && m_avFormatContext->iformat->long_name)
+            track->fb.newAttribute("Container", string(m_avFormatContext->iformat->long_name));
+        else if (m_avFormatContext && m_avFormatContext->iformat && m_avFormatContext->iformat->name)
+            track->fb.newAttribute("Container", string(m_avFormatContext->iformat->name));
+
+        if (videoCodecContext->bit_rate > 0)
+        {
+            ostringstream br;
+            br << (videoCodecContext->bit_rate / 1000) << " kb/s";
+            track->fb.newAttribute("BitRate", br.str());
+        }
+        else if (m_avFormatContext && m_avFormatContext->bit_rate > 0)
+        {
+            ostringstream br;
+            br << (m_avFormatContext->bit_rate / 1000) << " kb/s";
+            track->fb.newAttribute("BitRate", br.str());
+        }
 
         ostringstream attr;
         attr << m_videoTracks.size();

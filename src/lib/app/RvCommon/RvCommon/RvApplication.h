@@ -109,6 +109,7 @@ namespace Rv
         static void parseURL(const char* s, std::vector<char*>& av);
         static void sessionFromUrl(std::string url);
         static void putUrlOnClipboard(std::string url, std::string title, bool doEncode = true);
+        static void putStringOnClipboard(const std::string& text);
         static std::string encodeCommandLineURL(int argc, char* argv[]);
         static std::string bakeCommandLineURL(int argc, char* argv[]);
         static void initializeQSettings(std::string altPath);

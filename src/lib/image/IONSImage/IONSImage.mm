@@ -132,14 +132,25 @@ IONSImage::getImageInfo(const std::string& filename, FBInfo& fbi) const
     {
         //NSBitmapImageRep* rep = [NSBitmapImageRep 
                                     //imageRepWithData: [image TIFFRepresentation]];
-	NSBitmapImageRep *rep = [[image representations] objectAtIndex:0];
+        NSBitmapImageRep *rep = (NSBitmapImageRep *)[[image representations] objectAtIndex:0];
 	NSSize size         = [rep size];
         fbi.numChannels     = [rep samplesPerPixel];
         fbi.width           = [rep pixelsWide];
         fbi.height          = [rep pixelsHigh];
 
         NSString *colorSpace = [rep colorSpaceName];
-        fbi.proxy.newAttribute("NSImage/colorSpaceName", std::string([colorSpace UTF8String]));
+        if (colorSpace)
+        {
+            fbi.proxy.newAttribute("NSImage/colorSpaceName", std::string([colorSpace UTF8String]));
+            fbi.proxy.newAttribute("ColorSpace", std::string([colorSpace UTF8String]));
+        }
+        int gsamples = [rep samplesPerPixel];
+        int gbbs = [rep bitsPerSample];
+        std::string gPixFmt = (gsamples == 4) ? "RGBA" : (gsamples == 3 ? "RGB" : (gsamples == 1 ? "Y" : "Custom"));
+        gPixFmt += std::to_string(gbbs);
+        fbi.proxy.newAttribute("PixelFormat", gPixFmt);
+        fbi.proxy.newAttribute("Codec", std::string("Apple ImageIO / NSImage"));
+        fbi.proxy.newAttribute("File", filename);
 
         [image autorelease];
 
@@ -195,9 +206,11 @@ IONSImage::readImage(FrameBuffer& fb,
 	unsigned char* buffer   = [rep bitmapData];
 	int samples             = [rep samplesPerPixel];
         int bbs                 = [rep bitsPerSample];
+        int bpp                 = [rep bitsPerPixel];
         size_t rowSize          = [rep bytesPerRow];
         size_t w                = [rep pixelsWide];
         size_t h                = [rep pixelsHigh];
+        int componentsPerPixel  = (bbs > 0) ? (bpp / bbs) : samples;
 
         switch (bbs)
         {
@@ -228,19 +241,79 @@ IONSImage::readImage(FrameBuffer& fb,
             typedef unsigned char byte;
 
             //
-            //  Copy the scanlines skipping padding if any in nsimage rep
+            //  Copy the scanlines unpacking pixels if padded (e.g. RGBX -> RGB)
             //
 
-            for (int row=0; row < h; row++)
+            if (componentsPerPixel > samples && samples == 3 && bbs == 8)
             {
-                memcpy(fb.scanline<byte>(h-row-1), 
-                       buffer + (row * rowSize),
-                       fb.scanlineSize());
+                for (size_t row = 0; row < h; row++)
+                {
+                    const byte* src = buffer + (row * rowSize);
+                    byte* dst = fb.scanline<byte>(h - row - 1);
+                    for (size_t col = 0; col < w; ++col)
+                    {
+                        dst[0] = src[0];
+                        dst[1] = src[1];
+                        dst[2] = src[2];
+                        dst += 3;
+                        src += componentsPerPixel;
+                    }
+                }
+            }
+            else if (componentsPerPixel > samples && samples == 3 && bbs == 16)
+            {
+                for (size_t row = 0; row < h; row++)
+                {
+                    const unsigned short* src = reinterpret_cast<const unsigned short*>(buffer + (row * rowSize));
+                    unsigned short* dst = fb.scanline<unsigned short>(h - row - 1);
+                    for (size_t col = 0; col < w; ++col)
+                    {
+                        dst[0] = src[0];
+                        dst[1] = src[1];
+                        dst[2] = src[2];
+                        dst += 3;
+                        src += componentsPerPixel;
+                    }
+                }
+            }
+            else if (componentsPerPixel > samples && samples == 3 && bbs == 32)
+            {
+                for (size_t row = 0; row < h; row++)
+                {
+                    const float* src = reinterpret_cast<const float*>(buffer + (row * rowSize));
+                    float* dst = fb.scanline<float>(h - row - 1);
+                    for (size_t col = 0; col < w; ++col)
+                    {
+                        dst[0] = src[0];
+                        dst[1] = src[1];
+                        dst[2] = src[2];
+                        dst += 3;
+                        src += componentsPerPixel;
+                    }
+                }
+            }
+            else
+            {
+                for (int row = 0; row < h; row++)
+                {
+                    memcpy(fb.scanline<byte>(h - row - 1), 
+                           buffer + (row * rowSize),
+                           fb.scanlineSize());
+                }
             }
         }
         
         NSString *colorSpace = [rep colorSpaceName];
-        fb.newAttribute("NSImage/ColorSpaceName", std::string([colorSpace UTF8String]));
+        if (colorSpace)
+        {
+            fb.newAttribute("NSImage/ColorSpaceName", std::string([colorSpace UTF8String]));
+            fb.newAttribute("ColorSpace", std::string([colorSpace UTF8String]));
+        }
+        std::string pixFmt = (samples == 4) ? "RGBA" : (samples == 3 ? "RGB" : (samples == 1 ? "Y" : "Custom"));
+        pixFmt += std::to_string(bbs);
+        fb.newAttribute("PixelFormat", pixFmt);
+        fb.newAttribute("Codec", std::string("Apple ImageIO / NSImage"));
+        fb.newAttribute("File", filename);
 
 	NSArray* ireps = [image representations];
 	id item = [ireps objectAtIndex: 0];

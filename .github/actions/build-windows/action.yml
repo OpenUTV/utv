@@ -320,6 +320,41 @@ runs:
       run: cmake --install _build --prefix $(pwd)/_install
       shell: bash
 
+    - name: Deploy Qt and Runtime Dependencies
+      run: |
+        $QtBin = "C:\Qt\${{ inputs.qt-version }}\msvc2022_64\bin"
+        if (Test-Path "$QtBin\windeployqt.exe") {
+            Write-Host "Running windeployqt on _install\bin\utv.exe..."
+            & "$QtBin\windeployqt.exe" --release --no-translations --no-compiler-runtime "_install\bin\utv.exe"
+        } else {
+            Write-Warning "windeployqt.exe not found at $QtBin"
+        }
+        if ($env:OPENUTV_DEPS_ROOT) {
+            $BinPath = Join-Path $env:OPENUTV_DEPS_ROOT "bin"
+            if (-not (Test-Path $BinPath)) {
+                $BinPath = Join-Path $env:OPENUTV_DEPS_ROOT "installed\x64-windows\bin"
+            }
+            if (Test-Path $BinPath) {
+                Write-Host "Copying dependencies DLLs from $BinPath to _install\bin..."
+                Copy-Item -Path "$BinPath\*.dll" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            } else {
+                Write-Warning "Dependencies bin path not found: $BinPath"
+            }
+        }
+        if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python3*.dll")) {
+            Write-Host "Copying Python DLLs from $env:pythonLocation to _install\bin..."
+            Copy-Item -Path "$env:pythonLocation\python3*.dll" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+        }
+        # Ensure platforms plugin directory exists in both bin\platforms and plugins\Qt\platforms for maximum compatibility
+        if (Test-Path "_install\bin\platforms") {
+            New-Item -ItemType Directory -Force -Path "_install\plugins\Qt\platforms" | Out-Null
+            Copy-Item -Path "_install\bin\platforms\*" -Destination "_install\plugins\Qt\platforms" -Force -Recurse -ErrorAction SilentlyContinue
+        } elseif (Test-Path "_install\plugins\Qt\platforms") {
+            New-Item -ItemType Directory -Force -Path "_install\bin\platforms" | Out-Null
+            Copy-Item -Path "_install\plugins\Qt\platforms\*" -Destination "_install\bin\platforms" -Force -Recurse -ErrorAction SilentlyContinue
+        }
+      shell: powershell
+
     - name: Sccache Statistics
       if: always()
       run: sccache --show-stats

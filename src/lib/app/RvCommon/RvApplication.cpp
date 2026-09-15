@@ -1711,6 +1711,18 @@ namespace Rv
 #endif
     }
 
+    void RvApplication::putStringOnClipboard(const string& text)
+    {
+        QClipboard* clipboard = QApplication::clipboard();
+        if (clipboard)
+        {
+            clipboard->setText(QString::fromUtf8(text.c_str()), QClipboard::Clipboard);
+#if !defined(PLATFORM_DARWIN) && !defined(PLATFORM_WINDOWS)
+            clipboard->setText(QString::fromUtf8(text.c_str()), QClipboard::Selection);
+#endif
+        }
+    }
+
     void RvApplication::initializeQSettings(string altPath)
     {
         QString home = QDir::homePath();

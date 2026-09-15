@@ -40,12 +40,53 @@ class: ImageInfo : Widget
         if (_wrap) then CheckedMenuState else UncheckedMenuState; 
     }
 
+    method: copyMetadata (void; Event event)
+    {
+        State state = data();
+        let pinfo = state.pixelInfo;
+        string iname = nil;
+        if (pinfo neq nil)
+        {
+            for_each (info; pinfo)
+            {
+                if (nodeType(nodeGroup(info.node)) == "RVSourceGroup")
+                {
+                    iname = info.name;
+                    break;
+                }
+            }
+            if (iname eq nil && !pinfo.empty()) iname = pinfo.front().name;
+        }
+        if (iname eq nil) return;
+
+        let attrs = sourceAttributes(iname);
+        if (attrs eq nil) return;
+
+        string out = "";
+        for_each (a; attrs)
+        {
+            if (a._0 != "" || a._1 != "")
+            {
+                if (a._0 == "")
+                {
+                    out += "\n";
+                }
+                else
+                {
+                    out += "%s: %s\n" % (a._0, a._1);
+                }
+            }
+        }
+        commands.putStringOnClipboard(out);
+    }
+
     method: popupOpts (void; Event event)
     {
         popupMenu(event, 
             newMenu(MenuItem[] {
                 menuText("Image Info"),
                 menuSeparator(),
+                menuItem("Copy All Metadata to Clipboard", "", "info_category", copyMetadata, nil),
                 menuItem("Wrap Long Fields", "", "info_category", optWrap, isWrapping)
             })
         );

@@ -317,6 +317,9 @@ namespace Rv
             new Function(c, "putUrlOnClipboard", putUrlOnClipboard, None, Return, "void", Parameters, new Param(c, "url", "string"),
                          new Param(c, "title", "string"), new Param(c, "doEncode", "bool", Value(true)), End),
 
+            new Function(c, "putStringOnClipboard", putStringOnClipboard, None, Return, "void", Parameters, new Param(c, "text", "string"),
+                         End),
+
             new Function(c, "myNetworkPort", myNetworkPort, None, Return, "int", End),
 
             new Function(c, "myNetworkHost", myNetworkHost, None, Return, "string", End),
@@ -1856,24 +1859,15 @@ namespace Rv
             throw NilArgumentException(NODE_THREAD);
 
         RvApp()->putUrlOnClipboard(url->c_str(), title->c_str(), doEncode);
+    }
 
-        /*
-        NO WORKY
+    NODE_IMPLEMENTATION(putStringOnClipboard, void)
+    {
+        StringType::String* text = NODE_ARG_OBJECT(0, StringType::String);
+        if (!text)
+            throw NilArgumentException(NODE_THREAD);
 
-        QUrl qurl;
-        qurl.setScheme("rvlink");
-        qurl.setUrl (url->c_str(), QUrl::TolerantMode);
-        cerr << "made QUrl from '" << url->c_str() << "', valid " <<
-        qurl.isValid() << endl; QList<QUrl> qlist; qlist.append (qurl);
-
-        //  XXX memory leak, but a tiny one.
-        QMimeData *qmd = new QMimeData();
-
-        qmd->setUrls(qlist);
-        qmd->setText(url->c_str());
-
-        QApplication::clipboard()->setMimeData(qmd);
-        */
+        RvApp()->putStringOnClipboard(text->c_str());
     }
 
     NODE_IMPLEMENTATION(myNetworkPort, int) { NODE_RETURN(RvApp()->networkWindow()->myPort()); }

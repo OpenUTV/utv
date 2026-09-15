@@ -1,0 +1,16 @@
+package: Media Information
+author: Makai Systems
+organization: OpenUTV
+version: 1.0
+rv: 3.12.10
+openrv: 1.0.0
+requires: ''
+system: true
+hidden: false
+
+modes: 
+  - file: media_info
+    load: immediate
+
+description: |
+  <p>Native Qt Media Information dialog with selectable text, search filter, and clipboard copy.</p>

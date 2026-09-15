@@ -51,6 +51,7 @@ namespace RVIO
     NODE_DECLARATION(httpPost, void);
     NODE_DECLARATION(sessionFromUrl, void);
     NODE_DECLARATION(putUrlOnClipboard, void);
+    NODE_DECLARATION(putStringOnClipboard, void);
     NODE_DECLARATION(myNetworkPort, int);
     NODE_DECLARATION(encodePassword, Mu::Pointer);
     NODE_DECLARATION(decodePassword, Mu::Pointer);
