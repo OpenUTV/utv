@@ -7,6 +7,7 @@
 import csv
 import io
 import json
+import os
 
 from rv import commands, qtutils, rvtypes
 
@@ -177,7 +178,24 @@ class MediaInfoDialog(QDialog):
         layout.setContentsMargins(14, 14, 14, 14)
         layout.setSpacing(10)
 
-        # Header info
+        # Media / Source selection row
+        sourceRow = QHBoxLayout()
+        sourceLabel = QLabel("<b>Media:</b>")
+        sourceLabel.setStyleSheet("color: #4da6ff; font-weight: bold;")
+        self.sourceCombo = QComboBox()
+        self.sourceCombo.setMinimumWidth(320)
+        self.sourceCombo.currentIndexChanged.connect(self.onSourceComboChanged)
+        sourceRow.addWidget(sourceLabel)
+        sourceRow.addWidget(self.sourceCombo)
+
+        self.refreshBtn = QPushButton("↻ Refresh")
+        self.refreshBtn.setToolTip("Refresh metadata from active viewport or selected media")
+        self.refreshBtn.clicked.connect(lambda: self.refresh(rebuildCombo=True))
+        sourceRow.addWidget(self.refreshBtn)
+        sourceRow.addStretch()
+        layout.addLayout(sourceRow)
+
+        # File header info
         self.fileLabel = QLabel("<b>File:</b> None loaded")
         self.fileLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.fileLabel.setWordWrap(True)
@@ -257,41 +275,170 @@ class MediaInfoDialog(QDialog):
         self.statusLabel.setText(text)
         QTimer.singleShot(3000, lambda: self.statusLabel.setText(""))
 
-    def getCurrentSource(self):
+    def updateSourceCombo(self):
+        self.sourceCombo.blockSignals(True)
+        currData = self.sourceCombo.currentData()
+        self.sourceCombo.clear()
+        self.sourceCombo.addItem("✦ Auto (Active Viewport / Playhead)", "__auto__")
+
         try:
-            sources = commands.sourcesRendered()
-            if sources:
-                return sources[0].name
+            groups = commands.nodesOfType("RVSourceGroup") or []
+        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            groups = []
+
+        for grp in groups:
+            filePath = self.getSourceFilePath(grp)
+            base = os.path.basename(filePath) if filePath else grp
+            label = f"{grp} ({base})"
+            self.sourceCombo.addItem(label, grp)
+
+        # Restore previous selection if still present
+        restoreIdx = 0
+        if currData:
+            for i in range(self.sourceCombo.count()):
+                if self.sourceCombo.itemData(i) == currData:
+                    restoreIdx = i
+                    break
+        self.sourceCombo.setCurrentIndex(restoreIdx)
+        self.sourceCombo.blockSignals(False)
+
+    def onSourceComboChanged(self, index):
+        self.refresh(rebuildCombo=False)
+
+    def onFrameChanged(self):
+        # In Auto mode, update if the active source rendered at the playhead changes
+        if self.sourceCombo.currentData() == "__auto__":
+            active = self.getActiveViewportSource()
+            if active != self.currentSource:
+                self.refresh(rebuildCombo=False)
+
+    def getSourceNode(self, groupNode):
+        if not groupNode:
+            return None
+        for t in ("RVFileSource", "RVImageSource"):
+            try:
+                members = commands.nodesInGroupOfType(groupNode, t)
+                if members:
+                    return members[0]
+            except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                pass
+        return groupNode
+
+    def getSourceFilePath(self, node):
+        if not node:
+            return ""
+        target = self.getSourceNode(node)
+        # Try getStringProperty
+        try:
+            prop = commands.getStringProperty(target + ".media.movie")
+            if prop and prop[0]:
+                return prop[0]
         except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
             pass
+        # Try sourceMedia
         try:
-            nodes = commands.nodesOfType("RVSourceGroup")
-            if nodes:
-                return nodes[0]
+            med = commands.sourceMedia(target)
+            if med and isinstance(med, (list, tuple)) and med[0]:
+                return med[0]
+            elif isinstance(med, str) and med:
+                return med
         except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
             pass
+        return ""
+
+    def getActiveViewportSource(self):
+        # 1. First try sourcesAtFrame at current playhead frame
+        try:
+            fr = commands.frame()
+            active = commands.sourcesAtFrame(fr)
+            if active:
+                try:
+                    grp = commands.nodeGroup(active[0])
+                    if grp:
+                        return grp
+                except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                    pass
+                return active[0]
+        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            pass
+
+        # 2. Try sourcesRendered
+        try:
+            rendered = commands.sourcesRendered()
+            if rendered:
+                r = rendered[0]
+                node_name = getattr(r, "node", None) or getattr(r, "name", None) or (r if isinstance(r, str) else None)
+                if node_name:
+                    try:
+                        grp = commands.nodeGroup(node_name)
+                        if grp:
+                            return grp
+                    except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                        pass
+                    return node_name
+        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            pass
+
+        # 3. Fallback to first source group in session
+        try:
+            groups = commands.nodesOfType("RVSourceGroup")
+            if groups:
+                return groups[0]
+        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            pass
+
         return None
 
-    def refresh(self):
-        source = self.getCurrentSource()
+    def getAttributesForSource(self, source):
+        if not source:
+            return []
+
+        leaf = self.getSourceNode(source)
+        filePath = self.getSourceFilePath(source)
+
+        strategies = [
+            lambda: commands.sourceAttributes(source),
+            lambda: commands.sourceAttributes(leaf) if (leaf and leaf != source) else None,
+            lambda: commands.sourceAttributes(source, filePath) if filePath else None,
+            lambda: commands.sourceAttributes(leaf, filePath) if (leaf and leaf != source and filePath) else None,
+            lambda: commands.sourceAttributes(),
+        ]
+
+        for strat in strategies:
+            try:
+                attrs = strat()
+                if attrs:
+                    return attrs
+            except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                continue
+
+        return []
+
+    def refresh(self, rebuildCombo=True):
+        if rebuildCombo:
+            self.updateSourceCombo()
+
+        selected = self.sourceCombo.currentData()
+        if selected == "__auto__" or not selected:
+            source = self.getActiveViewportSource()
+        else:
+            source = selected
+
         if not source:
             self.fileLabel.setText("<b>File:</b> No media currently active in session")
             self.overviewTree.clear()
             self.allAttrsTree.clear()
             self.currentAttrs = []
+            self.currentSource = None
             return
 
         self.currentSource = source
-        try:
-            attrs = commands.sourceAttributes(source)
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
-            attrs = []
-
+        attrs = self.getAttributesForSource(source)
         self.currentAttrs = attrs or []
         attrDict = dict(self.currentAttrs)
 
         # Update file header
-        filepath = attrDict.get("File", attrDict.get("Sequence", source))
+        filepath = attrDict.get("File", attrDict.get("Sequence", self.getSourceFilePath(source) or source))
         self.fileLabel.setText(f"<b>File:</b> {filepath}")
 
         # Update Overview Tab
@@ -541,8 +688,11 @@ class MediaInfoMinorMode(rvtypes.MinorMode):
         globalBindings = [
             ("key-down--control--i", self.showDialog, "Show Media Information"),
             ("show-media-info-dialog", self.showDialog, "Show Media Information"),
-            ("new-source", self.onSourceChanged, "Update Media Info"),
-            ("source-modified", self.onSourceChanged, "Update Media Info"),
+            ("frame-changed", self.onFrameChanged, "Update Media Info on Frame Change"),
+            ("new-source", self.onSourceChanged, "Update Media Info on New Source"),
+            ("source-modified", self.onSourceChanged, "Update Media Info on Source Modified"),
+            ("source-media-changed", self.onSourceChanged, "Update Media Info on Media Changed"),
+            ("after-graph-view-change", self.onSourceChanged, "Update Media Info on View Change"),
         ]
         # Define menu under Window > Media Information...
         menu = [("Window", [("_", None), ("Media Information...", self.showDialog, "key-down--control--i", None)])]
@@ -557,14 +707,19 @@ class MediaInfoMinorMode(rvtypes.MinorMode):
 
     def showDialog(self, event=None):
         dlg = self.ensureDialog()
-        dlg.refresh()
+        dlg.refresh(rebuildCombo=True)
         dlg.show()
         dlg.raise_()
         dlg.activateWindow()
 
+    def onFrameChanged(self, event):
+        if self.dialog and self.dialog.isVisible():
+            self.dialog.onFrameChanged()
+        event.reject()
+
     def onSourceChanged(self, event):
         if self.dialog and self.dialog.isVisible():
-            self.dialog.refresh()
+            self.dialog.refresh(rebuildCombo=True)
         event.reject()
 
 
