@@ -4,6 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import csv
+import io
+import json
+
 from rv import commands, qtutils, rvtypes
 
 try:
@@ -11,11 +15,13 @@ try:
     from PySide6.QtCore import Qt, QTimer
     from PySide6.QtWidgets import (
         QApplication,
+        QComboBox,
         QDialog,
         QHBoxLayout,
         QHeaderView,
         QLabel,
         QLineEdit,
+        QMenu,
         QPushButton,
         QTabWidget,
         QTreeWidget,
@@ -28,11 +34,13 @@ except ImportError:
         from PySide2.QtCore import Qt, QTimer
         from PySide2.QtWidgets import (
             QApplication,
+            QComboBox,
             QDialog,
             QHBoxLayout,
             QHeaderView,
             QLabel,
             QLineEdit,
+            QMenu,
             QPushButton,
             QTabWidget,
             QTreeWidget,
@@ -139,6 +147,30 @@ class MediaInfoDialog(QDialog):
             QPushButton#copyBtn:hover {
                 background-color: #1177bb;
             }
+            QComboBox {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 5px 10px;
+                font-size: 13px;
+            }
+            QComboBox:hover {
+                border-color: #007acc;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 20px;
+                border-left: none;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #252525;
+                color: #e0e0e0;
+                selection-background-color: #094771;
+                selection-color: #ffffff;
+                border: 1px solid #444444;
+            }
         """)
 
         layout = QVBoxLayout(self)
@@ -172,6 +204,8 @@ class MediaInfoDialog(QDialog):
         self.overviewTree.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.overviewTree.setAlternatingRowColors(True)
         self.overviewTree.setRootIsDecorated(True)
+        self.overviewTree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.overviewTree.customContextMenuRequested.connect(self.showTreeContextMenu)
         self.tabs.addTab(self.overviewTree, "Overview")
 
         # Tab 2: All Attributes Tree
@@ -181,9 +215,11 @@ class MediaInfoDialog(QDialog):
         self.allAttrsTree.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.allAttrsTree.setAlternatingRowColors(True)
         self.allAttrsTree.setRootIsDecorated(False)
+        self.allAttrsTree.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.allAttrsTree.customContextMenuRequested.connect(self.showTreeContextMenu)
         self.tabs.addTab(self.allAttrsTree, "All Attributes")
 
-        # Bottom row: status, Copy All, Close
+        # Bottom row: status, Copy Overview, Format Selector, Copy All, Close
         btnLayout = QHBoxLayout()
         self.statusLabel = QLabel("")
         self.statusLabel.setStyleSheet("color: #4ec9b0; font-weight: bold;")
@@ -194,7 +230,16 @@ class MediaInfoDialog(QDialog):
         self.copyOverviewBtn.clicked.connect(self.copyOverview)
         btnLayout.addWidget(self.copyOverviewBtn)
 
-        self.copyAllBtn = QPushButton("Copy All Metadata")
+        fmtLabel = QLabel("Format:")
+        fmtLabel.setStyleSheet("color: #aaaaaa; margin-left: 8px;")
+        btnLayout.addWidget(fmtLabel)
+
+        self.formatCombo = QComboBox()
+        self.formatCombo.addItems(["JSON", "Plain Text", "CSV", "Markdown", "YAML"])
+        self.formatCombo.currentTextChanged.connect(self.onFormatChanged)
+        btnLayout.addWidget(self.formatCombo)
+
+        self.copyAllBtn = QPushButton("Copy All (JSON)")
         self.copyAllBtn.setObjectName("copyBtn")
         self.copyAllBtn.clicked.connect(self.copyAllMetadata)
         btnLayout.addWidget(self.copyAllBtn)
@@ -351,16 +396,105 @@ class MediaInfoDialog(QDialog):
         QApplication.clipboard().setText(text)
         self.showStatus("✓ Overview copied to clipboard!")
 
+    def onFormatChanged(self, fmt_name):
+        self.copyAllBtn.setText(f"Copy All ({fmt_name})")
+
+    def showTreeContextMenu(self, pos):
+        sender = self.sender()
+        if not sender:
+            return
+        item = sender.itemAt(pos)
+        if not item:
+            return
+        key = item.text(0)
+        val = item.text(1)
+        menu = QMenu(self)
+        if val:
+            copyValAction = menu.addAction(f"Copy Value: {val[:30]}...")
+            copyValAction.triggered.connect(lambda: QApplication.clipboard().setText(val))
+        copyKeyAction = menu.addAction(f"Copy Key: {key[:30]}")
+        copyKeyAction.triggered.connect(lambda: QApplication.clipboard().setText(key))
+        if val:
+            copyBothAction = menu.addAction("Copy Key and Value")
+            copyBothAction.triggered.connect(lambda: QApplication.clipboard().setText(f"{key}: {val}"))
+
+        execFunc = getattr(menu, "exec", getattr(menu, "exec_", None))
+        if execFunc:
+            execFunc(sender.viewport().mapToGlobal(pos))
+
     def copyAllMetadata(self):
-        lines = []
+        if not self.currentAttrs:
+            self.showStatus("No metadata available to copy")
+            return
+
+        fmt = self.formatCombo.currentText() if hasattr(self, "formatCombo") else "JSON"
         source = self.currentSource or "Unknown"
-        lines.append(f"--- All Metadata: {source} ---")
-        for k, v in self.currentAttrs:
-            if k or v:
-                lines.append(f"{k}: {v}")
-        text = "\n".join(lines)
+
+        if fmt == "JSON":
+            data = {}
+            for k, v in self.currentAttrs:
+                if not k:
+                    continue
+                val = v
+                if isinstance(val, str):
+                    if val.isdigit():
+                        val = int(val)
+                    else:
+                        try:
+                            val = float(val)
+                        except ValueError:
+                            pass
+                if k in data:
+                    if isinstance(data[k], list):
+                        data[k].append(val)
+                    else:
+                        data[k] = [data[k], val]
+                else:
+                    data[k] = val
+            text = json.dumps(data, indent=2, ensure_ascii=False)
+            statusMsg = "✓ Metadata copied as JSON!"
+
+        elif fmt == "CSV":
+            out = io.StringIO()
+            writer = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(["Attribute", "Value"])
+            for k, v in self.currentAttrs:
+                writer.writerow([k, v])
+            text = out.getvalue()
+            statusMsg = "✓ Metadata copied as CSV!"
+
+        elif fmt == "Markdown":
+            lines = [f"### Media Metadata: `{source}`\n", "| Attribute | Value |", "| :--- | :--- |"]
+            for k, v in self.currentAttrs:
+                if k or v:
+                    safe_k = str(k).replace("|", "\\|").replace("\n", " ")
+                    safe_v = str(v).replace("|", "\\|").replace("\n", " ")
+                    lines.append(f"| {safe_k} | {safe_v} |")
+            text = "\n".join(lines)
+            statusMsg = "✓ Metadata copied as Markdown!"
+
+        elif fmt == "YAML":
+            lines = [f"# Media Metadata: {source}"]
+            for k, v in self.currentAttrs:
+                if k:
+                    val_str = str(v)
+                    if any(c in val_str for c in ":#{}[]|>&*!%@`,\n") or val_str.strip() != val_str:
+                        lines.append(f'"{k}": {json.dumps(val_str)}')
+                    else:
+                        lines.append(f'"{k}": {val_str}')
+            text = "\n".join(lines)
+            statusMsg = "✓ Metadata copied as YAML!"
+
+        else:  # Plain Text
+            lines = [f"--- All Metadata: {source} ---"]
+            for k, v in self.currentAttrs:
+                if k or v:
+                    lines.append(f"{k}: {v}")
+            text = "\n".join(lines)
+            statusMsg = "✓ Metadata copied as Text!"
+
         QApplication.clipboard().setText(text)
-        self.showStatus("✓ All metadata copied to clipboard!")
+        self.showStatus(statusMsg)
 
 
 class MediaInfoMinorMode(rvtypes.MinorMode):

@@ -15,6 +15,8 @@
 #include <objc/objc-class.h>
 #import <AppKit/NSImage.h>
 #import <AppKit/NSBitmapImageRep.h>
+#import <ImageIO/ImageIO.h>
+#import <CoreGraphics/CoreGraphics.h>
 #import <Foundation/Foundation.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/NSString.h>
@@ -120,7 +122,90 @@ readNSImage(const char *name, bool getreps=true)
 {
     NSString *aFile = [[NSString alloc] initWithUTF8String: name];
     NSImage *image  = [[NSImage alloc] initWithContentsOfFile: aFile];
+    [aFile release];
     return image;
+}
+
+static void
+addDictToFB(NSDictionary* dict, FrameBuffer& fb, const std::string& prefix)
+{
+    @try
+    {
+        for (NSString* key in dict)
+        {
+            id val = [dict objectForKey:key];
+            std::string fullKey = prefix.empty() ? [key UTF8String] : (prefix + "/" + [key UTF8String]);
+            if ([val isKindOfClass:[NSNumber class]])
+            {
+                fb.newAttribute(fullKey, std::string([[val stringValue] UTF8String]));
+            }
+            else if ([val isKindOfClass:[NSString class]])
+            {
+                fb.newAttribute(fullKey, std::string([val UTF8String]));
+            }
+            else if ([val isKindOfClass:[NSArray class]])
+            {
+                NSArray* a = (NSArray*)val;
+                std::string s = "";
+                for (NSUInteger i = 0; i < [a count]; ++i)
+                {
+                    if (i > 0) s += ", ";
+                    id elem = [a objectAtIndex:i];
+                    NSString* sv = [elem respondsToSelector:@selector(stringValue)] ? [elem stringValue] : [elem description];
+                    if (sv) s += [sv UTF8String];
+                }
+                fb.newAttribute(fullKey, s);
+            }
+        }
+    }
+    @catch (NSException* ex)
+    {
+    }
+}
+
+static void
+populateImageIOAttributes(NSDictionary* props, FrameBuffer& fb, const std::string& filename, size_t w, size_t h, int samples, int bpc)
+{
+    @try
+    {
+        if (NSString* profileName = [props objectForKey:(id)kCGImagePropertyProfileName])
+        {
+            fb.newAttribute("ColorSpaceProfile", std::string([profileName UTF8String]));
+            if (!fb.hasAttribute("ColorSpace"))
+            {
+                fb.newAttribute("ColorSpace", std::string([profileName UTF8String]));
+            }
+        }
+        std::string pixFmt = (samples == 4) ? "RGBA" : (samples == 3 ? "RGB" : (samples == 1 ? "Y" : "Custom"));
+        pixFmt += std::to_string(bpc);
+        fb.newAttribute("PixelFormat", pixFmt);
+        fb.newAttribute("Codec", std::string("Apple ImageIO"));
+        fb.newAttribute("File", filename);
+
+        if (NSDictionary* exif = [props objectForKey:(id)kCGImagePropertyExifDictionary])
+        {
+            addDictToFB(exif, fb, "EXIF");
+            addDictToFB(exif, fb, "");
+        }
+        if (NSDictionary* tiff = [props objectForKey:(id)kCGImagePropertyTIFFDictionary])
+        {
+            addDictToFB(tiff, fb, "TIFF");
+            if (id make = [tiff objectForKey:@"Make"]) fb.newAttribute("Make", std::string([[make description] UTF8String]));
+            if (id model = [tiff objectForKey:@"Model"]) fb.newAttribute("Model", std::string([[model description] UTF8String]));
+            if (id soft = [tiff objectForKey:@"Software"]) fb.newAttribute("Software", std::string([[soft description] UTF8String]));
+        }
+        if (NSDictionary* gps = [props objectForKey:(id)kCGImagePropertyGPSDictionary])
+        {
+            addDictToFB(gps, fb, "GPS");
+        }
+        if (NSDictionary* apple = [props objectForKey:(id)kCGImagePropertyMakerAppleDictionary])
+        {
+            addDictToFB(apple, fb, "MakerApple");
+        }
+    }
+    @catch (NSException* ex)
+    {
+    }
 }
 
 void
@@ -128,10 +213,71 @@ IONSImage::getImageInfo(const std::string& filename, FBInfo& fbi) const
 {
     NSAutoreleasePool *pool = manageMemory ? [[NSAutoreleasePool alloc] init] : nil;
 
+    // Fast path: use CGImageSource directly to read headers in <1ms without decoding pixels
+    CFURLRef url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault,
+                                                           (const UInt8*)filename.c_str(),
+                                                           filename.length(), false);
+    if (url)
+    {
+        CGImageSourceRef src = CGImageSourceCreateWithURL(url, NULL);
+        if (src)
+        {
+            if (CGImageSourceGetCount(src) > 0)
+            {
+                NSDictionary *options = @{(id)kCGImageSourceShouldCache: @NO};
+                NSDictionary *props = (NSDictionary*)CGImageSourceCopyPropertiesAtIndex(src, 0, (CFDictionaryRef)options);
+                if (props)
+                {
+                    size_t pw = [[props objectForKey:(id)kCGImagePropertyPixelWidth] unsignedLongValue];
+                    size_t ph = [[props objectForKey:(id)kCGImagePropertyPixelHeight] unsignedLongValue];
+                    int orient = [[props objectForKey:(id)kCGImagePropertyOrientation] intValue];
+                    if (orient >= 5 && orient <= 8)
+                    {
+                        fbi.width = ph;
+                        fbi.height = pw;
+                    }
+                    else
+                    {
+                        fbi.width = pw;
+                        fbi.height = ph;
+                    }
+
+                    int depth = [[props objectForKey:(id)kCGImagePropertyDepth] intValue];
+                    if (depth <= 0) depth = 8;
+
+                    NSString* colorModel = [props objectForKey:(id)kCGImagePropertyColorModel];
+                    int samples = 4;
+                    if ([colorModel isEqualToString:@"RGB"]) samples = 4;
+                    else if ([colorModel isEqualToString:@"Gray"]) samples = 1;
+                    else if ([colorModel isEqualToString:@"CMYK"]) samples = 4;
+                    fbi.numChannels = samples;
+
+                    populateImageIOAttributes(props, fbi.proxy, filename, fbi.width, fbi.height, samples, depth);
+
+                    switch (depth)
+                    {
+                        case 1:  fbi.dataType = FrameBuffer::BIT; break;
+                        case 8:  fbi.dataType = FrameBuffer::UCHAR; break;
+                        case 16: fbi.dataType = FrameBuffer::USHORT; break;
+                        case 32: fbi.dataType = FrameBuffer::FLOAT; break;
+                        default: fbi.dataType = FrameBuffer::UCHAR; break;
+                    }
+
+                    [props release];
+                    CFRelease(src);
+                    CFRelease(url);
+                    if (pool) [pool release];
+                    return;
+                }
+            }
+            CFRelease(src);
+        }
+        CFRelease(url);
+    }
+
+    // Fallback path: legacy NSImage
     if (NSImage* image = readNSImage(filename.c_str()))
     {
-        //NSBitmapImageRep* rep = [NSBitmapImageRep 
-                                    //imageRepWithData: [image TIFFRepresentation]];
         NSBitmapImageRep *rep = (NSBitmapImageRep *)[[image representations] objectAtIndex:0];
 	NSSize size         = [rep size];
         fbi.numChannels     = [rep samplesPerPixel];
@@ -191,14 +337,127 @@ IONSImage::readImage(FrameBuffer& fb,
 {
     NSAutoreleasePool *pool = manageMemory ? [[NSAutoreleasePool alloc] init] : nil;
 
+    // Fast path: hardware-accelerated decoding via ImageIO / CGImageSource
+    CFURLRef url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault,
+                                                           (const UInt8*)filename.c_str(),
+                                                           filename.length(), false);
+    if (url)
+    {
+        CGImageSourceRef src = CGImageSourceCreateWithURL(url, NULL);
+        if (src)
+        {
+            if (CGImageSourceGetCount(src) > 0)
+            {
+                NSDictionary *props = (NSDictionary*)CGImageSourceCopyPropertiesAtIndex(src, 0, NULL);
+                size_t pw = props ? [[props objectForKey:(id)kCGImagePropertyPixelWidth] unsignedLongValue] : 0;
+                size_t ph = props ? [[props objectForKey:(id)kCGImagePropertyPixelHeight] unsignedLongValue] : 0;
+                size_t maxDim = std::max(pw, ph);
+                if (maxDim == 0) maxDim = 16384;
+
+                NSDictionary *options = @{
+                    (id)kCGImageSourceCreateThumbnailWithTransform: @YES,
+                    (id)kCGImageSourceCreateThumbnailFromImageAlways: @YES,
+                    (id)kCGImageSourceThumbnailMaxPixelSize: @(maxDim)
+                };
+                CGImageRef cg = CGImageSourceCreateThumbnailAtIndex(src, 0, (CFDictionaryRef)options);
+                if (cg)
+                {
+                    size_t w = CGImageGetWidth(cg);
+                    size_t h = CGImageGetHeight(cg);
+                    size_t bpc = CGImageGetBitsPerComponent(cg);
+                    size_t bpp = CGImageGetBitsPerPixel(cg);
+                    size_t bpr = CGImageGetBytesPerRow(cg);
+                    int samples = (bpc > 0) ? (bpp / bpc) : 4;
+
+                    switch (bpc)
+                    {
+                        case 1:
+                        case 8:
+                            fb.restructure(w, h, 0, samples, FrameBuffer::UCHAR);
+                            break;
+                        case 16:
+                            fb.restructure(w, h, 0, samples, FrameBuffer::USHORT);
+                            break;
+                        case 32:
+                            fb.restructure(w, h, 0, samples, FrameBuffer::FLOAT);
+                            break;
+                        default:
+                            CGImageRelease(cg);
+                            if (props) [props release];
+                            CFRelease(src);
+                            CFRelease(url);
+                            if (pool) [pool release];
+                            TWK_THROW_STREAM(UnsupportedException,
+                                             "Sorry, unsupported bit depth, trying to read file "
+                                             << filename);
+                    }
+
+                    CGDataProviderRef dp = CGImageGetDataProvider(cg);
+                    CFDataRef data = dp ? CGDataProviderCopyData(dp) : NULL;
+                    if (data)
+                    {
+                        const unsigned char* ptr = CFDataGetBytePtr(data);
+                        typedef unsigned char byte;
+                        for (size_t row = 0; row < h; row++)
+                        {
+                            memcpy(fb.scanline<byte>(h - row - 1),
+                                   ptr + (row * bpr),
+                                   fb.scanlineSize());
+                        }
+                        CFRelease(data);
+                    }
+
+                    CGColorSpaceRef cs = CGImageGetColorSpace(cg);
+                    if (cs)
+                    {
+                        CFStringRef csName = CGColorSpaceCopyName(cs);
+                        if (csName)
+                        {
+                            const char* cstr = CFStringGetCStringPtr(csName, kCFStringEncodingUTF8);
+                            if (cstr) fb.newAttribute("ColorSpace", std::string(cstr));
+                            CFRelease(csName);
+                        }
+                    }
+
+                    if (props)
+                    {
+                        populateImageIOAttributes(props, fb, filename, w, h, samples, bpc);
+                        [props release];
+                    }
+
+                    CGImageRelease(cg);
+                    CFRelease(src);
+                    CFRelease(url);
+                    if (pool) [pool release];
+                    return;
+                }
+                if (props) [props release];
+            }
+            CFRelease(src);
+        }
+        CFRelease(url);
+    }
+
+    // Fallback path: legacy NSImage
     if (NSImage* image = readNSImage(filename.c_str()))
     {
-        //
-        //  This will convert non TIFF-like formats to a TIFF like format
-        //
-
-        NSBitmapImageRep* rep = [NSBitmapImageRep 
-                                    imageRepWithData: [image TIFFRepresentation]];
+        NSBitmapImageRep* rep = nil;
+        for (NSImageRep* r in [image representations])
+        {
+            if ([r isKindOfClass:[NSBitmapImageRep class]])
+            {
+                NSBitmapImageRep* b = (NSBitmapImageRep*)r;
+                if ([b bitmapData] != NULL)
+                {
+                    rep = b;
+                    break;
+                }
+            }
+        }
+        if (!rep)
+        {
+            rep = [NSBitmapImageRep imageRepWithData: [image TIFFRepresentation]];
+        }
 
 	NSSize size             = [rep size];
 	unsigned char* buffer   = [rep bitmapData];

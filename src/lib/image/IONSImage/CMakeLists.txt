@@ -27,7 +27,7 @@ TARGET_INCLUDE_DIRECTORIES(
 TARGET_LINK_LIBRARIES(
   ${_target}
   PUBLIC TwkFB
-  PRIVATE "-framework AppKit" "-framework Foundation" "-framework CoreFoundation" stl_ext
+  PRIVATE "-framework AppKit" "-framework ImageIO" "-framework CoreGraphics" "-framework Foundation" "-framework CoreFoundation" stl_ext
 )
 
 RV_STAGE(TYPE "LIBRARY" TARGET ${_target})
