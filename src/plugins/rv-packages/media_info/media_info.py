@@ -346,6 +346,40 @@ class MediaInfoDialog(QDialog):
         ]
         addCategory("Color & Mastering", colorItems)
 
+        # Camera & Optics (EXIF)
+        cameraItems = [
+            ("Make / Camera Brand", attrDict.get("Exif:Make", attrDict.get("Make", ""))),
+            ("Model / Camera Body", attrDict.get("Exif:Model", attrDict.get("Model", ""))),
+            ("Lens", attrDict.get("Exif:LensModel", attrDict.get("LensModel", attrDict.get("Exif:LensMake", "")))),
+            ("Focal Length", attrDict.get("Exif:FocalLength", attrDict.get("FocalLength", ""))),
+            (
+                "Focal Length (35mm Eq)",
+                attrDict.get("Exif:FocalLengthIn35mmFilm", attrDict.get("FocalLengthIn35mmFormat", "")),
+            ),
+            (
+                "Aperture / F-Stop",
+                attrDict.get("Exif:FNumber", attrDict.get("FNumber", attrDict.get("ApertureValue", ""))),
+            ),
+            (
+                "Shutter Speed / Exposure",
+                attrDict.get("Exif:ExposureTime", attrDict.get("ExposureTime", attrDict.get("ShutterSpeedValue", ""))),
+            ),
+            (
+                "ISO Sensitivity",
+                attrDict.get(
+                    "Exif:PhotographicSensitivity", attrDict.get("Exif:ISOSpeedRatings", attrDict.get("ISO", ""))
+                ),
+            ),
+            ("Exposure Bias", attrDict.get("Exif:ExposureBiasValue", "")),
+            ("White Balance", attrDict.get("Exif:WhiteBalance", "")),
+            ("Metering Mode", attrDict.get("Exif:MeteringMode", "")),
+            ("Flash", attrDict.get("Exif:Flash", "")),
+            ("Date / Time Captured", attrDict.get("Exif:DateTimeOriginal", attrDict.get("DateTime", ""))),
+            ("GPS Coordinates", attrDict.get("GPS:Position", attrDict.get("GPS:Latitude", ""))),
+            ("Software / Firmware", attrDict.get("Software", attrDict.get("Exif:Software", ""))),
+        ]
+        addCategory("Camera & Optics (EXIF)", cameraItems)
+
         # Audio Info
         audioItems = [
             ("Audio Codec", attrDict.get("AudioCodec", "")),

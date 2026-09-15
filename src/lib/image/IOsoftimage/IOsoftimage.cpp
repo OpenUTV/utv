@@ -36,7 +36,7 @@ namespace TwkFB
     }
 
     IOsoftimage::IOsoftimage()
-        : FrameBufferIO()
+        : FrameBufferIO("IOsoftimage", "z_softimage")
     {
         unsigned int cap = ImageRead;
         addType("pic", "Softimage PIC file", cap);

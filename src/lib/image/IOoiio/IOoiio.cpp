@@ -26,7 +26,7 @@ namespace TwkFB
 #endif
 
     IOoiio::IOoiio()
-        : FrameBufferIO("IOoiio", "n") // OIIO after any defaults of ours
+        : FrameBufferIO("IOoiio", "m3") // Modern hardened OpenImageIO prioritized over legacy bespoke parsers
     {
         StringPairVector codecs;
         unsigned int r = ImageRead;
@@ -65,19 +65,19 @@ namespace TwkFB
         addType("heif", "High Efficiency Image File", rw, codecs);
         addType("avif", "AV1 Image File", rw, codecs);
         addType("jxl", "JPEG XL Image", rw, codecs);
+        addType("hdr", "Radiance HDR", rw, codecs);
+        addType("rgbe", "Radiance HDR", rw, codecs);
+        addType("z", "Pixar Z-Depth", r, codecs);
+        addType("png", "Portable Network Graphics Image", rw, codecs);
 
-        // These are handled by their respective plugins
-        // io_<something> in RV. This code is here to
-        // test oiio handling of these image types.
-        //
+        // These are handled by their dedicated optimized streaming plugins:
+        // IOexr ("m0"), IOtiff ("m1"), IOjpeg ("m2"), IOhtj2k ("m7")
         // addType("tif", "TIFF Image", rw, codecs);
         // addType("tiff", "TIFF Image", rw, codecs);
         // addType("j2c", "JPEG-2000 Codestream", r, codecs);
         // addType("j2k", "JPEG-2000 Codestream", r, codecs);
         // addType("jpt", "JPT-stream (JPEG 2000, JPIP)", r, codecs);
         // addType("jp2", "JPEG-2000 Image", r, codecs);
-        // addType("png", "Portable Network Graphics Image", rw, codecs);
-        // addType("z", "Pixar Z-Depth", r, codecs);
     }
 
     IOoiio::~IOoiio() {}
@@ -97,79 +97,38 @@ namespace TwkFB
             const ParamValue& value = spec.extra_attribs[i];
             const TypeDesc type = value.type();
             const string name = value.name().string();
-            const size_t n = value.nvalues();
 
-            switch (type.basetype)
+            if (name == "ICCProfile")
             {
-            case TypeDesc::UNKNOWN:
-            case TypeDesc::NONE:
-            case TypeDesc::INT64:
-            case TypeDesc::UINT64:
-                fb.newAttribute<string>(name, "-Unknown-");
-                break;
-            case TypeDesc::UINT8:
-            case TypeDesc::INT8:
-            {
-                if (name == "ICCProfile")
-                {
-                    fb.setICCprofile(value.data(), type.size());
-                    fb.setPrimaryColorSpace(ColorSpace::ICCProfile());
-                    fb.setTransferFunction(ColorSpace::ICCProfile());
-                }
-                break;
+                fb.setICCprofile(value.data(), type.size());
+                fb.setPrimaryColorSpace(ColorSpace::ICCProfile());
+                fb.setTransferFunction(ColorSpace::ICCProfile());
+                continue;
             }
-            case TypeDesc::UINT16:
-            case TypeDesc::INT16:
+
+            // Extract human-readable string for any metadata type (EXIF, IPTC, XMP, arrays, rationals)
+            string strVal = ImageSpec::metadata_val(value, true);
+            if (!strVal.empty())
             {
-                if (n == 1)
-                {
-                    fb.newAttribute<short>(name, *(short*)value.data());
-                }
-                break;
+                fb.newAttribute<string>(name, strVal);
             }
-            case TypeDesc::UINT32:
-                break;
-            case TypeDesc::INT32:
+
+            // Also preserve typed numeric attributes for scalar numbers
+            if (value.nvalues() == 1)
             {
-                if (n == 1)
+                if (type.basetype == TypeDesc::INT32 || type.basetype == TypeDesc::UINT32 || type.basetype == TypeDesc::INT16
+                    || type.basetype == TypeDesc::UINT16)
                 {
-                    fb.newAttribute<int>(name, *(int*)value.data());
+                    fb.newAttribute<int>(name, value.get_int());
                 }
-                break;
-            }
-            case TypeDesc::HALF:
-            {
-                if (n == 1)
+                else if (type.basetype == TypeDesc::FLOAT)
                 {
-                    fb.newAttribute<half>(name, *(float*)value.data());
+                    fb.newAttribute<float>(name, value.get_float());
                 }
-                break;
-            }
-            case TypeDesc::FLOAT:
-            {
-                if (n == 1)
+                else if (type.basetype == TypeDesc::DOUBLE)
                 {
-                    fb.newAttribute<float>(name, *(float*)value.data());
+                    fb.newAttribute<double>(name, *(const double*)value.data());
                 }
-                break;
-            }
-            case TypeDesc::DOUBLE:
-            {
-                if (n == 1)
-                {
-                    fb.newAttribute<double>(name, *(double*)value.data());
-                }
-                break;
-            }
-            break;
-            case TypeDesc::STRING:
-            {
-                if (n == 1)
-                {
-                    fb.newAttribute<string>(name, spec.get_string_attribute(name, "?"));
-                }
-                break;
-            }
             }
         }
 

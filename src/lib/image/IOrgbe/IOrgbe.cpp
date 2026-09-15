@@ -27,7 +27,7 @@ namespace TwkFB
     //----------------------------------------------------------------------
 
     IOrgbe::IOrgbe()
-        : FrameBufferIO()
+        : FrameBufferIO("IOrgbe", "z_rgbe")
     {
         unsigned int cap = ImageWrite | ImageRead | BruteForceIO;
 

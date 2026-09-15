@@ -21,7 +21,7 @@ namespace TwkFB
     static bool normalizeOnInput = true;
 
     IOz::IOz(bool n)
-        : FrameBufferIO()
+        : FrameBufferIO("IOz", "z_z")
         , m_normalizeOnInput(n)
     {
         unsigned int cap = ImageRead | BruteForceIO;

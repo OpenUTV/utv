@@ -35,7 +35,7 @@ namespace TwkFB
     using namespace std;
 
     IOrla::IOrla()
-        : FrameBufferIO("IOrla", "m99")
+        : FrameBufferIO("IOrla", "z_rla")
         , m_error(false)
     {
         //

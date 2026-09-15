@@ -33,7 +33,7 @@ namespace TwkFB
     using namespace TwkMath;
 
     IOtarga::IOtarga(IOType type, size_t chunkSize, int maxAsync)
-        : StreamingFrameBufferIO("IOtarga", "m7", type, chunkSize, maxAsync)
+        : StreamingFrameBufferIO("IOtarga", "z_targa", type, chunkSize, maxAsync)
     {
         //
         //  Indicate which extensions this plugin will handle The

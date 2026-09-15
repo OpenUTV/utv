@@ -21,7 +21,7 @@ namespace TwkFB
     static bool normalizeOnInput = true;
 
     IOmray::IOmray()
-        : FrameBufferIO()
+        : FrameBufferIO("IOmray", "z_mray")
     {
         unsigned int cap = ImageRead;
         addType("*mraysubfile*", "Mental Ray Stub File Reader", cap);

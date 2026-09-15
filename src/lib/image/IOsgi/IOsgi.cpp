@@ -70,7 +70,7 @@ namespace TwkFB
     }
 
     IOsgi::IOsgi()
-        : FrameBufferIO("IOsgi", "m99")
+        : FrameBufferIO("IOsgi", "z_sgi")
     {
         unsigned int cap = ImageRead | BruteForceIO;
 

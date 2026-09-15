@@ -64,7 +64,7 @@ namespace TwkFB
     //
 
     IOcin::IOcin(StorageFormat format, bool useChromaticies, IOType type, size_t iosize, int maxAsync)
-        : StreamingFrameBufferIO("IOcin", "m6", type, iosize, maxAsync)
+        : StreamingFrameBufferIO("IOcin", "z_cin", type, iosize, maxAsync)
         , m_format(format)
         , m_useChromaticities(useChromaticies)
     {
@@ -72,7 +72,7 @@ namespace TwkFB
     }
 
     IOcin::IOcin(const std::string& format, bool useChromaticies, IOType type, size_t iosize, int maxAsync)
-        : StreamingFrameBufferIO("IOcin", "m6", type, iosize, maxAsync)
+        : StreamingFrameBufferIO("IOcin", "z_cin", type, iosize, maxAsync)
         , m_useChromaticities(useChromaticies)
     {
         if (format == "RGB8")
