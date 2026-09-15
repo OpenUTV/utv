@@ -11,9 +11,9 @@ if defined OPENUTV_DEPS_ROOT (
     )
 )
 
-:: If not found via OPENUTV_DEPS_ROOT, scan Program Files
+:: If not found via OPENUTV_DEPS_ROOT, scan Program Files and common install locations
 if not defined DEPS_BIN (
-    for /d %%D in ("%ProgramFiles%\OpenUTVDeps *" "C:\Program Files\OpenUTVDeps *") do (
+    for /d %%D in ("%ProgramFiles%\OpenUTVDeps *" "C:\Program Files\OpenUTVDeps *" "%LOCALAPPDATA%\OpenUTVDeps *" "C:\OpenUTVDeps*") do (
         if exist "%%~D\bin" (
             set "DEPS_BIN=%%~D\bin"
             set "OPENUTV_DEPS_ROOT=%%~D"
