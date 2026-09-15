@@ -68,6 +68,7 @@ ADD_COMPILE_OPTIONS(
 # and Linux.
 ADD_LINK_OPTIONS("/STACK:8388608")
 
-# Enable parallel builds Note that in theory we should be able to specify just /MP here but when we do cmake sets /MP1 instead. So in order to parellize the
-# build, we must set the number of processors.
-ADD_DEFINITIONS(/MP${_cpu_count})
+# Enable parallel builds on MSBuild. Under Ninja, parallelism is managed by the generator and cl.exe uses /showIncludes, so /MP is only for Visual Studio.
+IF(CMAKE_GENERATOR MATCHES "Visual Studio")
+  ADD_COMPILE_OPTIONS(/MP${_cpu_count})
+ENDIF()
