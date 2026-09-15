@@ -1,6 +1,15 @@
-# OpenUTV 2026.4
+# OpenUTV 2026.5
 
-OpenUTV 2026.4 introduces major enhancements to media inspection, expanded codec and container format support, native SVG vector rendering, cross-platform GPU hardware acceleration with seamless fallback, and Windows build modernization.
+OpenUTV 2026.5 introduces high-performance SIMD PNG decoding via `libspng`, self-contained Windows deployment with bundled MSVC C++ runtime libraries, live timeline metadata tracking in the Qt Media Information inspector, expanded codec and container format support, native SVG vector rendering, and cross-platform GPU hardware acceleration.
+
+---
+
+### Ultra-Fast SIMD PNG Sequence Decoding (`libspng`)
+
+- **Hardware-Accelerated PNG Reader (`io_png`)**: Integrated `libspng` directly into the PNG image reader with zero-copy decoding straight into OpenUTV's internal `FrameBuffer`.
+- **3–4× Playback Speedup**: Leverages hardware SIMD acceleration (NEON on ARM64 / Apple Silicon, AVX2 / SSSE3 on x86_64) for dramatic performance improvements when playing back heavy 8-bit and 16-bit PNG image sequences.
+- **Complete Color & Metadata Fidelity**: Fully preserves sRGB chunk flags, embedded ICC color profiles, gamma values, chromaticity data, and pixel aspect ratios.
+- **Intelligent Fallback Architecture**: Automatically and transparently falls back to `libpng` if `libspng` encounters non-standard or proprietary chunk structures.
 
 ---
 
@@ -16,7 +25,7 @@ OpenUTV 2026.4 introduces major enhancements to media inspection, expanded codec
 
 ### Native Scalable Vector Graphics (SVG) Support
 
-- **Built-in SVG Vector Reader (`io_svg`)**: Integrated a lightweight, zero-dependency native SVG rasterizer using NanoSVG (zlib-licensed).
+- **Built-in SVG Vector Reader (`io_svg`)**: Integrated a lightweight, zero-dependency native SVG rasterizer using NanoSVG.
 - **First-Class Timeline Integration**: Open, inspect, playback, and composite vector graphics (`.svg`) directly inside OpenUTV sessions, timeline stacks, and command-line tools (`utvls`, `utvio`) without external rendering utilities.
 
 ---
@@ -41,12 +50,12 @@ OpenUTV 2026.4 introduces major enhancements to media inspection, expanded codec
 
 ---
 
-### Legacy Subsystem Modernization & Bug Fixes
+### Windows Deployment & Modernization
 
-- **Image Subsystem Modernization**: Deprecated legacy redundant image plugins in favor of modern OpenImageIO 3.x with direct EXIF metadata extraction.
+- **Self-Contained CRT Deployment**: Deployed modern MSVC C++ runtime redistributable DLLs (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, etc.) app-locally into the Windows distribution package, eliminating missing DLL crashes on systems without pre-installed redistributables.
+- **Broader Dependency Discovery**: Expanded discovery logic in [`UTV.bat`](file:///Users/moliver/dev/openutv/utv/src/UTV.bat) to automatically search `%LOCALAPPDATA%` and root directories for `OpenUTVDeps`.
 - **Session Manager Qt Signals**: Fixed Qt 6.11 re-entrancy issues in edit modes (`Stack`, `Switch`, `SourceGroup`) by isolating checkbox state signals during UI updates.
 - **Robust Exception Handling**: Hardened Python RV command wrappers against untyped runtime exceptions across all event listeners.
-- **Windows Platform & CI Overhaul**: Modernized MSVC build pipeline with Ninja, Vulkan presentation support, Python 3.14 C-extension modules, and MSI packaging.
 
 ---
 
@@ -67,4 +76,4 @@ brew upgrade --cask utv
 
 #### macOS (Standalone Archive)
 
-Download `UTV-2026.4-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
+Download `UTV-2026.5-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
