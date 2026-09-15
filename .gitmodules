@@ -1,6 +1,6 @@
 [submodule "src/lib/files/WFObj"]
 	path = src/lib/files/WFObj
-	url = https://github.com/shotgunsoftware/openrv-WFObj.git
+	url = https://github.com/OpenUTV/openrv-WFObj.git
 [submodule "src/pub"]
 	path = src/pub
-	url = https://github.com/mcoliver/openrv-pub.git
+	url = https://github.com/OpenUTV/openrv-pub.git
