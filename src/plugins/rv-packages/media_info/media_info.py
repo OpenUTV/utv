@@ -9,7 +9,7 @@ import io
 import json
 import os
 
-from rv import commands, qtutils, rvtypes
+from rv import commands, extra_commands, qtutils, rvtypes
 
 try:
     from PySide6 import QtGui
@@ -283,14 +283,17 @@ class MediaInfoDialog(QDialog):
 
         try:
             groups = commands.nodesOfType("RVSourceGroup") or []
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+        except Exception:
             groups = []
 
         for grp in groups:
-            filePath = self.getSourceFilePath(grp)
-            base = os.path.basename(filePath) if filePath else grp
-            label = f"{grp} ({base})"
-            self.sourceCombo.addItem(label, grp)
+            try:
+                filePath = self.getSourceFilePath(grp)
+                base = os.path.basename(filePath) if filePath else grp
+                label = f"{grp} ({base})"
+                self.sourceCombo.addItem(label, grp)
+            except Exception:
+                self.sourceCombo.addItem(str(grp), grp)
 
         # Restore previous selection if still present
         restoreIdx = 0
@@ -306,44 +309,96 @@ class MediaInfoDialog(QDialog):
         self.refresh(rebuildCombo=False)
 
     def onFrameChanged(self):
-        # In Auto mode, update if the active source rendered at the playhead changes
-        if self.sourceCombo.currentData() == "__auto__":
-            active = self.getActiveViewportSource()
-            if active != self.currentSource:
-                self.refresh(rebuildCombo=False)
+        try:
+            # In Auto mode, update if the active source rendered at the playhead changes
+            if self.sourceCombo.currentData() == "__auto__":
+                active = self.getActiveViewportSource()
+                if active and active != self.currentSource:
+                    self.refresh(rebuildCombo=False)
+        except Exception:
+            pass
 
     def getSourceNode(self, groupNode):
         if not groupNode:
             return None
-        for t in ("RVFileSource", "RVImageSource"):
+        # Check if groupNode is already a source leaf node
+        try:
+            ntype = commands.nodeType(groupNode)
+            if ntype in ("RVFileSource", "RVImageSource"):
+                return groupNode
+        except Exception:
+            pass
+
+        # Try extra_commands.nodesInGroupOfType
+        for t in ("RVSource", "RVFileSource", "RVImageSource"):
             try:
-                members = commands.nodesInGroupOfType(groupNode, t)
+                members = extra_commands.nodesInGroupOfType(groupNode, t)
                 if members:
                     return members[0]
-            except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            except Exception:
                 pass
+
+        # Also try common naming pattern: sourceGroupXXXXXX_source
+        candidate = groupNode + "_source"
+        try:
+            if commands.nodeExists(candidate):
+                return candidate
+        except Exception:
+            pass
+
         return groupNode
 
     def getSourceFilePath(self, node):
         if not node:
             return ""
         target = self.getSourceNode(node)
-        # Try getStringProperty
+
+        # 1. Try commands.sourceMediaInfoList
+        for n in (target, node):
+            if not n:
+                continue
+            try:
+                infos = commands.sourceMediaInfoList(n)
+                if infos and isinstance(infos, (list, tuple)):
+                    for info in infos:
+                        if isinstance(info, dict) and info.get("file"):
+                            return info["file"]
+            except Exception:
+                pass
+
+        # 2. Try commands.sourceMedia
+        for n in (target, node):
+            if not n:
+                continue
+            try:
+                med = commands.sourceMedia(n)
+                if med and isinstance(med, (list, tuple)) and med[0]:
+                    return med[0]
+                elif isinstance(med, str) and med:
+                    return med
+            except Exception:
+                pass
+
+        # 3. Try getStringProperty on target.media.movie or target.media.movies
+        for n in (target, node):
+            if not n:
+                continue
+            for propName in (f"{n}.media.movie", f"{n}.media.movies"):
+                try:
+                    prop = commands.getStringProperty(propName)
+                    if prop and prop[0]:
+                        return prop[0]
+                except Exception:
+                    pass
+
+        # 4. Try extra_commands.uiName
         try:
-            prop = commands.getStringProperty(target + ".media.movie")
-            if prop and prop[0]:
-                return prop[0]
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            uin = extra_commands.uiName(node)
+            if uin:
+                return uin
+        except Exception:
             pass
-        # Try sourceMedia
-        try:
-            med = commands.sourceMedia(target)
-            if med and isinstance(med, (list, tuple)) and med[0]:
-                return med[0]
-            elif isinstance(med, str) and med:
-                return med
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
-            pass
+
         return ""
 
     def getActiveViewportSource(self):
@@ -356,10 +411,10 @@ class MediaInfoDialog(QDialog):
                     grp = commands.nodeGroup(active[0])
                     if grp:
                         return grp
-                except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                except Exception:
                     pass
                 return active[0]
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+        except Exception:
             pass
 
         # 2. Try sourcesRendered
@@ -373,10 +428,10 @@ class MediaInfoDialog(QDialog):
                         grp = commands.nodeGroup(node_name)
                         if grp:
                             return grp
-                    except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+                    except Exception:
                         pass
                     return node_name
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+        except Exception:
             pass
 
         # 3. Fallback to first source group in session
@@ -384,7 +439,7 @@ class MediaInfoDialog(QDialog):
             groups = commands.nodesOfType("RVSourceGroup")
             if groups:
                 return groups[0]
-        except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+        except Exception:
             pass
 
         return None
@@ -409,7 +464,7 @@ class MediaInfoDialog(QDialog):
                 attrs = strat()
                 if attrs:
                     return attrs
-            except (RuntimeError, ValueError, TypeError, AttributeError, KeyError):
+            except Exception:
                 continue
 
         return []
@@ -706,20 +761,31 @@ class MediaInfoMinorMode(rvtypes.MinorMode):
         return self.dialog
 
     def showDialog(self, event=None):
-        dlg = self.ensureDialog()
-        dlg.refresh(rebuildCombo=True)
-        dlg.show()
-        dlg.raise_()
-        dlg.activateWindow()
+        try:
+            dlg = self.ensureDialog()
+            dlg.refresh(rebuildCombo=True)
+            dlg.show()
+            dlg.raise_()
+            dlg.activateWindow()
+        except Exception:
+            pass
+        if event:
+            event.reject()
 
     def onFrameChanged(self, event):
         if self.dialog and self.dialog.isVisible():
-            self.dialog.onFrameChanged()
+            try:
+                self.dialog.onFrameChanged()
+            except Exception:
+                pass
         event.reject()
 
     def onSourceChanged(self, event):
         if self.dialog and self.dialog.isVisible():
-            self.dialog.refresh(rebuildCombo=True)
+            try:
+                self.dialog.refresh(rebuildCombo=True)
+            except Exception:
+                pass
         event.reject()
 
 
