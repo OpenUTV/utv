@@ -463,12 +463,21 @@ namespace TwkApp
         Py_XDECREF(pModule);
 
         PyObject* rcs = PyImport_ImportModule("rv_commands_setup");
+        if (!rcs && PyErr_Occurred())
+        {
+            std::cerr << "ERROR: Failed to import rv_commands_setup:" << std::endl;
+            PyErr_Print();
+        }
 
         std::ifstream fileSteam(rcfile);
         if (fileSteam.is_open())
         {
             std::string content((std::istreambuf_iterator<char>(fileSteam)), (std::istreambuf_iterator<char>()));
-            PyRun_SimpleString(content.c_str());
+            if (PyRun_SimpleString(content.c_str()) != 0 && PyErr_Occurred())
+            {
+                std::cerr << "ERROR: Failed to execute python init file: " << rcfile << std::endl;
+                PyErr_Print();
+            }
         }
 
         pythonHasBeenInitialized = true;

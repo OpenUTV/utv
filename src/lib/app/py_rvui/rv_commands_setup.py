@@ -9,7 +9,8 @@ import os
 # Set RTLD_GLOBAL so that Python C++ extensions (like OpenTimelineIO's _otio.so)
 # share their C++ RTTI types (e.g. std::any) across different dynamic modules.
 # This prevents "RuntimeError: bad any cast" on macOS.
-sys.setdlopenflags(os.RTLD_GLOBAL | os.RTLD_NOW)
+if hasattr(sys, "setdlopenflags") and hasattr(os, "RTLD_GLOBAL"):
+    sys.setdlopenflags(os.RTLD_GLOBAL | getattr(os, "RTLD_NOW", 0))
 
 import site  # noqa: E402
 
