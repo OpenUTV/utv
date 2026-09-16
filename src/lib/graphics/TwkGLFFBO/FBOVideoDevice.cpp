@@ -294,9 +294,21 @@ namespace TwkGLF
 
     void FBOVideoDevice::redraw() const {}
 
-    void FBOVideoDevice::bind() const { if (defaultFBO()) defaultFBO()->bind(); }
+    void FBOVideoDevice::bind() const
+    {
+        if (defaultFBO())
+        {
+            defaultFBO()->bind();
+        }
+    }
 
-    void FBOVideoDevice::unbind() const { if (defaultFBO()) defaultFBO()->unbind(); }
+    void FBOVideoDevice::unbind() const
+    {
+        if (defaultFBO())
+        {
+            defaultFBO()->unbind();
+        }
+    }
 
     GLFBO* FBOVideoDevice::defaultFBO() { return m_fbo; }
 

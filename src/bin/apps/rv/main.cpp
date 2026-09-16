@@ -303,7 +303,9 @@ int utf8Main(int argc, char* argv[])
                 FindClose(hFind);
             }
             if (depsFound)
+            {
                 break;
+            }
         }
     }
 

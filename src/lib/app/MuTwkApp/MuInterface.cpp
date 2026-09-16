@@ -442,7 +442,9 @@ namespace TwkApp
     void initWithString(MuLangContext* context, Process* process, const Context::ModuleList& modules, const char* p)
     {
         if (!p || !*p)
+        {
             return;
+        }
         try
         {
             // Timer t;
@@ -466,7 +468,9 @@ namespace TwkApp
     void initWithFile(MuLangContext* context, Process* process, const Context::ModuleList& modules, const char* file)
     {
         if (!file || !*file)
+        {
             return;
+        }
         try
         {
             // Timer t;

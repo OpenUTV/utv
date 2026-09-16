@@ -98,13 +98,17 @@ namespace TwkGLF
                 if (sscanf(glslVersion, "%d.%d", &major, &minor) == 2)
                 {
                     if (major > 1 || (major == 1 && minor >= 50))
+                    {
                         return "#version 150\n";
+                    }
                     return "";
                 }
             }
             const char* glVersion = (const char*)glGetString(GL_VERSION);
             if (glVersion && glVersion[0] >= '3' && glVersion[2] >= '2')
+            {
                 return "#version 150\n";
+            }
             return "";
         }
     } // namespace
