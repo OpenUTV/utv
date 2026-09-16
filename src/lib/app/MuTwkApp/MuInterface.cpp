@@ -441,29 +441,49 @@ namespace TwkApp
 
     void initWithString(MuLangContext* context, Process* process, const Context::ModuleList& modules, const char* p)
     {
+        if (!p || !*p)
+            return;
         try
         {
             // Timer t;
             context->evalText(p, "initWithString", process, modules);
             // cout << "EVAL: " << t.elapsed() << " seconds" << endl;
         }
-        catch (StreamOpenFailureException)
+        catch (const StreamOpenFailureException&)
         {
             // Not an error if no file exists
+        }
+        catch (const std::exception& e)
+        {
+            cerr << "ERROR: initWithString: " << e.what() << endl;
+        }
+        catch (...)
+        {
+            cerr << "ERROR: initWithString unknown exception" << endl;
         }
     }
 
     void initWithFile(MuLangContext* context, Process* process, const Context::ModuleList& modules, const char* file)
     {
+        if (!file || !*file)
+            return;
         try
         {
             // Timer t;
             context->evalFile(file, process, modules);
             // cout << "EVAL: " << t.elapsed() << " seconds" << endl;
         }
-        catch (StreamOpenFailureException)
+        catch (const StreamOpenFailureException&)
         {
             // Not an error if no file exists
+        }
+        catch (const std::exception& e)
+        {
+            cerr << "ERROR: initWithFile: " << e.what() << endl;
+        }
+        catch (...)
+        {
+            cerr << "ERROR: initWithFile unknown exception" << endl;
         }
     }
 

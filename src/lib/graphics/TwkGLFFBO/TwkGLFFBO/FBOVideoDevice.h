@@ -32,7 +32,7 @@ namespace TwkGLF
         virtual void setDefaultFBOIndex(int i)
         {
             m_defaultFBOIndex = i;
-            m_fbo = m_fbos[i];
+            m_fbo = (i >= 0 && i < (int)m_fbos.size()) ? m_fbos[i] : nullptr;
         }
 
         virtual GLuint fboID() const

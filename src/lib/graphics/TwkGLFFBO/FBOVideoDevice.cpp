@@ -250,10 +250,21 @@ namespace TwkGLF
 
         for (int i = 0; i < numFBOs; ++i)
         {
-            m_fbos.push_back(new GLFBO(w, h, m_alpha ? GL_RGBA16F_ARB : GL_RGB16F_ARB));
-            m_fbos.back()->newColorRenderBuffer();
+            if (glGenFramebuffersEXT != nullptr)
+            {
+                m_fbos.push_back(new GLFBO(w, h, m_alpha ? GL_RGBA16F_ARB : GL_RGB16F_ARB));
+                m_fbos.back()->newColorRenderBuffer();
+            }
         }
-        setDefaultFBOIndex(0);
+        if (!m_fbos.empty())
+        {
+            setDefaultFBOIndex(0);
+        }
+        else
+        {
+            m_defaultFBOIndex = -1;
+            m_fbo = nullptr;
+        }
     }
 
     FBOVideoDevice::~FBOVideoDevice()
@@ -283,9 +294,9 @@ namespace TwkGLF
 
     void FBOVideoDevice::redraw() const {}
 
-    void FBOVideoDevice::bind() const { defaultFBO()->bind(); }
+    void FBOVideoDevice::bind() const { if (defaultFBO()) defaultFBO()->bind(); }
 
-    void FBOVideoDevice::unbind() const { defaultFBO()->unbind(); }
+    void FBOVideoDevice::unbind() const { if (defaultFBO()) defaultFBO()->unbind(); }
 
     GLFBO* FBOVideoDevice::defaultFBO() { return m_fbo; }
 
@@ -305,7 +316,10 @@ namespace TwkGLF
         glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx);
 #endif
 
-        bind();
+        if (defaultFBO())
+        {
+            bind();
+        }
 
         GLVideoDevice::makeCurrent();
     }

@@ -452,6 +452,19 @@ namespace TwkApp
                         return initInfo.absoluteFilePath().toUtf8().data();
                     }
                 }
+
+                // Fallback: check "rv" or "utv" if not found under m_appName
+                QString fallbackName = (m_appName == "utv") ? "rv" : "utv";
+                QDir fallbackDir(m_scripts);
+                if (fallbackDir.cd(fallbackName))
+                {
+                    QFileInfo initInfo(fallbackDir.absoluteFilePath(base));
+
+                    if (initInfo.exists() && initInfo.isReadable())
+                    {
+                        return initInfo.absoluteFilePath().toUtf8().data();
+                    }
+                }
             }
         }
 

@@ -379,6 +379,16 @@ runs:
             New-Item -ItemType Directory -Force -Path "_install\bin\platforms" | Out-Null
             Copy-Item -Path "_install\plugins\Qt\platforms\*" -Destination "_install\bin\platforms" -Force -Recurse -ErrorAction SilentlyContinue
         }
+        # Ensure scripts\utv exists alongside scripts\rv
+        if ((Test-Path "_install\scripts\rv") -and -not (Test-Path "_install\scripts\utv")) {
+            Write-Host "Replicating scripts\rv to scripts\utv..."
+            Copy-Item -Path "_install\scripts\rv" -Destination "_install\scripts\utv" -Recurse -Force
+        }
+        # Provide opengl32sw as opengl32.dll fallback for headless / software OpenGL environments
+        if (Test-Path "_install\bin\opengl32sw.dll") {
+            Write-Host "Creating opengl32.dll software OpenGL fallback from opengl32sw.dll..."
+            Copy-Item -Path "_install\bin\opengl32sw.dll" -Destination "_install\bin\opengl32.dll" -Force -ErrorAction SilentlyContinue
+        }
       shell: powershell
 
     - name: Sccache Statistics

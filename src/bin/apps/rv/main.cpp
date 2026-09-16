@@ -435,6 +435,19 @@ int utf8Main(int argc, char* argv[])
     // QGLWidget
     setEnvVar("QT_QUICK_BACKEND", "software");
 
+#if defined(PLATFORM_WINDOWS)
+    // If Mesa software OpenGL is used, set compatibility profile and GLSL version overrides
+    // so shaders compile cleanly on software rasterizers (e.g. CI / VMs / Remote Desktop).
+    if (!getenv("MESA_GL_VERSION_OVERRIDE"))
+    {
+        setEnvVar("MESA_GL_VERSION_OVERRIDE", "4.5COMPAT");
+    }
+    if (!getenv("MESA_GLSL_VERSION_OVERRIDE"))
+    {
+        setEnvVar("MESA_GLSL_VERSION_OVERRIDE", "450");
+    }
+#endif
+
 #if defined(PLATFORM_LINUX)
     // Work around for Wacom Tablet issue on linux
     // Note: This is a Qt 5.12.4 regression
@@ -913,9 +926,15 @@ int utf8Main(int argc, char* argv[])
             exit(-1);
         }
 
-        TwkApp::initWithFile(TwkApp::muContext(), TwkApp::muProcess(), TwkApp::muModuleList(), muInitFile.c_str());
+        if (!muInitFile.empty())
+        {
+            TwkApp::initWithFile(TwkApp::muContext(), TwkApp::muProcess(), TwkApp::muModuleList(), muInitFile.c_str());
+        }
 
-        TwkApp::pyInitWithFile(pyInitFile.c_str(), Rv::pyRvAppCommands(), Rv::pyUICommands());
+        if (!pyInitFile.empty())
+        {
+            TwkApp::pyInitWithFile(pyInitFile.c_str(), Rv::pyRvAppCommands(), Rv::pyUICommands());
+        }
     }
     catch (const exception& e)
     {
@@ -931,10 +950,13 @@ int utf8Main(int argc, char* argv[])
     //
 
 #ifdef PLATFORM_WINDOWS
-    TwkGLF::FBOVideoDevice* dummyDev = new TwkGLF::FBOVideoDevice(0, 10, 10, false);
+    TwkGLF::FBOVideoDevice* dummyDev = new TwkGLF::FBOVideoDevice(0, 10, 10, false, 0);
     IPCore::ImageRenderer::queryGL();
     const char* glVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
-    IPCore::Shader::Function::useShadingLanguageVersion(glVersion);
+    if (glVersion)
+    {
+        IPCore::Shader::Function::useShadingLanguageVersion(glVersion);
+    }
 #endif
 
     //

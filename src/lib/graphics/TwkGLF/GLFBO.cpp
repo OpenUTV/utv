@@ -37,11 +37,16 @@ namespace TwkGLF
     {
         TWK_GLDEBUG;
 
-        glGenFramebuffersEXT(1, &m_id);
-
-        TWK_GLDEBUG;
-        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_id);
-        TWK_GLDEBUG;
+        if (glGenFramebuffersEXT != nullptr)
+        {
+            glGenFramebuffersEXT(1, &m_id);
+            TWK_GLDEBUG;
+            if (glBindFramebufferEXT != nullptr)
+            {
+                glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_id);
+                TWK_GLDEBUG;
+            }
+        }
     }
 
     GLFBO::GLFBO(const GLVideoDevice* d)
@@ -85,13 +90,21 @@ namespace TwkGLF
     {
         if (m_id && m_ownsFBOHandle)
         {
-            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-            TWK_GLDEBUG;
-            glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
-            TWK_GLDEBUG;
-            glDeleteFramebuffersEXT(1, &m_id);
-            // std::cerr << "deleting GLFBO " << m_id << std::endl;
-            TWK_GLDEBUG;
+            if (glBindFramebufferEXT != nullptr)
+            {
+                glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+                TWK_GLDEBUG;
+            }
+            if (glBindRenderbufferEXT != nullptr)
+            {
+                glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+                TWK_GLDEBUG;
+            }
+            if (glDeleteFramebuffersEXT != nullptr)
+            {
+                glDeleteFramebuffersEXT(1, &m_id);
+                TWK_GLDEBUG;
+            }
 
             for (size_t i = 0; i < m_attachments.size(); i++)
             {

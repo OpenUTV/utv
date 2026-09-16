@@ -84,8 +84,7 @@ namespace IPCore
                     }
                     else
                     {
-                        cerr << "ERROR: GL_SHADING_LANGUAGE_VERSION query failed" << endl;
-                        abort();
+                        cerr << "WARNING: GL_SHADING_LANGUAGE_VERSION query failed" << endl;
                     }
                 }
             }
@@ -96,6 +95,14 @@ namespace IPCore
 
         void Function::useShadingLanguageVersion(const char* glVersion)
         {
+            if (!glVersion)
+            {
+                cerr << "WARNING: Shader::Function::useShadingLanguageVersion called with null glVersion" << endl;
+                glslMajor = 0;
+                glslMinor = 0;
+                return;
+            }
+
             vector<string> buffer;
             algorithm::split(buffer, glVersion, is_any_of(string(". ")), token_compress_on);
 
