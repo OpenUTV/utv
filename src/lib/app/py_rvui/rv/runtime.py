@@ -4,8 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 import os
+import sys
 
 try:
+    if "QTWEBENGINE_RESOURCES_PATH" not in os.environ or "QTWEBENGINE_LOCALES_PATH" not in os.environ:
+        for p in sys.path:
+            res_cand = os.path.join(p, "PySide6", "resources")
+            if os.path.isdir(res_cand) and "QTWEBENGINE_RESOURCES_PATH" not in os.environ:
+                os.environ["QTWEBENGINE_RESOURCES_PATH"] = res_cand
+            loc_cand = os.path.join(p, "PySide6", "translations", "qtwebengine_locales")
+            if os.path.isdir(loc_cand) and "QTWEBENGINE_LOCALES_PATH" not in os.environ:
+                os.environ["QTWEBENGINE_LOCALES_PATH"] = loc_cand
+
     from PySide6.QtWebEngineCore import QWebEngineProfile
 
     def __dummy__():
