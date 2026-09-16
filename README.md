@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  👉 <a href="#installation"><b>Skip to Installation</b></a> 👈
+  👉 <a href="#installation"><b>Skip to Installation</b></a> &nbsp;&nbsp;•&nbsp;&nbsp; ⭐️ <b>Love OpenUTV? Give us a star in the top-right!</b> 👈
 </p>
 
 ## A Player for the Masses
@@ -36,6 +36,8 @@ We need the community's help to stress-test UTV and report what you find:
 - **New features, integrations, or workflows you want to see**
 
 All bug reports and feature requests are tracked publicly via **[GitHub Issues](https://github.com/OpenUTV/utv/issues)**. If you run into any issue or have an idea, please **[submit an issue](https://github.com/OpenUTV/utv/issues/new/choose)** with details about your operating system, hardware, and sample file specifications.
+
+- **Star this repository**: If you find OpenUTV useful or believe in our mission of modern, lightning-fast media playback for everyone, **please star this repository** (top-right corner of the page)! Every star helps boost visibility on GitHub, attracts more contributors, and accelerates our release roadmap.
 
 ### Why OpenUTV?
 
