@@ -1,13 +1,18 @@
-name: Build and Release macOS
+name: Build and Release (macOS & Windows)
 
 on:
   workflow_dispatch:
     inputs:
       version_override:
-        description: 'Version to build (e.g. 2026.2). Leave blank for next version.'
+        description: 'Version to build (e.g. 2026.6). Leave blank for next version.'
         required: false
         default: ''
         type: string
+      create_release:
+        description: 'Publish GitHub Release and push Git tag? (Leave unchecked for test build)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -21,36 +26,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint codebase
+  version:
+    name: Determine Version
     runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-      
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.14'
-          
-      - name: Install pre-commit
-        run: pip install pre-commit
-        
-      - name: Run pre-commit hooks
-        run: pre-commit run --all-files
-
-  build:
-    name: Build macOS
-    needs: lint
-    runs-on: macos-26
     outputs:
       version: ${{ steps.versioning.outputs.version }}
+      clean_version: ${{ steps.versioning.outputs.clean_version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          submodules: recursive
-          fetch-depth: 0 # Need all history and tags to determine version
+          fetch-depth: 0
 
       - name: Determine Next Semantic Version
         id: versioning
@@ -70,14 +56,43 @@ jobs:
             # If it's a pull request, append PR number
             if [ "${{ github.event_name }}" == "pull_request" ]; then
               NEW_VERSION="${NEW_VERSION}-PR${{ github.event.pull_request.number }}"
-            elif [ "${{ github.event_name }}" == "push" ]; then
-              NEW_VERSION="${NEW_VERSION}-dev"
             fi
           fi
           
-          echo "Next version is: $NEW_VERSION"
+          CLEAN_VERSION=$(echo "$NEW_VERSION" | cut -d'-' -f1)
+          echo "Next version is: $NEW_VERSION (clean: $CLEAN_VERSION)"
           echo "version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "clean_version=${CLEAN_VERSION}" >> $GITHUB_OUTPUT
         shell: bash
+
+  lint:
+    name: Lint codebase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+      
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          
+      - name: Install pre-commit
+        run: pip install pre-commit
+        
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  build-macos:
+    name: Build macOS
+    needs: [version, lint]
+    runs-on: macos-26
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Get current date
         id: date
@@ -87,11 +102,9 @@ jobs:
       - name: Cache Homebrew
         uses: actions/cache@v6
         with:
-          save-always: true
           path: |
             ~/Library/Caches/Homebrew/downloads
             ~/Library/Caches/Homebrew/Casks
-          # Re-evaluate the cache weekly to capture upstream brew updates
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
           restore-keys: |
             ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
@@ -104,12 +117,9 @@ jobs:
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
         shell: bash
 
-
-
       - name: Cache CCache
         uses: actions/cache@v6
         with:
-          save-always: true
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
           restore-keys: |
@@ -120,9 +130,7 @@ jobs:
           export CCACHE_DIR=~/.ccache
           export SDKROOT=$(xcrun --show-sdk-path)
           chmod +x ./build.sh
-          # Only pass major.minor (strip -PR stuff for CMake)
-          CLEAN_VERSION=$(echo "${{ steps.versioning.outputs.version }}" | cut -d'-' -f1)
-          ./build.sh --release --clean --version $CLEAN_VERSION
+          ./build.sh --release --clean --version "${{ needs.version.outputs.clean_version }}"
         shell: bash
 
       - name: Archive Unsigned App
@@ -134,24 +142,24 @@ jobs:
         shell: bash
 
       - name: Upload Unsigned App Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: utv-app-unsigned-${{ steps.versioning.outputs.version }}
+          name: utv-app-unsigned-${{ needs.version.outputs.version }}
           path: _build/stage/unsigned/UTV.app.tar.gz
           retention-days: 1
 
   sign-and-notarize:
     name: Sign & Notarize macOS
-    needs: build
+    needs: [version, build-macos]
     runs-on: macos-26
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
       - name: Download Unsigned App Artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
         with:
-          name: utv-app-unsigned-${{ needs.build.outputs.version }}
+          name: utv-app-unsigned-${{ needs.version.outputs.version }}
           path: _build/stage/unsigned
 
       - name: Extract Unsigned App
@@ -179,7 +187,7 @@ jobs:
         run: |
           ENTITLEMENTS="${PWD}/src/bin/nsapps/UTV/entitlements.plist"
           APP_PATH="_build/stage/app/UTV.app"
-          ZIP_NAME="UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
+          ZIP_NAME="UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip"
 
           if [ -n "${MACOS_CERTIFICATE}" ] && [ -n "${MACOS_CERTIFICATE_PWD}" ]; then
             echo "--- Importing Developer ID Certificate ---"
@@ -196,7 +204,6 @@ jobs:
             security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
             security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed -e 's/^[[:space:]]*//' | tr -d '"')
 
-            # Determine Signing Identity
             SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | awk -F'"' '{print $2}')
             if [ -z "$SIGNING_IDENTITY" ]; then
               SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | head -n 1 | awk -F'"' '{print $2}')
@@ -304,10 +311,10 @@ jobs:
         shell: bash
 
       - name: Upload Signed Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
-          path: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
+          name: UTV-${{ needs.version.outputs.version }}-macOS-arm64
+          path: _build/stage/app/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip
           retention-days: 7
 
       - name: Clean up Keychain and Secrets
@@ -320,22 +327,65 @@ jobs:
           rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/AuthKey_"*.p8 2>/dev/null || true
         shell: bash
 
+  build-windows:
+    name: Build Windows
+    needs: [version]
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build Windows Executable and Packages
+        uses: ./.github/actions/build-windows
+        with:
+          version: ${{ needs.version.outputs.clean_version }}
+
+      - name: Package Windows Distribution Archive
+        shell: powershell
+        run: |
+          $Ver = "${{ needs.version.outputs.version }}"
+          $ZipName = "UTV-$Ver-windows-x64.zip"
+          Write-Host "Packaging _install into $ZipName..."
+          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
+          Rename-Item -Path "_install" -NewName "utv-windows-x64"
+          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
+          Write-Host "Created _dist\$ZipName successfully."
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-${{ needs.version.outputs.version }}-windows-x64
+          path: _dist/UTV-${{ needs.version.outputs.version }}-windows-x64.zip
+          retention-days: 7
+
   release:
-    name: Release
-    needs: [build, sign-and-notarize]
+    name: Publish Release
+    needs: [version, sign-and-notarize, build-windows]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: inputs.create_release == true && github.ref == 'refs/heads/main'
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Download Artifact
-        uses: actions/download-artifact@v8
+      - name: Download macOS Artifact
+        uses: actions/download-artifact@v4
         with:
-          name: UTV-${{ needs.build.outputs.version }}-macOS-arm64
-          path: _build/stage/app
+          name: UTV-${{ needs.version.outputs.version }}-macOS-arm64
+          path: _dist
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: UTV-${{ needs.version.outputs.version }}-windows-x64
+          path: _dist
 
       - name: Generate Release Notes
         id: release-notes
@@ -348,48 +398,46 @@ jobs:
             echo "" >> $GITHUB_OUTPUT
             echo "$EOF" >> $GITHUB_OUTPUT
           else
-            echo "content=UTV Release ${{ needs.build.outputs.version }}" >> $GITHUB_OUTPUT
+            echo "content=UTV Release ${{ needs.version.outputs.version }}" >> $GITHUB_OUTPUT
           fi
         shell: bash
 
       - name: Update Homebrew Cask Formula
         run: |
-          ZIP_FILE=$(find _build/stage/app -name "UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip" | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "::error::Could not find UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip in _build/stage/app"
-            ls -laR _build/stage/app
+          MAC_ZIP="_dist/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip"
+          if [ ! -f "$MAC_ZIP" ]; then
+            echo "::error::Could not find $MAC_ZIP"
+            ls -laR _dist
             exit 1
           fi
-          if [ "$ZIP_FILE" != "_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip" ]; then
-            cp "$ZIP_FILE" "_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
-            ZIP_FILE="_build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip"
-          fi
-          SHA256_HASH=$(sha256sum "$ZIP_FILE" | awk '{print $1}')
+          SHA256_HASH=$(sha256sum "$MAC_ZIP" | awk '{print $1}')
           
           # Update version and sha256 in Cask formula
-          sed -i "s/version \".*\"/version \"${{ needs.build.outputs.version }}\"/" Casks/utv.rb
+          sed -i "s/version \".*\"/version \"${{ needs.version.outputs.version }}\"/" Casks/utv.rb
           sed -i "s/sha256 \".*\"/sha256 \"$SHA256_HASH\"/" Casks/utv.rb
           
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/utv.rb
-          git commit -m "chore(release): update homebrew cask for ${{ needs.build.outputs.version }} [skip ci]" || echo "No changes to commit"
+          git commit -m "chore(release): update homebrew cask for ${{ needs.version.outputs.version }} [skip ci]" || echo "No changes to commit"
           git push origin main || echo "::warning::Direct push of Cask formula to main was blocked by branch protection. Please merge Cask update via PR."
         shell: bash
 
       - name: Create and Push Tag
         run: |
-          git tag -f ${{ needs.build.outputs.version }}
-          git push origin ${{ needs.build.outputs.version }} --force
+          git tag -f ${{ needs.version.outputs.version }}
+          git push origin ${{ needs.version.outputs.version }} --force
         shell: bash
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3.0.1
         with:
-          tag_name: ${{ needs.build.outputs.version }}
-          name: UTV Release ${{ needs.build.outputs.version }}
+          tag_name: ${{ needs.version.outputs.version }}
+          name: UTV Release ${{ needs.version.outputs.version }}
           body: ${{ steps.release-notes.outputs.content }}
-          files: _build/stage/app/UTV-${{ needs.build.outputs.version }}-macOS-arm64.zip
+          files: |
+            _dist/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip
+            _dist/UTV-${{ needs.version.outputs.version }}-windows-x64.zip
           draft: false
           prerelease: false
           make_latest: true

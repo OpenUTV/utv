@@ -2,6 +2,9 @@ name: Build UTV on Windows
 description: Build and test UTV on Windows
 
 inputs:
+  version:
+    required: false
+    default: ''
   build-type:
     required: false
     default: 'Release'
@@ -302,6 +305,18 @@ runs:
             "-DCMAKE_C_COMPILER_LAUNCHER=sccache",
             "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
         )
+        if ("${{ inputs.version }}") {
+            $CleanVer = ("${{ inputs.version }}".Split('-')[0]).Trim()
+            $Parts = $CleanVer.Split('.')
+            $Major = $Parts[0]
+            $Minor = if ($Parts.Length -gt 1) { $Parts[1] } else { "0" }
+            $Patch = if ($Parts.Length -gt 2) { $Parts[2] } else { "0" }
+            $CmakeArgs += "-DRV_MAJOR_VERSION=$Major"
+            $CmakeArgs += "-DRV_MINOR_VERSION=$Minor"
+            $CmakeArgs += "-DRV_REVISION_NUMBER=$Patch"
+            $CmakeArgs += "-DRV_VERSION_YEAR=$Major"
+            Write-Host "Configuring CMake with version $Major.$Minor.$Patch"
+        }
         if ($env:VULKAN_SDK) {
             $VulkanSlash = $env:VULKAN_SDK.Replace('\', '/')
             $CmakeArgs += "-DVulkan_ROOT=$VulkanSlash"
