@@ -15,5 +15,6 @@ packaging
 pydantic
 PyOpenGL
 PyOpenGL_accelerate
+PySide6==6.11.2
 requests
 six

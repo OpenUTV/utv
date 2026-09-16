@@ -155,6 +155,7 @@ void setEnvVar(const string& var, const string& val)
     ostringstream str;
     str << var << "=" << val;
     putenv(str.str().c_str());
+    SetEnvironmentVariableA(var.c_str(), val.c_str());
 #else
     setenv(var.c_str(), val.c_str(), 1);
 #endif

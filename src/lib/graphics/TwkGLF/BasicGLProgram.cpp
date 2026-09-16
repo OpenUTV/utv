@@ -87,12 +87,23 @@ namespace TwkGLF
 
     namespace
     {
-        // Returns "#version 150\n" for GL3+, empty string for GL2.
+        // Returns "#version 150\n" for GLSL >= 1.50, empty string for GL2 / GLSL < 1.50.
         // Must be called after a GL context is current.
         const char* basicGLVersionHeader()
         {
+            const char* glslVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+            if (glslVersion)
+            {
+                int major = 0, minor = 0;
+                if (sscanf(glslVersion, "%d.%d", &major, &minor) == 2)
+                {
+                    if (major > 1 || (major == 1 && minor >= 50))
+                        return "#version 150\n";
+                    return "";
+                }
+            }
             const char* glVersion = (const char*)glGetString(GL_VERSION);
-            if (glVersion && glVersion[0] >= '3')
+            if (glVersion && glVersion[0] >= '3' && glVersion[2] >= '2')
                 return "#version 150\n";
             return "";
         }

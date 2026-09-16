@@ -6,7 +6,7 @@ Copyright (C) 2026 Makai Systems. All Rights Reserved.
 
 .DESCRIPTION
 This script builds UTV on Windows. It automatically detects and installs all
-missing prerequisites (OpenUTVDeps MSI, Qt 6.11.0, Build Tools) to provide
+missing prerequisites (OpenUTVDeps MSI, Qt 6.11.2, Build Tools) to provide
 a seamless "one-command" build experience.
 
 .PARAMETER Debug
@@ -210,15 +210,15 @@ if ($hasPip -ne "OK") {
     & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
 }
 
-# --- 5. Qt 6.11.0 ---
-Write-Host "`n--- Checking Qt 6.11.0 ---" -ForegroundColor Cyan
+# --- 5. Qt 6.11.2 ---
+Write-Host "`n--- Checking Qt 6.11.2 ---" -ForegroundColor Cyan
 # Honor existing QT_HOME if set (e.g. by CI's install-qt-action)
 if ($env:QT_HOME -and (Test-Path $env:QT_HOME)) {
     $QtPath = $env:QT_HOME
     Write-Host "Using existing Qt from environment: $QtPath" -ForegroundColor Gray
 }
 else {
-    $QtVersion = "6.11.0"
+    $QtVersion = "6.11.2"
     $QtTargetDir = "C:\Qt"
     $QtPath = Join-Path $QtTargetDir "$QtVersion\msvc2022_64"
 
@@ -239,7 +239,7 @@ else {
 $env:PATH = "$PythonPath;$PythonPath\Scripts;C:\ProgramData\chocolatey\bin;$env:PATH"
 
 if (-not (Test-Path $QtPath)) {
-    Write-Error "Qt 6.11.0 was not found. In CI, ensure the install-qt-action ran successfully. Locally, do not use -SkipBootstrapping."
+    Write-Error "Qt 6.11.2 was not found. In CI, ensure the install-qt-action ran successfully. Locally, do not use -SkipBootstrapping."
     exit 1
 }
 $env:QT_HOME = $QtPath

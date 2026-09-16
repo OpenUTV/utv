@@ -6,6 +6,7 @@
 //
 //
 #include <IPCore/ShaderProgram.h>
+#include <IPCore/ShaderFunction.h>
 #include <IPCore/ShaderSymbol.h>
 #include <IPCore/ShaderState.h>
 #include <IPCore/IPImage.h>
@@ -341,8 +342,8 @@ namespace IPCore::Shader
 
         code << "{" << endl;
 
-        const char* glVersion = (const char*)glGetString(GL_VERSION);
-        string fragColor = glVersion[0] <= '2' ? "gl_FragColor" : "FragColor";
+        bool isGLSL150OrAbove = !Function::isGLSLVersionLessThan150();
+        string fragColor = isGLSL150OrAbove ? "FragColor" : "gl_FragColor";
 
         code << "    " << (ismain ? (fragColor + " = ") : "return ") << recursiveOutputExpr(l.root, !ismain) << ";" << endl;
 
@@ -369,11 +370,10 @@ namespace IPCore::Shader
 
         ostringstream code;
 
-        const char* glVersion = (const char*)glGetString(GL_VERSION);
-        bool isGL3OrAbove = glVersion[0] > '2';
-        string varying = isGL3OrAbove ? "in" : "varying";
-        string varying_out = isGL3OrAbove ? "out" : "varying";
-        string attribute = isGL3OrAbove ? "in" : "attribute";
+        bool isGLSL150OrAbove = !Function::isGLSLVersionLessThan150();
+        string varying = isGLSL150OrAbove ? "in" : "varying";
+        string varying_out = isGLSL150OrAbove ? "out" : "varying";
+        string attribute = isGLSL150OrAbove ? "in" : "attribute";
 
         //
         //  Declare all the uniform variables before main() and the
@@ -416,9 +416,9 @@ namespace IPCore::Shader
             code << "uniform vec2 Size" << *i << ";" << endl;
         }
 
-        // GL 3 deprecated gl_FragColor, so use a out vec4 instead
+        // GL 3 / GLSL 150+ deprecated gl_FragColor, so use an out vec4 instead
 
-        if (isGL3OrAbove)
+        if (isGLSL150OrAbove)
         {
             code << "out vec4 FragColor;" << endl;
         }
@@ -430,9 +430,13 @@ namespace IPCore::Shader
         GLuint vshader = glCreateShader(GL_VERTEX_SHADER);
         ostringstream vertexCode;
 
-        if (isGL3OrAbove)
+        if (isGLSL150OrAbove)
         {
             vertexCode << "#version 150\n" << endl;
+        }
+        else
+        {
+            vertexCode << "#version 120\n" << endl;
         }
 
         vertexCode << attribute << " vec2 in_Position;" << endl;
