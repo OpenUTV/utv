@@ -326,10 +326,73 @@ SET(_vfx_platform_str
     "${RV_VFX_PLATFORM}"
 )
 
+# Gather dependency versions for about_utv
+SET(_dep_versions_list "")
+MACRO(_ADD_DEP_VER _name _var)
+  IF(${_var})
+    LIST(APPEND _dep_versions_list "${_name}:${${_var}}")
+  ENDIF()
+ENDMACRO()
+
+_ADD_DEP_VER("Boost" RV_DEPS_BOOST_VERSION)
+_ADD_DEP_VER("Imath" RV_DEPS_IMATH_VERSION)
+_ADD_DEP_VER("OpenColorIO" RV_DEPS_OCIO_VERSION)
+_ADD_DEP_VER("OpenEXR" RV_DEPS_OPENEXR_VERSION)
+_ADD_DEP_VER("OpenImageIO" RV_DEPS_OIIO_VERSION)
+_ADD_DEP_VER("Python" Python3_VERSION)
+_ADD_DEP_VER("Qt" Qt6_VERSION)
+_ADD_DEP_VER("PySide" RV_DEPS_PYSIDE_VERSION)
+_ADD_DEP_VER("AJA" RV_DEPS_AJA_VERSION)
+_ADD_DEP_VER("BMD" RV_DEPS_BMD_VERSION)
+_ADD_DEP_VER("Boehm GC" RV_DEPS_GC_VERSION)
+_ADD_DEP_VER("dav1d" DAV1D_VERSION)
+_ADD_DEP_VER("Dear ImGui" RV_DEPS_IMGUI_VERSION)
+_ADD_DEP_VER("Expat" EXPAT_VERSION)
+_ADD_DEP_VER("FFmpeg" FFMPEG_libavcodec_VERSION)
+_ADD_DEP_VER("GLEW" RV_DEPS_GLEW_VERSION)
+_ADD_DEP_VER("libjpeg-turbo" RV_DEPS_JPEGTURBO_VERSION)
+_ADD_DEP_VER("libpng" RV_DEPS_PNG_VERSION)
+_ADD_DEP_VER("LibRaw" RV_DEPS_RAW_VERSION)
+_ADD_DEP_VER("libtiff" RV_DEPS_TIFF_VERSION)
+_ADD_DEP_VER("libwebp" RV_DEPS_WEBP_VERSION)
+_ADD_DEP_VER("nanobind" RV_DEPS_NANOBIND_VERSION)
+_ADD_DEP_VER("OpenJPEG" OPENJP2_VERSION)
+_ADD_DEP_VER("OpenJPH" RV_DEPS_OPENJPH_VERSION)
+_ADD_DEP_VER("OpenSSL" OPENSSL_VERSION)
+_ADD_DEP_VER("PCRE2" pcre2_VERSION)
+_ADD_DEP_VER("spdlog" RV_DEPS_SPDLOG_VERSION)
+_ADD_DEP_VER("yaml-cpp" yaml-cpp_VERSION)
+_ADD_DEP_VER("zlib" RV_DEPS_ZLIB_VERSION)
+
+STRING(REPLACE ";" "," _dep_versions_str "${_dep_versions_list}")
+
+IF(Python3_EXECUTABLE)
+  EXECUTE_PROCESS(
+    COMMAND "${Python3_EXECUTABLE}" -c "for m in ['PySide6', 'numpy', 'opentimelineio', 'nanobind', 'imgui']:\n    try:\n        mod = __import__(m)\n        v = getattr(mod, '__version__', 'Installed')\n        print(f'{m}:{v}')\n    except Exception:\n        pass"
+    OUTPUT_VARIABLE _py_mods_out
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  IF(_py_mods_out)
+    STRING(REPLACE "\n" "," _py_mods_csv "${_py_mods_out}")
+    STRING(REPLACE "\r" "" _py_mods_csv "${_py_mods_csv}")
+    IF(_dep_versions_str)
+      SET(_dep_versions_str "${_dep_versions_str},${_py_mods_csv}")
+    ELSE()
+      SET(_dep_versions_str "${_py_mods_csv}")
+    ENDIF()
+  ENDIF()
+ENDIF()
+
+SET(_py_exec "python3")
+IF(Python3_EXECUTABLE)
+  SET(_py_exec "${Python3_EXECUTABLE}")
+ENDIF()
+
 ADD_CUSTOM_COMMAND(
   OUTPUT ${_about_utv_cpp}
-  COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py ${_about_utv_cpp} "${_compiler_name}" "${_vfx_platform_str}" "${_platform_name}"
-          "${_arch_name}" "${RV_UI_APPLICATION_NAME}" "" "${RV_GIT_COMMIT_SHORT_HASH}"
+  COMMAND ${_py_exec} ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py ${_about_utv_cpp} "${_compiler_name}" "${_vfx_platform_str}" "${_platform_name}"
+          "${_arch_name}" "${RV_UI_APPLICATION_NAME}" "${_dep_versions_str}" "${RV_GIT_COMMIT_SHORT_HASH}"
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py
   COMMENT "Generating about_utv.cpp with build information"
   VERBATIM

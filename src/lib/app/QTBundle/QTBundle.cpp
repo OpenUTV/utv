@@ -88,21 +88,40 @@ namespace TwkApp
         m_pyhome.cd("lib");
         m_pyhome.cd("python" PYTHON_VERSION);
         bool setPythonHome = !(getenv("PYTHONHOME") && getenv("RV_ALLOW_SITE_PYTHONHOME"));
+        QString discoveredDepsRoot;
+        const char* depsRoot = getenv("OPENUTV_DEPS_ROOT");
+#ifdef PLATFORM_WINDOWS
+        if (!depsRoot)
+        {
+            QDir progFiles("C:/Program Files");
+            QStringList matches = progFiles.entryList(QStringList() << "OpenUTVDeps*", QDir::Dirs, QDir::Name | QDir::Reversed);
+            if (!matches.isEmpty())
+            {
+                discoveredDepsRoot = progFiles.absoluteFilePath(matches.first());
+                depsRoot = discoveredDepsRoot.toUtf8().constData();
+            }
+        }
+#endif
         if (setPythonHome)
         {
             QString resolvedPythonHome;
-            const char* depsRoot = getenv("OPENUTV_DEPS_ROOT");
             if (depsRoot)
             {
                 QString candidate1 = QString(depsRoot) + "/tools/python3";
                 QString candidate2 = QString(depsRoot) + "/installed/x64-windows/tools/python3";
                 QString candidate3 = QString(depsRoot) + "/bin";
                 if (QDir(candidate1).exists())
+                {
                     resolvedPythonHome = candidate1;
+                }
                 else if (QDir(candidate2).exists())
+                {
                     resolvedPythonHome = candidate2;
+                }
                 else if (QDir(candidate3).exists())
+                {
                     resolvedPythonHome = candidate3;
+                }
             }
 #ifdef SYSTEM_PYTHONHOME
             if (resolvedPythonHome.isEmpty() && QDir(SYSTEM_PYTHONHOME).exists())
@@ -119,7 +138,7 @@ namespace TwkApp
 
         bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
 
-        if (const char* depsRoot = getenv("OPENUTV_DEPS_ROOT"))
+        if (depsRoot)
         {
             QStringList candidateSitePackages;
             candidateSitePackages << QString(depsRoot) + "/tools/python3/Lib/site-packages" << QString(depsRoot) + "/tools/python3/Lib"

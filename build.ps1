@@ -210,6 +210,13 @@ if ($hasPip -ne "OK") {
     & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
 }
 
+# Ensure PySide6 is present in bundled Python
+$hasPySide = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('PySide6') else 'MISSING')" 2>$null
+if ($hasPySide -ne "OK") {
+    Write-Host "Installing PySide6 into bundled Python..." -ForegroundColor Yellow
+    & "$PythonPath\python.exe" -m pip install "PySide6==6.11.2" --no-warn-script-location
+}
+
 # --- 5. Qt 6.11.2 ---
 Write-Host "`n--- Checking Qt 6.11.2 ---" -ForegroundColor Cyan
 # Honor existing QT_HOME if set (e.g. by CI's install-qt-action)
