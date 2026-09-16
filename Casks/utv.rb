@@ -1,6 +1,6 @@
 cask "utv" do
-  version "2026.5" # This will be automatically updated by GitHub Actions
-  sha256 "22f11b2b82aae4c82673b0ce927e220ffea7baaaa8b5f8c36d1098793cb2c8c4"
+  version "2026.6" # This will be automatically updated by GitHub Actions
+  sha256 "3c2c4141a05eb408bdf72373f963b3c5ac5d0ca4f834d61aa6c7dac85904fd92"
 
   url "https://github.com/OpenUTV/utv/releases/download/#{version}/UTV-#{version}-macOS-arm64.zip"
   name "UTV"
