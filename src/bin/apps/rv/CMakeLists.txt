@@ -112,7 +112,7 @@ TARGET_LINK_LIBRARIES(
 IF(RV_TARGET_WINDOWS)
   TARGET_LINK_LIBRARIES(
     ${_target}
-    PRIVATE glew win_pthreads Shlwapi
+    PRIVATE glew win_pthreads Shlwapi Shell32
   )
 ENDIF()
 

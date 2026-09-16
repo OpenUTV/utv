@@ -90,22 +90,60 @@ namespace TwkApp
         bool setPythonHome = !(getenv("PYTHONHOME") && getenv("RV_ALLOW_SITE_PYTHONHOME"));
         if (setPythonHome)
         {
-            // When using system python, set the python home to the absolute prefix it was built with
+            QString resolvedPythonHome;
+            const char* depsRoot = getenv("OPENUTV_DEPS_ROOT");
+            if (depsRoot)
+            {
+                QString candidate1 = QString(depsRoot) + "/tools/python3";
+                QString candidate2 = QString(depsRoot) + "/installed/x64-windows/tools/python3";
+                QString candidate3 = QString(depsRoot) + "/bin";
+                if (QDir(candidate1).exists())
+                    resolvedPythonHome = candidate1;
+                else if (QDir(candidate2).exists())
+                    resolvedPythonHome = candidate2;
+                else if (QDir(candidate3).exists())
+                    resolvedPythonHome = candidate3;
+            }
 #ifdef SYSTEM_PYTHONHOME
-            setEnvVar("PYTHONHOME", SYSTEM_PYTHONHOME, true);
-#else
-            setEnvVar("PYTHONHOME", m_root.absolutePath().toUtf8().constData(), true);
+            if (resolvedPythonHome.isEmpty() && QDir(SYSTEM_PYTHONHOME).exists())
+            {
+                resolvedPythonHome = SYSTEM_PYTHONHOME;
+            }
 #endif
+            if (resolvedPythonHome.isEmpty())
+            {
+                resolvedPythonHome = m_root.absolutePath();
+            }
+            setEnvVar("PYTHONHOME", resolvedPythonHome.toUtf8().constData(), true);
         }
 
         bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
 
+        if (const char* depsRoot = getenv("OPENUTV_DEPS_ROOT"))
+        {
+            QStringList candidateSitePackages;
+            candidateSitePackages << QString(depsRoot) + "/tools/python3/Lib/site-packages" << QString(depsRoot) + "/tools/python3/Lib"
+                                  << QString(depsRoot) + "/installed/x64-windows/tools/python3/Lib/site-packages"
+                                  << QString(depsRoot) + "/installed/x64-windows/tools/python3/Lib"
+                                  << QString(depsRoot) + "/lib/python" PYTHON_VERSION "/site-packages";
+            for (const QString& sp : candidateSitePackages)
+            {
+                if (QDir(sp).exists())
+                {
+                    addPathToEnvVar("PYTHONPATH", sp.toUtf8().constData(), forceToFront);
+                }
+            }
+        }
+
 #ifdef SYSTEM_PYTHONPATH
-        // Add the system site-packages so PySide6 and other modules can be found
+        // Add the system site-packages only if they exist on the target system
         QStringList paths = QString(SYSTEM_PYTHONPATH).split("|", Qt::SkipEmptyParts);
         for (const QString& p : paths)
         {
-            addPathToEnvVar("PYTHONPATH", p.toUtf8().constData(), forceToFront);
+            if (QDir(p).exists())
+            {
+                addPathToEnvVar("PYTHONPATH", p.toUtf8().constData(), forceToFront);
+            }
         }
 #endif
 

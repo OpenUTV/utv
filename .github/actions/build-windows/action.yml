@@ -361,6 +361,14 @@ runs:
             Write-Host "Copying Python DLLs from $env:pythonLocation to _install\bin..."
             Copy-Item -Path "$env:pythonLocation\python3*.dll" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
         }
+        if (Test-Path "$env:TEMP\pyembed\python314.zip") {
+            Write-Host "Copying python314.zip to _install\bin..."
+            Copy-Item -Path "$env:TEMP\pyembed\python314.zip" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+        }
+        if (Test-Path "$env:TEMP\pyembed\DLLs") {
+            Write-Host "Copying standard Python C-extensions (.pyd) to _install\bin..."
+            Copy-Item -Path "$env:TEMP\pyembed\DLLs\*.pyd" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+        }
         # Ensure platforms plugin directory exists in both bin\platforms and plugins\Qt\platforms for maximum compatibility
         if (Test-Path "_install\bin\platforms") {
             New-Item -ItemType Directory -Force -Path "_install\plugins\Qt\platforms" | Out-Null
