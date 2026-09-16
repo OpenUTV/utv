@@ -13,7 +13,9 @@
   <a href="https://github.com/OpenUTV/utv/stargazers"><img src="https://img.shields.io/github/stars/OpenUTV/utv?style=social" alt="GitHub Stars" /></a>
 </p>
 
----
+<p align="center">
+  👉 <a href="#installation"><b>Skip to Installation</b></a> 👈
+</p>
 
 ## A Player for the Masses
 
@@ -65,6 +67,30 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ---
 
+## Feature Comparison: OpenUTV vs. Upstream OpenRV
+
+| Feature / Capability | Upstream OpenRV | OpenUTV (2026.5+) |
+| :--- | :--- | :--- |
+| **macOS Distribution** | Unsigned, manual build required, Gatekeeper blocks | **Signed & Apple Notarized**, instant `brew install --cask utv` |
+| **intelligent caching** | User must select cache behavior | **Intelligently sets cache behavior** based on media metadata |
+| **Windows Installation** | Complex manual setup, DLL missing errors | **Self-contained MSVC CRT**, zero-config `OpenUTVDeps` MSI |
+| **Linux Packaging** | Requires compiling heavy VFX deps tree | **Precompiled zero-config DEB & RPM** (`/usr/local/openutv-deps`) |
+| **Hardware GPU Acceleration** | Limited / platform-specific patchwork | **Auto-detecting GPU across macOS (VideoToolbox), Linux (NVDEC/VAAPI), Windows (NVDECODE/D3D11VA)** |
+| **CPU Fallback Architecture** | Hard failure if GPU pipeline errors | **Intelligent, zero-configuration fallback** to multithreaded CPU decode |
+| **PNG Sequence Playback** | Standard `libpng` (single-threaded / CPU bottleneck) | **Ultra-fast SIMD `libspng` (3–4× faster FPS playback)** with `libpng` fallback |
+| **Vector Graphics (SVG)** | Unsupported | **Native SVG vector rendering (`io_svg`)** via NanoSVG |
+| **Video Codec Support** | Basic broadcast formats | **WebM, FLAC, Opus, AAC, M4A, WMA, VOB, TS, WMV, Y4M** |
+| **Camera RAW & Modern Formats** | Restricted RAW set | **Panasonic RW2, Sony SR2, Hasselblad 3FR, Phase One IIQ, Samsung SRW, Nikon NRW, Canon/Sony HIF, QOI** |
+| **Apple Silicon HEIC** | Software / slow decode | **Hardware-accelerated CoreGraphics/ImageIO** with full P3/Rec.2020 |
+| **Media Information Panel** | Non selectable, image overlay | **secondary panel, Live playhead/viewport tracking, source clip dropdown, instant search filter, and 1-click export (Text/CSV/JSON)** |
+| **Modern Tech Stack** | Outdated Qt / Python 3.9–3.10 | **Modern Qt 6.11, Python 3.14, OpenEXR 3.4, OIIO 3.1, FFmpeg 9+** |
+| **In-App Update Checking** | None | **Automated GitHub release checker** (`Help -> Check for Updates...`) |
+| **Integrated Bug Reporting** | None (manual GitHub issue filing) | **Native 1-click Bug Reporter** with auto-collected system specs |
+| **Build & CI Pipeline** | Multi-hour brittle builds, hard-to-cache | **6-min macOS / 18-min Windows CI**, auditable binary banking & sccache |
+| **Decoupled Dependencies** | Monolithic tight coupling | **Standalone `OpenUTVDeps` bundle** reusable by other studio tools |
+
+---
+
 ## Installation
 
 ### macOS (Homebrew Cask — Recommended)
@@ -97,9 +123,29 @@ Alternatively, you can clear the quarantine attribute via Terminal:
 xattr -cr /Applications/UTV.app
 ```
 
-4. When UTV launches, its built-in **Dependency Assistant** will verify your installed Homebrew libraries and offer to install any missing ones with a single click.
+### Windows (Standalone Release)
 
-*(Native installers for Linux (`.deb`/`.rpm`) and Windows (`.msi`/`.exe`) are actively in progress!)*
+1. **Install the Dependencies Package**:
+   Download and run the latest `OpenUTVDeps-*-win64.msi` installer from **[OpenUTV Dependencies Releases](https://github.com/OpenUTV/utv-dependencies/releases/latest)**. This automatically installs all multimedia libraries (FFmpeg, Qt, OpenColorIO, OpenEXR, OpenImageIO, etc.) and registers them with your system `PATH`.
+2. **Download OpenUTV for Windows**:
+   Download the latest Windows release archive `utv-windows-x64.zip` from our **[Releases](https://github.com/OpenUTV/utv/releases)** page.
+3. **Extract and Run**:
+   Extract the archive to a folder of your choice (e.g. `C:\Program Files\OpenUTV` or your user directory) and launch `utv.exe` (or `UTV.bat`).
+
+#### Windows SmartScreen / Unsigned Executable Notice
+
+When launching `utv.exe` for the first time, Windows Defender SmartScreen may display a warning (*"Windows protected your PC – Microsoft Defender SmartScreen prevented an unrecognized app from starting"*):
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+> [!NOTE]
+> **Why is the Windows binary unsigned?**
+> Microsoft requires an Extended Validation (EV) Code Signing Certificate or Azure Trusted Signing (~$10/month or several hundred dollars per year) to bypass SmartScreen warnings. As an independent open-source project, our binaries are 100% auditable, open-source, and built transparently on public GitHub Actions runners.
+>
+> If an individual, studio, or corporate sponsor would like to fund a Windows code signing certificate for the project, please reach out via [GitHub Discussions](https://github.com/OpenUTV/utv/discussions) or sponsor us—we would be thrilled to set it up!
+
+*(Precompiled Linux `.deb` and `.rpm` packages are also available in our dependencies releases!)*
 
 ---
 
