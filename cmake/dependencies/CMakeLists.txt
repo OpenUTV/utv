@@ -107,6 +107,7 @@ ENDIF()
 INCLUDE(yaml-cpp) # depends on OCIO
 
 INCLUDE(bmd.cmake)
+INCLUDE(braw.cmake)
 INCLUDE(spdlog)
 INCLUDE(aja.cmake)
 INCLUDE(prores.cmake)

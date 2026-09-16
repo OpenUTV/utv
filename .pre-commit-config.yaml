@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: clang-format
         types_or: [c++, c]
-        exclude: '\.(m|mm)$'
+        exclude: '^cmake/dependencies/.*|\.(m|mm)$'
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.47.0

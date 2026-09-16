@@ -112,20 +112,20 @@ runs:
                 Write-Host "Configuring bundled Python at $PythonPath"
                 "pythonLocation=$PythonPath" | Add-Content -Path $env:GITHUB_ENV
                 
-                # Ensure Python C-extension modules (.pyd files like _socket.pyd) exist
-                $DllsPath = Join-Path $PythonPath "DLLs"
-                if (-not (Test-Path "$PythonPath\_socket.pyd") -and -not (Test-Path "$DllsPath\_socket.pyd")) {
-                    Write-Host "Fetching Python 3.14.7 standard extension modules..."
-                    New-Item -ItemType Directory -Force -Path $DllsPath | Out-Null
+                # Ensure Python embed package is fetched so python314.zip and standard library modules are always available
+                if (-not (Test-Path "$env:TEMP\pyembed\python314.zip")) {
+                    Write-Host "Fetching Python 3.14.7 embed standard library..."
                     Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.14.7/python-3.14.7-embed-amd64.zip" -OutFile "$env:TEMP\pyembed.zip"
                     Expand-Archive -Path "$env:TEMP\pyembed.zip" -DestinationPath "$env:TEMP\pyembed" -Force
-                    $BinPath = Join-Path $DepsDir.FullName "bin"
-                    Get-ChildItem -Path "$env:TEMP\pyembed" | Where-Object { ($_.Extension -eq ".pyd" -or $_.Extension -eq ".dll") -and $_.Name -notin @("python.exe", "pythonw.exe", "python314.dll") } | ForEach-Object {
-                        Copy-Item -Path $_.FullName -Destination $DllsPath -Force
-                        Copy-Item -Path $_.FullName -Destination $PythonPath -Force
-                        if (Test-Path $BinPath) {
-                            Copy-Item -Path $_.FullName -Destination $BinPath -Force
-                        }
+                }
+                $DllsPath = Join-Path $PythonPath "DLLs"
+                New-Item -ItemType Directory -Force -Path $DllsPath | Out-Null
+                $BinPath = Join-Path $DepsDir.FullName "bin"
+                Get-ChildItem -Path "$env:TEMP\pyembed" | Where-Object { ($_.Extension -eq ".pyd" -or $_.Extension -eq ".dll" -or $_.Name -eq "python314.zip") -and $_.Name -notin @("python.exe", "pythonw.exe", "python314.dll") } | ForEach-Object {
+                    Copy-Item -Path $_.FullName -Destination $DllsPath -Force
+                    Copy-Item -Path $_.FullName -Destination $PythonPath -Force
+                    if (Test-Path $BinPath) {
+                        Copy-Item -Path $_.FullName -Destination $BinPath -Force
                     }
                 }
 
@@ -365,9 +365,11 @@ runs:
             Write-Host "Copying python314.zip to _install\bin..."
             Copy-Item -Path "$env:TEMP\pyembed\python314.zip" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
         }
-        if (Test-Path "$env:TEMP\pyembed\DLLs") {
+        if (Test-Path "$env:TEMP\pyembed") {
             Write-Host "Copying standard Python C-extensions (.pyd) to _install\bin..."
-            Copy-Item -Path "$env:TEMP\pyembed\DLLs\*.pyd" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            Get-ChildItem -Path "$env:TEMP\pyembed" -Filter "*.pyd" | ForEach-Object {
+                Copy-Item -Path $_.FullName -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
         }
         # Ensure platforms plugin directory exists in both bin\platforms and plugins\Qt\platforms for maximum compatibility
         if (Test-Path "_install\bin\platforms") {
