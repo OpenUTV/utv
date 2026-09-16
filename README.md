@@ -183,6 +183,29 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 
 ---
 
+## Cinema Camera RAW Support (RED, Blackmagic RAW, ARRI)
+
+OpenUTV provides native out-of-the-box support for a wide array of camera formats including Panasonic Lumix (`.rw2`), Sony RAW (`.sr2`), Hasselblad (`.3fr`), Phase One (`.iiq`), Samsung (`.srw`), Nikon (`.nrw`), Canon/Sony (`.hif`), and Apple ProRes RAW.
+
+### Proprietary Cinema RAW SDKs (`.r3d`, `.braw`, `.ari`)
+
+Proprietary cinema camera formats—such as **REDCODE RAW (`.r3d`)**, **Blackmagic RAW (`.braw`)**, and **ARRIRAW (`.ari`, `.arx`)**—require proprietary SDKs distributed under restrictive vendor licenses (EULAs) by RED Digital Cinema, Blackmagic Design, and ARRI.
+
+Because these vendor EULAs prohibit open-source redistribution of their binary SDKs, OpenUTV **cannot legally bundle these proprietary libraries in precompiled public releases**.
+
+#### Enabling Cinema RAW in Your Pipeline
+
+Because OpenUTV dynamically resolves its multimedia decoders at runtime, studios and power users can enable these formats without recompiling OpenUTV:
+
+1. **Custom FFmpeg with Vendor SDKs**:
+   Compile or install an FFmpeg build configured with vendor SDK modules (e.g. `--enable-libbraw` for Blackmagic RAW). Place the shared libraries in your system `PATH` or in UTV's `bin/` directory.
+2. **OpenImageIO Plugins**:
+   OpenUTV queries OpenImageIO dynamically for sequence formats. Facilities with licensed vendor SDKs can compile OpenImageIO with camera RAW plugins enabled.
+3. **Studio Source Builds**:
+   If your studio holds commercial developer licenses with RED, ARRI, or Blackmagic, you can build OpenUTV from source and point CMake directly to your facility's licensed SDK paths.
+
+---
+
 ## FFmpeg & Codec Architecture
 
 UTV dynamically links to **FFmpeg** at runtime to provide broad playback support across professional multimedia formats without licensing or redistribution restrictions. Because UTV resolves FFmpeg dynamically, updating or replacing your local FFmpeg installation directly enables hardware encoding/decoding and extended codec support without recompiling UTV:
