@@ -327,7 +327,9 @@ SET(_vfx_platform_str
 )
 
 # Gather dependency versions for about_utv
-SET(_dep_versions_list "")
+SET(_dep_versions_list
+    ""
+)
 MACRO(_ADD_DEP_VER _name _var)
   IF(${_var})
     LIST(APPEND _dep_versions_list "${_name}:${${_var}}")
@@ -368,25 +370,34 @@ STRING(REPLACE ";" "," _dep_versions_str "${_dep_versions_list}")
 
 IF(Python3_EXECUTABLE)
   EXECUTE_PROCESS(
-    COMMAND "${Python3_EXECUTABLE}" -c "for m in ['PySide6', 'numpy', 'opentimelineio', 'nanobind', 'imgui']:\n    try:\n        mod = __import__(m)\n        v = getattr(mod, '__version__', 'Installed')\n        print(f'{m}:{v}')\n    except Exception:\n        pass"
+    COMMAND
+      "${Python3_EXECUTABLE}" -c
+      "for m in ['PySide6', 'numpy', 'opentimelineio', 'nanobind', 'imgui']:\n    try:\n        mod = __import__(m)\n        v = getattr(mod, '__version__', 'Installed')\n        print(f'{m}:{v}')\n    except Exception:\n        pass"
     OUTPUT_VARIABLE _py_mods_out
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
   )
   IF(_py_mods_out)
     STRING(REPLACE "\n" "," _py_mods_csv "${_py_mods_out}")
     STRING(REPLACE "\r" "" _py_mods_csv "${_py_mods_csv}")
     IF(_dep_versions_str)
-      SET(_dep_versions_str "${_dep_versions_str},${_py_mods_csv}")
+      SET(_dep_versions_str
+          "${_dep_versions_str},${_py_mods_csv}"
+      )
     ELSE()
-      SET(_dep_versions_str "${_py_mods_csv}")
+      SET(_dep_versions_str
+          "${_py_mods_csv}"
+      )
     ENDIF()
   ENDIF()
 ENDIF()
 
-SET(_py_exec "python3")
+SET(_py_exec
+    "python3"
+)
 IF(Python3_EXECUTABLE)
-  SET(_py_exec "${Python3_EXECUTABLE}")
+  SET(_py_exec
+      "${Python3_EXECUTABLE}"
+  )
 ENDIF()
 
 ADD_CUSTOM_COMMAND(

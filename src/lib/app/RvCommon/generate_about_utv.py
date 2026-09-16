@@ -76,8 +76,18 @@ def get_dependencies_info(versions, app_name, platform=""):
     pyside_version = resolve_version(["PySide", "PySide6", "pyside"], "PySide6", default=qt_version)
 
     vfx_deps = [
-        ("Boost", resolve_version(["Boost", "boost"], "boost"), get_runtime_placeholder("boost"), "Boost Software License"),
-        ("Imath", resolve_version(["Imath", "imath"], "Imath", "imath"), get_runtime_placeholder("imath"), "BSD 3-Clause"),
+        (
+            "Boost",
+            resolve_version(["Boost", "boost"], "boost"),
+            get_runtime_placeholder("boost"),
+            "Boost Software License",
+        ),
+        (
+            "Imath",
+            resolve_version(["Imath", "imath"], "Imath", "imath"),
+            get_runtime_placeholder("imath"),
+            "BSD 3-Clause",
+        ),
         ("NumPy", resolve_version(["NumPy", "numpy"]), get_runtime_placeholder("numpy"), "BSD 3-Clause"),
         (
             "OpenColorIO",
@@ -85,16 +95,31 @@ def get_dependencies_info(versions, app_name, platform=""):
             get_runtime_placeholder("opencolorio"),
             "BSD 3-Clause",
         ),
-        ("OpenEXR", resolve_version(["OpenEXR", "openexr"], "OpenEXR", "openexr"), get_runtime_placeholder("openexr"), "BSD 3-Clause"),
+        (
+            "OpenEXR",
+            resolve_version(["OpenEXR", "openexr"], "OpenEXR", "openexr"),
+            get_runtime_placeholder("openexr"),
+            "BSD 3-Clause",
+        ),
         (
             "OpenImageIO",
             resolve_version(["OpenImageIO", "openimageio", "OIIO"], "OpenImageIO", "openimageio"),
             get_runtime_placeholder("openimageio"),
             "Apache 2.0",
         ),
-        ("OpenTimelineIO", resolve_version(["OpenTimelineIO", "opentimelineio", "OTIO"]), get_runtime_placeholder("opentimelineio"), "Apache 2.0"),
+        (
+            "OpenTimelineIO",
+            resolve_version(["OpenTimelineIO", "opentimelineio", "OTIO"]),
+            get_runtime_placeholder("opentimelineio"),
+            "Apache 2.0",
+        ),
         ("PySide", pyside_version, get_runtime_placeholder("pyside"), pyside_license),
-        ("Python", resolve_version(["Python", "python", "Python3"], "python3", "python"), get_runtime_placeholder("python"), "PSF License"),
+        (
+            "Python",
+            resolve_version(["Python", "python", "Python3"], "python3", "python"),
+            get_runtime_placeholder("python"),
+            "PSF License",
+        ),
         ("Qt Framework", qt_version, get_runtime_placeholder("qt"), qt_license),
     ]
 
@@ -114,31 +139,101 @@ def get_dependencies_info(versions, app_name, platform=""):
         )
 
     other_deps = [
-        ("AJA NTV2 SDK", resolve_version(["AJA NTV2 SDK", "AJA", "aja"]), get_runtime_placeholder("aja"), "MIT License"),
-        ("Blackmagic DeckLink SDK", resolve_version(["Blackmagic DeckLink SDK", "BMD", "bmd"]), get_runtime_placeholder("bmd"), "Proprietary"),
-        ("Boehm GC", resolve_version(["Boehm GC", "bdw-gc", "gc"], "bdw-gc", "bdw-gc"), get_runtime_placeholder("bdw-gc"), "MIT-style"),
+        (
+            "AJA NTV2 SDK",
+            resolve_version(["AJA NTV2 SDK", "AJA", "aja"]),
+            get_runtime_placeholder("aja"),
+            "MIT License",
+        ),
+        (
+            "Blackmagic DeckLink SDK",
+            resolve_version(["Blackmagic DeckLink SDK", "BMD", "bmd"]),
+            get_runtime_placeholder("bmd"),
+            "Proprietary",
+        ),
+        (
+            "Boehm GC",
+            resolve_version(["Boehm GC", "bdw-gc", "gc"], "bdw-gc", "bdw-gc"),
+            get_runtime_placeholder("bdw-gc"),
+            "MIT-style",
+        ),
         ("dav1d", resolve_version(["dav1d"], "dav1d", "dav1d"), get_runtime_placeholder("dav1d"), "BSD 2-Clause"),
         ("Dear ImGui", resolve_version(["Dear ImGui", "imgui"]), get_runtime_placeholder("imgui"), "MIT License"),
-        ("Expat", resolve_version(["Expat", "expat"], "expat", "expat"), get_runtime_placeholder("expat"), "MIT License"),
-        ("FFmpeg", resolve_version(["FFmpeg", "ffmpeg", "libavcodec"], "libavcodec", "ffmpeg"), get_runtime_placeholder("ffmpeg"), "LGPL v2.1+"),
-        ("GLEW", resolve_version(["GLEW", "glew"], "glew", "glew"), get_runtime_placeholder("glew"), "Modified BSD / MIT"),
+        (
+            "Expat",
+            resolve_version(["Expat", "expat"], "expat", "expat"),
+            get_runtime_placeholder("expat"),
+            "MIT License",
+        ),
+        (
+            "FFmpeg",
+            resolve_version(["FFmpeg", "ffmpeg", "libavcodec"], "libavcodec", "ffmpeg"),
+            get_runtime_placeholder("ffmpeg"),
+            "LGPL v2.1+",
+        ),
+        (
+            "GLEW",
+            resolve_version(["GLEW", "glew"], "glew", "glew"),
+            get_runtime_placeholder("glew"),
+            "Modified BSD / MIT",
+        ),
         (
             "libjpeg-turbo",
             resolve_version(["libjpeg-turbo", "jpeg-turbo", "jpegturbo"], "libturbojpeg", "jpeg-turbo"),
             get_runtime_placeholder("jpeg-turbo"),
             "BSD-style",
         ),
-        ("libpng", resolve_version(["libpng"], "libpng", "libpng"), get_runtime_placeholder("libpng"), "libpng License"),
-        ("LibRaw", resolve_version(["LibRaw", "libraw", "raw"], "libraw", "libraw"), get_runtime_placeholder("libraw"), "LGPL v2.1 / CDDL"),
-        ("libtiff", resolve_version(["libtiff", "tiff"], "libtiff-4", "libtiff"), get_runtime_placeholder("libtiff"), "libtiff License"),
-        ("libwebp", resolve_version(["libwebp", "webp"], "libwebp", "webp"), get_runtime_placeholder("webp"), "BSD 3-Clause"),
+        (
+            "libpng",
+            resolve_version(["libpng"], "libpng", "libpng"),
+            get_runtime_placeholder("libpng"),
+            "libpng License",
+        ),
+        (
+            "LibRaw",
+            resolve_version(["LibRaw", "libraw", "raw"], "libraw", "libraw"),
+            get_runtime_placeholder("libraw"),
+            "LGPL v2.1 / CDDL",
+        ),
+        (
+            "libtiff",
+            resolve_version(["libtiff", "tiff"], "libtiff-4", "libtiff"),
+            get_runtime_placeholder("libtiff"),
+            "libtiff License",
+        ),
+        (
+            "libwebp",
+            resolve_version(["libwebp", "webp"], "libwebp", "webp"),
+            get_runtime_placeholder("webp"),
+            "BSD 3-Clause",
+        ),
         ("nanobind", resolve_version(["nanobind"]), get_runtime_placeholder("nanobind"), "BSD 3-Clause"),
-        ("OpenJPEG", resolve_version(["OpenJPEG", "openjpeg"], "libopenjp2", "openjpeg"), get_runtime_placeholder("openjpeg"), "BSD 2-Clause"),
+        (
+            "OpenJPEG",
+            resolve_version(["OpenJPEG", "openjpeg"], "libopenjp2", "openjpeg"),
+            get_runtime_placeholder("openjpeg"),
+            "BSD 2-Clause",
+        ),
         ("OpenJPH", resolve_version(["OpenJPH", "openjph"]), get_runtime_placeholder("openjph"), "BSD 2-Clause"),
-        ("OpenSSL", resolve_version(["OpenSSL", "openssl"], "openssl", "openssl"), get_runtime_placeholder("openssl"), "Apache License 2.0"),
-        ("PCRE2", resolve_version(["PCRE2", "pcre2"], "libpcre2-8", "pcre2"), get_runtime_placeholder("pcre2"), "BSD License"),
+        (
+            "OpenSSL",
+            resolve_version(["OpenSSL", "openssl"], "openssl", "openssl"),
+            get_runtime_placeholder("openssl"),
+            "Apache License 2.0",
+        ),
+        (
+            "PCRE2",
+            resolve_version(["PCRE2", "pcre2"], "libpcre2-8", "pcre2"),
+            get_runtime_placeholder("pcre2"),
+            "BSD License",
+        ),
         ("spdlog", resolve_version(["spdlog"], "spdlog", "spdlog"), get_runtime_placeholder("spdlog"), "MIT License"),
-        ("yaml-cpp", resolve_version(["yaml-cpp", "yaml"], "yaml-cpp", "yaml-cpp"), get_runtime_placeholder("yaml-cpp"), "MIT License"),
+        (
+            "yaml-cpp",
+            resolve_version(["yaml-cpp", "yaml"], "yaml-cpp", "yaml-cpp"),
+            get_runtime_placeholder("yaml-cpp"),
+            "MIT License",
+        ),
         ("zlib", resolve_version(["zlib"], "zlib", "zlib"), get_runtime_placeholder("zlib"), "zlib License"),
     ]
 
