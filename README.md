@@ -83,6 +83,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 | **Vector Graphics (SVG)** | Unsupported | **Native SVG vector rendering (`io_svg`)** via NanoSVG |
 | **Video Codec Support** | Basic broadcast formats | **WebM, FLAC, Opus, AAC, M4A, WMA, VOB, TS, WMV, Y4M** |
 | **Camera RAW & Modern Formats** | Restricted RAW set | **Panasonic RW2, Sony SR2, Hasselblad 3FR, Phase One IIQ, Samsung SRW, Nikon NRW, Canon/Sony HIF, QOI** |
+| **Cinema RAW (BRAW, RED, ARRI)** | Unsupported | **Native dynamic runtime loading for Blackmagic RAW (`.braw`), RED Digital Cinema (`.r3d`), and ARRIRAW** |
 | **Apple Silicon HEIC** | Software / slow decode | **Hardware-accelerated CoreGraphics/ImageIO** with full P3/Rec.2020 |
 | **Media Information Panel** | Non selectable, image overlay | **secondary panel, Live playhead/viewport tracking, source clip dropdown, instant search filter, and 1-click export (Text/CSV/JSON)** |
 | **Modern Tech Stack** | Outdated Qt / Python 3.9–3.10 | **Modern Qt 6.11, Python 3.14, OpenEXR 3.4, OIIO 3.1, FFmpeg 9+** |
@@ -185,26 +186,17 @@ If you have the appropriate drivers and runtimes installed on your machine, UTV 
 
 ---
 
-## Cinema Camera RAW Support (RED, Blackmagic RAW, ARRI)
+## Cinema Camera RAW Support (Blackmagic RAW, RED R3D, ARRI)
 
 OpenUTV provides native out-of-the-box support for a wide array of camera formats including Panasonic Lumix (`.rw2`), Sony RAW (`.sr2`), Hasselblad (`.3fr`), Phase One (`.iiq`), Samsung (`.srw`), Nikon (`.nrw`), Canon/Sony (`.hif`), and Apple ProRes RAW.
 
-### Proprietary Cinema RAW SDKs (`.r3d`, `.braw`, `.ari`)
+### Native Runtime Loading (No Recompilation Required!)
 
-Proprietary cinema camera formats—such as **REDCODE RAW (`.r3d`)**, **Blackmagic RAW (`.braw`)**, and **ARRIRAW (`.ari`, `.arx`)**—require proprietary SDKs distributed under restrictive vendor licenses (EULAs) by RED Digital Cinema, Blackmagic Design, and ARRI.
+Just like our NDI and DeckLink integrations, OpenUTV uses zero-overhead dynamic runtime loading for cinema camera formats so that users and studios can enable playback without rebuilding OpenUTV:
 
-Because these vendor EULAs prohibit open-source redistribution of their binary SDKs, OpenUTV **cannot legally bundle these proprietary libraries in precompiled public releases**.
-
-#### Enabling Cinema RAW in Your Pipeline
-
-Because OpenUTV dynamically resolves its multimedia decoders at runtime, studios and power users can enable these formats without recompiling OpenUTV:
-
-1. **Custom FFmpeg with Vendor SDKs**:
-   Compile or install an FFmpeg build configured with vendor SDK modules (e.g. `--enable-libbraw` for Blackmagic RAW). Place the shared libraries in your system `PATH` or in UTV's `bin/` directory.
-2. **OpenImageIO Plugins**:
-   OpenUTV queries OpenImageIO dynamically for sequence formats. Facilities with licensed vendor SDKs can compile OpenImageIO with camera RAW plugins enabled.
-3. **Studio Source Builds**:
-   If your studio holds commercial developer licenses with RED, ARRI, or Blackmagic, you can build OpenUTV from source and point CMake directly to your facility's licensed SDK paths.
+- **Blackmagic RAW (`.braw`)**: Simply install the free [Blackmagic RAW Player](https://www.blackmagicdesign.com/support/) or DaVinci Resolve. OpenUTV automatically discovers the installed runtime framework and enables full hardware and multithreaded CPU debayering with full camera metadata.
+- **RED Digital Cinema (`.r3d`)**: OpenUTV includes the native `mio_r3d` plugin supporting IPP2 color science, custom resolutions (Full, Half, Quarter), and multi-channel 16-bit float/integer decoding. OpenUTV automatically discovers the RED dynamic libraries if RED SDK or [REDCINE-X PRO](https://www.red.com/downloads) is installed, or via the `RED_SDK_PATH` environment variable.
+- **ARRIRAW & ARRI MXF (`.ari`, `.arx`, `.mxf`)**: Supported natively via OpenUTV's built-in decoding pipeline with automatic detection of ARRI LogC / ALEXA Wide Gamut color spaces and primaries.
 
 ---
 
