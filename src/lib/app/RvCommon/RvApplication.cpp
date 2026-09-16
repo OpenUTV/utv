@@ -6,7 +6,6 @@
 //
 //******************************************************************************
 
-#include <Python.h>
 #include <RvCommon/QTUtils.h>
 #include <RvCommon/RvApplication.h>
 #include <RvCommon/RvConsoleWindow.h>
@@ -640,129 +639,7 @@ namespace Rv
 
         // Add a text box with detailed build and dependency information
         QTextEdit* textBox = new QTextEdit();
-
-        QString aboutHtml = QString::fromUtf8(about_UTV);
-
-        // Resolve runtime versions using actual C++ APIs for core dependencies
-        aboutHtml.replace("%RUNTIME_QT%", qVersion());
-
-        QString pyVer = QString::fromUtf8(Py_GetVersion()).section(' ', 0, 0);
-        aboutHtml.replace("%RUNTIME_PYTHON%", pyVer);
-
-        if (Py_IsInitialized())
-        {
-            auto getPyModuleVersion = [](const char* modName) -> QString
-            {
-                PyObject* pName = PyUnicode_DecodeFSDefault(modName);
-                if (!pName)
-                {
-                    return QString();
-                }
-                PyObject* pModule = PyImport_Import(pName);
-                Py_DECREF(pName);
-                if (!pModule)
-                {
-                    PyErr_Clear();
-                    return QString();
-                }
-                PyObject* pVer = PyObject_GetAttrString(pModule, "__version__");
-                QString ver;
-                if (pVer)
-                {
-                    const char* verStr = PyUnicode_AsUTF8(pVer);
-                    if (verStr)
-                    {
-                        ver = QString::fromUtf8(verStr);
-                    }
-                    Py_DECREF(pVer);
-                }
-                Py_DECREF(pModule);
-                return ver;
-            };
-
-            QString pySideVer = getPyModuleVersion("PySide6");
-            if (!pySideVer.isEmpty())
-            {
-                aboutHtml.replace("%RUNTIME_PYSIDE%", pySideVer);
-            }
-            else
-            {
-                aboutHtml.replace("%RUNTIME_PYSIDE%", qVersion());
-            }
-
-            QString numpyVer = getPyModuleVersion("numpy");
-            if (!numpyVer.isEmpty())
-            {
-                aboutHtml.replace("%RUNTIME_NUMPY%", numpyVer);
-            }
-
-            QString otioVer = getPyModuleVersion("opentimelineio");
-            if (!otioVer.isEmpty())
-            {
-                aboutHtml.replace("%RUNTIME_OPENTIMELINEIO%", otioVer);
-            }
-
-            QString nanobindVer = getPyModuleVersion("nanobind");
-            if (!nanobindVer.isEmpty())
-            {
-                aboutHtml.replace("%RUNTIME_NANOBIND%", nanobindVer);
-            }
-        }
-        else
-        {
-            aboutHtml.replace("%RUNTIME_PYSIDE%", qVersion());
-        }
-
-        // Helper lambda to fetch Homebrew symlink target version on macOS or return "Linked"
-        auto getRuntimeVersion = [](const QString& packageName) -> QString
-        {
-#ifdef PLATFORM_DARWIN
-            QFileInfo info("/opt/homebrew/opt/" + packageName);
-            if (!info.exists() || !info.isSymLink())
-            {
-                info = QFileInfo("/usr/local/opt/" + packageName);
-            }
-            if (info.isSymLink())
-            {
-                QFileInfo targetInfo(info.symLinkTarget());
-                return targetInfo.fileName();
-            }
-#endif
-            return "Linked";
-        };
-
-        // Resolve remaining dependencies by checking Homebrew symlinks (macOS) or marking as Linked
-        QRegularExpression regex("%RUNTIME_([a-zA-Z0-9_-]+)%");
-        QRegularExpressionMatchIterator i = regex.globalMatch(aboutHtml);
-        while (i.hasNext())
-        {
-            QRegularExpressionMatch match = i.next();
-            QString placeholder = match.captured(0);
-            QString packageName = match.captured(1).toLower();
-
-            // Convert placeholder keys like 'libtiff-4' to brew package 'libtiff'
-            if (packageName == "libtiff-4")
-            {
-                packageName = "libtiff";
-            }
-            if (packageName == "libopenjp2")
-            {
-                packageName = "openjpeg";
-            }
-            if (packageName == "libpcre2-8")
-            {
-                packageName = "pcre2";
-            }
-            if (packageName == "bdw-gc")
-            {
-                packageName = "bdw-gc";
-            }
-
-            QString runtimeVersion = getRuntimeVersion(packageName);
-            aboutHtml.replace(placeholder, runtimeVersion);
-        }
-
-        textBox->setHtml(aboutHtml);
+        textBox->setHtml(QString::fromUtf8(about_UTV));
 
         textBox->setReadOnly(true);
         textBox->setMinimumHeight(250);
