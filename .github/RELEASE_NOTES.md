@@ -1,45 +1,51 @@
 # OpenUTV 2026.6
 
-OpenUTV 2026.6 brings native camera RAW decode for Blackmagic RAW (`.braw`) and RED Digital Cinema (`.r3d`), auto-detected NDI 6 network video and audio streaming, a modernized cross-platform About inspector, Windows Explorer executable metadata, and synchronized cross-platform release packaging.
+OpenUTV 2026.6 delivers native cinema camera RAW decode for RED Digital Cinema (`.r3d`) and Blackmagic RAW (`.braw`), out-of-the-box OpenColorIO ACES 2.0 color management, zero-configuration NDI 6 network streaming, presentation multi-monitor playback fixes, and an upgrade to Qt 6.11.2 & PySide6 6.11.2.
+
+---
+
+### Native RED Digital Cinema RAW (`.r3d`) Playback & Metadata
+
+- **Integrated RED R3D Movie Reader (`mio_r3d`)**: Native support for REDCODE RAW media files using the official RED R3D SDK without requiring third-party transcoding.
+- **Hardware-Accelerated REDMetal GPU Debayering**: Instant GPU-accelerated debayering on macOS via Metal, with smooth interactive toggle between GPU and multi-threaded CPU processing.
+- **Dynamic Wavelet Decode Resolution**: Real-time decode resolution switching (`Full`, `Half Premium`, `Half Good`, `Quarter`, `Eighth`, `Sixteenth`) via Image & View menus and hotkeys, featuring automatic cache invalidation and immediate frame reload.
+- **Comprehensive Camera Metadata & Timecode**: Complete camera and lens metadata exposed in Media Information and Image Info boxes, including Camera Model, PIN, Firmware, Sensor Name, Serial, ISO, Shutter, Kelvins, Tint, Lens Model, Focal Length, Aperture, Focus Distance, Absolute Timecode, Edge Timecode, and Reel/Clip details.
+
+---
+
+### OpenColorIO & ACES 2.0 Integration
+
+- **Bundled Official ACES 2.0 Config**: Ships with the Academy Software Foundation ACES Studio Config v2.0.0 (`studio-config-v2.0.0_aces-v1.3_ocio-v2.3.ocio`) bundled directly inside the application bundle.
+- **Zero-Config Fallback**: Automatically activates and points to the bundled ACES 2.0 config when the `OCIO` environment variable is not defined on the host system.
+- **Auto Setup ACES Preference**: Added a new user preference (`ocio_auto_setup_aces`) under OpenColorIO settings that automatically enables OCIO, configures the input colorspace to `ACEScg`, and aligns the display and view transforms to `sRGB`.
+- **Streamlined OCIO Menu**: Ensured the OpenColorIO menu and mode controls dynamically auto-initialize and populate on startup.
 
 ---
 
 ### Native Blackmagic RAW (`.braw`) Playback
 
-- **Dynamic BRAW Runtime Loader (`mio_braw`)**: Integrated a zero-recompile dynamic runtime loader and reader for Blackmagic RAW video media.
+- **Dynamic BRAW Runtime Loader (`mio_braw`)**: Zero-recompile dynamic runtime loader and reader for Blackmagic RAW video media.
 - **Hardware-Accelerated & CPU Decode**: Automatically leverages host GPU acceleration for high-framerate playback of `.braw` camera takes with seamless fallback to multi-threaded CPU decode.
 - **Full Color & Metadata Preservation**: Reads embedded camera ISO, color temperature, tint, color gamut, and gamma curves directly into OpenUTV's imaging pipeline.
 
 ---
 
-### Native RED Digital Cinema RAW (`.r3d`) Playback
+### NDI 6 Network Video & Multi-Monitor Presentation
 
-- **Integrated RED R3D Movie Reader (`mio_r3d`)**: Added native support for REDCODE RAW media files using the official RED R3D SDK.
-- **High-Performance Wavelet Decompression**: Smooth playback and inspection of RED camera footage without external transcoding.
-
----
-
-### Out-of-the-Box NDI 6 Network Video Output
-
-- **Native NDI Video Device**: Broadcast active viewport playback, synced multi-channel audio, and timeline EDL cuts directly over the local network to NDI receivers (OBS Studio, NDI Studio Monitor, vMix, TriCaster, QTAKE, etc.).
-- **Zero-Configuration Auto-Discovery**: Automatically locates official NDI 6 runtime libraries across standard system locations on macOS (`/Library/NDI SDK for Apple/`), Windows (`C:\Program Files\NDI\NDI 6 Tools\Runtime\`), and Linux (`/usr/lib/x86_64-linux-gnu/`) without requiring manual environment variables.
-- **Flexible Presentation Output**: Supports 8-bit RGBA, 8-bit BGRA, and 16-bit YCbCr 4:2:2 (P216) for high-dynamic-range presentation workflows.
+- **Zero-Configuration NDI 6 Auto-Discovery**: Automatically discovers official NDI 6 runtime libraries across standard system locations on macOS (`/Library/NDI SDK for Apple/`), Windows (`C:\Program Files\NDI\NDI 6 Tools\Runtime\`, `NDI 6 SDK`), and Linux (`/usr/lib/x86_64-linux-gnu/`).
+- **Fixed NDI Presentation Device Visibility**: Fixed dynamic library search paths ensuring NDI presentation output is available in display preferences on macOS and Windows out of the box.
+- **Toolbar Device Switching**: Select active Display and Presentation devices directly from the main toolbar menu.
+- **Presentation Playback Stability**: Fixed multi-monitor presentation viewport and timeline freezing during playback.
+- **Sortable Media Information**: Added sortable column headers (Property, Value, Attribute) in the Media Information dialog for quick sorting of inspection data.
 
 ---
 
-### Modernized Cross-Platform "About UTV" Inspector
+### Platform Modernization, Qt 6.11.2 & Windows Stability
 
-- **Compile-Time Dependency & License Manifest**: Replaced runtime dynamic Python probing with a fast, static dependency table generated at compile time.
-- **Crash Prevention**: Completely eliminates GIL synchronization crashes across Python 3.12–3.14 on macOS, Linux, and Windows.
-- **Complete Open-Source Attribution**: Accurately displays version numbers and license terms for all bundled and system libraries.
-
----
-
-### Windows Executable Metadata & Alignment
-
-- **Windows Version Resource (`utv.rc`)**: Embedded complete Windows PE version information (`CompanyName`, `FileDescription`, `FileVersion`, `ProductVersion`, and application icon) into `utv.exe`.
-- **Explorer Properties Details**: Windows Explorer File Properties -> Details now accurately reports the product version, copyright, and description.
-- **Strict Version Synchronization**: Aligned CMake version definitions so that Windows console `-version` output, binary metadata, and Qt GUI report matching version numbers.
+- **Qt 6.11.2 & PySide6 6.11.2**: Upgraded UI and Python binding frameworks across all platforms, including GLSL 1.50 shader compatibility.
+- **Modernized "About UTV" Inspector**: Replaced runtime dynamic Python probing with a fast, static compile-time dependency table, eliminating GIL synchronization crashes across Python 3.12–3.14.
+- **Windows Executable Metadata (`utv.rc`)**: Embedded complete Windows PE version information and application icons into `utv.exe`, enabling full Windows Explorer file property details.
+- **Hardened Windows Runtime**: Embedded `python314.zip`, dynamic `PYTHONHOME` detection, and strict MSVC CRT DLL distribution.
 
 ---
 
