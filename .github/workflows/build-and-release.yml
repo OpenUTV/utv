@@ -402,6 +402,45 @@ jobs:
           fi
         shell: bash
 
+      - name: Create and Push Tag
+        run: |
+          git tag -f ${{ needs.version.outputs.version }}
+          git push origin ${{ needs.version.outputs.version }} --force
+        shell: bash
+
+      - name: Publish GitHub Release
+        run: |
+          if [ -f ".github/RELEASE_NOTES.md" ]; then
+            cp .github/RELEASE_NOTES.md release_notes.md
+          else
+            echo "UTV Release ${{ needs.version.outputs.version }}" > release_notes.md
+          fi
+
+          if gh release view "${{ needs.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Updating existing release..."
+            gh release edit "${{ needs.version.outputs.version }}" \
+              --title "UTV Release ${{ needs.version.outputs.version }}" \
+              --notes-file release_notes.md \
+              --draft=false \
+              --latest
+          else
+            echo "Creating new release..."
+            gh release create "${{ needs.version.outputs.version }}" \
+              --title "UTV Release ${{ needs.version.outputs.version }}" \
+              --notes-file release_notes.md \
+              --draft=false \
+              --latest
+          fi
+
+          echo "Uploading release assets..."
+          gh release upload "${{ needs.version.outputs.version }}" \
+            _dist/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip \
+            _dist/UTV-${{ needs.version.outputs.version }}-windows-x64.zip \
+            --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+
       - name: Update Homebrew Cask Formula
         run: |
           MAC_ZIP="_dist/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip"
@@ -411,6 +450,9 @@ jobs:
             exit 1
           fi
           SHA256_HASH=$(sha256sum "$MAC_ZIP" | awk '{print $1}')
+          
+          # Pull latest main first to avoid non-fast-forward conflicts
+          git pull --rebase origin main
           
           # Update version and sha256 in Cask formula
           sed -i "s/version \".*\"/version \"${{ needs.version.outputs.version }}\"/" Casks/utv.rb
@@ -422,24 +464,3 @@ jobs:
           git commit -m "chore(release): update homebrew cask for ${{ needs.version.outputs.version }} [skip ci]" || echo "No changes to commit"
           git push origin main || echo "::warning::Direct push of Cask formula to main was blocked by branch protection. Please merge Cask update via PR."
         shell: bash
-
-      - name: Create and Push Tag
-        run: |
-          git tag -f ${{ needs.version.outputs.version }}
-          git push origin ${{ needs.version.outputs.version }} --force
-        shell: bash
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v3.0.1
-        with:
-          tag_name: ${{ needs.version.outputs.version }}
-          name: UTV Release ${{ needs.version.outputs.version }}
-          body: ${{ steps.release-notes.outputs.content }}
-          files: |
-            _dist/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip
-            _dist/UTV-${{ needs.version.outputs.version }}-windows-x64.zip
-          draft: false
-          prerelease: false
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
