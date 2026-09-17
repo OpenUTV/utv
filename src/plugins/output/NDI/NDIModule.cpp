@@ -30,36 +30,72 @@ namespace NDI
             return p_NDI_lib;
 
 #ifdef _WIN32
+        std::vector<std::string> search_paths;
         const char* p_ndi_runtime_v6 = getenv(NDILIB_REDIST_FOLDER);
-        if (!p_ndi_runtime_v6)
+        if (p_ndi_runtime_v6 && *p_ndi_runtime_v6)
         {
-            std::cout << "NDI runtime not found. Please install NDI Tools." << std::endl;
-            return nullptr;
+            std::string p(p_ndi_runtime_v6);
+            if (!p.empty() && p.back() != '\\' && p.back() != '/')
+                p += "\\";
+            p += NDILIB_LIBRARY_NAME;
+            search_paths.push_back(p);
         }
-        std::string ndi_path = p_ndi_runtime_v6;
-        ndi_path += "\\" NDILIB_LIBRARY_NAME;
-        hNDILib = LoadLibraryA(ndi_path.c_str());
+        search_paths.push_back("C:\\Program Files\\NDI\\NDI 6 Runtime\\v6\\" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("C:\\Program Files\\NDI\\NDI 6 Tools\\" NDILIB_LIBRARY_NAME);
+        search_paths.push_back(NDILIB_LIBRARY_NAME);
 
         const NDIlib_v6* (*load_func)(void) = NULL;
-        if (hNDILib)
-            *((FARPROC*)&load_func) = GetProcAddress((HMODULE)hNDILib, "NDIlib_v6_load");
+        for (const auto& path : search_paths)
+        {
+            hNDILib = LoadLibraryA(path.c_str());
+            if (hNDILib)
+            {
+                *((FARPROC*)&load_func) = GetProcAddress((HMODULE)hNDILib, "NDIlib_v6_load");
+                if (load_func)
+                    break;
+                FreeLibrary((HMODULE)hNDILib);
+                hNDILib = nullptr;
+            }
+        }
 #else
-        std::string ndi_path;
+        std::vector<std::string> search_paths;
         const char* p_NDI_runtime_folder = getenv(NDILIB_REDIST_FOLDER);
-        if (p_NDI_runtime_folder)
+        if (p_NDI_runtime_folder && *p_NDI_runtime_folder)
         {
-            ndi_path = p_NDI_runtime_folder;
-            ndi_path += NDILIB_LIBRARY_NAME;
+            std::string p(p_NDI_runtime_folder);
+            if (!p.empty() && p.back() != '/')
+                p += "/";
+            p += NDILIB_LIBRARY_NAME;
+            search_paths.push_back(p);
         }
-        else
-        {
-            ndi_path = NDILIB_LIBRARY_NAME;
-        }
-        hNDILib = dlopen(ndi_path.c_str(), RTLD_LOCAL | RTLD_LAZY);
+
+#ifdef __APPLE__
+        search_paths.push_back("/Library/NDI SDK for Apple/lib/macOS/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/Library/CoreMediaIO/Plug-Ins/DAL/NDIVideoOut.plugin/Contents/Frameworks/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/Applications/NDI Scan Converter.app/Contents/Frameworks/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back(
+            "/Applications/NDI Router.app/Contents/Frameworks/NTFramework.framework/Versions/A/Frameworks/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/usr/local/lib/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/opt/homebrew/lib/" NDILIB_LIBRARY_NAME);
+#else
+        search_paths.push_back("/usr/lib/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/usr/local/lib/" NDILIB_LIBRARY_NAME);
+#endif
+        search_paths.push_back(NDILIB_LIBRARY_NAME);
 
         const NDIlib_v6* (*load_func)(void) = NULL;
-        if (hNDILib)
-            *((void**)&load_func) = dlsym(hNDILib, "NDIlib_v6_load");
+        for (const auto& path : search_paths)
+        {
+            hNDILib = dlopen(path.c_str(), RTLD_LOCAL | RTLD_LAZY);
+            if (hNDILib)
+            {
+                *((void**)&load_func) = dlsym(hNDILib, "NDIlib_v6_load");
+                if (load_func)
+                    break;
+                dlclose(hNDILib);
+                hNDILib = nullptr;
+            }
+        }
 #endif
 
         if (!load_func)
