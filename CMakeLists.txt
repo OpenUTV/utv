@@ -7,52 +7,69 @@
 # Need 3.27 for Boost 1.82 (FindBoost.cmake).
 CMAKE_MINIMUM_REQUIRED(VERSION 3.27)
 
+# Track if version was explicitly passed on the command line (-DRV_MAJOR_VERSION=... or -DRV_VERSION_EXPLICIT=ON)
+SET(_RV_VERSION_PASSED_BY_USER
+    FALSE
+)
+IF(DEFINED RV_MAJOR_VERSION
+   OR DEFINED RV_MINOR_VERSION
+   OR DEFINED RV_VERSION_EXPLICIT
+)
+  SET(_RV_VERSION_PASSED_BY_USER
+      TRUE
+  )
+ENDIF()
+
 # These variables are parsed by sphinx for the documentation. One-line formatting facilitates parsing and readability.
 # cmake-format: off
 SET(RV_MAJOR_VERSION "2026" CACHE STRING "RV's version major")
-SET(RV_MINOR_VERSION "5" CACHE STRING "RV's version minor")
+SET(RV_MINOR_VERSION "6" CACHE STRING "RV's version minor")
 SET(RV_REVISION_NUMBER "0" CACHE STRING "RV's revision number")
 SET(RV_VERSION_YEAR "2026" CACHE STRING "RV's year of release.")
 # cmake-format: on
 
 # If git is available and version wasn't manually overridden on command line, auto-detect latest release tag
-FIND_PACKAGE(Git QUIET)
-IF(GIT_FOUND
-   AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git"
-)
-  EXECUTE_PROCESS(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE _LATEST_GIT_TAG
-    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+IF(NOT _RV_VERSION_PASSED_BY_USER)
+  FIND_PACKAGE(Git QUIET)
+  IF(GIT_FOUND
+     AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git"
   )
-  IF(_LATEST_GIT_TAG MATCHES "^([0-9]+)\\.([0-9]+)(\\.([0-9]+))?")
-    IF(CMAKE_MATCH_1)
-      SET(RV_MAJOR_VERSION
-          "${CMAKE_MATCH_1}"
-          CACHE STRING "RV's version major" FORCE
-      )
-      SET(RV_VERSION_YEAR
-          "${CMAKE_MATCH_1}"
-          CACHE STRING "RV's year of release." FORCE
-      )
-    ENDIF()
-    IF(CMAKE_MATCH_2)
-      SET(RV_MINOR_VERSION
-          "${CMAKE_MATCH_2}"
-          CACHE STRING "RV's version minor" FORCE
-      )
-    ENDIF()
-    IF(CMAKE_MATCH_4)
-      SET(RV_REVISION_NUMBER
-          "${CMAKE_MATCH_4}"
-          CACHE STRING "RV's revision number" FORCE
-      )
-    ELSE()
-      SET(RV_REVISION_NUMBER
-          "0"
-          CACHE STRING "RV's revision number" FORCE
-      )
+    EXECUTE_PROCESS(
+      COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      OUTPUT_VARIABLE _LATEST_GIT_TAG
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
+    )
+    IF(_LATEST_GIT_TAG MATCHES "^([0-9]+)\\.([0-9]+)(\\.([0-9]+))?")
+      IF(_LATEST_GIT_TAG VERSION_GREATER_EQUAL "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}")
+        IF(CMAKE_MATCH_1)
+          SET(RV_MAJOR_VERSION
+              "${CMAKE_MATCH_1}"
+              CACHE STRING "RV's version major" FORCE
+          )
+          SET(RV_VERSION_YEAR
+              "${CMAKE_MATCH_1}"
+              CACHE STRING "RV's year of release." FORCE
+          )
+        ENDIF()
+        IF(CMAKE_MATCH_2)
+          SET(RV_MINOR_VERSION
+              "${CMAKE_MATCH_2}"
+              CACHE STRING "RV's version minor" FORCE
+          )
+        ENDIF()
+        IF(CMAKE_MATCH_4)
+          SET(RV_REVISION_NUMBER
+              "${CMAKE_MATCH_4}"
+              CACHE STRING "RV's revision number" FORCE
+          )
+        ELSE()
+          SET(RV_REVISION_NUMBER
+              "0"
+              CACHE STRING "RV's revision number" FORCE
+          )
+        ENDIF()
+      ENDIF()
     ENDIF()
   ENDIF()
 ENDIF()

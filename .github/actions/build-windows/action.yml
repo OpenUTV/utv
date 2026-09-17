@@ -315,6 +315,7 @@ runs:
             $CmakeArgs += "-DRV_MINOR_VERSION=$Minor"
             $CmakeArgs += "-DRV_REVISION_NUMBER=$Patch"
             $CmakeArgs += "-DRV_VERSION_YEAR=$Major"
+            $CmakeArgs += "-DRV_VERSION_EXPLICIT=ON"
             Write-Host "Configuring CMake with version $Major.$Minor.$Patch"
         }
         if ($env:VULKAN_SDK) {
