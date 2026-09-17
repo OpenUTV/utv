@@ -86,6 +86,11 @@ def get_dependencies_info(versions, app_name, platform=""):
             "BSD 3-Clause",
         ),
         (
+            "OpenColorIO ACES Config",
+            "4.0.0 (ACES 2.0)",
+            "BSD 3-Clause",
+        ),
+        (
             "OpenEXR",
             resolve_version(["OpenEXR", "openexr"], "OpenEXR", "openexr"),
             "BSD 3-Clause",
