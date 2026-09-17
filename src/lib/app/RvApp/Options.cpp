@@ -383,6 +383,7 @@ namespace Rv
         noSequence = 0;
         inferSequence = 0;
         autoRetime = 1;
+        autoSetupACES = 0;
         aframesize = 0;
         acachesize = 2048;
         nukeSequence = 0;
@@ -1192,6 +1193,7 @@ namespace Rv
                                           "audioOff",
                                           "audioPrecision",
                                           "autoRetime",
+                                          "autoSetupACES",
                                           "bakeURL",
                                           "cinIOMethod",
                                           "cinIOSize",
@@ -1337,6 +1339,7 @@ namespace Rv
                                static_cast<size_t>((char*)(&this->audioOff) - (char*)this),
                                static_cast<size_t>((char*)(&this->audioPrecision) - (char*)this),
                                static_cast<size_t>((char*)(&this->autoRetime) - (char*)this),
+                               static_cast<size_t>((char*)(&this->autoSetupACES) - (char*)this),
                                static_cast<size_t>((char*)(&this->bakeURL) - (char*)this),
                                static_cast<size_t>((char*)(&this->cinIOMethod) - (char*)this),
                                static_cast<size_t>((char*)(&this->cinIOSize) - (char*)this),

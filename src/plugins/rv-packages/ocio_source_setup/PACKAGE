@@ -5,7 +5,7 @@ version: 2.5
 requires: ''
 rv: 4.0
 openrv: 1.0.0
-optional: true
+optional: false
 system: true
 hidden: false
 
@@ -15,6 +15,10 @@ modes:
     shortcut: ''
     event: ''
     load: immediate
+
+files:
+  - file: studio-config-all-views-v4.0.0_aces-v2.0_ocio-v2.5.ocio
+    location: SupportFiles/$PACKAGE
 
 description: |
     <p>
