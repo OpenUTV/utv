@@ -384,6 +384,7 @@ namespace Rv
         inferSequence = 0;
         autoRetime = 1;
         autoSetupACES = 0;
+        useNativeFileDialog = 0;
         aframesize = 0;
         acachesize = 2048;
         nukeSequence = 0;
@@ -1194,6 +1195,7 @@ namespace Rv
                                           "audioPrecision",
                                           "autoRetime",
                                           "autoSetupACES",
+                                          "useNativeFileDialog",
                                           "bakeURL",
                                           "cinIOMethod",
                                           "cinIOSize",
@@ -1340,6 +1342,7 @@ namespace Rv
                                static_cast<size_t>((char*)(&this->audioPrecision) - (char*)this),
                                static_cast<size_t>((char*)(&this->autoRetime) - (char*)this),
                                static_cast<size_t>((char*)(&this->autoSetupACES) - (char*)this),
+                               static_cast<size_t>((char*)(&this->useNativeFileDialog) - (char*)this),
                                static_cast<size_t>((char*)(&this->bakeURL) - (char*)this),
                                static_cast<size_t>((char*)(&this->cinIOMethod) - (char*)this),
                                static_cast<size_t>((char*)(&this->cinIOSize) - (char*)this),

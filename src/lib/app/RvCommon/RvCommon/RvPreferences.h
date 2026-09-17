@@ -96,6 +96,7 @@ namespace Rv
 
         void stylusAsMouseChanged(int);
         void startupResizeChanged(int);
+        void useNativeFileDialogChanged(int);
 
         void audioModuleChanged(int index);
         void audioDeviceChanged(int index);

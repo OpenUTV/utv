@@ -41,6 +41,8 @@
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtWidgets/QFileIconProvider>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
 
 #if defined(RV_VFX_CY2023)
 #include <MuQt5/QNetworkAccessManagerType.h>
@@ -597,6 +599,182 @@ namespace Rv
         NODE_RETURN(rvDoc->menuBarShown());
     }
 
+    static bool shouldUseNativeFileDialog()
+    {
+        if (const char* env = getenv("OPENUTV_NATIVE_FILE_DIALOG"))
+        {
+            string s = env;
+            if (s == "1" || s == "true" || s == "TRUE" || s == "yes" || s == "YES")
+                return true;
+            if (s == "0" || s == "false" || s == "FALSE" || s == "no" || s == "NO")
+                return false;
+        }
+        if (const char* env = getenv("UTV_NATIVE_FILE_DIALOG"))
+        {
+            string s = env;
+            if (s == "1" || s == "true" || s == "TRUE" || s == "yes" || s == "YES")
+                return true;
+            if (s == "0" || s == "false" || s == "FALSE" || s == "no" || s == "NO")
+                return false;
+        }
+        if (Options::sharedOptions().useNativeFileDialog != 0)
+        {
+            return true;
+        }
+        QSettings settings;
+        settings.beginGroup("General");
+        bool val = settings.value("useNativeFileDialog", false).toBool();
+        settings.endGroup();
+        return val;
+    }
+
+    static QString getInitialDialogPath(StringType::String* path, const QString& settingsGroup)
+    {
+        if (path && path->c_str() && strlen(path->c_str()) > 0)
+        {
+            return UTF8::qconvert(path->c_str());
+        }
+        QSettings settings;
+        settings.beginGroup(settingsGroup);
+        QString lastDir = settings.value("lastDir", "").toString();
+        settings.endGroup();
+        if (!lastDir.isEmpty() && QDir(lastDir).exists())
+        {
+            return lastDir;
+        }
+        return QDir::currentPath();
+    }
+
+    static void saveLastDialogDirectory(const QString& filePath, const QString& settingsGroup)
+    {
+        if (filePath.isEmpty())
+            return;
+        QFileInfo info(filePath);
+        QString dir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+        QSettings settings;
+        settings.beginGroup(settingsGroup);
+        settings.setValue("lastDir", dir);
+        settings.endGroup();
+    }
+
+    static QString buildQtFilterString(StringType::String* filter, MediaFileTypes* traits = nullptr, bool isSave = false)
+    {
+        QStringList filterEntries;
+        QStringList allWildcards;
+
+        if (filter && filter->c_str() && strlen(filter->c_str()) > 0)
+        {
+            QStringList parts = UTF8::qconvert(filter->c_str()).split("|");
+            if (parts.size() == 1)
+            {
+                QString v = parts.front().trimmed();
+                if (v == "*" || v.isEmpty())
+                {
+                    filterEntries.append("All Files (*)");
+                }
+                else
+                {
+                    QString wildcard = v.startsWith("*.") ? v : (v.startsWith(".") ? QString("*") + v : QString("*.") + v);
+                    filterEntries.append(QString("Files (%1)").arg(wildcard));
+                    filterEntries.append("All Files (*)");
+                }
+            }
+            else
+            {
+                for (int i = 0; i + 1 < parts.size(); i += 2)
+                {
+                    QString ext = parts[i].trimmed();
+                    QString desc = parts[i + 1].trimmed();
+                    if (ext.isEmpty() || desc.isEmpty())
+                        continue;
+
+                    QString wildcard;
+                    if (ext == "*")
+                    {
+                        wildcard = "*";
+                    }
+                    else if (ext.startsWith("*."))
+                    {
+                        wildcard = ext;
+                    }
+                    else if (ext.startsWith("."))
+                    {
+                        wildcard = QString("*") + ext;
+                    }
+                    else
+                    {
+                        wildcard = QString("*.") + ext;
+                    }
+
+                    if (wildcard != "*")
+                    {
+                        allWildcards.append(wildcard);
+                    }
+
+                    if (desc.contains("(*"))
+                    {
+                        filterEntries.append(desc);
+                    }
+                    else if (desc.endsWith(QString("(%1)").arg(ext)))
+                    {
+                        desc = desc.left(desc.lastIndexOf('(')).trimmed();
+                        filterEntries.append(QString("%1 (%2)").arg(desc, wildcard));
+                    }
+                    else
+                    {
+                        filterEntries.append(QString("%1 (%2)").arg(desc, wildcard));
+                    }
+                }
+
+                if (filterEntries.size() > 1 && !allWildcards.isEmpty() && !isSave)
+                {
+                    filterEntries.prepend(QString("All Supported Files (%1)").arg(allWildcards.join(" ")));
+                }
+                filterEntries.append("All Files (*)");
+            }
+        }
+        else if (traits)
+        {
+            QStringList descriptions = traits->typeDescriptions();
+            for (int i = 2; i < descriptions.size(); ++i)
+            {
+                QString ext = traits->extension(i).trimmed();
+                QString desc = traits->description(i).trimmed();
+                if (ext.isEmpty() || ext == "*" || ext == "&")
+                    continue;
+
+                QString wildcard = ext.startsWith("*.") ? ext : (ext.startsWith(".") ? QString("*") + ext : QString("*.") + ext);
+                allWildcards.append(wildcard);
+
+                if (desc.contains("(*"))
+                {
+                    filterEntries.append(desc);
+                }
+                else if (desc.endsWith(QString("(%1)").arg(ext)))
+                {
+                    desc = desc.left(desc.lastIndexOf('(')).trimmed();
+                    filterEntries.append(QString("%1 (%2)").arg(desc, wildcard));
+                }
+                else
+                {
+                    filterEntries.append(QString("%1 (%2)").arg(desc, wildcard));
+                }
+            }
+
+            if (!allWildcards.isEmpty() && !isSave)
+            {
+                filterEntries.prepend(QString("All Supported Media Files (%1)").arg(allWildcards.join(" ")));
+            }
+            filterEntries.append("All Files (*)");
+        }
+        else
+        {
+            filterEntries.append("All Files (*)");
+        }
+
+        return filterEntries.join(";;");
+    }
+
     static map<Session*, RvFileDialog*> sessionToMediaDialog;
 
     NODE_IMPLEMENTATION(openMediaFileDialog, Pointer)
@@ -614,6 +792,65 @@ namespace Rv
 
         const DynamicArrayType* atype = static_cast<const DynamicArrayType*>(NODE_THIS.type());
         const StringType* stype = static_cast<const StringType*>(atype->elementType());
+
+        if (shouldUseNativeFileDialog())
+        {
+            MediaFileTypes mediaTraits(true, false);
+            QString filterStr = buildQtFilterString(filter, &mediaTraits, false);
+            QString initialPath = getInitialDialogPath(path, "MediaFileDialog");
+            QString caption =
+                (label && label->c_str() && strlen(label->c_str()) > 0) ? UTF8::qconvert(label->c_str()) : QString("Open Media");
+
+            QStringList files;
+            if (mode == RvFileDialog::OneDirectory || mode == RvFileDialog::OneDirectoryName)
+            {
+                QString dir = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                if (!dir.isEmpty())
+                    files.append(dir);
+            }
+            else if (mode == RvFileDialog::ManyExistingFiles || mode == RvFileDialog::ManyExistingFilesAndDirectories)
+            {
+                files = QFileDialog::getOpenFileNames(rvDoc, caption, initialPath, filterStr);
+            }
+            else
+            {
+                QString file = QFileDialog::getOpenFileName(rvDoc, caption, initialPath, filterStr);
+                if (!file.isEmpty())
+                    files.append(file);
+            }
+
+            if (QWidget* view = rvDoc->viewWidget())
+            {
+                view->setFocus(Qt::OtherFocusReason);
+            }
+
+            if (!files.isEmpty())
+            {
+                saveLastDialogDirectory(files.first(), "MediaFileDialog");
+
+                DynamicArray* array = new DynamicArray(atype, 1);
+                array->resize(files.size());
+
+                for (int i = 0, size = files.size(); i < size; i++)
+                {
+                    string v = pathConform(UTF8::qconvert(files.at(i)));
+                    array->element<StringType::String*>(i) = stype->allocate(v);
+                }
+
+                NODE_RETURN((Pointer)array);
+            }
+            else
+            {
+                MuLangContext* context = static_cast<MuLangContext*>(p->context());
+                ExceptionType::Exception* e = new ExceptionType::Exception(context->exceptionType());
+                e->string() += "operation cancelled";
+                NODE_THREAD.setException(e);
+                ProgramException exc(NODE_THREAD, e);
+                throw exc;
+            }
+
+            NODE_RETURN((Pointer)0);
+        }
 
         FileTypeTraits* traits = 0;
         bool hasSinglePair = false;
@@ -737,6 +974,63 @@ namespace Rv
         const DynamicArrayType* atype = static_cast<const DynamicArrayType*>(NODE_THIS.type());
         const StringType* stype = static_cast<const StringType*>(atype->elementType());
 
+        if (shouldUseNativeFileDialog())
+        {
+            QString filterStr = buildQtFilterString(filter, nullptr, false);
+            QString initialPath = getInitialDialogPath(path, "OpenFileDialog");
+            QString caption = multi ? QString("Open Files") : (directory ? QString("Open Directory") : QString("Open File"));
+
+            QStringList files;
+            if (directory)
+            {
+                QString dir = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                if (!dir.isEmpty())
+                    files.append(dir);
+            }
+            else if (multi)
+            {
+                files = QFileDialog::getOpenFileNames(rvDoc, caption, initialPath, filterStr);
+            }
+            else
+            {
+                QString file = QFileDialog::getOpenFileName(rvDoc, caption, initialPath, filterStr);
+                if (!file.isEmpty())
+                    files.append(file);
+            }
+
+            if (QWidget* view = rvDoc->viewWidget())
+            {
+                view->setFocus(Qt::OtherFocusReason);
+            }
+
+            if (!files.isEmpty())
+            {
+                saveLastDialogDirectory(files.first(), "OpenFileDialog");
+
+                DynamicArray* array = new DynamicArray(atype, 1);
+                array->resize(files.size());
+
+                for (int i = 0, size = files.size(); i < size; i++)
+                {
+                    string v = pathConform(UTF8::qconvert(files.at(i)));
+                    array->element<StringType::String*>(i) = stype->allocate(v);
+                }
+
+                NODE_RETURN((Pointer)array);
+            }
+            else
+            {
+                MuLangContext* context = static_cast<MuLangContext*>(p->context());
+                ExceptionType::Exception* e = new ExceptionType::Exception(context->exceptionType());
+                e->string() += "operation cancelled";
+                NODE_THREAD.setException(e);
+                ProgramException exc(NODE_THREAD, e);
+                throw exc;
+            }
+
+            NODE_RETURN((Pointer)0);
+        }
+
         FileTypeTraits* traits = 0;
         bool hasSinglePair = false;
 
@@ -849,6 +1143,78 @@ namespace Rv
         bool directory = NODE_ARG(3, bool);
 
         const StringType* stype = static_cast<const StringType*>(NODE_THIS.type());
+
+        if (shouldUseNativeFileDialog())
+        {
+            QString filterStr = buildQtFilterString(filter, nullptr, true);
+            QString initialPath = getInitialDialogPath(path, "SaveFileDialog");
+            QString caption = directory ? QString("Choose Directory") : QString("Save to File");
+
+            string v = "";
+            bool done = false;
+
+            while (!done)
+            {
+                QString chosen;
+                if (directory)
+                {
+                    chosen = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                }
+                else
+                {
+                    chosen = QFileDialog::getSaveFileName(rvDoc, caption, initialPath, filterStr);
+                }
+
+                if (QWidget* view = rvDoc->viewWidget())
+                {
+                    view->setFocus(Qt::OtherFocusReason);
+                }
+
+                if (chosen.isEmpty())
+                {
+                    MuLangContext* context = static_cast<MuLangContext*>(p->context());
+                    ExceptionType::Exception* e = new ExceptionType::Exception(context->exceptionType());
+                    e->string() += "operation cancelled";
+                    NODE_THREAD.setException(e);
+                    ProgramException exc(NODE_THREAD, e);
+                    throw exc;
+                }
+
+                v = pathConform(UTF8::qconvert(chosen));
+                QFileInfo info(UTF8::qconvert(v.c_str()));
+
+                static const bool skipPermissionsCheck = (getenv("RV_SKIP_SAVE_FILE_DIALOG_PERMISSIONS_CHECK") != nullptr);
+                if (!skipPermissionsCheck)
+                {
+                    const bool isDirWritable = TwkUtil::isWritable(UTF8::qconvert(info.absolutePath()).c_str());
+                    const bool isFileWritable = TwkUtil::isWritable(v.c_str());
+
+                    if ((!info.exists() && !isDirWritable) || (info.exists() && !isFileWritable))
+                    {
+                        QString message = QString("File '") + UTF8::qconvert(v.c_str())
+                                          + "' is not writable; please check the permissions or "
+                                            "choose another location.";
+                        QMessageBox confirm(QMessageBox::Warning, "Permissions", message, QMessageBox::NoButton, rvDoc, Qt::Sheet);
+
+                        QPushButton* q1 = confirm.addButton("Try to Save Anyway", QMessageBox::AcceptRole);
+                        QPushButton* q2 = confirm.addButton("Choose Another Location", QMessageBox::RejectRole);
+                        confirm.setDefaultButton(q2);
+                        confirm.setIcon(QMessageBox::Question);
+                        confirm.exec();
+                        if (confirm.clickedButton() != q1)
+                        {
+                            initialPath = UTF8::qconvert(v.c_str());
+                            continue;
+                        }
+                    }
+                }
+
+                saveLastDialogDirectory(chosen, "SaveFileDialog");
+                done = true;
+            }
+
+            NODE_RETURN(stype->allocate(v));
+        }
 
         FileTypeTraits* traits = 0;
         bool hasSinglePair = false;
