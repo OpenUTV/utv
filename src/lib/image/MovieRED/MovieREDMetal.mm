@@ -187,7 +187,8 @@ namespace TwkMovie
             uint32_t decodeMode,
             uint32_t pixelType,
             unsigned char* outBuffer,
-            size_t outBufferSize
+            size_t outBufferSize,
+            R3DSDK::Metadata* outFrameMetadata
         )
         {
             if (!isAvailable() || !clip || !outBuffer)
@@ -205,6 +206,7 @@ namespace TwkMovie
                 decompressJob.Mode = vmode;
                 decompressJob.VideoTrackNo = 0;
                 decompressJob.VideoFrameNo = frameNo;
+                decompressJob.OutputFrameMetadata = outFrameMetadata;
 
                 size_t rawSize = R3DSDK::AsyncDecoder::GetSizeBufferNeeded(decompressJob);
                 if (rawSize == 0)

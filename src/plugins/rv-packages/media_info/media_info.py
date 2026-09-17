@@ -562,6 +562,7 @@ class MediaInfoDialog(QDialog):
         containerItems = [
             ("Container", attrDict.get("Container", "")),
             ("Duration", attrDict.get("Duration", "")),
+            ("Timecode", attrDict.get("Timecode", attrDict.get("Timecode/Start", ""))),
             ("FPS", attrDict.get("FPS", "")),
             ("Bit Rate", attrDict.get("BitRate", "")),
             ("Resolution", attrDict.get("Resolution", attrDict.get("DisplayResolution", ""))),
@@ -571,8 +572,8 @@ class MediaInfoDialog(QDialog):
 
         # Video Info
         videoItems = [
-            ("Codec", attrDict.get("Codec", attrDict.get("VideoCodec", ""))),
-            ("Codec ID / Name", attrDict.get("CodecName", "")),
+            ("Codec", attrDict.get("Codec", attrDict.get("VideoCodec", attrDict.get("RED/redcode", "")))),
+            ("Codec ID / Name", attrDict.get("CodecName", attrDict.get("Production/REDCODE", ""))),
             ("Pixel Format", attrDict.get("PixelFormat", attrDict.get("VideoPixelFormat", ""))),
             ("Pixel Aspect Ratio", attrDict.get("PixelAspectRatio", "")),
             ("Video Tracks", attrDict.get("VideoTracks", "")),
@@ -593,37 +594,108 @@ class MediaInfoDialog(QDialog):
 
         # Camera & Optics (EXIF)
         cameraItems = [
-            ("Make / Camera Brand", attrDict.get("Exif:Make", attrDict.get("Make", ""))),
-            ("Model / Camera Body", attrDict.get("Exif:Model", attrDict.get("Model", ""))),
-            ("Lens", attrDict.get("Exif:LensModel", attrDict.get("LensModel", attrDict.get("Exif:LensMake", "")))),
-            ("Focal Length", attrDict.get("Exif:FocalLength", attrDict.get("FocalLength", ""))),
+            (
+                "Make / Camera Brand",
+                attrDict.get("Exif:Make", attrDict.get("Make", attrDict.get("Camera/Manufacturer", ""))),
+            ),
+            (
+                "Model / Camera Body",
+                attrDict.get("Exif:Model", attrDict.get("Model", attrDict.get("Camera/Model", ""))),
+            ),
+            ("PIN / Serial Number", attrDict.get("Camera/PIN", attrDict.get("Camera/Serial", ""))),
+            (
+                "Lens",
+                attrDict.get(
+                    "Exif:LensModel",
+                    attrDict.get("LensModel", attrDict.get("Lens/Name", attrDict.get("Exif:LensMake", ""))),
+                ),
+            ),
+            (
+                "Focal Length",
+                attrDict.get("Exif:FocalLength", attrDict.get("FocalLength", attrDict.get("Lens/FocalLength", ""))),
+            ),
             (
                 "Focal Length (35mm Eq)",
                 attrDict.get("Exif:FocalLengthIn35mmFilm", attrDict.get("FocalLengthIn35mmFormat", "")),
             ),
             (
                 "Aperture / F-Stop",
-                attrDict.get("Exif:FNumber", attrDict.get("FNumber", attrDict.get("ApertureValue", ""))),
+                attrDict.get(
+                    "Exif:FNumber",
+                    attrDict.get("FNumber", attrDict.get("Lens/Aperture", attrDict.get("ApertureValue", ""))),
+                ),
             ),
             (
                 "Shutter Speed / Exposure",
-                attrDict.get("Exif:ExposureTime", attrDict.get("ExposureTime", attrDict.get("ShutterSpeedValue", ""))),
+                attrDict.get(
+                    "Exif:ExposureTime",
+                    attrDict.get(
+                        "ExposureTime", attrDict.get("Exposure/ShutterSpeed", attrDict.get("ShutterSpeedValue", ""))
+                    ),
+                ),
             ),
             (
                 "ISO Sensitivity",
                 attrDict.get(
-                    "Exif:PhotographicSensitivity", attrDict.get("Exif:ISOSpeedRatings", attrDict.get("ISO", ""))
+                    "Exif:PhotographicSensitivity",
+                    attrDict.get("Exif:ISOSpeedRatings", attrDict.get("ISO", attrDict.get("Exposure/ISO", ""))),
                 ),
             ),
             ("Exposure Bias", attrDict.get("Exif:ExposureBiasValue", "")),
-            ("White Balance", attrDict.get("Exif:WhiteBalance", "")),
+            (
+                "White Balance",
+                attrDict.get(
+                    "Exif:WhiteBalance", attrDict.get("WhiteBalance", attrDict.get("Color/WhiteBalanceKelvin", ""))
+                ),
+            ),
             ("Metering Mode", attrDict.get("Exif:MeteringMode", "")),
             ("Flash", attrDict.get("Exif:Flash", "")),
-            ("Date / Time Captured", attrDict.get("Exif:DateTimeOriginal", attrDict.get("DateTime", ""))),
+            (
+                "Date / Time Captured",
+                attrDict.get("Exif:DateTimeOriginal", attrDict.get("DateTime", attrDict.get("Date/Captured", ""))),
+            ),
             ("GPS Coordinates", attrDict.get("GPS:Position", attrDict.get("GPS:Latitude", ""))),
-            ("Software / Firmware", attrDict.get("Software", attrDict.get("Exif:Software", ""))),
+            (
+                "Software / Firmware",
+                attrDict.get("Software", attrDict.get("Exif:Software", attrDict.get("Camera/Firmware", ""))),
+            ),
         ]
         addCategory("Camera & Optics (EXIF)", cameraItems, cat_idx=3)
+
+        # Cinema & Production
+        cinemaItems = [
+            ("Camera Model", attrDict.get("Camera/Model", attrDict.get("RED/camera_model", ""))),
+            ("Camera PIN / Serial", attrDict.get("Camera/PIN", attrDict.get("RED/camera_pin", ""))),
+            ("Camera ID", attrDict.get("Camera/ID", attrDict.get("RED/camera_id", ""))),
+            ("Sensor", attrDict.get("Camera/Sensor", attrDict.get("RED/sensor_name", ""))),
+            ("Firmware", attrDict.get("Camera/Firmware", attrDict.get("RED/camera_firmware_version", ""))),
+            (
+                "Reel / Roll",
+                attrDict.get(
+                    "Production/ReelFull", attrDict.get("RED/reel_id_full", attrDict.get("Production/Reel", ""))
+                ),
+            ),
+            ("Clip ID", attrDict.get("Production/ClipID", attrDict.get("RED/clip_id", ""))),
+            ("REDCODE / Quality", attrDict.get("Production/REDCODE", attrDict.get("RED/redcode", ""))),
+            (
+                "Capture Format",
+                attrDict.get("Production/ResolutionFormat", attrDict.get("RED/resolution_format_name", "")),
+            ),
+            ("Record FPS", attrDict.get("Production/RecordFramerate", attrDict.get("RED/record_framerate", ""))),
+            ("Project FPS", attrDict.get("Production/ProjectFramerate", attrDict.get("RED/framerate", ""))),
+            ("Timecode (Current)", attrDict.get("Timecode", "")),
+            (
+                "Timecode (TOD / Abs)",
+                attrDict.get("Timecode/Absolute", attrDict.get("RED/frame_absolute_timecode", "")),
+            ),
+            ("Timecode (Edge)", attrDict.get("Timecode/Edge", attrDict.get("RED/frame_edge_timecode", ""))),
+            ("Timecode (Start)", attrDict.get("Timecode/Start", attrDict.get("RED/start_absolute_timecode", ""))),
+            ("Shutter Angle", attrDict.get("Exposure/ShutterDegrees", attrDict.get("RED/shutter_degrees", ""))),
+            ("White Balance", attrDict.get("Color/WhiteBalanceKelvin", attrDict.get("RED/white_balance_kelvin", ""))),
+            ("Color Science", attrDict.get("Color/ColorScience", attrDict.get("RED/ColorScience", ""))),
+            ("Original File", attrDict.get("Production/OriginalFilename", attrDict.get("RED/original_filename", ""))),
+        ]
+        addCategory("Cinema & Production", cinemaItems, cat_idx=4)
 
         # Audio Info
         audioItems = [
@@ -634,7 +706,7 @@ class MediaInfoDialog(QDialog):
             ("Bits Per Sample", attrDict.get("AudioBitsPerSample", "")),
             ("Audio Language", attrDict.get("AudioLanguage", "")),
         ]
-        addCategory("Audio Stream", audioItems, cat_idx=4)
+        addCategory("Audio Stream", audioItems, cat_idx=5)
 
         self.overviewTree.setSortingEnabled(True)
         self.overviewTree.sortByColumn(overviewCol, overviewOrder)

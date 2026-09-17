@@ -13,7 +13,8 @@
 namespace R3DSDK
 {
     class Clip;
-}
+    class Metadata;
+} // namespace R3DSDK
 
 namespace TwkMovie
 {
@@ -26,7 +27,7 @@ namespace TwkMovie
         void shutdown();
 
         bool debayerFrame(R3DSDK::Clip* clip, size_t frameNo, uint32_t decodeMode, uint32_t pixelType, unsigned char* outBuffer,
-                          size_t outBufferSize);
+                          size_t outBufferSize, R3DSDK::Metadata* outFrameMetadata = nullptr);
 
     } // namespace REDMetalGpu
 } // namespace TwkMovie

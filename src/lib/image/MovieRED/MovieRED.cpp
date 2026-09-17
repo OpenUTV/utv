@@ -1,5 +1,5 @@
 //******************************************************************************
-// Copyright (c) 2026 The OpenUTV Contributors. All rights reserved.
+// Copyright (c) 2026 Makai Systems and OpenUTV Contributors. All rights reserved.
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -19,10 +19,12 @@
 #endif
 
 #include <R3DSDK.h>
+#include <R3DSDKMetadata.h>
 
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <iomanip>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -171,6 +173,21 @@ namespace TwkMovie
             return buffer;
         sizeNeeded = 16U - (ptr % 16U);
         return buffer + sizeNeeded;
+    }
+
+    static std::string getMetaString(const R3DSDK::Clip* clip, const char* key)
+    {
+        if (!clip || !clip->MetadataExists(key))
+            return std::string();
+        return clip->MetadataItemAsString(key);
+    }
+
+    static void setNonEmptyAttr(TwkFB::FrameBuffer& fb, const std::string& key, const std::string& val)
+    {
+        if (!val.empty())
+        {
+            fb.newAttribute(key, val);
+        }
     }
 
     struct MovieRED::Impl
@@ -335,6 +352,189 @@ namespace TwkMovie
             m_info.dataType = FrameBuffer::UCHAR;
         else
             m_info.dataType = FrameBuffer::USHORT;
+
+        // Populate clip-level metadata on m_info.proxy
+        TwkFB::FrameBuffer& proxy = m_info.proxy;
+        proxy.newAttribute("File", m_filename);
+        proxy.newAttribute("Container", std::string("RED Digital Cinema (R3D)"));
+
+        std::ostringstream durStr;
+        durStr << m_impl->frameCount << " frames (" << std::fixed << std::setprecision(2)
+               << (static_cast<double>(m_impl->frameCount) / m_impl->fps) << "s @ " << m_impl->fps << " fps)";
+        proxy.newAttribute("Duration", durStr.str());
+
+        std::ostringstream fpsStr;
+        fpsStr << m_impl->fps;
+        proxy.newAttribute("FPS", fpsStr.str());
+
+        std::ostringstream resStr;
+        resStr << m_impl->fullWidth << "x" << m_impl->fullHeight;
+        proxy.newAttribute("Resolution", resStr.str());
+
+        proxy.newAttribute("ColorSpace/Primaries", ColorSpace::RedWideGamut());
+        proxy.newAttribute("ColorSpace/TransferFunction", ColorSpace::RedLogFilm());
+        proxy.newAttribute("RED/ColorScience", m_impl->colorScience);
+        proxy.newAttribute("RED/SDKVersion", std::string(R3DSDK::GetSdkVersion()));
+        proxy.newAttribute("Make", std::string("RED Digital Cinema"));
+        proxy.newAttribute("Camera/Manufacturer", std::string("RED Digital Cinema"));
+
+        // Camera
+        std::string camModel = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CAMERA_MODEL);
+        std::string camPin = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CAMERA_PIN);
+        std::string camId = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CAMERA_ID);
+        std::string camFirmware = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CAMERA_FIRMWARE_VERSION);
+        std::string sensorName = getMetaString(m_impl->clip.get(), R3DSDK::RMD_SENSOR_NAME);
+        std::string sensorId = getMetaString(m_impl->clip.get(), R3DSDK::RMD_SENSOR_ID);
+
+        setNonEmptyAttr(proxy, "Model", camModel);
+        setNonEmptyAttr(proxy, "Software", camFirmware);
+        setNonEmptyAttr(proxy, "Camera/Model", camModel);
+        setNonEmptyAttr(proxy, "Camera/PIN", camPin);
+        setNonEmptyAttr(proxy, "Camera/ID", camId);
+        setNonEmptyAttr(proxy, "Camera/Firmware", camFirmware);
+        setNonEmptyAttr(proxy, "Camera/Sensor", sensorName);
+        setNonEmptyAttr(proxy, "Camera/SensorID", sensorId);
+
+        // Lens
+        std::string lensName = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_NAME);
+        std::string lensBrand = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_BRAND);
+        std::string lensFocal = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_FOCAL_LENGTH);
+        std::string lensAperture = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_APERTURE_LABEL);
+        std::string lensFocusDist = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_FOCUS_DISTANCE);
+        std::string lensMount = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_MOUNT);
+        std::string lensSerial = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LENS_SERIAL_NUMBER);
+
+        setNonEmptyAttr(proxy, "LensModel", !lensName.empty() ? lensName : lensBrand);
+        setNonEmptyAttr(proxy, "Lens/Name", lensName);
+        setNonEmptyAttr(proxy, "Lens/Brand", lensBrand);
+        if (!lensFocal.empty() && lensFocal != "0")
+        {
+            proxy.newAttribute("FocalLength", lensFocal + " mm");
+            proxy.newAttribute("Lens/FocalLength", lensFocal + " mm");
+        }
+        if (!lensAperture.empty())
+        {
+            proxy.newAttribute("FNumber", lensAperture);
+            proxy.newAttribute("Lens/Aperture", lensAperture);
+        }
+        if (!lensFocusDist.empty() && lensFocusDist != "0" && lensFocusDist != "4294967295")
+        {
+            proxy.newAttribute("Lens/FocusDistance", lensFocusDist + " mm");
+        }
+        setNonEmptyAttr(proxy, "Lens/Mount", lensMount);
+        setNonEmptyAttr(proxy, "Lens/SerialNumber", lensSerial);
+
+        // Exposure
+        std::string iso = getMetaString(m_impl->clip.get(), R3DSDK::RMD_ISO);
+        std::string shutterDeg = getMetaString(m_impl->clip.get(), R3DSDK::RMD_SHUTTER_DEGREES);
+        std::string shutterFrac = getMetaString(m_impl->clip.get(), R3DSDK::RMD_SHUTTER_FRACTIONS);
+        std::string expTime = getMetaString(m_impl->clip.get(), R3DSDK::RMD_EXPOSURE_TIME);
+
+        setNonEmptyAttr(proxy, "ISO", iso);
+        setNonEmptyAttr(proxy, "Exposure/ISO", iso);
+        if (!shutterDeg.empty())
+            proxy.newAttribute("Exposure/ShutterDegrees", shutterDeg + "°");
+        if (!shutterFrac.empty() && shutterFrac != "0")
+        {
+            std::string speedStr = "1/" + shutterFrac + " s";
+            proxy.newAttribute("ExposureTime", speedStr);
+            proxy.newAttribute("Exposure/ShutterSpeed", speedStr);
+        }
+        else if (!expTime.empty() && expTime != "0")
+        {
+            proxy.newAttribute("ExposureTime", expTime + " µs");
+        }
+        if (!expTime.empty())
+            proxy.newAttribute("Exposure/ExposureTime", expTime + " µs");
+
+        // Color
+        std::string kelvin = getMetaString(m_impl->clip.get(), R3DSDK::RMD_WHITE_BALANCE_KELVIN);
+        std::string tint = getMetaString(m_impl->clip.get(), R3DSDK::RMD_WHITE_BALANCE_TINT);
+        if (!kelvin.empty())
+        {
+            std::string wbStr = kelvin + " K";
+            if (!tint.empty())
+                wbStr += " (Tint " + tint + ")";
+            proxy.newAttribute("WhiteBalance", wbStr);
+            proxy.newAttribute("Color/WhiteBalanceKelvin", kelvin + " K");
+        }
+        setNonEmptyAttr(proxy, "Color/WhiteBalanceTint", tint);
+        proxy.newAttribute("Color/ColorScience", m_impl->colorScience);
+
+        // Production / Reel
+        std::string reel = getMetaString(m_impl->clip.get(), R3DSDK::RMD_REEL_ID);
+        std::string reelFull = getMetaString(m_impl->clip.get(), R3DSDK::RMD_REEL_ID_FULL);
+        std::string clipId = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CLIP_ID);
+        std::string clipUuid = getMetaString(m_impl->clip.get(), R3DSDK::RMD_CLIP_UUID);
+        std::string redcode = getMetaString(m_impl->clip.get(), R3DSDK::RMD_REDCODE);
+        std::string resFormat = getMetaString(m_impl->clip.get(), R3DSDK::RMD_RESOLUTION_FORMAT_NAME);
+        std::string recFps = getMetaString(m_impl->clip.get(), R3DSDK::RMD_RECORD_FRAMERATE);
+        std::string origFilename = getMetaString(m_impl->clip.get(), R3DSDK::RMD_ORIGINAL_FILENAME);
+        std::string wavFilename = getMetaString(m_impl->clip.get(), R3DSDK::RMD_WAV_FILENAME);
+
+        setNonEmptyAttr(proxy, "Production/Reel", reel);
+        setNonEmptyAttr(proxy, "Production/ReelFull", reelFull);
+        setNonEmptyAttr(proxy, "Production/ClipID", clipId);
+        setNonEmptyAttr(proxy, "Production/ClipUUID", clipUuid);
+        setNonEmptyAttr(proxy, "Production/REDCODE", redcode);
+        setNonEmptyAttr(proxy, "Production/ResolutionFormat", resFormat);
+        if (!recFps.empty())
+            proxy.newAttribute("Production/RecordFramerate", recFps + " fps");
+        std::ostringstream prjFpsStr;
+        prjFpsStr << m_impl->fps << " fps";
+        proxy.newAttribute("Production/ProjectFramerate", prjFpsStr.str());
+        setNonEmptyAttr(proxy, "Production/OriginalFilename", origFilename);
+        setNonEmptyAttr(proxy, "Production/WavFilename", wavFilename);
+
+        setNonEmptyAttr(proxy, "Production/Scene", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_SCENE));
+        setNonEmptyAttr(proxy, "Production/Shot", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_SHOT));
+        setNonEmptyAttr(proxy, "Production/Take", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_TAKE));
+        setNonEmptyAttr(proxy, "Production/Director", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_DIRECTOR));
+        setNonEmptyAttr(proxy, "Production/DP", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_DIRECTOR_OF_PHOTOGRAPHY));
+        setNonEmptyAttr(proxy, "Production/Copyright", getMetaString(m_impl->clip.get(), R3DSDK::RMD_USER_COPYRIGHT));
+
+        // Date / Time
+        std::string localDate = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LOCAL_DATE);
+        std::string localTime = getMetaString(m_impl->clip.get(), R3DSDK::RMD_LOCAL_TIME);
+        std::string gmtDate = getMetaString(m_impl->clip.get(), R3DSDK::RMD_GMT_DATE);
+        std::string gmtTime = getMetaString(m_impl->clip.get(), R3DSDK::RMD_GMT_TIME);
+        std::string dateTimeStr =
+            !localDate.empty() ? (localDate + " " + localTime) : (!gmtDate.empty() ? (gmtDate + " " + gmtTime + " GMT") : "");
+        setNonEmptyAttr(proxy, "DateTime", dateTimeStr);
+        setNonEmptyAttr(proxy, "Date/Captured", dateTimeStr);
+
+        // Timecode
+        std::string startAbsTc = getMetaString(m_impl->clip.get(), R3DSDK::RMD_START_ABSOLUTE_TIMECODE);
+        std::string startEdgeTc = getMetaString(m_impl->clip.get(), R3DSDK::RMD_START_EDGE_TIMECODE);
+        std::string startTc;
+        {
+            std::lock_guard<std::mutex> lock(m_impl->clipMutex);
+            const char* ctc = m_impl->clip->Timecode(0);
+            if (ctc && ctc[0] != '\0')
+                startTc = ctc;
+        }
+        if (startTc.empty())
+            startTc = !startAbsTc.empty() ? startAbsTc : startEdgeTc;
+
+        setNonEmptyAttr(proxy, "Timecode", startTc);
+        setNonEmptyAttr(proxy, "Timecode/Start", startTc);
+        setNonEmptyAttr(proxy, "Timecode/Absolute", startAbsTc);
+        setNonEmptyAttr(proxy, "Timecode/Edge", startEdgeTc);
+        std::ostringstream tcRateStr;
+        tcRateStr << m_impl->clip->TimecodeFramerate();
+        proxy.newAttribute("Timecode/FrameRate", tcRateStr.str());
+
+        // Enumerate all raw clip metadata under RED/
+        size_t metaCount = m_impl->clip->MetadataCount();
+        for (size_t i = 0; i < metaCount; ++i)
+        {
+            std::string key = m_impl->clip->MetadataItemKey(i);
+            std::string val = m_impl->clip->MetadataItemAsString(i);
+            if (!key.empty() && !val.empty())
+            {
+                proxy.newAttribute("RED/" + key, val);
+            }
+        }
     }
 
     void MovieRED::imagesAtFrame(const ReadRequest& request, FrameBufferVector& fbs)
@@ -394,11 +594,13 @@ namespace TwkMovie
             TWK_THROW_STREAM(IOException, "Failed to allocate memory for RED decode: " << memNeeded << " bytes");
         }
 
+        R3DSDK::Metadata frameMeta;
         bool decodedOnGpu = false;
 #if defined(__APPLE__)
         if (m_impl->useGpu && REDMetalGpu::isAvailable() && pixelFormat != RGBA8)
         {
-            decodedOnGpu = REDMetalGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded);
+            decodedOnGpu =
+                REDMetalGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded, &frameMeta);
         }
 #endif
 
@@ -409,6 +611,7 @@ namespace TwkMovie
             job.PixelType = (pixelFormat == RGBA8) ? R3DSDK::PixelType_8Bit_BGRA_Interleaved : jobPixelType;
             job.OutputBuffer = imgBuffer;
             job.OutputBufferSize = memNeeded;
+            job.OutputFrameMetadata = &frameMeta;
 
             R3DSDK::DecodeStatus dstatus;
             {
@@ -459,20 +662,86 @@ namespace TwkMovie
 
         free(imgBuffer - adjusted);
 
+        // Copy clip-level metadata from m_info.proxy
+        m_info.proxy.copyAttributesTo(&fb);
+
         fb.setIdentifier("");
         identifier(frame, fb.idstream());
-        fb.addAttribute(new StringAttribute("File", m_filename));
-        fb.addAttribute(new StringAttribute("ColorSpace/Primaries", ColorSpace::RedWideGamut()));
-        fb.addAttribute(new StringAttribute("ColorSpace/TransferFunction", ColorSpace::RedLogFilm()));
-        fb.addAttribute(new StringAttribute("RED/Acceleration", decodedOnGpu ? "Metal GPU" : "CPU"));
-        fb.addAttribute(new StringAttribute("RED/Resolution", (m_impl->clipResolution == FULL_RES)      ? "Full (1:1)"
-                                                              : (m_impl->clipResolution == HALF_RES)    ? "Half (1:2)"
-                                                              : (m_impl->clipResolution == QUARTER_RES) ? "Quarter (1:4)"
-                                                                                                        : "Eighth (1:8)"));
-        fb.addAttribute(new StringAttribute("RED/ColorScience", m_impl->colorScience));
-        fb.addAttribute(new IntAttribute("RED/FrameIndex", static_cast<int>(videoFrameNo)));
-        fb.addAttribute(new IntAttribute("RED/TotalFrames", static_cast<int>(m_impl->frameCount)));
-        fb.addAttribute(new StringAttribute("RED/SDKVersion", R3DSDK::GetSdkVersion()));
+        fb.newAttribute("File", m_filename);
+        fb.newAttribute("ColorSpace/Primaries", ColorSpace::RedWideGamut());
+        fb.newAttribute("ColorSpace/TransferFunction", ColorSpace::RedLogFilm());
+        fb.newAttribute("RED/Acceleration", decodedOnGpu ? std::string("Metal GPU") : std::string("CPU"));
+        fb.newAttribute("RED/Resolution", (m_impl->clipResolution == FULL_RES)      ? std::string("Full (1:1)")
+                                          : (m_impl->clipResolution == HALF_RES)    ? std::string("Half (1:2)")
+                                          : (m_impl->clipResolution == QUARTER_RES) ? std::string("Quarter (1:4)")
+                                                                                    : std::string("Eighth (1:8)"));
+        fb.newAttribute("RED/ColorScience", m_impl->colorScience);
+        fb.newAttribute("RED/FrameIndex", static_cast<int>(videoFrameNo));
+        fb.newAttribute("RED/TotalFrames", static_cast<int>(m_impl->frameCount));
+        fb.newAttribute("RED/SDKVersion", std::string(R3DSDK::GetSdkVersion()));
+
+        // Per-frame timecodes
+        std::string frameTc;
+        std::string frameAbsTc;
+        std::string frameEdgeTc;
+        {
+            std::lock_guard<std::mutex> lock(m_impl->clipMutex);
+            const char* ctc = m_impl->clip->Timecode(videoFrameNo);
+            if (ctc && ctc[0] != '\0')
+                frameTc = ctc;
+            const char* atc = m_impl->clip->AbsoluteTimecode(videoFrameNo);
+            if (atc && atc[0] != '\0')
+                frameAbsTc = atc;
+            const char* etc = m_impl->clip->EdgeTimecode(videoFrameNo);
+            if (etc && etc[0] != '\0')
+                frameEdgeTc = etc;
+        }
+
+        if (frameMeta.MetadataCount() == 0)
+        {
+            std::lock_guard<std::mutex> lock(m_impl->clipMutex);
+            m_impl->clip->GetFrameMetadata(frameMeta, videoFrameNo);
+        }
+
+        if (frameMeta.MetadataExists(R3DSDK::RMD_FRAME_ABSOLUTE_TIMECODE))
+        {
+            frameAbsTc = frameMeta.MetadataItemAsString(R3DSDK::RMD_FRAME_ABSOLUTE_TIMECODE);
+            if (frameTc.empty())
+                frameTc = frameAbsTc;
+        }
+        if (frameMeta.MetadataExists(R3DSDK::RMD_FRAME_EDGE_TIMECODE))
+        {
+            frameEdgeTc = frameMeta.MetadataItemAsString(R3DSDK::RMD_FRAME_EDGE_TIMECODE);
+            if (frameTc.empty())
+                frameTc = frameEdgeTc;
+        }
+
+        if (!frameTc.empty())
+            fb.newAttribute("Timecode", frameTc);
+        if (!frameAbsTc.empty())
+            fb.newAttribute("Timecode/Absolute", frameAbsTc);
+        if (!frameEdgeTc.empty())
+            fb.newAttribute("Timecode/Edge", frameEdgeTc);
+
+        if (frameMeta.MetadataExists(R3DSDK::RMD_FRAME_TIMESTAMP))
+        {
+            fb.newAttribute("Time/Timestamp", frameMeta.MetadataItemAsString(R3DSDK::RMD_FRAME_TIMESTAMP) + " µs");
+        }
+        if (frameMeta.MetadataExists(R3DSDK::RMD_FRAME_PTP_TIMESTAMP))
+        {
+            fb.newAttribute("Time/PTPTimestamp", frameMeta.MetadataItemAsString(R3DSDK::RMD_FRAME_PTP_TIMESTAMP) + " ns");
+        }
+
+        size_t fMetaCount = frameMeta.MetadataCount();
+        for (size_t i = 0; i < fMetaCount; ++i)
+        {
+            std::string key = frameMeta.MetadataItemKey(i);
+            std::string val = frameMeta.MetadataItemAsString(i);
+            if (!key.empty() && !val.empty())
+            {
+                fb.newAttribute("RED/" + key, val);
+            }
+        }
     }
 
     void MovieRED::identifiersAtFrame(const ReadRequest& request, IdentifierVector& ids)

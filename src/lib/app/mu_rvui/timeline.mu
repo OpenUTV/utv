@@ -1,5 +1,6 @@
 //
 // Copyright (C) 2023  Autodesk, Inc. All Rights Reserved. 
+// Copyright (c) 2026 Makai Systems and OpenUTV Contributors. All rights reserved.
 // 
 // SPDX-License-Identifier: Apache-2.0 
 //
@@ -468,14 +469,14 @@ class: Timeline : Widget
                 float sfps = getFloatProperty("%s.group.fps" % name).front();
                 fps = sfps;
 
-                if (fps == 0.0)
+                let attrs = sourceAttributes(name + ".0");
+                if (attrs eq nil || attrs.empty()) attrs = sourceAttributes(name);
+                if (attrs neq nil)
                 {
-                    let attrs = sourceAttributes(name + ".0");
                     for_each (a; attrs)
                     {
-                        if (a._0 == "Timecode") return a._1;
-                        if (a._0 == "fps" || a._0 == "FPS") fps = float(a._1);
-                        //if (a._0 == "DPX-TV/TimeCode") fileTC = a._1;
+                        if (a._0 == "Timecode" || a._0 == "DPX-TV/TimeCode") return a._1;
+                        if (fps == 0.0 && (a._0 == "fps" || a._0 == "FPS")) fps = float(a._1);
                     }
                 }
             }
