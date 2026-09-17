@@ -20,6 +20,8 @@
 #include <string>
 #include <string_view>
 
+class QActionGroup;
+
 namespace TwkApp
 {
     class VideoDevice;
@@ -127,6 +129,7 @@ namespace Rv
         void ditherOff();
         void dither8();
         void dither10();
+        void deviceActionTriggered(QAction*);
 
         bool hasStandardDisplayPipeline();
         bool hasOCIODisplayPipeline();
@@ -185,7 +188,8 @@ namespace Rv
         QAction* m_LChannelAction;
         QMenu* m_monitorMenu;
         QAction* m_monitorMenuAction;
-        QLabel* m_monitorInfoLabel;
+        QAction* m_deviceTitleAction;
+        QActionGroup* m_deviceActionGroup;
         QAction* m_transferTitleAction;
         QAction* m_primariesTitleAction;
         QAction* m_ditherTitleAction;

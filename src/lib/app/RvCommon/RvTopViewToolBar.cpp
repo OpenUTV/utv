@@ -14,6 +14,10 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QWidgetAction>
 #include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QMessageBox>
+#include <QtGui/QActionGroup>
+#include <RvCommon/RvPreferences.h>
+#include <RvCommon/RvDocument.h>
 #include <TwkQtCoreUtil/QtConvert.h>
 #include <IPCore/Session.h>
 #include <IPCore/ImageRenderer.h>
@@ -329,15 +333,11 @@ namespace Rv
         m_dither8 = m->addAction("  8 Bit");
         m_dither10 = m->addAction("  10 Bit");
         m->addSeparator();
-        QWidgetAction* wa = new QWidgetAction(m);
-        QWidget* base = new QWidget(b);
-        QHBoxLayout* layout = new QHBoxLayout(base);
-        m_monitorInfoLabel = new QLabel(b);
-        m_monitorInfoLabel->setEnabled(false);
-        m_monitorInfoLabel->setTextFormat(Qt::RichText);
-        layout->addWidget(m_monitorInfoLabel);
-        wa->setDefaultWidget(base);
-        m->addAction(wa);
+        m_deviceTitleAction = m->addAction("Display Devices");
+        m_deviceTitleAction->setDisabled(true);
+        m_deviceActionGroup = new QActionGroup(this);
+        m_deviceActionGroup->setExclusive(false);
+        connect(m_deviceActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(deviceActionTriggered(QAction*)));
         b->setMenu(m);
         m_monitorMenu = m;
         m_monitorMenuAction->setToolTip("Configure display device");
@@ -1050,10 +1050,22 @@ namespace Rv
         }
 
         //
-        //  Display Info
+        //  Display Devices
         //
 
-        QString html = "<style type=\"text/css\"> td { padding: 4px; } </style><table>";
+        qDeleteAll(m_deviceActionGroup->actions());
+
+        const VideoDevice* currentOutput = 0;
+        if (isInPresentationMode())
+        {
+            currentOutput = m_outputDevice;
+            if (!currentOutput && m_session)
+                currentOutput = m_session->outputVideoDevice();
+        }
+
+        const VideoDevice* currentControl = m_device;
+        if (!currentControl && m_session)
+            currentControl = m_session->controlVideoDevice();
 
         for (const auto module : RvApp()->videoModules())
         {
@@ -1062,65 +1074,181 @@ namespace Rv
                 VideoDevice::VideoFormat format = device->videoFormatAtIndex(device->currentVideoFormat());
                 VideoDevice::DataFormat data = device->dataFormatAtIndex(device->currentDataFormat());
 
-                QString icon;
-
-                if (dynamic_cast<const DesktopVideoDevice*>(device))
-                {
-                    icon = "<img src=\":/images/view_display_flat.png\" "
-                           "width=24 height=24>";
-                }
-                else
-                {
-                    icon = " ";
-                }
-
-                string mname = module->name(); // windows
+                string mname = module->name();
                 string dname = device->name();
-                QString name;
+                string dpath = mname + "/" + dname;
 
+                QString displayName;
                 if (mname != "Desktop")
                 {
-                    name += mname.c_str();
-                    name += " / ";
+                    displayName += QString::fromUtf8(mname.c_str());
+                    displayName += " / ";
                 }
+                displayName += QString::fromUtf8(dname.c_str());
 
-                name += dname.c_str();
-
-                QString mon;
-
+                QString actionText = "  " + displayName;
                 if (format.width > 0 && format.height > 0)
                 {
-                    mon = QString("<tr>"
-                                  "<td align=center valign=middle>%6</td>"
-                                  "<td><strong>%1</strong><br><small>%2 x %3 @ "
-                                  "%4Hz<br>%5</small>")
-                              .arg(name)
-                              .arg(format.width)
-                              .arg(format.height)
-                              .arg(format.hz)
-                              .arg(data.description.c_str())
-                              .arg(icon);
+                    if (format.hz > 0.0)
+                    {
+                        actionText += QString("  (%1 x %2 @ %3Hz)").arg(format.width).arg(format.height).arg(format.hz);
+                    }
+                    else
+                    {
+                        actionText += QString("  (%1 x %2)").arg(format.width).arg(format.height);
+                    }
+                }
+
+                QAction* action = m_monitorMenu->addAction(actionText);
+                if (dynamic_cast<const DesktopVideoDevice*>(device))
+                {
+                    action->setIcon(QIcon(":/images/view_display_flat.png"));
                 }
                 else
                 {
-                    mon = QString("<tr>"
-                                  "<td align=center valign=middle>%1</td>"
-                                  "<td><strong>%2</strong>")
-                              .arg(icon)
-                              .arg(name);
+                    action->setIcon(QIcon(":/images/view_display.png"));
                 }
 
-                mon += "</td> </td>";
+                action->setCheckable(true);
+                action->setData(QString::fromUtf8(dpath.c_str()));
 
-                html += mon;
+                bool isCurrentActive = false;
+                if (isInPresentationMode())
+                {
+                    if (currentOutput && device == currentOutput)
+                        isCurrentActive = true;
+                }
+                else
+                {
+                    if (currentControl && device == currentControl)
+                        isCurrentActive = true;
+                }
+
+                action->setChecked(isCurrentActive);
+
+                QString tooltip;
+                if (isCurrentActive)
+                {
+                    tooltip = isInPresentationMode() ? tr("Active presentation device (click to disable presentation mode)")
+                                                     : tr("Active desktop display");
+                }
+                else if (device == currentControl)
+                {
+                    tooltip = tr("Switch to desktop display (disable presentation mode)");
+                }
+                else
+                {
+                    tooltip = tr("Select and present to this device");
+                }
+
+                if (!data.description.empty())
+                {
+                    tooltip += QString("\n%1").arg(QString::fromUtf8(data.description.c_str()));
+                }
+                action->setToolTip(tooltip);
+
+                m_deviceActionGroup->addAction(action);
             }
         }
 
-        html += "</table>";
-        m_monitorInfoLabel->setText(html);
-        m_monitorInfoLabel->setTextFormat(Qt::RichText);
-
         m_monitorMenu->update();
+    }
+
+    void RvTopViewToolBar::deviceActionTriggered(QAction* action)
+    {
+        if (!action)
+            return;
+
+        string dpath = UTF8::qconvert(action->data().toString());
+        if (dpath.empty())
+            return;
+
+        RvApplication* app = RvApp();
+        if (!app)
+            return;
+
+        Options& opts = Options::sharedOptions();
+        TwkApp::Document* doc = TwkApp::Document::activeDocument();
+        Rv::Session* session = m_session ? m_session : (doc ? static_cast<Rv::Session*>(doc) : nullptr);
+        if (!session)
+            return;
+
+        VideoDevice* targetDev = app->findPresentationDevice(dpath);
+        if (!targetDev)
+            return;
+
+        const VideoDevice* controlDev = session->controlVideoDevice();
+        bool isControlDevice = (targetDev == controlDev || targetDev == m_device);
+
+        bool presenting = app->isInPresentationMode();
+        const VideoDevice* currentOutput = session->outputVideoDevice();
+        bool isCurrentOutput = (presenting && currentOutput && targetDev == currentOutput);
+
+        Session::CachingMode mode = session->cachingMode();
+
+        if (presenting)
+        {
+            if (isCurrentOutput || isControlDevice)
+            {
+                // User clicked the active presentation device to toggle off,
+                // or clicked the main desktop screen to return to normal display.
+                session->setCaching(Session::NeverCache);
+                app->setPresentationMode(false);
+                session->setCaching(mode);
+                session->askForRedraw();
+            }
+            else
+            {
+                // Switch to a different presentation device
+                session->setCaching(Session::NeverCache);
+                app->setPresentationMode(false);
+
+                RV_QSETTINGS;
+                settings.beginGroup("Video");
+                settings.setValue("presentationDevice", QString::fromUtf8(dpath.c_str()));
+                settings.endGroup();
+
+                opts.presentDevice = strdup(dpath.c_str());
+                RvPreferences::loadSettingsIntoOptions(opts);
+                app->setVideoDeviceStateFromSettings(targetDev);
+
+                app->setPresentationMode(true);
+                session->setCaching(mode);
+                session->askForRedraw();
+            }
+        }
+        else
+        {
+            if (isControlDevice)
+            {
+                // Already on the control device with presentation mode off
+                return;
+            }
+
+            if (app->documents().size() > 1)
+            {
+                RvDocument* rvDoc = (RvDocument*)session->opaquePointer();
+                QString message = tr("Cannot start presentation mode when multiple sessions are active");
+                QMessageBox::warning(rvDoc, tr("Presentation Mode"), message);
+                return;
+            }
+
+            // Start presentation mode with the selected device
+            session->setCaching(Session::NeverCache);
+
+            RV_QSETTINGS;
+            settings.beginGroup("Video");
+            settings.setValue("presentationDevice", QString::fromUtf8(dpath.c_str()));
+            settings.endGroup();
+
+            opts.presentDevice = strdup(dpath.c_str());
+            RvPreferences::loadSettingsIntoOptions(opts);
+            app->setVideoDeviceStateFromSettings(targetDev);
+
+            app->setPresentationMode(true);
+            session->setCaching(mode);
+            session->askForRedraw();
+        }
     }
 
     void RvTopViewToolBar::monitorMenuOCIOUpdate() {}
