@@ -463,10 +463,10 @@ namespace Rv
         opts.autoRetime, "-autoACES %d", &opt.autoSetupACES, "Automatically setup ACES (1 = on, 0 = off, default=%d)", opts.autoSetupACES, \
         "-nativeFileDialog %d", &opt.useNativeFileDialog, "Use OS native file dialogs (1 = on, 0 = off, default=%d)",                      \
         opts.useNativeFileDialog, "-rthreads %d", &opt.readerThreads, "Number of reader threads (default=%d)", opts.readerThreads,         \
-        &opt.workItemThreads, "Number of work item threads (default=%d)", opts.workItemThreads, "-progressiveSourceLoading %d",            \
-        &opt.progressiveSourceLoading, "Use asynchronous source loading, default=0 (off)", "-fullscreen", ARG_FLAG(&opt.fullscreen),       \
-        "Start in fullscreen mode", "-present", ARG_FLAG(&opt.present), "Start in presentation mode (using presentation device)",          \
-        "-presentAudio %d", &opt.presentAudio,                                                                                             \
+        "-workItemThreads %d", &opt.workItemThreads, "Number of work item threads (default=%d)", opts.workItemThreads,                     \
+        "-progressiveSourceLoading %d", &opt.progressiveSourceLoading, "Use asynchronous source loading, default=0 (off)", "-fullscreen",  \
+        ARG_FLAG(&opt.fullscreen), "Start in fullscreen mode", "-present", ARG_FLAG(&opt.present),                                         \
+        "Start in presentation mode (using presentation device)", "-presentAudio %d", &opt.presentAudio,                                   \
         "Use presentation audio device in presentation mode (1 = on, 0 = "                                                                 \
         "off)",                                                                                                                            \
         "-presentDevice %S", &opt.presentDevice, "Presentation mode device", "-presentVideoFormat %S", &opt.presentFormat,                 \
