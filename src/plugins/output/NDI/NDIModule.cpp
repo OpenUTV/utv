@@ -40,6 +40,7 @@ namespace NDI
             p += NDILIB_LIBRARY_NAME;
             search_paths.push_back(p);
         }
+        search_paths.push_back("C:\\Program Files\\NDI\\NDI 6 Tools\\Runtime\\" NDILIB_LIBRARY_NAME);
         search_paths.push_back("C:\\Program Files\\NDI\\NDI 6 Runtime\\v6\\" NDILIB_LIBRARY_NAME);
         search_paths.push_back("C:\\Program Files\\NDI\\NDI 6 Tools\\" NDILIB_LIBRARY_NAME);
         search_paths.push_back(NDILIB_LIBRARY_NAME);
@@ -77,11 +78,19 @@ namespace NDI
             "/Applications/NDI Router.app/Contents/Frameworks/NTFramework.framework/Versions/A/Frameworks/" NDILIB_LIBRARY_NAME);
         search_paths.push_back("/usr/local/lib/" NDILIB_LIBRARY_NAME);
         search_paths.push_back("/opt/homebrew/lib/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back(NDILIB_LIBRARY_NAME);
 #else
+        search_paths.push_back("/usr/lib/x86_64-linux-gnu/" NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/usr/lib64/" NDILIB_LIBRARY_NAME);
         search_paths.push_back("/usr/lib/" NDILIB_LIBRARY_NAME);
         search_paths.push_back("/usr/local/lib/" NDILIB_LIBRARY_NAME);
-#endif
         search_paths.push_back(NDILIB_LIBRARY_NAME);
+        search_paths.push_back("/usr/lib/x86_64-linux-gnu/libndi.so");
+        search_paths.push_back("/usr/lib64/libndi.so");
+        search_paths.push_back("/usr/lib/libndi.so");
+        search_paths.push_back("/usr/local/lib/libndi.so");
+        search_paths.push_back("libndi.so");
+#endif
 
         const NDIlib_v6* (*load_func)(void) = NULL;
         for (const auto& path : search_paths)
