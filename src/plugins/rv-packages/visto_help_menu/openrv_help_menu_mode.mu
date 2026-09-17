@@ -129,6 +129,34 @@ class: UTVHelpMenuMinorMode : MinorMode
     }
 
 
+    \: findPythonInterpreter (string;)
+    {
+        try
+        {
+            let rv = system.getenv("RV_APP_RV");
+            if (rv neq nil && rv != "")
+            {
+                let base = io.path.basename(rv);
+                let dir = rv.substr(0, rv.size() - base.size());
+                let pyName = if runtime.build_os() == "WINDOWS" then "py-interp.exe" else "py-interp";
+                let p = io.path.join(dir, pyName);
+                if (io.path.exists(p)) return p;
+            }
+        }
+        catch (...) { ; }
+
+        if (runtime.build_os() == "WINDOWS")
+        {
+            return "python.exe";
+        }
+        else
+        {
+            let p1 = "/Applications/UTV.app/Contents/MacOS/py-interp";
+            if (io.path.exists(p1)) return p1;
+            return "python3";
+        }
+    }
+
     \: findHelperScript (string; string scriptName)
     {
         try
@@ -138,19 +166,53 @@ class: UTVHelpMenuMinorMode : MinorMode
             {
                 let base = io.path.basename(rv);
                 let dir = rv.substr(0, rv.size() - base.size());
+                let p_py = io.path.join(dir, scriptName + ".py");
+                if (io.path.exists(p_py)) return p_py;
                 let p = io.path.join(dir, scriptName);
                 if (io.path.exists(p)) return p;
+                let p_sh = io.path.join(dir, scriptName + ".sh");
+                if (io.path.exists(p_sh)) return p_sh;
             }
         }
         catch (...) { ; }
 
-        let p1 = "/Applications/UTV.app/Contents/MacOS/" + scriptName;
+        let p1 = "/Applications/UTV.app/Contents/MacOS/" + scriptName + ".py";
         if (io.path.exists(p1)) return p1;
 
-        let p2 = "/Applications/UTV.app/Contents/Resources/" + scriptName + ".sh";
+        let p2 = "/Applications/UTV.app/Contents/Resources/" + scriptName + ".py";
         if (io.path.exists(p2)) return p2;
 
+        let p3 = "/Applications/UTV.app/Contents/MacOS/" + scriptName;
+        if (io.path.exists(p3)) return p3;
+
+        let p4 = "/Applications/UTV.app/Contents/Resources/" + scriptName + ".sh";
+        if (io.path.exists(p4)) return p4;
+
         return "";
+    }
+
+    \: runHelperScript (void; string scriptPath, string[] extraArgs)
+    {
+        let isPy = scriptPath.size() > 3 && scriptPath.substr(scriptPath.size() - 3, 3) == ".py";
+        if (isPy)
+        {
+            let py = findPythonInterpreter();
+            string[] args = string[] { scriptPath };
+            for_each (arg; extraArgs) args.push_back(arg);
+            qt.QProcess.startDetached(py, args);
+        }
+        else if (runtime.build_os() == "WINDOWS")
+        {
+            string[] args = string[] { "/c", scriptPath };
+            for_each (arg; extraArgs) args.push_back(arg);
+            qt.QProcess.startDetached("cmd.exe", args);
+        }
+        else
+        {
+            string[] args = string[] { scriptPath };
+            for_each (arg; extraArgs) args.push_back(arg);
+            qt.QProcess.startDetached("/bin/sh", args);
+        }
     }
 
     \: reportIssue (void; Event ev)
@@ -160,8 +222,7 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-diagnostics");
             if (script != "")
             {
-                string[] args = string[] { script };
-                qt.QProcess.startDetached("/bin/bash", args);
+                runHelperScript(script, string[] {});
             }
             else
             {
@@ -181,8 +242,7 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-diagnostics");
             if (script != "")
             {
-                string[] args = string[] { script, "--no-browser" };
-                qt.QProcess.startDetached("/bin/bash", args);
+                runHelperScript(script, string[] { "--no-browser" });
             }
         }
         catch (...) { ; }
@@ -195,8 +255,9 @@ class: UTVHelpMenuMinorMode : MinorMode
             let script = findHelperScript("openutv-check-updates");
             if (script != "")
             {
-                string[] args = string[] { script, "--interactive" };
-                qt.QProcess.startDetached("/bin/bash", args);
+                let v = commands.getVersion();
+                string curVer = "%d.%d.%d" % (v[0], v[1], v[2]);
+                runHelperScript(script, string[] { "--interactive", "--current-version", curVer });
             }
             else
             {

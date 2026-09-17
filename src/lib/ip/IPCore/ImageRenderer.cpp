@@ -1903,6 +1903,7 @@ namespace IPCore
                     }
 
                     m_controlDevice.glDevice->makeCurrent();
+                    m_controlDevice.glDevice->redraw();
                     controlFBO->bind();
                 }
             }
