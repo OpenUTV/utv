@@ -628,6 +628,28 @@ namespace Rv
         return val;
     }
 
+    struct ScopedNativeDialog
+    {
+        bool m_prev;
+
+        ScopedNativeDialog()
+            : m_prev(QApplication::testAttribute(Qt::AA_DontUseNativeDialogs))
+        {
+            if (m_prev)
+            {
+                QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, false);
+            }
+        }
+
+        ~ScopedNativeDialog()
+        {
+            if (m_prev)
+            {
+                QApplication::setAttribute(Qt::AA_DontUseNativeDialogs, true);
+            }
+        }
+    };
+
     static QString getInitialDialogPath(StringType::String* path, const QString& settingsGroup)
     {
         if (path && path->c_str() && strlen(path->c_str()) > 0)
@@ -795,26 +817,32 @@ namespace Rv
 
         if (shouldUseNativeFileDialog())
         {
+            ScopedNativeDialog nativeDialogScope;
             MediaFileTypes mediaTraits(true, false);
             QString filterStr = buildQtFilterString(filter, &mediaTraits, false);
             QString initialPath = getInitialDialogPath(path, "MediaFileDialog");
             QString caption =
                 (label && label->c_str() && strlen(label->c_str()) > 0) ? UTF8::qconvert(label->c_str()) : QString("Open Media");
+#ifdef PLATFORM_DARWIN
+            QWidget* parentWidget = sheet ? rvDoc : nullptr;
+#else
+            QWidget* parentWidget = rvDoc;
+#endif
 
             QStringList files;
             if (mode == RvFileDialog::OneDirectory || mode == RvFileDialog::OneDirectoryName)
             {
-                QString dir = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                QString dir = QFileDialog::getExistingDirectory(parentWidget, caption, initialPath);
                 if (!dir.isEmpty())
                     files.append(dir);
             }
             else if (mode == RvFileDialog::ManyExistingFiles || mode == RvFileDialog::ManyExistingFilesAndDirectories)
             {
-                files = QFileDialog::getOpenFileNames(rvDoc, caption, initialPath, filterStr);
+                files = QFileDialog::getOpenFileNames(parentWidget, caption, initialPath, filterStr);
             }
             else
             {
-                QString file = QFileDialog::getOpenFileName(rvDoc, caption, initialPath, filterStr);
+                QString file = QFileDialog::getOpenFileName(parentWidget, caption, initialPath, filterStr);
                 if (!file.isEmpty())
                     files.append(file);
             }
@@ -976,24 +1004,30 @@ namespace Rv
 
         if (shouldUseNativeFileDialog())
         {
+            ScopedNativeDialog nativeDialogScope;
             QString filterStr = buildQtFilterString(filter, nullptr, false);
             QString initialPath = getInitialDialogPath(path, "OpenFileDialog");
             QString caption = multi ? QString("Open Files") : (directory ? QString("Open Directory") : QString("Open File"));
+#ifdef PLATFORM_DARWIN
+            QWidget* parentWidget = sheet ? rvDoc : nullptr;
+#else
+            QWidget* parentWidget = rvDoc;
+#endif
 
             QStringList files;
             if (directory)
             {
-                QString dir = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                QString dir = QFileDialog::getExistingDirectory(parentWidget, caption, initialPath);
                 if (!dir.isEmpty())
                     files.append(dir);
             }
             else if (multi)
             {
-                files = QFileDialog::getOpenFileNames(rvDoc, caption, initialPath, filterStr);
+                files = QFileDialog::getOpenFileNames(parentWidget, caption, initialPath, filterStr);
             }
             else
             {
-                QString file = QFileDialog::getOpenFileName(rvDoc, caption, initialPath, filterStr);
+                QString file = QFileDialog::getOpenFileName(parentWidget, caption, initialPath, filterStr);
                 if (!file.isEmpty())
                     files.append(file);
             }
@@ -1146,9 +1180,15 @@ namespace Rv
 
         if (shouldUseNativeFileDialog())
         {
+            ScopedNativeDialog nativeDialogScope;
             QString filterStr = buildQtFilterString(filter, nullptr, true);
             QString initialPath = getInitialDialogPath(path, "SaveFileDialog");
             QString caption = directory ? QString("Choose Directory") : QString("Save to File");
+#ifdef PLATFORM_DARWIN
+            QWidget* parentWidget = sheet ? rvDoc : nullptr;
+#else
+            QWidget* parentWidget = rvDoc;
+#endif
 
             string v = "";
             bool done = false;
@@ -1158,11 +1198,11 @@ namespace Rv
                 QString chosen;
                 if (directory)
                 {
-                    chosen = QFileDialog::getExistingDirectory(rvDoc, caption, initialPath);
+                    chosen = QFileDialog::getExistingDirectory(parentWidget, caption, initialPath);
                 }
                 else
                 {
-                    chosen = QFileDialog::getSaveFileName(rvDoc, caption, initialPath, filterStr);
+                    chosen = QFileDialog::getSaveFileName(parentWidget, caption, initialPath, filterStr);
                 }
 
                 if (QWidget* view = rvDoc->viewWidget())
