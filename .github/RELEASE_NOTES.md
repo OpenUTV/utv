@@ -15,7 +15,7 @@ OpenUTV 2026.6 delivers native cinema camera RAW decode for RED Digital Cinema (
 
 ### OpenColorIO & ACES 2.0 Integration
 
-- **Bundled Official ACES 2.0 Config**: Ships with the Academy Software Foundation ACES Studio Config v2.0.0 (`studio-config-v2.0.0_aces-v1.3_ocio-v2.3.ocio`) bundled directly inside the application bundle.
+- **Bundled Official ACES 2.0 Config**: Ships with the Academy Software Foundation ACES 2.0 Studio Config v4.0.0 (`studio-config-all-views-v4.0.0_aces-v2.0_ocio-v2.5.ocio`) bundled directly inside the application bundle.
 - **Zero-Config Fallback**: Automatically activates and points to the bundled ACES 2.0 config when the `OCIO` environment variable is not defined on the host system.
 - **Auto Setup ACES Preference**: Added a new user preference (`ocio_auto_setup_aces`) under OpenColorIO settings that automatically enables OCIO, configures the input colorspace to `ACEScg`, and aligns the display and view transforms to `sRGB`.
 - **Streamlined OCIO Menu**: Ensured the OpenColorIO menu and mode controls dynamically auto-initialize and populate on startup.
