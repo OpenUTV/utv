@@ -367,6 +367,27 @@ runs:
             Write-Host "Replicating scripts\rv to scripts\utv..."
             Copy-Item -Path "_install\scripts\rv" -Destination "_install\scripts\utv" -Recurse -Force
         }
+        # Deploy python3.dll for abi3 extensions and python314.dll
+        if ($env:OPENUTV_DEPS_ROOT) {
+            $Py3Dll = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\python3.dll"
+            if (Test-Path $Py3Dll) {
+                Copy-Item -Path $Py3Dll -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
+            $Py314Dll = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\python314.dll"
+            if (Test-Path $Py314Dll) {
+                Copy-Item -Path $Py314Dll -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
+            $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
+            if (Test-Path $SwGl) {
+                Copy-Item -Path $SwGl -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
+        }
+        if (-not (Test-Path "_install\bin\python3.dll") -and (Get-Command python.exe -ErrorAction SilentlyContinue)) {
+            $pyDir = Split-Path (Get-Command python.exe).Source
+            if (Test-Path "$pyDir\python3.dll") {
+                Copy-Item -Path "$pyDir\python3.dll" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
+        }
       shell: powershell
 
     - name: Sccache Statistics

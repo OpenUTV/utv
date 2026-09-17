@@ -3,11 +3,15 @@ setlocal enabledelayedexpansion
 
 :: Check if OPENUTV_DEPS_ROOT is already defined and valid
 set "DEPS_BIN="
+set "PYSIDE_DIR="
+set "PYTHON_DIR="
 if defined OPENUTV_DEPS_ROOT (
     if exist "%OPENUTV_DEPS_ROOT%\bin" (
         set "DEPS_BIN=%OPENUTV_DEPS_ROOT%\bin"
-    ) else if exist "%OPENUTV_DEPS_ROOT%\x64-windows\bin" (
-        set "DEPS_BIN=%OPENUTV_DEPS_ROOT%\x64-windows\bin"
+    )
+    if exist "%OPENUTV_DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6" (
+        set "PYSIDE_DIR=%OPENUTV_DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6"
+        set "PYTHON_DIR=%OPENUTV_DEPS_ROOT%\tools\python3"
     )
 )
 
@@ -17,9 +21,10 @@ if not defined DEPS_BIN (
         if exist "%%~D\bin" (
             set "DEPS_BIN=%%~D\bin"
             set "OPENUTV_DEPS_ROOT=%%~D"
-        ) else if exist "%%~D\installed\x64-windows\bin" (
-            set "DEPS_BIN=%%~D\installed\x64-windows\bin"
-            set "OPENUTV_DEPS_ROOT=%%~D"
+            if exist "%%~D\tools\python3\Lib\site-packages\PySide6" (
+                set "PYSIDE_DIR=%%~D\tools\python3\Lib\site-packages\PySide6"
+                set "PYTHON_DIR=%%~D\tools\python3"
+            )
         )
     )
 )
@@ -33,8 +38,23 @@ if not defined DEPS_BIN (
     exit /b 1
 )
 
-:: Add dependencies bin to PATH
-set "PATH=%DEPS_BIN%;%PATH%"
+:: Configure environment
+if defined PYSIDE_DIR (
+    set "PATH=%~dp0;!PYSIDE_DIR!;!PYSIDE_DIR!\..\shiboken6;!DEPS_BIN!;!PYTHON_DIR!;!PATH!"
+    if not defined QT_PLUGIN_PATH set "QT_PLUGIN_PATH=!PYSIDE_DIR!\plugins"
+    if not defined QTWEBENGINEPROCESS_PATH set "QTWEBENGINEPROCESS_PATH=!PYSIDE_DIR!\QtWebEngineProcess.exe"
+    if not defined QTWEBENGINE_RESOURCES_PATH set "QTWEBENGINE_RESOURCES_PATH=!PYSIDE_DIR!\resources"
+    if not defined QTWEBENGINE_LOCALES_PATH set "QTWEBENGINE_LOCALES_PATH=!PYSIDE_DIR!\translations\qtwebengine_locales"
+    if not defined QML2_IMPORT_PATH set "QML2_IMPORT_PATH=!PYSIDE_DIR!\qml"
+) else (
+    set "PATH=%~dp0;%DEPS_BIN%;%PATH%"
+)
 
-:: Launch the actual UTV executable
-start "" "%~dp0utv.exe" %*
+if not defined PYTHONHOME if defined PYTHON_DIR set "PYTHONHOME=%PYTHON_DIR%"
+
+:: Launch the actual UTV binary
+if exist "%~dp0utv-bin.exe" (
+    start "" "%~dp0utv-bin.exe" %*
+) else (
+    start "" "%~dp0utv.exe" %*
+)

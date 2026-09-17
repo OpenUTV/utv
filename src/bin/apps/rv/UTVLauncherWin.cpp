@@ -73,33 +73,102 @@ namespace
         return std::wstring(buffer.data());
     }
 
-    bool CheckDepsDir(const std::wstring& root, std::wstring& outBinDir)
+    bool CheckDepsDir(const std::wstring& root, std::wstring& outBinDir, std::wstring& outPySideDir, std::wstring& outPythonDir)
     {
         if (root.empty())
         {
             return false;
         }
 
-        // Check root\bin\Qt6Core.dll
+        // 1. Locate C++ binary directory (must contain OpenColorIO, OpenEXR, Imath, avcodec, boost, or Qt)
         std::wstring binPath = root + L"\\bin";
-        if (FileExists(binPath + L"\\Qt6Core.dll"))
-        {
-            outBinDir = binPath;
-            return true;
-        }
-
-        // Check root\installed\x64-windows\bin\Qt6Core.dll (vcpkg export structure)
         std::wstring vcpkgBinPath = root + L"\\installed\\x64-windows\\bin";
-        if (FileExists(vcpkgBinPath + L"\\Qt6Core.dll"))
+        std::wstring foundBin;
+
+        const std::wstring markerDlls[] = {L"\\OpenColorIO_2_5.dll", L"\\OpenEXR-3_4.dll", L"\\Imath-3_2.dll", L"\\Qt6Core.dll"};
+
+        for (const auto& marker : markerDlls)
         {
-            outBinDir = vcpkgBinPath;
-            return true;
+            if (FileExists(binPath + marker))
+            {
+                foundBin = binPath;
+                break;
+            }
+            if (FileExists(vcpkgBinPath + marker))
+            {
+                foundBin = vcpkgBinPath;
+                break;
+            }
         }
 
-        return false;
+        if (foundBin.empty())
+        {
+            WIN32_FIND_DATAW fd;
+            HANDLE h = FindFirstFileW((binPath + L"\\avcodec-*.dll").c_str(), &fd);
+            if (h != INVALID_HANDLE_VALUE)
+            {
+                foundBin = binPath;
+                FindClose(h);
+            }
+            else
+            {
+                h = FindFirstFileW((vcpkgBinPath + L"\\avcodec-*.dll").c_str(), &fd);
+                if (h != INVALID_HANDLE_VALUE)
+                {
+                    foundBin = vcpkgBinPath;
+                    FindClose(h);
+                }
+            }
+        }
+
+        if (foundBin.empty())
+        {
+            return false;
+        }
+
+        // 2. Locate Qt6 binaries (either in PySide6 or in bin)
+        std::wstring foundPySide;
+        const std::wstring pySideCandidates[] = {root + L"\\tools\\python3\\Lib\\site-packages\\PySide6",
+                                                 root + L"\\installed\\x64-windows\\tools\\python3\\Lib\\site-packages\\PySide6"};
+        for (const auto& cand : pySideCandidates)
+        {
+            if (FileExists(cand + L"\\Qt6Core.dll"))
+            {
+                foundPySide = cand;
+                break;
+            }
+        }
+
+        if (foundPySide.empty() && FileExists(foundBin + L"\\Qt6Core.dll"))
+        {
+            foundPySide = foundBin;
+        }
+
+        if (foundPySide.empty())
+        {
+            return false;
+        }
+
+        // 3. Locate Python directory
+        std::wstring foundPython;
+        const std::wstring pythonCandidates[] = {root + L"\\tools\\python3", root + L"\\installed\\x64-windows\\tools\\python3"};
+        for (const auto& cand : pythonCandidates)
+        {
+            if (FileExists(cand + L"\\python.exe") || FileExists(cand + L"\\python314.dll") || DirExists(cand))
+            {
+                foundPython = cand;
+                break;
+            }
+        }
+
+        outBinDir = foundBin;
+        outPySideDir = foundPySide;
+        outPythonDir = foundPython;
+        return true;
     }
 
-    bool FindDependencies(const std::wstring& appDir, std::wstring& outRootDir, std::wstring& outBinDir)
+    bool FindDependencies(const std::wstring& appDir, std::wstring& outRootDir, std::wstring& outBinDir, std::wstring& outPySideDir,
+                          std::wstring& outPythonDir)
     {
         // 1. Environment variable OPENUTV_DEPS_ROOT
         DWORD len = GetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", NULL, 0);
@@ -108,7 +177,7 @@ namespace
             std::vector<wchar_t> buf(len);
             GetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", buf.data(), len);
             std::wstring envRoot(buf.data());
-            if (CheckDepsDir(envRoot, outBinDir))
+            if (CheckDepsDir(envRoot, outBinDir, outPySideDir, outPythonDir))
             {
                 outRootDir = envRoot;
                 return true;
@@ -126,7 +195,7 @@ namespace
             if (RegQueryValueExW(hKey, L"OPENUTV_DEPS_ROOT", NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
             {
                 std::wstring regRoot(regVal);
-                if (CheckDepsDir(regRoot, outBinDir))
+                if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
                 {
                     outRootDir = regRoot;
                     RegCloseKey(hKey);
@@ -136,7 +205,90 @@ namespace
             RegCloseKey(hKey);
         }
 
-        // 3. Known Program Files and standard install directories
+        // 3. User Environment in registry
+        if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Environment", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+        {
+            wchar_t regVal[MAX_PATH];
+            DWORD valSize = sizeof(regVal);
+            DWORD valType = 0;
+            if (RegQueryValueExW(hKey, L"OPENUTV_DEPS_ROOT", NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
+            {
+                std::wstring regRoot(regVal);
+                if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                {
+                    outRootDir = regRoot;
+                    RegCloseKey(hKey);
+                    return true;
+                }
+            }
+            RegCloseKey(hKey);
+        }
+
+        // 4. Windows Uninstall registry keys (detects any installed OpenUTVDeps MSI package)
+        const HKEY rootKeys[] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
+        const wchar_t* subKeyPaths[] = {L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                                        L"SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"};
+
+        for (HKEY rk : rootKeys)
+        {
+            for (const wchar_t* subPath : subKeyPaths)
+            {
+                HKEY hUninstall = NULL;
+                if (RegOpenKeyExW(rk, subPath, 0, KEY_READ, &hUninstall) == ERROR_SUCCESS)
+                {
+                    DWORD subkeyCount = 0;
+                    if (RegQueryInfoKeyW(hUninstall, NULL, NULL, NULL, &subkeyCount, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+                        == ERROR_SUCCESS)
+                    {
+                        for (DWORD i = 0; i < subkeyCount; ++i)
+                        {
+                            wchar_t subkeyName[256];
+                            DWORD nameLen = 256;
+                            if (RegEnumKeyExW(hUninstall, i, subkeyName, &nameLen, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+                            {
+                                HKEY hApp = NULL;
+                                if (RegOpenKeyExW(hUninstall, subkeyName, 0, KEY_READ, &hApp) == ERROR_SUCCESS)
+                                {
+                                    wchar_t dispName[256];
+                                    DWORD dispSize = sizeof(dispName);
+                                    if (RegQueryValueExW(hApp, L"DisplayName", NULL, NULL, reinterpret_cast<LPBYTE>(dispName), &dispSize)
+                                        == ERROR_SUCCESS)
+                                    {
+                                        if (wcsstr(dispName, L"OpenUTVDeps") != nullptr
+                                            || wcsstr(dispName, L"OpenUTV Dependencies") != nullptr)
+                                        {
+                                            wchar_t installLoc[MAX_PATH];
+                                            DWORD locSize = sizeof(installLoc);
+                                            if (RegQueryValueExW(hApp, L"InstallLocation", NULL, NULL, reinterpret_cast<LPBYTE>(installLoc),
+                                                                 &locSize)
+                                                == ERROR_SUCCESS)
+                                            {
+                                                std::wstring loc(installLoc);
+                                                while (!loc.empty() && (loc.back() == L'\\' || loc.back() == L'/'))
+                                                {
+                                                    loc.pop_back();
+                                                }
+                                                if (CheckDepsDir(loc, outBinDir, outPySideDir, outPythonDir))
+                                                {
+                                                    outRootDir = loc;
+                                                    RegCloseKey(hApp);
+                                                    RegCloseKey(hUninstall);
+                                                    return true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    RegCloseKey(hApp);
+                                }
+                            }
+                        }
+                    }
+                    RegCloseKey(hUninstall);
+                }
+            }
+        }
+
+        // 5. Known Program Files and standard install directories
         std::vector<std::wstring> baseSearchDirs;
         wchar_t progFiles[MAX_PATH];
         if (GetEnvironmentVariableW(L"ProgramFiles", progFiles, MAX_PATH) > 0)
@@ -155,7 +307,7 @@ namespace
         for (const auto& baseDir : baseSearchDirs)
         {
             std::wstring directPath = baseDir + L"\\OpenUTVDeps";
-            if (CheckDepsDir(directPath, outBinDir))
+            if (CheckDepsDir(directPath, outBinDir, outPySideDir, outPythonDir))
             {
                 outRootDir = directPath;
                 return true;
@@ -174,7 +326,7 @@ namespace
                         if (wcscmp(ffd.cFileName, L".") != 0 && wcscmp(ffd.cFileName, L"..") != 0)
                         {
                             std::wstring candRoot = baseDir + L"\\" + ffd.cFileName;
-                            if (CheckDepsDir(candRoot, outBinDir))
+                            if (CheckDepsDir(candRoot, outBinDir, outPySideDir, outPythonDir))
                             {
                                 outRootDir = candRoot;
                                 FindClose(hFind);
@@ -187,7 +339,7 @@ namespace
             }
         }
 
-        // 4. Relative paths from app directory (developer & portable installations)
+        // 6. Relative paths from app directory (developer & portable installations)
         if (!appDir.empty())
         {
             std::vector<std::wstring> relCandidates = {appDir + L"\\deps", appDir + L"\\..\\deps", appDir + L"\\..\\..\\deps",
@@ -195,7 +347,7 @@ namespace
                                                        appDir + L"\\..\\..\\utv-dependencies\\installed\\x64-windows"};
             for (const auto& cand : relCandidates)
             {
-                if (CheckDepsDir(cand, outBinDir))
+                if (CheckDepsDir(cand, outBinDir, outPySideDir, outPythonDir))
                 {
                     outRootDir = cand;
                     return true;
@@ -203,32 +355,33 @@ namespace
             }
         }
 
-        // 5. Check if Qt6Core.dll is on the system PATH
-        wchar_t foundPath[MAX_PATH];
-        LPWSTR filePart = NULL;
-        DWORD spRes = SearchPathW(NULL, L"Qt6Core.dll", NULL, MAX_PATH, foundPath, &filePart);
-        if (spRes > 0 && spRes < MAX_PATH)
+        // 7. Check if OpenColorIO_2_5.dll or Qt6Core.dll is on the system PATH
+        const wchar_t* searchDlls[] = {L"OpenColorIO_2_5.dll", L"Qt6Core.dll"};
+        for (const wchar_t* dll : searchDlls)
         {
-            if (filePart)
+            wchar_t foundPath[MAX_PATH];
+            LPWSTR filePart = NULL;
+            DWORD spRes = SearchPathW(NULL, dll, NULL, MAX_PATH, foundPath, &filePart);
+            if (spRes > 0 && spRes < MAX_PATH && filePart)
             {
                 *filePart = L'\0';
-                size_t len = wcslen(foundPath);
-                if (len > 0 && foundPath[len - 1] == L'\\')
+                size_t pathLen = wcslen(foundPath);
+                if (pathLen > 0 && foundPath[pathLen - 1] == L'\\')
                 {
-                    foundPath[len - 1] = L'\0';
+                    foundPath[pathLen - 1] = L'\0';
                 }
-                outBinDir = foundPath;
                 std::wstring binStr(foundPath);
+                std::wstring candRoot = binStr;
                 size_t lastSlash = binStr.find_last_of(L"\\/");
                 if (lastSlash != std::wstring::npos)
                 {
-                    outRootDir = binStr.substr(0, lastSlash);
+                    candRoot = binStr.substr(0, lastSlash);
                 }
-                else
+                if (CheckDepsDir(candRoot, outBinDir, outPySideDir, outPythonDir))
                 {
-                    outRootDir = binStr;
+                    outRootDir = candRoot;
+                    return true;
                 }
-                return true;
             }
         }
 
@@ -314,8 +467,10 @@ int RunLauncher()
     std::wstring appDir = GetAppDir();
     std::wstring depsRoot;
     std::wstring depsBin;
+    std::wstring depsPySide;
+    std::wstring depsPython;
 
-    if (!FindDependencies(appDir, depsRoot, depsBin))
+    if (!FindDependencies(appDir, depsRoot, depsBin, depsPySide, depsPython))
     {
         ShowMissingDependenciesDialog();
         return 1;
@@ -323,6 +478,38 @@ int RunLauncher()
 
     // Configure DLL search directory
     SetDllDirectoryW(depsBin.c_str());
+
+    typedef BOOL(WINAPI * SetDefaultDllDirectoriesFn)(DWORD);
+    typedef DLL_DIRECTORY_COOKIE(WINAPI * AddDllDirectoryFn)(PCWSTR);
+    HMODULE hKernel32 = GetModuleHandleW(L"kernel32.dll");
+    if (hKernel32)
+    {
+        SetDefaultDllDirectoriesFn pSetDefaultDllDirs =
+            reinterpret_cast<SetDefaultDllDirectoriesFn>(GetProcAddress(hKernel32, "SetDefaultDllDirectories"));
+        AddDllDirectoryFn pAddDllDir = reinterpret_cast<AddDllDirectoryFn>(GetProcAddress(hKernel32, "AddDllDirectory"));
+        if (pSetDefaultDllDirs && pAddDllDir)
+        {
+            pSetDefaultDllDirs(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
+            pAddDllDir(depsBin.c_str());
+            if (!depsPySide.empty())
+            {
+                pAddDllDir(depsPySide.c_str());
+            }
+            std::wstring shibokenDir = depsPySide + L"\\..\\shiboken6";
+            if (DirExists(shibokenDir))
+            {
+                pAddDllDir(shibokenDir.c_str());
+            }
+            if (!depsPython.empty())
+            {
+                pAddDllDir(depsPython.c_str());
+            }
+            if (!appDir.empty())
+            {
+                pAddDllDir(appDir.c_str());
+            }
+        }
+    }
 
     // Export OPENUTV_DEPS_ROOT and OPENUTV_DEPS_ROOT_SLASH for runtime child processes
     SetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", depsRoot.c_str());
@@ -340,22 +527,24 @@ int RunLauncher()
         currentPath = pathBuf.data();
     }
 
-    std::wstring newPath = depsBin;
-
-    // Add bundled Python to PATH if present
-    std::wstring pythonDir = depsRoot + L"\\tools\\python3";
-    if (!DirExists(pythonDir))
+    std::wstring newPath = appDir + L";" + depsBin;
+    if (!depsPySide.empty())
     {
-        pythonDir = depsRoot + L"\\installed\\x64-windows\\tools\\python3";
+        newPath = newPath + L";" + depsPySide;
+        std::wstring shibokenDir = depsPySide + L"\\..\\shiboken6";
+        if (DirExists(shibokenDir))
+        {
+            newPath = newPath + L";" + shibokenDir;
+        }
     }
-    if (DirExists(pythonDir))
+    if (!depsPython.empty())
     {
-        newPath = pythonDir + L";" + pythonDir + L"\\Scripts;" + newPath;
+        newPath = newPath + L";" + depsPython + L";" + depsPython + L"\\Scripts";
 
         // Set PYTHONHOME if not explicitly specified
         if (GetEnvironmentVariableW(L"PYTHONHOME", NULL, 0) == 0)
         {
-            SetEnvironmentVariableW(L"PYTHONHOME", pythonDir.c_str());
+            SetEnvironmentVariableW(L"PYTHONHOME", depsPython.c_str());
         }
     }
 
@@ -368,10 +557,16 @@ int RunLauncher()
     // Configure QT_PLUGIN_PATH if not explicitly specified
     if (GetEnvironmentVariableW(L"QT_PLUGIN_PATH", NULL, 0) == 0)
     {
-        std::vector<std::wstring> candidatePluginDirs = {depsRoot + L"\\plugins", depsRoot + L"\\plugins\\Qt",
-                                                         depsRoot + L"\\installed\\x64-windows\\plugins", appDir + L"\\plugins\\Qt",
-                                                         appDir + L"\\..\\plugins\\Qt"};
         std::wstring pluginPathEnv;
+        std::vector<std::wstring> candidatePluginDirs;
+        if (!depsPySide.empty() && DirExists(depsPySide + L"\\plugins"))
+        {
+            candidatePluginDirs.push_back(depsPySide + L"\\plugins");
+        }
+        candidatePluginDirs.push_back(depsRoot + L"\\plugins");
+        candidatePluginDirs.push_back(depsRoot + L"\\plugins\\Qt");
+        candidatePluginDirs.push_back(appDir + L"\\plugins\\Qt");
+
         for (const auto& pDir : candidatePluginDirs)
         {
             if (DirExists(pDir))
@@ -386,6 +581,62 @@ int RunLauncher()
         if (!pluginPathEnv.empty())
         {
             SetEnvironmentVariableW(L"QT_PLUGIN_PATH", pluginPathEnv.c_str());
+        }
+    }
+
+    // Configure QtWebEngine and QML paths if PySide6 Qt is used
+    if (!depsPySide.empty())
+    {
+        if (GetEnvironmentVariableW(L"QTWEBENGINEPROCESS_PATH", NULL, 0) == 0)
+        {
+            std::wstring wep = depsPySide + L"\\QtWebEngineProcess.exe";
+            if (FileExists(wep))
+            {
+                SetEnvironmentVariableW(L"QTWEBENGINEPROCESS_PATH", wep.c_str());
+            }
+        }
+        if (GetEnvironmentVariableW(L"QTWEBENGINE_RESOURCES_PATH", NULL, 0) == 0)
+        {
+            std::wstring res = depsPySide + L"\\resources";
+            if (DirExists(res))
+            {
+                SetEnvironmentVariableW(L"QTWEBENGINE_RESOURCES_PATH", res.c_str());
+            }
+        }
+        if (GetEnvironmentVariableW(L"QTWEBENGINE_LOCALES_PATH", NULL, 0) == 0)
+        {
+            std::wstring loc = depsPySide + L"\\translations\\qtwebengine_locales";
+            if (DirExists(loc))
+            {
+                SetEnvironmentVariableW(L"QTWEBENGINE_LOCALES_PATH", loc.c_str());
+            }
+        }
+        if (GetEnvironmentVariableW(L"QML2_IMPORT_PATH", NULL, 0) == 0)
+        {
+            std::wstring qml = depsPySide + L"\\qml";
+            if (DirExists(qml))
+            {
+                SetEnvironmentVariableW(L"QML2_IMPORT_PATH", qml.c_str());
+                SetEnvironmentVariableW(L"QML_IMPORT_PATH", qml.c_str());
+            }
+        }
+    }
+
+    // Check for software OpenGL fallback flag or requirement
+    const wchar_t* rawCommandLine = GetCommandLineW();
+    if (rawCommandLine && (wcsstr(rawCommandLine, L"--software-gl") != nullptr || wcsstr(rawCommandLine, L"-software-gl") != nullptr))
+    {
+        SetEnvironmentVariableW(L"QT_OPENGL", L"software");
+        if (!FileExists(appDir + L"\\opengl32.dll"))
+        {
+            if (FileExists(appDir + L"\\opengl32sw.dll"))
+            {
+                CopyFileW((appDir + L"\\opengl32sw.dll").c_str(), (appDir + L"\\opengl32.dll").c_str(), FALSE);
+            }
+            else if (!depsPySide.empty() && FileExists(depsPySide + L"\\opengl32sw.dll"))
+            {
+                CopyFileW((depsPySide + L"\\opengl32sw.dll").c_str(), (appDir + L"\\opengl32.dll").c_str(), FALSE);
+            }
         }
     }
 
