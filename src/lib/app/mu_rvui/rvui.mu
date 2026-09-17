@@ -3667,6 +3667,54 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
     return files;
 }
 
+\: getDirectoryFromBrowser (string[]; )
+{
+    State state = data();
+
+    string[] files = string[]();
+
+    try
+    {
+        let F     = state.defaultOpenDir,
+            ddir  = state.config.lastOpenDir,
+            dir   = if (ddir eq nil && (F neq nil)) then F() else (if (ddir eq nil) then nil else ddir);
+
+        files = contractSequences(openMediaFileDialog(false,
+                                                      OneDirectory,
+                                                      "*",
+                                                      dir,
+                                                      "Open Directory"));
+
+        if (!files.empty()) state.config.lastOpenDir = path.dirname(files.front());
+    }
+    catch (...)
+    {
+        displayFeedback("Cancelled");
+        files.clear();
+    }
+
+    return files;
+}
+
+\: addDirectorySources (void; Event ev)
+{
+    State state = data();
+
+    let files = getDirectoryFromBrowser();
+    if (files.empty()) return;
+
+    try
+    {
+        addSources(files, "explicit", false, false);
+    }
+    catch (object obj)
+    {
+        displayFeedback("ERROR: open directory failed: %s" % string(obj));
+    }
+
+    redraw();
+}
+
 \: addMovieOrImageSources (void; Event ev, bool mark, bool merge)
 {
     State state = data();
@@ -6254,6 +6302,7 @@ global bool debugGC = false;
         subMenu("File", MenuItem[] {
             menuItem("New Session", "", "media_category", \: (void; Event ev) { newSession(nil); }, newSessionState),
             menuItem("Open...", "key-down--control--o", "media_category", addMovieOrImageSources(,true,false), enabledItem),
+            menuItem("Open Directory...", "", "media_category", addDirectorySources, enabledItem),
             menuItem("Merge...", "", "media_category", addMovieOrImageSources(,true,true), enabledItem),
             menuItem("Open into Layer...", "", "media_category", addMovieOrImage(,addToClosestSource(,"explicit"),false), sourcesExistState),
             menuItem("Open in New Session...", "key-down--control--O", "media_category", openMovieOrImage, newSessionState),

@@ -801,6 +801,38 @@ namespace Rv
         return filterEntries.join(";;");
     }
 
+    static vector<string> unpackPathsAndSequences(const QStringList& files)
+    {
+        vector<string> finalFiles;
+        for (int i = 0, size = files.size(); i < size; i++)
+        {
+            string v = pathConform(UTF8::qconvert(files.at(i)));
+            QFileInfo fi(UTF8::qconvert(v.c_str()));
+            if (fi.isDir())
+            {
+                TwkUtil::SequenceNameList seqs = TwkUtil::sequencesInDirectory(v, TwkUtil::GlobalExtensionPredicate, true, true, false);
+                if (!seqs.empty())
+                {
+                    for (size_t j = 0; j < seqs.size(); ++j)
+                    {
+                        if (seqs[j].empty() || seqs[j][0] == '.')
+                            continue;
+                        finalFiles.push_back(v + "/" + seqs[j]);
+                    }
+                }
+                else
+                {
+                    finalFiles.push_back(v);
+                }
+            }
+            else
+            {
+                finalFiles.push_back(v);
+            }
+        }
+        return finalFiles;
+    }
+
     static map<Session*, RvFileDialog*> sessionToMediaDialog;
 
     NODE_IMPLEMENTATION(openMediaFileDialog, Pointer)
@@ -894,34 +926,7 @@ namespace Rv
             {
                 saveLastDialogDirectory(files.first(), "MediaFileDialog");
 
-                vector<string> finalFiles;
-                for (int i = 0, size = files.size(); i < size; i++)
-                {
-                    string v = pathConform(UTF8::qconvert(files.at(i)));
-                    QFileInfo fi(UTF8::qconvert(v.c_str()));
-                    if (fi.isDir())
-                    {
-                        TwkUtil::SequenceNameList seqs =
-                            TwkUtil::sequencesInDirectory(v, TwkUtil::GlobalExtensionPredicate, true, true, false);
-                        if (!seqs.empty())
-                        {
-                            for (size_t j = 0; j < seqs.size(); ++j)
-                            {
-                                if (seqs[j].empty() || seqs[j][0] == '.')
-                                    continue;
-                                finalFiles.push_back(v + "/" + seqs[j]);
-                            }
-                        }
-                        else
-                        {
-                            finalFiles.push_back(v);
-                        }
-                    }
-                    else
-                    {
-                        finalFiles.push_back(v);
-                    }
-                }
+                vector<string> finalFiles = unpackPathsAndSequences(files);
 
                 DynamicArray* array = new DynamicArray(atype, 1);
                 array->resize(finalFiles.size());
@@ -1017,13 +1022,14 @@ namespace Rv
             QStringList files;
             files = dialog.selectedFiles();
 
-            DynamicArray* array = new DynamicArray(atype, 1);
-            array->resize(files.size());
+            vector<string> finalFiles = unpackPathsAndSequences(files);
 
-            for (int i = 0, size = files.size(); i < size; i++)
+            DynamicArray* array = new DynamicArray(atype, 1);
+            array->resize(finalFiles.size());
+
+            for (size_t i = 0, size = finalFiles.size(); i < size; i++)
             {
-                string v = pathConform(UTF8::qconvert(files.at(i)));
-                array->element<StringType::String*>(i) = stype->allocate(v);
+                array->element<StringType::String*>(i) = stype->allocate(finalFiles[i]);
             }
 
             NODE_RETURN((Pointer)array);
