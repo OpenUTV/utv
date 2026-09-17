@@ -1,6 +1,6 @@
 UTV
 
-Copyright (C) 2026  Makai Systems. All Rights Reserved.
+Copyright (C) 2026 Makai Systems and OpenUTV Contributors. All Rights Reserved.
 
 This project, UTV, is a derivative work of OpenRV.
 

@@ -34,7 +34,7 @@ SET_TARGET_PROPERTIES(
              MACOSX_BUNDLE_SHORT_VERSION_STRING "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
              MACOSX_BUNDLE_BUNDLE_VERSION "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"
              MACOSX_BUNDLE_COPYRIGHT
-             "Copyright © ${RV_VERSION_YEAR} OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software."
+             "Copyright © ${RV_VERSION_YEAR} Makai Systems and OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software."
              MACOSX_BUNDLE_ICON_FILE "${_target}.icns"
              MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
 )

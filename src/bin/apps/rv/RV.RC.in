@@ -25,7 +25,7 @@ BEGIN
             VALUE "FileDescription",  "@RV_UI_APPLICATION_NAME@ Professional Image and Sequence Player\0"
             VALUE "FileVersion",      "@RV_MAJOR_VERSION@.@RV_MINOR_VERSION@.@RV_REVISION_NUMBER@.0\0"
             VALUE "InternalName",     "@RV_INTERNAL_APPLICATION_NAME@\0"
-            VALUE "LegalCopyright",   "Copyright (C) @RV_VERSION_YEAR@ OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.\0"
+            VALUE "LegalCopyright",   "Copyright (C) @RV_VERSION_YEAR@ Makai Systems and OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.\0"
             VALUE "OriginalFilename", "utv.exe\0"
             VALUE "ProductName",      "@RV_UI_APPLICATION_NAME@\0"
             VALUE "ProductVersion",   "@RV_MAJOR_VERSION@.@RV_MINOR_VERSION@.@RV_REVISION_NUMBER@.0\0"

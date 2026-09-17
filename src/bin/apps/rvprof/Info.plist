@@ -43,7 +43,7 @@
 	<key>NSAppleScriptEnabled</key>
 	<string>0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.</string>
+	<string>Copyright © 2026 Makai Systems and OpenUTV Contributors. Portions Copyright 2022-2023 Autodesk, Inc., and 2001-2022 Tweak Software.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
