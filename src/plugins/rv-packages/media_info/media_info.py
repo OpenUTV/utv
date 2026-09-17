@@ -52,6 +52,32 @@ except ImportError:
         pass
 
 
+class MediaInfoTreeItem(QTreeWidgetItem):
+    """
+    Custom QTreeWidgetItem with natural case-insensitive and numeric-aware sorting,
+    preserving top-level category grouping in the Overview tab.
+    """
+
+    def __init__(self, parent, text_list, cat_idx=None):
+        super().__init__(parent, text_list)
+        self.cat_idx = cat_idx
+
+    def __lt__(self, other):
+        # Top-level category items stay ordered by category index
+        if self.cat_idx is not None and getattr(other, "cat_idx", None) is not None:
+            tree = self.treeWidget()
+            order = tree.header().sortIndicatorOrder() if tree else Qt.AscendingOrder
+            return self.cat_idx < other.cat_idx if order == Qt.AscendingOrder else self.cat_idx > other.cat_idx
+
+        col = self.treeWidget().sortColumn() if self.treeWidget() else 0
+        t1 = self.text(col).lower()
+        t2 = other.text(col).lower()
+        try:
+            return float(t1) < float(t2)
+        except ValueError:
+            return t1 < t2
+
+
 class MediaInfoDialog(QDialog):
     """
     Native Qt Media Information Dialog with selectable text, search filtering,
@@ -124,6 +150,14 @@ class MediaInfoDialog(QDialog):
                 border-right: 1px solid #333333;
                 font-weight: bold;
                 font-size: 12px;
+            }
+            QHeaderView::section:hover {
+                background-color: #2a2a2a;
+                color: #ffffff;
+            }
+            QHeaderView::section:pressed {
+                background-color: #007acc;
+                color: #ffffff;
             }
             QPushButton {
                 background-color: #383838;
@@ -222,6 +256,8 @@ class MediaInfoDialog(QDialog):
         self.overviewTree.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.overviewTree.setAlternatingRowColors(True)
         self.overviewTree.setRootIsDecorated(True)
+        self.overviewTree.setSortingEnabled(True)
+        self.overviewTree.sortByColumn(0, Qt.AscendingOrder)
         self.overviewTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.overviewTree.customContextMenuRequested.connect(self.showTreeContextMenu)
         self.tabs.addTab(self.overviewTree, "Overview")
@@ -233,6 +269,8 @@ class MediaInfoDialog(QDialog):
         self.allAttrsTree.header().setSectionResizeMode(1, QHeaderView.Stretch)
         self.allAttrsTree.setAlternatingRowColors(True)
         self.allAttrsTree.setRootIsDecorated(False)
+        self.allAttrsTree.setSortingEnabled(True)
+        self.allAttrsTree.sortByColumn(0, Qt.AscendingOrder)
         self.allAttrsTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.allAttrsTree.customContextMenuRequested.connect(self.showTreeContextMenu)
         self.tabs.addTab(self.allAttrsTree, "All Attributes")
@@ -489,7 +527,7 @@ class MediaInfoDialog(QDialog):
 
         self.currentSource = source
         attrs = self.getAttributesForSource(source)
-        self.currentAttrs = attrs or []
+        self.currentAttrs = sorted(attrs or [], key=lambda x: str(x[0] if x else "").lower())
         attrDict = dict(self.currentAttrs)
 
         # Update file header
@@ -497,10 +535,15 @@ class MediaInfoDialog(QDialog):
         self.fileLabel.setText(f"<b>File:</b> {filepath}")
 
         # Update Overview Tab
+        overviewCol = self.overviewTree.sortColumn()
+        if overviewCol < 0:
+            overviewCol = 0
+        overviewOrder = self.overviewTree.header().sortIndicatorOrder()
+        self.overviewTree.setSortingEnabled(False)
         self.overviewTree.clear()
 
-        def addCategory(name, items):
-            cat = QTreeWidgetItem(self.overviewTree, [name, ""])
+        def addCategory(name, items, cat_idx):
+            cat = MediaInfoTreeItem(self.overviewTree, [name, ""], cat_idx=cat_idx)
             cat.setExpanded(True)
             font = cat.font(0)
             font.setBold(True)
@@ -509,7 +552,7 @@ class MediaInfoDialog(QDialog):
             hasItems = False
             for k, v in items:
                 if v:
-                    QTreeWidgetItem(cat, [str(k), str(v)])
+                    MediaInfoTreeItem(cat, [str(k), str(v)])
                     hasItems = True
             if not hasItems:
                 cat.setHidden(True)
@@ -524,7 +567,7 @@ class MediaInfoDialog(QDialog):
             ("Resolution", attrDict.get("Resolution", attrDict.get("DisplayResolution", ""))),
             ("Channels", attrDict.get("Channels", "")),
         ]
-        addCategory("Container & General", containerItems)
+        addCategory("Container & General", containerItems, cat_idx=0)
 
         # Video Info
         videoItems = [
@@ -535,7 +578,7 @@ class MediaInfoDialog(QDialog):
             ("Video Tracks", attrDict.get("VideoTracks", "")),
             ("Rotation", attrDict.get("Rotation", "")),
         ]
-        addCategory("Video Stream", videoItems)
+        addCategory("Video Stream", videoItems, cat_idx=1)
 
         # Color & Mastering Info
         colorItems = [
@@ -546,7 +589,7 @@ class MediaInfoDialog(QDialog):
             ("Matrix", attrDict.get("Codec/Matrix", "")),
             ("Chroma Placement", attrDict.get("ColorSpace/ChromaPlacement", "")),
         ]
-        addCategory("Color & Mastering", colorItems)
+        addCategory("Color & Mastering", colorItems, cat_idx=2)
 
         # Camera & Optics (EXIF)
         cameraItems = [
@@ -580,7 +623,7 @@ class MediaInfoDialog(QDialog):
             ("GPS Coordinates", attrDict.get("GPS:Position", attrDict.get("GPS:Latitude", ""))),
             ("Software / Firmware", attrDict.get("Software", attrDict.get("Exif:Software", ""))),
         ]
-        addCategory("Camera & Optics (EXIF)", cameraItems)
+        addCategory("Camera & Optics (EXIF)", cameraItems, cat_idx=3)
 
         # Audio Info
         audioItems = [
@@ -591,13 +634,23 @@ class MediaInfoDialog(QDialog):
             ("Bits Per Sample", attrDict.get("AudioBitsPerSample", "")),
             ("Audio Language", attrDict.get("AudioLanguage", "")),
         ]
-        addCategory("Audio Stream", audioItems)
+        addCategory("Audio Stream", audioItems, cat_idx=4)
+
+        self.overviewTree.setSortingEnabled(True)
+        self.overviewTree.sortByColumn(overviewCol, overviewOrder)
 
         # Update All Attributes Tab
         self.populateAllAttributes()
 
     def populateAllAttributes(self):
+        col = self.allAttrsTree.sortColumn()
+        if col < 0:
+            col = 0
+        order = self.allAttrsTree.header().sortIndicatorOrder()
+
+        self.allAttrsTree.setSortingEnabled(False)
         self.allAttrsTree.clear()
+
         query = self.filterEdit.text().strip().lower()
         for key, val in self.currentAttrs:
             if not key and not val:
@@ -606,7 +659,10 @@ class MediaInfoDialog(QDialog):
             v_str = str(val)
             if query and (query not in k_str.lower() and query not in v_str.lower()):
                 continue
-            QTreeWidgetItem(self.allAttrsTree, [k_str, v_str])
+            MediaInfoTreeItem(self.allAttrsTree, [k_str, v_str])
+
+        self.allAttrsTree.setSortingEnabled(True)
+        self.allAttrsTree.sortByColumn(col, order)
 
     def filterAttributes(self, text):
         self.populateAllAttributes()
