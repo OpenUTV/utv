@@ -265,9 +265,9 @@ ELSEIF(RV_TARGET_WINDOWS)
       "perUser"
   )
 
-  # Ensure the Start Menu shortcut points to the UTV.bat launcher
+  # Ensure the Start Menu shortcut points to the native utv.exe launcher
   SET(CPACK_PACKAGE_EXECUTABLES
-      "UTV.bat" "UTV"
+      "utv" "UTV"
   )
 ELSEIF(RV_TARGET_DARWIN)
   SET(CPACK_GENERATOR

@@ -6,9 +6,15 @@
 
 INCLUDE(cxx_defaults)
 
-SET(_target
-    "utv"
-)
+IF(RV_TARGET_WINDOWS)
+  SET(_target
+      "utv_bin"
+  )
+ELSE()
+  SET(_target
+      "utv"
+  )
+ENDIF()
 
 SET(CMAKE_AUTOUIC
     ON
@@ -52,6 +58,11 @@ ADD_EXECUTABLE(
 )
 
 IF(RV_TARGET_WINDOWS)
+  SET_TARGET_PROPERTIES(
+    ${_target}
+    PROPERTIES OUTPUT_NAME "utv-bin"
+  )
+
   IF(CMAKE_BUILD_TYPE STREQUAL "Release")
     SET_PROPERTY(
       TARGET ${_target}
@@ -154,7 +165,54 @@ IF(RV_TARGET_WINDOWS)
   ADD_CUSTOM_COMMAND(
     TARGET ${_target}
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_target}> ${RV_STAGE_BIN_DIR}/rv.exe
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_target}> ${RV_STAGE_BIN_DIR}/rv-bin.exe
+    COMMENT "Creating rv-bin.exe copy in ${RV_STAGE_BIN_DIR}"
+  )
+
+  SET(_launcher_target
+      "utv"
+  )
+  ADD_EXECUTABLE(
+    ${_launcher_target}
+    UTVLauncherWin.cpp "${CMAKE_CURRENT_BINARY_DIR}/RV.rc"
+  )
+
+  SET_PROPERTY(
+    TARGET ${_launcher_target}
+    PROPERTY WIN32_EXECUTABLE True
+  )
+
+  TARGET_LINK_OPTIONS(${_launcher_target} PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/RV.manifest")
+
+  TARGET_LINK_LIBRARIES(
+    ${_launcher_target}
+    PRIVATE comctl32 shell32 shlwapi advapi32 user32 kernel32
+  )
+
+  SET_TARGET_PROPERTIES(
+    ${_launcher_target}
+    PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_BIN_DIR}"
+               OUTPUT_NAME "utv"
+  )
+
+  FOREACH(
+    OUTPUTCONFIG
+    ${CMAKE_CONFIGURATION_TYPES}
+  )
+    STRING(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    SET_TARGET_PROPERTIES(
+      ${_launcher_target}
+      PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${RV_STAGE_BIN_DIR}"
+    )
+  ENDFOREACH()
+
+  ADD_DEPENDENCIES(main_executable ${_launcher_target})
+  ADD_DEPENDENCIES(${_launcher_target} ${_target})
+
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_launcher_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_launcher_target}> ${RV_STAGE_BIN_DIR}/rv.exe
     COMMENT "Creating rv.exe copy in ${RV_STAGE_BIN_DIR}"
   )
 ELSEIF(RV_TARGET_LINUX)
