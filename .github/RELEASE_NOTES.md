@@ -1,61 +1,45 @@
-# OpenUTV 2026.5
+# OpenUTV 2026.6
 
-OpenUTV 2026.5 introduces high-performance SIMD PNG decoding via `libspng`, self-contained Windows deployment with bundled MSVC C++ runtime libraries, live timeline metadata tracking in the Qt Media Information inspector, expanded codec and container format support, native SVG vector rendering, and cross-platform GPU hardware acceleration.
-
----
-
-### Ultra-Fast SIMD PNG Sequence Decoding (`libspng`)
-
-- **Hardware-Accelerated PNG Reader (`io_png`)**: Integrated `libspng` directly into the PNG image reader with zero-copy decoding straight into OpenUTV's internal `FrameBuffer`.
-- **3–4× Playback Speedup**: Leverages hardware SIMD acceleration (NEON on ARM64 / Apple Silicon, AVX2 / SSSE3 on x86_64) for dramatic performance improvements when playing back heavy 8-bit and 16-bit PNG image sequences.
-- **Complete Color & Metadata Fidelity**: Fully preserves sRGB chunk flags, embedded ICC color profiles, gamma values, chromaticity data, and pixel aspect ratios.
-- **Intelligent Fallback Architecture**: Automatically and transparently falls back to `libpng` if `libspng` encounters non-standard or proprietary chunk structures.
+OpenUTV 2026.6 brings native camera RAW decode for Blackmagic RAW (`.braw`) and RED Digital Cinema (`.r3d`), auto-detected NDI 6 network video and audio streaming, a modernized cross-platform About inspector, Windows Explorer executable metadata, and synchronized cross-platform release packaging.
 
 ---
 
-### Dynamic Media Information & Timeline Inspector
+### Native Blackmagic RAW (`.braw`) Playback
 
-- **Live Viewport & Playhead Tracking**: The native Qt Media Information dialog (`Ctrl+I` / `Cmd+I`) now dynamically tracks the active image or video clip in the viewport as playback traverses multi-clip timelines, EDL cuts, and frame sequences.
-- **Timeline Media Dropdown**: Added an interactive **Media:** dropdown to the dialog header. Switch effortlessly between `✦ Auto (Active Viewport / Playhead)` and any individual clip loaded in the session graph (e.g. `sourceGroup000000 (shot_010.exr)`).
-- **Multi-Strategy Metadata Extraction**: Robust fallback querying resolves image attributes directly from leaf source nodes and proxy headers even for clips not currently drawn to the active framebuffer.
-- **Multi-Format Metadata Export**: Copy complete metadata attributes directly to the system clipboard with one click as **Formatted Text**, spreadsheet-ready **CSV**, or structured **JSON**.
-- **Live Search Filtering**: Instantly search and filter through hundreds of EXIF, color mastering, audio, and container attributes in real time.
+- **Dynamic BRAW Runtime Loader (`mio_braw`)**: Integrated a zero-recompile dynamic runtime loader and reader for Blackmagic RAW video media.
+- **Hardware-Accelerated & CPU Decode**: Automatically leverages host GPU acceleration for high-framerate playback of `.braw` camera takes with seamless fallback to multi-threaded CPU decode.
+- **Full Color & Metadata Preservation**: Reads embedded camera ISO, color temperature, tint, color gamut, and gamma curves directly into OpenUTV's imaging pipeline.
 
 ---
 
-### Native Scalable Vector Graphics (SVG) Support
+### Native RED Digital Cinema RAW (`.r3d`) Playback
 
-- **Built-in SVG Vector Reader (`io_svg`)**: Integrated a lightweight, zero-dependency native SVG rasterizer using NanoSVG.
-- **First-Class Timeline Integration**: Open, inspect, playback, and composite vector graphics (`.svg`) directly inside OpenUTV sessions, timeline stacks, and command-line tools (`utvls`, `utvio`) without external rendering utilities.
-
----
-
-### Expanded Video, Audio & Camera RAW Formats
-
-- **Extended Video Containers**: Added native playback support for WebM (`.webm`), Ogg Video (`.ogv`), MPEG Transport Streams (`.ts`, `.mts`, `.m2ts`), DVD VOB (`.vob`), Windows Media Video (`.wmv`, `.asf`), Y4M (`.y4m`), IVF (`.ivf`), and MPEG (`.mpeg`).
-- **High-Fidelity Audio Tracks**: Added playback for Free Lossless Audio Codec (`.flac`), Advanced Audio Coding (`.aac`), Opus (`.opus`), MPEG-4 Audio (`.m4a`), and Windows Media Audio (`.wma`).
-- **Expanded Professional Camera RAW**: Added Panasonic Lumix RAW (`.rw2`), Sony RAW (`.sr2`), Hasselblad RAW (`.3fr`), Phase One RAW (`.iiq`), Samsung RAW (`.srw`), and Nikon RAW (`.nrw`).
-- **Modern Image Formats**: Added Canon/Sony HEIF (`.hif`) and the Quite OK Image format (`.qoi`).
+- **Integrated RED R3D Movie Reader (`mio_r3d`)**: Added native support for REDCODE RAW media files using the official RED R3D SDK.
+- **High-Performance Wavelet Decompression**: Smooth playback and inspection of RED camera footage without external transcoding.
 
 ---
 
-### Cross-Platform Auto-GPU Acceleration & Intelligent Fallback
+### Out-of-the-Box NDI 6 Network Video Output
 
-- **Zero-Configuration Hardware Acceleration**: Automatically detects host GPU hardware and initializes hardware-accelerated decode/encode pipelines:
-  - **macOS**: Apple VideoToolbox with native ProRes, HEVC, and H.264 acceleration.
-  - **Linux**: NVIDIA NVDEC / NVENC with automatic fallback to Intel/AMD VAAPI.
-  - **Windows**: NVIDIA NVDECODE / NVENC with automatic fallback to Microsoft D3D11VA and DXVA2.
-- **Intelligent CPU Fallback**: Automatically and seamlessly falls back to high-performance multi-threaded CPU decoding if GPU allocation fails, VRAM limits are exceeded, or an unsupported codec profile is encountered.
-- **Hardware-Accelerated Apple Silicon HEIC**: Added native Apple Silicon CoreGraphics / ImageIO hardware decoding for HEIC/HEIF with full P3 and Rec.2020 color fidelity.
+- **Native NDI Video Device**: Broadcast active viewport playback, synced multi-channel audio, and timeline EDL cuts directly over the local network to NDI receivers (OBS Studio, NDI Studio Monitor, vMix, TriCaster, QTAKE, etc.).
+- **Zero-Configuration Auto-Discovery**: Automatically locates official NDI 6 runtime libraries across standard system locations on macOS (`/Library/NDI SDK for Apple/`), Windows (`C:\Program Files\NDI\NDI 6 Tools\Runtime\`), and Linux (`/usr/lib/x86_64-linux-gnu/`) without requiring manual environment variables.
+- **Flexible Presentation Output**: Supports 8-bit RGBA, 8-bit BGRA, and 16-bit YCbCr 4:2:2 (P216) for high-dynamic-range presentation workflows.
 
 ---
 
-### Windows Deployment & Modernization
+### Modernized Cross-Platform "About UTV" Inspector
 
-- **Self-Contained CRT Deployment**: Deployed modern MSVC C++ runtime redistributable DLLs (`msvcp140.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, etc.) app-locally into the Windows distribution package, eliminating missing DLL crashes on systems without pre-installed redistributables.
-- **Broader Dependency Discovery**: Expanded discovery logic in [`UTV.bat`](file:///Users/moliver/dev/openutv/utv/src/UTV.bat) to automatically search `%LOCALAPPDATA%` and root directories for `OpenUTVDeps`.
-- **Session Manager Qt Signals**: Fixed Qt 6.11 re-entrancy issues in edit modes (`Stack`, `Switch`, `SourceGroup`) by isolating checkbox state signals during UI updates.
-- **Robust Exception Handling**: Hardened Python RV command wrappers against untyped runtime exceptions across all event listeners.
+- **Compile-Time Dependency & License Manifest**: Replaced runtime dynamic Python probing with a fast, static dependency table generated at compile time.
+- **Crash Prevention**: Completely eliminates GIL synchronization crashes across Python 3.12–3.14 on macOS, Linux, and Windows.
+- **Complete Open-Source Attribution**: Accurately displays version numbers and license terms for all bundled and system libraries.
+
+---
+
+### Windows Executable Metadata & Alignment
+
+- **Windows Version Resource (`utv.rc`)**: Embedded complete Windows PE version information (`CompanyName`, `FileDescription`, `FileVersion`, `ProductVersion`, and application icon) into `utv.exe`.
+- **Explorer Properties Details**: Windows Explorer File Properties -> Details now accurately reports the product version, copyright, and description.
+- **Strict Version Synchronization**: Aligned CMake version definitions so that Windows console `-version` output, binary metadata, and Qt GUI report matching version numbers.
 
 ---
 
@@ -76,4 +60,10 @@ brew upgrade --cask utv
 
 #### macOS (Standalone Archive)
 
-Download `UTV-2026.5-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
+Download `UTV-2026.6-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
+
+#### Windows (Standalone Archive)
+
+1. Download `UTV-2026.6-windows-x64.zip` below and extract the archive (e.g. to `C:\Program Files\OpenUTV` or `C:\Users\<User>\Downloads\utv-windows-x64`).
+2. Download and extract the runtime dependencies from [OpenUTVDeps-26.3-win64.msi](https://github.com/OpenUTV/utv-dependencies/releases/tag/v26.3) or [OpenUTVDeps 26.4](https://github.com/OpenUTV/utv-dependencies/releases/tag/v26.4).
+3. Launch `bin\utv.exe`.
