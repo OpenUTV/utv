@@ -11,6 +11,13 @@
 #include <TwkUtil/File.h>
 #include <TwkUtil/PathConform.h>
 
+#include <QtCore/QSettings>
+#include <QtCore/QString>
+
+#if defined(__APPLE__)
+#include <MovieRED/MovieREDMetal.h>
+#endif
+
 #include <R3DSDK.h>
 
 #include <algorithm>
@@ -123,11 +130,28 @@ namespace TwkMovie
             std::string fullPath = dir + "/" + targetLib;
             if (fileExists(fullPath))
             {
-                R3DSDK::InitializeStatus st = R3DSDK::InitializeSdk(dir.c_str(), OPTION_RED_NONE);
+#if defined(__APPLE__)
+                unsigned int options = OPTION_RED_METAL;
+#else
+                unsigned int options = OPTION_RED_NONE;
+#endif
+                R3DSDK::InitializeStatus st = R3DSDK::InitializeSdk(dir.c_str(), options);
+                if (st != R3DSDK::ISInitializeOK && options != OPTION_RED_NONE)
+                {
+                    st = R3DSDK::InitializeSdk(dir.c_str(), OPTION_RED_NONE);
+                    options = OPTION_RED_NONE;
+                }
+
                 if (st == R3DSDK::ISInitializeOK)
                 {
                     s_redInitialized = true;
                     std::cout << "INFO: Initialized RED SDK from " << dir << ": " << R3DSDK::GetSdkVersion() << std::endl;
+#if defined(__APPLE__)
+                    if (options & OPTION_RED_METAL)
+                    {
+                        REDMetalGpu::init(dir.c_str());
+                    }
+#endif
                     return true;
                 }
             }
@@ -153,6 +177,8 @@ namespace TwkMovie
     {
         std::unique_ptr<R3DSDK::Clip> clip;
         std::mutex clipMutex;
+        Resolution clipResolution = HALF_RES;
+        bool useGpu = true;
         uint32_t fullWidth = 0;
         uint32_t fullHeight = 0;
         uint32_t decodeWidth = 0;
@@ -223,15 +249,52 @@ namespace TwkMovie
         if (m_impl->frameCount == 0)
             m_impl->frameCount = 1;
 
-        if (resolution == HALF_RES)
+        // Query user settings
+        QSettings settings;
+        settings.beginGroup("R3D");
+        QString resSetting = settings.value("resolution", "half").toString();
+        bool gpuSetting = settings.value("gpu_acceleration", true).toBool();
+        settings.endGroup();
+
+        if (resSetting == "full")
+            m_impl->clipResolution = FULL_RES;
+        else if (resSetting == "quarter")
+            m_impl->clipResolution = QUARTER_RES;
+        else if (resSetting == "eighth")
+            m_impl->clipResolution = EIGHTH_RES;
+        else
+            m_impl->clipResolution = HALF_RES;
+
+        m_impl->useGpu = gpuSetting;
+
+        // Environment variable override if specified
+        if (const char* args = getenv("MOVIERED_ARGS"))
+        {
+            std::string s(args);
+            if (s.find("resolution=full") != std::string::npos)
+                m_impl->clipResolution = FULL_RES;
+            else if (s.find("resolution=half") != std::string::npos)
+                m_impl->clipResolution = HALF_RES;
+            else if (s.find("resolution=quarter") != std::string::npos)
+                m_impl->clipResolution = QUARTER_RES;
+            else if (s.find("resolution=eighth") != std::string::npos)
+                m_impl->clipResolution = EIGHTH_RES;
+        }
+
+        if (m_impl->clipResolution == HALF_RES)
         {
             m_impl->decodeWidth = m_impl->fullWidth / 2;
             m_impl->decodeHeight = m_impl->fullHeight / 2;
         }
-        else if (resolution == QUARTER_RES)
+        else if (m_impl->clipResolution == QUARTER_RES)
         {
             m_impl->decodeWidth = m_impl->fullWidth / 4;
             m_impl->decodeHeight = m_impl->fullHeight / 4;
+        }
+        else if (m_impl->clipResolution == EIGHTH_RES)
+        {
+            m_impl->decodeWidth = m_impl->fullWidth / 8;
+            m_impl->decodeHeight = m_impl->fullHeight / 8;
         }
         else
         {
@@ -259,6 +322,7 @@ namespace TwkMovie
         m_info.fps = m_impl->fps;
         m_info.video = true;
         m_info.audio = false;
+        m_info.slowRandomAccess = true;
 
         if (pixelFormat == RGBA16 || pixelFormat == RGBA8)
             m_info.numChannels = 4;
@@ -305,31 +369,23 @@ namespace TwkMovie
 
         fb.restructure(w, h, 0, numChannels, dt, nullptr, nullptr, FrameBuffer::TOPLEFT);
 
-        R3DSDK::VideoDecodeJob job;
-        if (resolution == HALF_RES)
-            job.Mode = R3DSDK::DECODE_HALF_RES_PREMIUM;
-        else if (resolution == QUARTER_RES)
-            job.Mode = R3DSDK::DECODE_QUARTER_RES_GOOD;
+        R3DSDK::VideoDecodeMode jobMode;
+        if (m_impl->clipResolution == HALF_RES)
+            jobMode = R3DSDK::DECODE_HALF_RES_GOOD;
+        else if (m_impl->clipResolution == QUARTER_RES)
+            jobMode = R3DSDK::DECODE_QUARTER_RES_GOOD;
+        else if (m_impl->clipResolution == EIGHTH_RES)
+            jobMode = R3DSDK::DECODE_EIGHT_RES_GOOD;
         else
-            job.Mode = R3DSDK::DECODE_FULL_RES_PREMIUM;
+            jobMode = R3DSDK::DECODE_FULL_RES_PREMIUM;
 
-        size_t bytesPerPixel = 0;
+        R3DSDK::VideoPixelType jobPixelType;
         if (pixelFormat == RGB_HALF)
-        {
-            job.PixelType = R3DSDK::PixelType_HalfFloat_RGB_Interleaved;
-            bytesPerPixel = 3 * sizeof(uint16_t);
-        }
-        else if (pixelFormat == RGBA8)
-        {
-            job.PixelType = R3DSDK::PixelType_8Bit_BGRA_Interleaved;
-            bytesPerPixel = 4 * sizeof(uint8_t);
-        }
+            jobPixelType = R3DSDK::PixelType_HalfFloat_RGB_Interleaved;
         else
-        {
-            job.PixelType = R3DSDK::PixelType_16Bit_RGB_Interleaved;
-            bytesPerPixel = 3 * sizeof(uint16_t);
-        }
+            jobPixelType = R3DSDK::PixelType_16Bit_RGB_Interleaved;
 
+        size_t bytesPerPixel = (pixelFormat == RGBA8) ? (4 * sizeof(uint8_t)) : (3 * sizeof(uint16_t));
         size_t memNeeded = static_cast<size_t>(w) * static_cast<size_t>(h) * bytesPerPixel;
         size_t adjusted = memNeeded;
         unsigned char* imgBuffer = AlignedMalloc(adjusted);
@@ -338,19 +394,33 @@ namespace TwkMovie
             TWK_THROW_STREAM(IOException, "Failed to allocate memory for RED decode: " << memNeeded << " bytes");
         }
 
-        job.OutputBuffer = imgBuffer;
-        job.OutputBufferSize = memNeeded;
-
-        R3DSDK::DecodeStatus dstatus;
+        bool decodedOnGpu = false;
+#if defined(__APPLE__)
+        if (m_impl->useGpu && REDMetalGpu::isAvailable() && pixelFormat != RGBA8)
         {
-            std::lock_guard<std::mutex> lock(m_impl->clipMutex);
-            dstatus = m_impl->clip->DecodeVideoFrame(videoFrameNo, job);
+            decodedOnGpu = REDMetalGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded);
         }
+#endif
 
-        if (dstatus != R3DSDK::DSDecodeOK)
+        if (!decodedOnGpu)
         {
-            free(imgBuffer - adjusted);
-            TWK_THROW_STREAM(IOException, "RED decode failed for frame " << videoFrameNo << " (status: " << dstatus << ")");
+            R3DSDK::VideoDecodeJob job;
+            job.Mode = jobMode;
+            job.PixelType = (pixelFormat == RGBA8) ? R3DSDK::PixelType_8Bit_BGRA_Interleaved : jobPixelType;
+            job.OutputBuffer = imgBuffer;
+            job.OutputBufferSize = memNeeded;
+
+            R3DSDK::DecodeStatus dstatus;
+            {
+                std::lock_guard<std::mutex> lock(m_impl->clipMutex);
+                dstatus = m_impl->clip->DecodeVideoFrame(videoFrameNo, job);
+            }
+
+            if (dstatus != R3DSDK::DSDecodeOK)
+            {
+                free(imgBuffer - adjusted);
+                TWK_THROW_STREAM(IOException, "RED decode failed for frame " << videoFrameNo << " (status: " << dstatus << ")");
+            }
         }
 
         if (pixelFormat == RGBA16)
@@ -394,6 +464,11 @@ namespace TwkMovie
         fb.addAttribute(new StringAttribute("File", m_filename));
         fb.addAttribute(new StringAttribute("ColorSpace/Primaries", ColorSpace::RedWideGamut()));
         fb.addAttribute(new StringAttribute("ColorSpace/TransferFunction", ColorSpace::RedLogFilm()));
+        fb.addAttribute(new StringAttribute("RED/Acceleration", decodedOnGpu ? "Metal GPU" : "CPU"));
+        fb.addAttribute(new StringAttribute("RED/Resolution", (m_impl->clipResolution == FULL_RES)      ? "Full (1:1)"
+                                                              : (m_impl->clipResolution == HALF_RES)    ? "Half (1:2)"
+                                                              : (m_impl->clipResolution == QUARTER_RES) ? "Quarter (1:4)"
+                                                                                                        : "Eighth (1:8)"));
         fb.addAttribute(new StringAttribute("RED/ColorScience", m_impl->colorScience));
         fb.addAttribute(new IntAttribute("RED/FrameIndex", static_cast<int>(videoFrameNo)));
         fb.addAttribute(new IntAttribute("RED/TotalFrames", static_cast<int>(m_impl->frameCount)));

@@ -32,7 +32,8 @@ namespace TwkMovie
         {
             FULL_RES,
             HALF_RES,
-            QUARTER_RES
+            QUARTER_RES,
+            EIGHTH_RES
         };
 
         // MovieReader API

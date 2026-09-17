@@ -83,6 +83,8 @@ extern "C"
             TwkMovie::MovieRED::resolution = TwkMovie::MovieRED::HALF_RES;
         else if (res == "quarter")
             TwkMovie::MovieRED::resolution = TwkMovie::MovieRED::QUARTER_RES;
+        else if (res == "eighth")
+            TwkMovie::MovieRED::resolution = TwkMovie::MovieRED::EIGHTH_RES;
         else
             TwkMovie::MovieRED::resolution = TwkMovie::MovieRED::FULL_RES;
 

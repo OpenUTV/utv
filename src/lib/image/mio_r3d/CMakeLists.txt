@@ -17,9 +17,15 @@ ADD_LIBRARY(
   ${_sources}
 )
 
+FIND_PACKAGE(
+  ${RV_QT_PACKAGE_NAME}
+  COMPONENTS Core
+  REQUIRED
+)
+
 TARGET_LINK_LIBRARIES(
   ${_target}
-  PRIVATE MovieRED TwkMovie TwkFB Boost::program_options
+  PRIVATE MovieRED TwkMovie TwkFB Boost::program_options Qt::Core
 )
 
 RV_STAGE(TYPE "MOVIE_FORMAT" TARGET ${_target})
@@ -44,6 +50,12 @@ IF(RV_DEPS_RED_REDIST_DIR
         TARGET ${_target}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_rlib}" "${RV_STAGE_BIN_DIR}/${_rname}"
+      )
+    ELSEIF(RV_TARGET_LINUX)
+      ADD_CUSTOM_COMMAND(
+        TARGET ${_target}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_rlib}" "${RV_STAGE_LIB_DIR}/${_rname}"
       )
     ENDIF()
   ENDFOREACH()

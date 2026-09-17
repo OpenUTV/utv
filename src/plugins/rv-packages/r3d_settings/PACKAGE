@@ -1,0 +1,16 @@
+package: RED R3D Settings
+author: Makai Systems
+organization: OpenUTV
+version: 1.0
+rv: 3.12.10
+openrv: 1.0.0
+requires: ''
+system: true
+hidden: false
+
+modes: 
+  - file: r3d_settings
+    load: immediate
+
+description: |
+  <p>RED R3D multi-resolution wavelet decoding and GPU debayering controls.</p>
