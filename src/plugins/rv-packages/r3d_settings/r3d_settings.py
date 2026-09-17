@@ -4,6 +4,7 @@
 #
 
 from rv import commands as rvc
+from rv import extra_commands as rve
 from rv import rvtypes as rvt
 
 
@@ -68,11 +69,22 @@ class R3DSettingsMinorMode(rvt.MinorMode):
         except Exception:
             return "half"
 
+    def _reloadR3DSources(self):
+        """Reload any active FileSource nodes displaying R3D media so new decode settings take effect."""
+        for src in rvc.nodesOfType("RVFileSource"):
+            try:
+                movies = rvc.getStringProperty(f"{src}.media.movie")
+                if any(m.lower().endswith(".r3d") for m in movies):
+                    rvc.setStringProperty(f"{src}.media.movie", movies, True)
+            except Exception:
+                pass
+
     def setResolution(self, res):
         try:
             rvc.writeSettings("R3D", "resolution", res)
+            self._reloadR3DSources()
             rvc.reload()
-            rvc.displayFeedback(f"RED R3D Resolution: {res.capitalize()}", 2.0)
+            rve.displayFeedback(f"RED R3D Resolution: {res.capitalize()}", 2.0)
         except Exception as e:
             print(f"ERROR: Failed to set R3D resolution: {e}")
 
@@ -92,9 +104,10 @@ class R3DSettingsMinorMode(rvt.MinorMode):
         try:
             new_val = not self.isGPUEnabled()
             rvc.writeSettings("R3D", "gpu_acceleration", new_val)
+            self._reloadR3DSources()
             rvc.reload()
             state_str = "Enabled" if new_val else "Disabled"
-            rvc.displayFeedback(f"RED GPU Acceleration: {state_str}", 2.0)
+            rve.displayFeedback(f"RED GPU Acceleration: {state_str}", 2.0)
         except Exception as e:
             print(f"ERROR: Failed to toggle RED GPU acceleration: {e}")
 
@@ -104,5 +117,15 @@ class R3DSettingsMinorMode(rvt.MinorMode):
         return rvc.UncheckedMenuState
 
 
+_theMode = None
+
+
+def theMode():
+    global _theMode
+    return _theMode
+
+
 def createMode():
-    return R3DSettingsMinorMode()
+    global _theMode
+    _theMode = R3DSettingsMinorMode()
+    return _theMode

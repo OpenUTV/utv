@@ -759,7 +759,8 @@ namespace TwkMovie
             frame = m_info.start;
         if (frame > m_info.end)
             frame = m_info.end;
-        o << frame << ":" << m_filename;
+        o << frame << ":" << (m_impl ? static_cast<int>(m_impl->clipResolution) : 0) << ":" << (m_impl && m_impl->useGpu ? "gpu" : "cpu")
+          << ":" << m_filename;
     }
 
     //----------------------------------------------------------------------
