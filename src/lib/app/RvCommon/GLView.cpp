@@ -531,7 +531,8 @@ namespace Rv
             {
                 session->outputVideoDevice()->syncBuffers();
             }
-            else
+
+            if (m_videoDevice && m_videoDevice->widget() && m_videoDevice->widget()->context())
             {
                 m_videoDevice->widget()->context()->swapBuffers(m_videoDevice->widget()->context()->surface());
             }

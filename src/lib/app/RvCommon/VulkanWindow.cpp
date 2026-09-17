@@ -1869,7 +1869,8 @@ namespace Rv
             {
                 session->outputVideoDevice()->syncBuffers();
             }
-            else
+
+            if (m_videoDevice)
             {
                 m_videoDevice->syncBuffers();
             }

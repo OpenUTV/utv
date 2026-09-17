@@ -463,12 +463,9 @@ namespace Rv
                 {
                     output->syncBuffers();
                 }
-                else
-                {
-                    m_videoDevice->syncBuffers();
-                }
             }
-            else
+
+            if (m_videoDevice)
             {
                 m_videoDevice->syncBuffers();
             }
