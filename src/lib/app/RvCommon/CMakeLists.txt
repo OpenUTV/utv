@@ -64,9 +64,9 @@ SET(_sources
 # IF(RV_TARGET_DARWIN) LIST(APPEND _sources CGDesktopVideoDevice.cpp CGDesktopVideoDeviceArm.cpp DisplayLink.cpp) ENDIF()
 
 IF(RV_TARGET_DARWIN)
-  LIST(APPEND _sources DisplayLink.cpp MetalView.mm QTMetalVideoDevice.mm)
+  LIST(APPEND _sources DisplayLink.cpp MetalView.mm QTMetalVideoDevice.mm MacNativeFileDialog.mm)
   SET_SOURCE_FILES_PROPERTIES(
-    MetalView.mm
+    MetalView.mm MacNativeFileDialog.mm
     PROPERTIES COMPILE_FLAGS "-fobjc-arc"
   )
 ENDIF()
@@ -170,7 +170,15 @@ FILE(
   RvCommon/*.h
 )
 IF(NOT RV_TARGET_DARWIN)
-  LIST(REMOVE_ITEM _files_to_moc "RvCommon/DisplayLink.h" "RvCommon/CGDesktopVideoDevice.h" "RvCommon/MetalView.h" "RvCommon/QTMetalVideoDevice.h")
+  LIST(
+    REMOVE_ITEM
+    _files_to_moc
+    "RvCommon/DisplayLink.h"
+    "RvCommon/CGDesktopVideoDevice.h"
+    "RvCommon/MetalView.h"
+    "RvCommon/QTMetalVideoDevice.h"
+    "RvCommon/MacNativeFileDialog.h"
+  )
 ENDIF()
 IF(NOT
    (RV_TARGET_LINUX

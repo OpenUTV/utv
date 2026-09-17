@@ -66,6 +66,10 @@
 #include <TwkUtil/sgcHop.h>
 #include <TwkUtil/User.h>
 #include <TwkUtil/File.h>
+#include <TwkUtil/FrameUtils.h>
+#ifdef PLATFORM_DARWIN
+#include <RvCommon/MacNativeFileDialog.h>
+#endif
 #include <assert.h>
 #include <RvCommon/GLView.h> // WINDOWS NEEDS THIS LAST
 // #include <RvCommon/SequenceFileEngine.h>
@@ -830,6 +834,39 @@ namespace Rv
 #endif
 
             QStringList files;
+#ifdef PLATFORM_DARWIN
+            QStringList allowedExts;
+            if (filter && filter->c_str() && strlen(filter->c_str()) > 0)
+            {
+                QStringList parts = UTF8::qconvert(filter->c_str()).split("|");
+                for (int i = 0; i < parts.size(); i += 2)
+                {
+                    QString e = parts[i].trimmed();
+                    if (e.startsWith("*."))
+                        e = e.mid(2);
+                    else if (e.startsWith("."))
+                        e = e.mid(1);
+                    if (!e.isEmpty() && e != "*")
+                        allowedExts.append(e);
+                }
+            }
+            else
+            {
+                QStringList descriptions = mediaTraits.typeDescriptions();
+                for (int i = 2; i < descriptions.size(); ++i)
+                {
+                    QString e = mediaTraits.extension(i).trimmed();
+                    if (!e.isEmpty() && e != "*" && e != "&")
+                        allowedExts.append(e);
+                }
+            }
+
+            bool canFiles = (mode != RvFileDialog::OneDirectory && mode != RvFileDialog::OneDirectoryName);
+            bool canDirs = true;
+            bool multi = (mode == RvFileDialog::ManyExistingFiles || mode == RvFileDialog::ManyExistingFilesAndDirectories);
+
+            files = runMacNativeOpenDialog(caption, initialPath, allowedExts, canFiles, canDirs, multi);
+#else
             if (mode == RvFileDialog::OneDirectory || mode == RvFileDialog::OneDirectoryName)
             {
                 QString dir = QFileDialog::getExistingDirectory(parentWidget, caption, initialPath);
@@ -846,6 +883,7 @@ namespace Rv
                 if (!file.isEmpty())
                     files.append(file);
             }
+#endif
 
             if (QWidget* view = rvDoc->viewWidget())
             {
@@ -856,13 +894,41 @@ namespace Rv
             {
                 saveLastDialogDirectory(files.first(), "MediaFileDialog");
 
-                DynamicArray* array = new DynamicArray(atype, 1);
-                array->resize(files.size());
-
+                vector<string> finalFiles;
                 for (int i = 0, size = files.size(); i < size; i++)
                 {
                     string v = pathConform(UTF8::qconvert(files.at(i)));
-                    array->element<StringType::String*>(i) = stype->allocate(v);
+                    QFileInfo fi(UTF8::qconvert(v.c_str()));
+                    if (fi.isDir())
+                    {
+                        TwkUtil::SequenceNameList seqs =
+                            TwkUtil::sequencesInDirectory(v, TwkUtil::GlobalExtensionPredicate, true, true, false);
+                        if (!seqs.empty())
+                        {
+                            for (size_t j = 0; j < seqs.size(); ++j)
+                            {
+                                if (seqs[j].empty() || seqs[j][0] == '.')
+                                    continue;
+                                finalFiles.push_back(v + "/" + seqs[j]);
+                            }
+                        }
+                        else
+                        {
+                            finalFiles.push_back(v);
+                        }
+                    }
+                    else
+                    {
+                        finalFiles.push_back(v);
+                    }
+                }
+
+                DynamicArray* array = new DynamicArray(atype, 1);
+                array->resize(finalFiles.size());
+
+                for (size_t i = 0, size = finalFiles.size(); i < size; i++)
+                {
+                    array->element<StringType::String*>(i) = stype->allocate(finalFiles[i]);
                 }
 
                 NODE_RETURN((Pointer)array);
@@ -1015,6 +1081,24 @@ namespace Rv
 #endif
 
             QStringList files;
+#ifdef PLATFORM_DARWIN
+            QStringList allowedExts;
+            if (filter && filter->c_str() && strlen(filter->c_str()) > 0)
+            {
+                QStringList parts = UTF8::qconvert(filter->c_str()).split("|");
+                for (int i = 0; i < parts.size(); i += 2)
+                {
+                    QString e = parts[i].trimmed();
+                    if (e.startsWith("*."))
+                        e = e.mid(2);
+                    else if (e.startsWith("."))
+                        e = e.mid(1);
+                    if (!e.isEmpty() && e != "*")
+                        allowedExts.append(e);
+                }
+            }
+            files = runMacNativeOpenDialog(caption, initialPath, allowedExts, !directory, directory, multi);
+#else
             if (directory)
             {
                 QString dir = QFileDialog::getExistingDirectory(parentWidget, caption, initialPath);
@@ -1031,6 +1115,7 @@ namespace Rv
                 if (!file.isEmpty())
                     files.append(file);
             }
+#endif
 
             if (QWidget* view = rvDoc->viewWidget())
             {
