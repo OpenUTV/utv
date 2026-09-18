@@ -80,44 +80,45 @@ namespace
             return false;
         }
 
-        // 1. Locate C++ binary directory (must contain OpenColorIO, OpenEXR, Imath, avcodec, boost, or Qt)
-        std::wstring binPath = root + L"\\bin";
-        std::wstring vcpkgBinPath = root + L"\\installed\\x64-windows\\bin";
+        // 1. Locate C++ binary directory
+        std::wstring binCandidates[] = {root + L"\\bin", root + L"\\installed\\x64-windows\\bin", root};
         std::wstring foundBin;
 
-        const std::wstring markerDlls[] = {L"\\OpenColorIO_2_5.dll", L"\\OpenEXR-3_4.dll", L"\\Imath-3_2.dll", L"\\Qt6Core.dll"};
+        const std::wstring exactDlls[] = {L"\\OpenImageIO.dll", L"\\glew32.dll", L"\\OpenColorIO_2_5.dll", L"\\OpenEXR-3_4.dll",
+                                          L"\\Imath-3_2.dll",   L"\\zlib1.dll",  L"\\Qt6Core.dll"};
 
-        for (const auto& marker : markerDlls)
+        for (const auto& candBin : binCandidates)
         {
-            if (FileExists(binPath + marker))
+            for (const auto& dll : exactDlls)
             {
-                foundBin = binPath;
+                if (FileExists(candBin + dll))
+                {
+                    foundBin = candBin;
+                    break;
+                }
+            }
+            if (!foundBin.empty())
+            {
                 break;
             }
-            if (FileExists(vcpkgBinPath + marker))
-            {
-                foundBin = vcpkgBinPath;
-                break;
-            }
-        }
 
-        if (foundBin.empty())
-        {
-            WIN32_FIND_DATAW fd;
-            HANDLE h = FindFirstFileW((binPath + L"\\avcodec-*.dll").c_str(), &fd);
-            if (h != INVALID_HANDLE_VALUE)
+            // Pattern fallback
+            const wchar_t* patterns[] = {L"\\avcodec-*.dll", L"\\avutil-*.dll", L"\\OpenColorIO*.dll",
+                                         L"\\OpenEXR*.dll",  L"\\Imath*.dll",   L"\\boost_*.dll"};
+            for (const auto& pat : patterns)
             {
-                foundBin = binPath;
-                FindClose(h);
-            }
-            else
-            {
-                h = FindFirstFileW((vcpkgBinPath + L"\\avcodec-*.dll").c_str(), &fd);
+                WIN32_FIND_DATAW fd;
+                HANDLE h = FindFirstFileW((candBin + pat).c_str(), &fd);
                 if (h != INVALID_HANDLE_VALUE)
                 {
-                    foundBin = vcpkgBinPath;
+                    foundBin = candBin;
                     FindClose(h);
+                    break;
                 }
+            }
+            if (!foundBin.empty())
+            {
+                break;
             }
         }
 
@@ -126,10 +127,11 @@ namespace
             return false;
         }
 
-        // 2. Locate Qt6 binaries (either in PySide6 or in bin)
+        // 2. Locate Qt6 binaries (either in PySide6 or in bin or standard locations)
         std::wstring foundPySide;
         const std::wstring pySideCandidates[] = {root + L"\\tools\\python3\\Lib\\site-packages\\PySide6",
-                                                 root + L"\\installed\\x64-windows\\tools\\python3\\Lib\\site-packages\\PySide6"};
+                                                 root + L"\\installed\\x64-windows\\tools\\python3\\Lib\\site-packages\\PySide6",
+                                                 root + L"\\Lib\\site-packages\\PySide6"};
         for (const auto& cand : pySideCandidates)
         {
             if (FileExists(cand + L"\\Qt6Core.dll"))
@@ -144,6 +146,65 @@ namespace
             foundPySide = foundBin;
         }
 
+        // Fallback: check QTDIR environment variable
+        if (foundPySide.empty())
+        {
+            wchar_t qtDirEnv[MAX_PATH];
+            if (GetEnvironmentVariableW(L"QTDIR", qtDirEnv, MAX_PATH) > 0)
+            {
+                std::wstring cand(qtDirEnv);
+                if (FileExists(cand + L"\\bin\\Qt6Core.dll"))
+                {
+                    foundPySide = cand + L"\\bin";
+                }
+                else if (FileExists(cand + L"\\Qt6Core.dll"))
+                {
+                    foundPySide = cand;
+                }
+            }
+        }
+
+        // Fallback: search system PATH for Qt6Core.dll
+        if (foundPySide.empty())
+        {
+            wchar_t foundQtPath[MAX_PATH];
+            LPWSTR filePart = NULL;
+            DWORD spRes = SearchPathW(NULL, L"Qt6Core.dll", NULL, MAX_PATH, foundQtPath, &filePart);
+            if (spRes > 0 && spRes < MAX_PATH && filePart)
+            {
+                *filePart = L'\0';
+                size_t pLen = wcslen(foundQtPath);
+                if (pLen > 0 && foundQtPath[pLen - 1] == L'\\')
+                {
+                    foundQtPath[pLen - 1] = L'\0';
+                }
+                foundPySide = foundQtPath;
+            }
+        }
+
+        // Fallback: check C:\Qt\6.*\msvc2022_64\bin
+        if (foundPySide.empty())
+        {
+            WIN32_FIND_DATAW fd;
+            HANDLE hFind = FindFirstFileW(L"C:\\Qt\\6.*", &fd);
+            if (hFind != INVALID_HANDLE_VALUE)
+            {
+                do
+                {
+                    if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                    {
+                        std::wstring cand = L"C:\\Qt\\" + std::wstring(fd.cFileName) + L"\\msvc2022_64\\bin";
+                        if (FileExists(cand + L"\\Qt6Core.dll"))
+                        {
+                            foundPySide = cand;
+                            break;
+                        }
+                    }
+                } while (FindNextFileW(hFind, &fd));
+                FindClose(hFind);
+            }
+        }
+
         if (foundPySide.empty())
         {
             return false;
@@ -151,13 +212,40 @@ namespace
 
         // 3. Locate Python directory
         std::wstring foundPython;
-        const std::wstring pythonCandidates[] = {root + L"\\tools\\python3", root + L"\\installed\\x64-windows\\tools\\python3"};
+        const std::wstring pythonCandidates[] = {root + L"\\tools\\python3", root + L"\\installed\\x64-windows\\tools\\python3",
+                                                 root + L"\\python"};
         for (const auto& cand : pythonCandidates)
         {
             if (FileExists(cand + L"\\python.exe") || FileExists(cand + L"\\python314.dll") || DirExists(cand))
             {
                 foundPython = cand;
                 break;
+            }
+        }
+
+        if (foundPython.empty() && (FileExists(foundBin + L"\\python.exe") || FileExists(foundBin + L"\\python314.dll")))
+        {
+            foundPython = foundBin;
+        }
+
+        if (foundPython.empty())
+        {
+            wchar_t pyHome[MAX_PATH];
+            if (GetEnvironmentVariableW(L"PYTHONHOME", pyHome, MAX_PATH) > 0)
+            {
+                foundPython = pyHome;
+            }
+        }
+
+        if (foundPython.empty())
+        {
+            wchar_t foundPyPath[MAX_PATH];
+            LPWSTR filePart = NULL;
+            DWORD spRes = SearchPathW(NULL, L"python.exe", NULL, MAX_PATH, foundPyPath, &filePart);
+            if (spRes > 0 && spRes < MAX_PATH && filePart)
+            {
+                *filePart = L'\0';
+                foundPython = foundPyPath;
             }
         }
 
@@ -355,8 +443,8 @@ namespace
             }
         }
 
-        // 7. Check if OpenColorIO_2_5.dll or Qt6Core.dll is on the system PATH
-        const wchar_t* searchDlls[] = {L"OpenColorIO_2_5.dll", L"Qt6Core.dll"};
+        // 7. Check if OpenImageIO.dll, glew32.dll, OpenColorIO, or Qt6Core.dll is on the system PATH
+        const wchar_t* searchDlls[] = {L"OpenImageIO.dll", L"glew32.dll", L"OpenColorIO_2_5.dll", L"Qt6Core.dll"};
         for (const wchar_t* dll : searchDlls)
         {
             wchar_t foundPath[MAX_PATH];
@@ -380,6 +468,11 @@ namespace
                 if (CheckDepsDir(candRoot, outBinDir, outPySideDir, outPythonDir))
                 {
                     outRootDir = candRoot;
+                    return true;
+                }
+                if (CheckDepsDir(binStr, outBinDir, outPySideDir, outPythonDir))
+                {
+                    outRootDir = binStr;
                     return true;
                 }
             }
