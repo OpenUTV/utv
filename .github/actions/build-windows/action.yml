@@ -403,6 +403,7 @@ runs:
             $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
             if (Test-Path $SwGl) {
                 Copy-Item -Path $SwGl -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+                Copy-Item -Path $SwGl -Destination "_install\bin\opengl32.dll" -Force -ErrorAction SilentlyContinue
             }
             # Deploy PyOpenColorIO from OpenUTVDeps if present
             $OcioInDeps = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PyOpenColorIO"

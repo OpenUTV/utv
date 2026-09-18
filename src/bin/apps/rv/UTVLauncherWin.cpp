@@ -843,7 +843,11 @@ int RunLauncher()
 
     if (needsSoftwareGl)
     {
-        SetEnvironmentVariableW(L"QT_OPENGL", L"software");
+        // When running in headless/VM/RDP without an active ICD driver, provide Mesa llvmpipe
+        // as opengl32.dll in the application directory. Crucially, set QT_OPENGL to "desktop"
+        // (NOT "software") so Qt's QOpenGLWidget and UTV/GLEW both load and share this exact same
+        // opengl32.dll rather than Qt loading a disjoint opengl32sw.dll instance into the process.
+        SetEnvironmentVariableW(L"QT_OPENGL", L"desktop");
         if (!FileExists(targetOpengl))
         {
             if (FileExists(appDir + L"\\opengl32sw.dll"))
@@ -859,10 +863,12 @@ int RunLauncher()
     else
     {
         // Native hardware GPU is available; remove software opengl32.dll if present so system GPU driver is used
-        if (FileExists(targetOpengl) && FileExists(appDir + L"\\opengl32sw.dll"))
+        if (FileExists(targetOpengl)
+            && (FileExists(appDir + L"\\opengl32sw.dll") || (!depsPySide.empty() && FileExists(depsPySide + L"\\opengl32sw.dll"))))
         {
             DeleteFileW(targetOpengl.c_str());
         }
+        SetEnvironmentVariableW(L"QT_OPENGL", L"desktop");
     }
 
     // Locate core application executable: utv-bin.exe (or rv-bin.exe)
