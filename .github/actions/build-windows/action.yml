@@ -156,11 +156,24 @@ runs:
                     & "$PythonPath\python.exe" "$env:TEMP\get-pip.py" --no-warn-script-location
                 }
 
-                # Ensure PySide6 is present in bundled Python
+                # Ensure PySide6 and opencolorio are present in bundled Python
                 $hasPySide = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('PySide6') else 'MISSING')" 2>$null
                 if ($hasPySide -ne "OK") {
-                    Write-Host "Installing PySide6-Essentials into bundled Python..."
-                    & "$PythonPath\python.exe" -m pip install "PySide6-Essentials==6.11.2" --no-warn-script-location
+                    Write-Host "Installing PySide6 into bundled Python..."
+                    if (Get-Command uv -ErrorAction SilentlyContinue) {
+                        uv pip install --python "$PythonPath\python.exe" "PySide6==6.11.2"
+                    } else {
+                        & "$PythonPath\python.exe" -m pip install "PySide6==6.11.2" --no-warn-script-location
+                    }
+                }
+                $hasOcio = & "$PythonPath\python.exe" -c "import importlib.util; print('OK' if importlib.util.find_spec('PyOpenColorIO') else 'MISSING')" 2>$null
+                if ($hasOcio -ne "OK") {
+                    Write-Host "Installing opencolorio into bundled Python..."
+                    if (Get-Command uv -ErrorAction SilentlyContinue) {
+                        uv pip install --python "$PythonPath\python.exe" "opencolorio>=2.5.0"
+                    } else {
+                        & "$PythonPath\python.exe" -m pip install "opencolorio>=2.5.0" --no-warn-script-location
+                    }
                 }
             } else {
                 Write-Error "Bundled Python not found at $PythonPath"
@@ -390,6 +403,30 @@ runs:
             $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
             if (Test-Path $SwGl) {
                 Copy-Item -Path $SwGl -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            }
+            # Deploy PyOpenColorIO from OpenUTVDeps if present
+            $OcioInDeps = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PyOpenColorIO"
+            if (Test-Path $OcioInDeps) {
+                Write-Host "Deploying PyOpenColorIO from OpenUTVDeps to _install\PlugIns\Python..."
+                New-Item -ItemType Directory -Force -Path "_install\PlugIns\Python" | Out-Null
+                Copy-Item -Path $OcioInDeps -Destination "_install\PlugIns\Python\PyOpenColorIO" -Recurse -Force -ErrorAction SilentlyContinue
+                $OcioDll = Join-Path $OcioInDeps "bin\OpenColorIO_2_5.dll"
+                if (Test-Path $OcioDll) {
+                    Copy-Item -Path $OcioDll -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+                }
+            }
+        }
+        # Fallback: Deploy PyOpenColorIO from bundled Python site-packages
+        if (-not (Test-Path "_install\PlugIns\Python\PyOpenColorIO")) {
+            $OcioPkg = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps*", "$env:pythonLocation" -Recurse -Directory -Filter "PyOpenColorIO" -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($OcioPkg) {
+                Write-Host "Deploying PyOpenColorIO from $($OcioPkg.FullName) to _install\PlugIns\Python..."
+                New-Item -ItemType Directory -Force -Path "_install\PlugIns\Python" | Out-Null
+                Copy-Item -Path $OcioPkg.FullName -Destination "_install\PlugIns\Python\PyOpenColorIO" -Recurse -Force -ErrorAction SilentlyContinue
+                $OcioDll = Join-Path $OcioPkg.FullName "bin\OpenColorIO_2_5.dll"
+                if (Test-Path $OcioDll) {
+                    Copy-Item -Path $OcioDll -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+                }
             }
         }
         if (-not (Test-Path "_install\bin\python3.dll") -and (Get-Command python.exe -ErrorAction SilentlyContinue)) {
