@@ -2,19 +2,44 @@ name: UTV Windows
 
 on:
   workflow_dispatch:
-  workflow_call:
     inputs:
+      attach_to_release:
+        description: 'Tag of existing release to attach Windows zip asset to (e.g. 2026.6)'
+        required: false
+        default: '2026.6'
+        type: string
       skip_deps_cache:
         type: string
         default: 'false'
       qt5_modules:
         type: string
+        default: ''
       full_matrix:
         type: string
         default: 'true'
       run_debug:
         type: string
         default: 'true'
+  workflow_call:
+    inputs:
+      attach_to_release:
+        type: string
+        default: ''
+      skip_deps_cache:
+        type: string
+        default: 'false'
+      qt5_modules:
+        type: string
+        default: ''
+      full_matrix:
+        type: string
+        default: 'true'
+      run_debug:
+        type: string
+        default: 'true'
+
+permissions:
+  contents: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -36,7 +61,11 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+
       - uses: ./.github/actions/build-windows
+        with:
+          version: ${{ inputs.attach_to_release || '2026.6' }}
+
       - name: Upload Windows Build Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -44,3 +73,17 @@ jobs:
           path: _install/
           retention-days: 7
 
+      - name: Package and Attach to Release
+        if: inputs.attach_to_release != ''
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $Ver = "${{ inputs.attach_to_release }}"
+          $ZipName = "UTV-$Ver-windows-x64.zip"
+          Write-Host "Packaging _install into $ZipName..."
+          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
+          Rename-Item -Path "_install" -NewName "utv-windows-x64"
+          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
+          Write-Host "Attaching $ZipName to release $Ver..."
+          gh release upload $Ver "_dist\$ZipName" --clobber
