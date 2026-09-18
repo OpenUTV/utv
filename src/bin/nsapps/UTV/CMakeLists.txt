@@ -149,22 +149,16 @@ FOREACH(
   CONFIGURE_FILE(${_png_file} ${RV_STAGE_RESOURCES_DIR} COPYONLY)
 ENDFOREACH()
 
-# Cross-platform helper scripts: update checker and diagnostics collector
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.py ${RV_STAGE_BIN_DIR}/openutv-diagnostics.py COPYONLY)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.py ${RV_STAGE_BIN_DIR}/openutv-check-updates.py COPYONLY)
-
-IF(WIN32)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.cmd ${RV_STAGE_BIN_DIR}/openutv-diagnostics.cmd COPYONLY)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.cmd ${RV_STAGE_BIN_DIR}/openutv-check-updates.cmd COPYONLY)
-ELSE()
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.py ${RV_STAGE_BIN_DIR}/openutv-diagnostics COPYONLY)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.py ${RV_STAGE_BIN_DIR}/openutv-check-updates COPYONLY)
+# macOS App Bundle resources: stage helper scripts into Resources
+IF(APPLE)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.py ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.py COPYONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.sh ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh COPYONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.py ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.py COPYONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.sh ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh COPYONLY)
   FILE(
     CHMOD
-    ${RV_STAGE_BIN_DIR}/openutv-diagnostics
-    ${RV_STAGE_BIN_DIR}/openutv-check-updates
-    ${RV_STAGE_BIN_DIR}/openutv-diagnostics.py
-    ${RV_STAGE_BIN_DIR}/openutv-check-updates.py
+    ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh
+    ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh
     PERMISSIONS
     OWNER_READ
     OWNER_WRITE
@@ -174,23 +168,4 @@ ELSE()
     WORLD_READ
     WORLD_EXECUTE
   )
-  IF(APPLE)
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.py ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.py COPYONLY)
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.sh ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh COPYONLY)
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.py ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.py COPYONLY)
-    CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.sh ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh COPYONLY)
-    FILE(
-      CHMOD
-      ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh
-      ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh
-      PERMISSIONS
-      OWNER_READ
-      OWNER_WRITE
-      OWNER_EXECUTE
-      GROUP_READ
-      GROUP_EXECUTE
-      WORLD_READ
-      WORLD_EXECUTE
-    )
-  ENDIF()
 ENDIF()

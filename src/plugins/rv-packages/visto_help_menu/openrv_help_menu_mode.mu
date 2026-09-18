@@ -147,6 +147,28 @@ class: UTVHelpMenuMinorMode : MinorMode
 
         if (runtime.build_os() == "WINDOWS")
         {
+            try
+            {
+                let pyhome = system.getenv("PYTHONHOME");
+                if (pyhome neq nil && pyhome != "")
+                {
+                    let p_home = io.path.join(pyhome, "python.exe");
+                    if (io.path.exists(p_home)) return p_home;
+                    let p_tools = io.path.join(pyhome, "tools/python3/python.exe");
+                    if (io.path.exists(p_tools)) return p_tools;
+                }
+
+                let depsRoot = system.getenv("OPENUTV_DEPS_ROOT");
+                if (depsRoot neq nil && depsRoot != "")
+                {
+                    let p_deps = io.path.join(depsRoot, "tools/python3/python.exe");
+                    if (io.path.exists(p_deps)) return p_deps;
+                    let p_deps_py = io.path.join(depsRoot, "python/python.exe");
+                    if (io.path.exists(p_deps_py)) return p_deps_py;
+                }
+            }
+            catch (...) { ; }
+
             return "python.exe";
         }
         else
@@ -168,6 +190,10 @@ class: UTVHelpMenuMinorMode : MinorMode
                 let dir = rv.substr(0, rv.size() - base.size());
                 let p_py = io.path.join(dir, scriptName + ".py");
                 if (io.path.exists(p_py)) return p_py;
+                let p_cmd = io.path.join(dir, scriptName + ".cmd");
+                if (io.path.exists(p_cmd)) return p_cmd;
+                let p_bat = io.path.join(dir, scriptName + ".bat");
+                if (io.path.exists(p_bat)) return p_bat;
                 let p = io.path.join(dir, scriptName);
                 if (io.path.exists(p)) return p;
                 let p_sh = io.path.join(dir, scriptName + ".sh");
@@ -243,6 +269,10 @@ class: UTVHelpMenuMinorMode : MinorMode
             if (script != "")
             {
                 runHelperScript(script, string[] { "--no-browser" });
+            }
+            else
+            {
+                print("WARNING: openutv-diagnostics helper script could not be found.\n");
             }
         }
         catch (...) { ; }

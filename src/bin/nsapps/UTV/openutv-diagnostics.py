@@ -115,16 +115,44 @@ def collect_system_info(diag_dir):
     elif sys_name == "Windows":
         lines.append("--- Windows System Info ---")
         lines.append(f"Windows Version: {platform.win32_ver()}")
-        lines.append(run_cmd(["cmd.exe", "/c", "wmic cpu get name,numberofcores,numberoflogicalprocessors"]))
-        lines.append(
-            run_cmd(
-                [
-                    "cmd.exe",
-                    "/c",
-                    "wmic path win32_VideoController get name,driverversion,adapterram,videomodedescription",
-                ]
-            )
+        
+        # Query CPU information via PowerShell CIM or WMIC fallback
+        ps_cpu = run_cmd(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-Command",
+                "Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, NumberOfLogicalProcessors | Format-List",
+            ]
         )
+        if ps_cpu and ("Name" in ps_cpu or "Intel" in ps_cpu or "AMD" in ps_cpu):
+            lines.append("--- CPU Info ---")
+            lines.append(ps_cpu.strip())
+        else:
+            lines.append(run_cmd(["cmd.exe", "/c", "wmic cpu get name,numberofcores,numberoflogicalprocessors"]))
+
+        # Query GPU / Video Controller information via PowerShell CIM or WMIC fallback
+        ps_gpu = run_cmd(
+            [
+                "powershell.exe",
+                "-NoProfile",
+                "-Command",
+                "Get-CimInstance Win32_VideoController | Select-Object Name, DriverVersion, AdapterRAM, VideoModeDescription | Format-List",
+            ]
+        )
+        if ps_gpu and "Name" in ps_gpu:
+            lines.append("--- Video Controller / GPU Info ---")
+            lines.append(ps_gpu.strip())
+        else:
+            lines.append(
+                run_cmd(
+                    [
+                        "cmd.exe",
+                        "/c",
+                        "wmic path win32_VideoController get name,driverversion,adapterram,videomodedescription",
+                    ]
+                )
+            )
 
         try:
             import ctypes
@@ -198,6 +226,14 @@ def collect_package_info(diag_dir):
         elif shutil.which("rpm"):
             lines.append("--- RPM Packages ---")
             lines.append(run_cmd(["sh", "-c", "rpm -qa '*qt*' '*ffmpeg*' '*vulkan*' | head -n 50"]))
+
+    elif sys_name == "Windows":
+        lines.append("--- OpenUTVDeps & Installed Environments ---")
+        deps_root = os.environ.get("OPENUTV_DEPS_ROOT", "")
+        if deps_root:
+            lines.append(f"OPENUTV_DEPS_ROOT: {deps_root}")
+        for p in sorted(glob.glob(r"C:\Program Files\OpenUTVDeps*")):
+            lines.append(f"Found Dependency Directory: {p}")
 
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

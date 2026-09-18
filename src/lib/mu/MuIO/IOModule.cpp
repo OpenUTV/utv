@@ -495,7 +495,11 @@ namespace Mu
         MuLangContext* c = static_cast<MuLangContext*>(p->context());
         const StringType::String* s = NODE_ARG_OBJECT(0, StringType::String);
 
+#ifdef _WIN32
+        String::size_type i = s->utf8().find_last_of("/\\");
+#else
         int i = s->utf8().rfind(delimiter);
+#endif
 
         if (i == string::npos)
         {
@@ -513,10 +517,21 @@ namespace Mu
         MuLangContext* c = static_cast<MuLangContext*>(p->context());
         const StringType::String* s = NODE_ARG_OBJECT(0, StringType::String);
 
+#ifdef _WIN32
+        String::size_type i = s->utf8().find_last_of("/\\");
+
+        if (i > 0 && i == s->size() - 1)
+        {
+            i = s->utf8().find_last_of("/\\", i - 1);
+        }
+#else
         String::size_type i = s->utf8().rfind(delimiter);
 
         if (i > 0 && i == s->size() - 1)
+        {
             i = s->utf8().rfind(delimiter, i - 1);
+        }
+#endif
 
         size_t size = s->size();
 
@@ -711,8 +726,10 @@ namespace Mu
         String ostr;
 
         ostr = s0->c_str();
-        if (ostr[ostr.size() - 1] != '/')
+        if (ostr.empty() || (ostr[ostr.size() - 1] != '/' && ostr[ostr.size() - 1] != '\\'))
+        {
             ostr += "/";
+        }
         ostr += s1->c_str();
 
         NODE_RETURN(c->stringType()->allocate(ostr));

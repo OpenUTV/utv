@@ -430,6 +430,13 @@ runs:
                 }
             }
         }
+        # Deploy helper scripts (diagnostics packager and update checker)
+        $HelperSrc = Join-Path $env:GITHUB_WORKSPACE "src\bin\nsapps\UTV"
+        if (Test-Path $HelperSrc) {
+            Write-Host "Deploying openutv-diagnostics and openutv-check-updates to _install\bin..."
+            Copy-Item -Path "$HelperSrc\openutv-diagnostics.*" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+            Copy-Item -Path "$HelperSrc\openutv-check-updates.*" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
+        }
         if (-not (Test-Path "_install\bin\python3.dll") -and (Get-Command python.exe -ErrorAction SilentlyContinue)) {
             $pyDir = Split-Path (Get-Command python.exe).Source
             if (Test-Path "$pyDir\python3.dll") {
