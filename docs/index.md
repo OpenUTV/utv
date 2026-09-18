@@ -7,6 +7,14 @@
 build_system/config_linux_rocky89
 build_system/config_macos
 build_system/config_windows
+build_system/rapid_build_windows
+```
+
+```{toctree}
+:maxdepth: 2
+:hidden:
+:caption: Architecture
+architecture/windows_runtime_architecture
 ```
 
 ```{toctree}

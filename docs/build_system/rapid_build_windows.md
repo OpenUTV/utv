@@ -41,3 +41,4 @@ The only hard prerequisite is **Internet Access** to download the various compon
 * **Bundled Python**: The script uses the Python 3.12 environment bundled inside the `OpenUTVDeps` MSI. This ensures your local environment perfectly matches the CI environment.
 * **Automatic Qt**: Qt is installed using the `aqt` tool. It includes modules like `qtwebengine`, `qtmultimedia`, and `qtquick3d`.
 * **Sccache**: The script will automatically detect and use `sccache` if it is present in your `PATH` to accelerate build times.
+* **Runtime Architecture**: For details on how the trampoline launcher (`utv.exe`), dynamic dependency discovery, and the OpenGL subsystem operate at runtime, see the [Windows Runtime Architecture](../architecture/windows_runtime_architecture.md).
