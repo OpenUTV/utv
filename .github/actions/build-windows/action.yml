@@ -51,16 +51,26 @@ runs:
         try {
             gh release download --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
         } catch {
-            Write-Warning "gh release download encountered an error, checking for direct download fallback..."
+            Write-Warning "gh release download encountered an error, checking fallback releases..."
         }
         $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
         if (-not $MsiFile) {
-            Write-Host "Downloading direct asset from GitHub Releases..."
-            Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.3/OpenUTVDeps-26.3-win64.msi" -OutFile "OpenUTVDeps-26.3-win64.msi"
-            $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
+            Write-Host "Searching recent releases in OpenUTV/utv-dependencies for an MSI package..."
+            $releases = gh release list --repo OpenUTV/utv-dependencies | ForEach-Object { ($_ -split "`t")[2] }
+            foreach ($rel in $releases) {
+                Write-Host "Checking release $rel..."
+                try {
+                    gh release download $rel --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
+                    $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
+                    if ($MsiFile) {
+                        Write-Host "Found MSI package in release $rel"
+                        break
+                    }
+                } catch { }
+            }
         }
         if (-not $MsiFile) {
-            Write-Error "Could not find or download OpenUTVDeps MSI asset."
+            Write-Error "Could not find or download OpenUTVDeps MSI asset from any release."
             exit 1
         }
         Write-Host "Installing MSI: $($MsiFile.FullName)..."
