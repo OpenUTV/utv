@@ -34,6 +34,7 @@
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "kernel32.lib")
+#pragma comment(lib, "gdi32.lib")
 
 #pragma comment( \
     linker,      \
@@ -71,6 +72,119 @@ namespace
         }
         PathRemoveFileSpecW(buffer.data());
         return std::wstring(buffer.data());
+    }
+
+    bool IsHardwareOpenGLAvailable()
+    {
+        // 1. Check if user explicitly requested software GL via environment variable
+        wchar_t envBuf[32];
+        if (GetEnvironmentVariableW(L"OPENUTV_SOFTWARE_GL", envBuf, 32) > 0
+            || GetEnvironmentVariableW(L"QT_OPENGL", envBuf, 32) > 0)
+        {
+            if (_wcsicmp(envBuf, L"software") == 0 || wcscmp(envBuf, L"1") == 0)
+            {
+                return false;
+            }
+        }
+
+        // 2. In a remote desktop (RDP) session without an active hardware ICD driver,
+        // standard RDP falls back to GDI Generic OpenGL 1.1 which crashes modern shaders and QtWebEngine.
+        bool hasHardwareIcd = false;
+        HKEY hKey = NULL;
+        if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\OpenGLDrivers", 0, KEY_READ, &hKey)
+            == ERROR_SUCCESS)
+        {
+            DWORD subkeys = 0;
+            DWORD values = 0;
+            if (RegQueryInfoKeyW(hKey, NULL, NULL, NULL, &subkeys, NULL, NULL, &values, NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+            {
+                if (subkeys > 0 || values > 0)
+                {
+                    hasHardwareIcd = true;
+                }
+            }
+            RegCloseKey(hKey);
+        }
+
+        if (GetSystemMetrics(SM_REMOTESESSION) != 0 && !hasHardwareIcd)
+        {
+            return false;
+        }
+
+        // 3. Probe OpenGL context to verify hardware acceleration
+        HMODULE hGL = LoadLibraryW(L"opengl32.dll");
+        if (!hGL)
+        {
+            return false;
+        }
+
+        typedef HGLRC(WINAPI * wglCreateContextFn)(HDC);
+        typedef BOOL(WINAPI * wglMakeCurrentFn)(HDC, HGLRC);
+        typedef BOOL(WINAPI * wglDeleteContextFn)(HGLRC);
+        typedef const GLubyte*(WINAPI * glGetStringFn)(GLenum);
+
+        wglCreateContextFn pWglCreateContext = reinterpret_cast<wglCreateContextFn>(GetProcAddress(hGL, "wglCreateContext"));
+        wglMakeCurrentFn pWglMakeCurrent = reinterpret_cast<wglMakeCurrentFn>(GetProcAddress(hGL, "wglMakeCurrent"));
+        wglDeleteContextFn pWglDeleteContext = reinterpret_cast<wglDeleteContextFn>(GetProcAddress(hGL, "wglDeleteContext"));
+        glGetStringFn pGlGetString = reinterpret_cast<glGetStringFn>(GetProcAddress(hGL, "glGetString"));
+
+        if (!pWglCreateContext || !pWglMakeCurrent || !pWglDeleteContext || !pGlGetString)
+        {
+            FreeLibrary(hGL);
+            return false;
+        }
+
+        HWND hWnd = CreateWindowW(L"STATIC", L"GLProbe", WS_POPUP, 0, 0, 1, 1, NULL, NULL, NULL, NULL);
+        if (!hWnd)
+        {
+            FreeLibrary(hGL);
+            return false;
+        }
+
+        HDC hDC = GetDC(hWnd);
+        PIXELFORMATDESCRIPTOR pfd;
+        ZeroMemory(&pfd, sizeof(pfd));
+        pfd.nSize = sizeof(pfd);
+        pfd.nVersion = 1;
+        pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+        pfd.iPixelType = PFD_TYPE_RGBA;
+        pfd.cColorBits = 32;
+
+        int pf = ChoosePixelFormat(hDC, &pfd);
+        if (!pf || !SetPixelFormat(hDC, pf, &pfd))
+        {
+            ReleaseDC(hWnd, hDC);
+            DestroyWindow(hWnd);
+            FreeLibrary(hGL);
+            return false;
+        }
+
+        HGLRC hRC = pWglCreateContext(hDC);
+        if (!hRC)
+        {
+            ReleaseDC(hWnd, hDC);
+            DestroyWindow(hWnd);
+            FreeLibrary(hGL);
+            return false;
+        }
+
+        bool hardwareOk = false;
+        if (pWglMakeCurrent(hDC, hRC))
+        {
+            const char* renderer = reinterpret_cast<const char*>(pGlGetString(0x1F01)); // GL_RENDERER
+            if (renderer && strstr(renderer, "GDI Generic") == nullptr)
+            {
+                hardwareOk = true;
+            }
+            pWglMakeCurrent(NULL, NULL);
+        }
+
+        pWglDeleteContext(hRC);
+        ReleaseDC(hWnd, hDC);
+        DestroyWindow(hWnd);
+        FreeLibrary(hGL);
+
+        return hardwareOk;
     }
 
     bool CheckDepsDir(const std::wstring& root, std::wstring& outBinDir, std::wstring& outPySideDir, std::wstring& outPythonDir)
@@ -715,21 +829,38 @@ int RunLauncher()
         }
     }
 
-    // Check for software OpenGL fallback flag or requirement
+    // Automatic Hardware / Software OpenGL Management
     const wchar_t* rawCommandLine = GetCommandLineW();
+    bool forceSoftwareGl = false;
     if (rawCommandLine && (wcsstr(rawCommandLine, L"--software-gl") != nullptr || wcsstr(rawCommandLine, L"-software-gl") != nullptr))
     {
+        forceSoftwareGl = true;
+    }
+
+    bool needsSoftwareGl = forceSoftwareGl || !IsHardwareOpenGLAvailable();
+    std::wstring targetOpengl = appDir + L"\\opengl32.dll";
+
+    if (needsSoftwareGl)
+    {
         SetEnvironmentVariableW(L"QT_OPENGL", L"software");
-        if (!FileExists(appDir + L"\\opengl32.dll"))
+        if (!FileExists(targetOpengl))
         {
             if (FileExists(appDir + L"\\opengl32sw.dll"))
             {
-                CopyFileW((appDir + L"\\opengl32sw.dll").c_str(), (appDir + L"\\opengl32.dll").c_str(), FALSE);
+                CopyFileW((appDir + L"\\opengl32sw.dll").c_str(), targetOpengl.c_str(), FALSE);
             }
             else if (!depsPySide.empty() && FileExists(depsPySide + L"\\opengl32sw.dll"))
             {
-                CopyFileW((depsPySide + L"\\opengl32sw.dll").c_str(), (appDir + L"\\opengl32.dll").c_str(), FALSE);
+                CopyFileW((depsPySide + L"\\opengl32sw.dll").c_str(), targetOpengl.c_str(), FALSE);
             }
+        }
+    }
+    else
+    {
+        // Native hardware GPU is available; remove software opengl32.dll if present so system GPU driver is used
+        if (FileExists(targetOpengl) && FileExists(appDir + L"\\opengl32sw.dll"))
+        {
+            DeleteFileW(targetOpengl.c_str());
         }
     }
 

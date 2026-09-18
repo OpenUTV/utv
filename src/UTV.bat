@@ -52,6 +52,17 @@ if defined PYSIDE_DIR (
 
 if not defined PYTHONHOME if defined PYTHON_DIR set "PYTHONHOME=%PYTHON_DIR%"
 
+:: Software OpenGL fallback for VM/RDP
+if not "%SESSIONNAME%"=="" if not "%SESSIONNAME%"=="Console" if not defined QT_OPENGL set "QT_OPENGL=software"
+if "%~1"=="--software-gl" set "QT_OPENGL=software"
+if "%~1"=="-software-gl" set "QT_OPENGL=software"
+if "%QT_OPENGL%"=="software" (
+    if not exist "%~dp0opengl32.dll" (
+        if exist "%~dp0opengl32sw.dll" copy /y "%~dp0opengl32sw.dll" "%~dp0opengl32.dll" >nul 2>&1
+        if not exist "%~dp0opengl32.dll" if defined PYSIDE_DIR if exist "!PYSIDE_DIR!\opengl32sw.dll" copy /y "!PYSIDE_DIR!\opengl32sw.dll" "%~dp0opengl32.dll" >nul 2>&1
+    )
+)
+
 :: Launch the actual UTV binary
 if exist "%~dp0utv-bin.exe" (
     start "" "%~dp0utv-bin.exe" %*
