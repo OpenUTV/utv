@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -121,7 +122,7 @@ namespace
         typedef HGLRC(WINAPI * wglCreateContextFn)(HDC);
         typedef BOOL(WINAPI * wglMakeCurrentFn)(HDC, HGLRC);
         typedef BOOL(WINAPI * wglDeleteContextFn)(HGLRC);
-        typedef const GLubyte*(WINAPI * glGetStringFn)(GLenum);
+        typedef const unsigned char*(WINAPI * glGetStringFn)(unsigned int);
 
         wglCreateContextFn pWglCreateContext = reinterpret_cast<wglCreateContextFn>(GetProcAddress(hGL, "wglCreateContext"));
         wglMakeCurrentFn pWglMakeCurrent = reinterpret_cast<wglMakeCurrentFn>(GetProcAddress(hGL, "wglMakeCurrent"));
