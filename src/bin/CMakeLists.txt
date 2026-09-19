@@ -14,7 +14,9 @@ ADD_SUBDIRECTORY(imgtools)
 ADD_SUBDIRECTORY(python)
 
 # Cross-platform helper scripts (diagnostics packager, update checker)
-SET(_HELPER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/nsapps/UTV")
+SET(_HELPER_SRC_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/nsapps/UTV"
+)
 CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-diagnostics.py ${RV_STAGE_BIN_DIR}/openutv-diagnostics.py COPYONLY)
 CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-check-updates.py ${RV_STAGE_BIN_DIR}/openutv-check-updates.py COPYONLY)
 

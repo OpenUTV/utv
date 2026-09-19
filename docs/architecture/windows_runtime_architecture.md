@@ -100,6 +100,7 @@ If no valid dependency tree is located, the launcher displays an interactive Win
 Once the dependency root is determined, the launcher configures the process environment before spawning `utv-bin.exe`:
 
 ### DLL Search Directories
+
 - Invokes `SetDllDirectoryW(depsBin)` and `AddDllDirectory()` with `LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS`.
 - Injects:
   - `depsRoot\bin` (or `depsRoot\installed\x64-windows\bin`)
@@ -109,18 +110,23 @@ Once the dependency root is determined, the launcher configures the process envi
   - `appDir`
 
 ### PATH Prepending
+
 Prepends `appDir`, `depsBin`, `depsPySide`, `depsPython`, and `depsPython\Scripts` to the active `PATH` environment variable.
 
 ### Python Environment
+
 - **`PYTHONHOME`**: Set to `depsPython` (e.g. `C:\Program Files\OpenUTVDeps 26.5\python`) if not already defined.
 - **PyOpenColorIO**: The Python module `PyOpenColorIO` must be placed in `PlugIns/Python/PyOpenColorIO` (containing `__init__.py` and `_PyOpenColorIO.pyd`). Without this, OCIO initialization fails with:
+
   ```text
   ModuleNotFoundError: No module named 'PyOpenColorIO'
   ERROR: python module ocio_source_setup could not be imported
   ```
 
 ### Qt 6 Plugin & Resource Variables
+
 If using PySide6's Qt distribution, the launcher ensures the following paths are populated:
+
 - `QT_PLUGIN_PATH`: Points to `depsPySide\plugins`, `depsRoot\plugins`, and `appDir\plugins\Qt`.
 - `QTWEBENGINEPROCESS_PATH`: Points to `depsPySide\QtWebEngineProcess.exe`.
 - `QTWEBENGINE_RESOURCES_PATH`: Points to `depsPySide\resources`.
@@ -141,12 +147,14 @@ OpenUTV relies heavily on modern OpenGL for timeline playback, color transforms 
 #### The Failure Mechanism
 
 During development of software OpenGL fallback, setting `QT_OPENGL=software` resulted in a severe rendering defect:
+
 - The Qt UI loaded correctly.
 - However, dragging an image (e.g. `Desk.exr`) into the viewport showed **no drag/drop overlay** ("Add Source to Session") and **a completely black/blank viewport**, despite the session successfully loading media into memory.
 
 #### Root Cause Analysis
 
 On Windows with Qt 6:
+
 1. When `QT_OPENGL=software` is set, Qt's Windows QPA plugin (`qwindows.dll`) explicitly calls `LoadLibraryW(L"opengl32sw.dll")` to create its OpenGL contexts.
 2. In contrast, `utv-bin.exe` and `glew32.dll` are linked against the standard Windows `opengl32.dll`.
 3. If Mesa llvmpipe was copied to `opengl32.dll` to satisfy UTV and GLEW, **two completely separate instances of Mesa llvmpipe ran concurrently within the same process**:
@@ -172,6 +180,7 @@ flowchart TD
 #### The Unified Solution
 
 Setting `QT_OPENGL=desktop` forces Qt's Windows QPA to call `LoadLibraryW(L"opengl32.dll")`. When software rendering is required:
+
 1. Mesa llvmpipe is placed in the application directory as `opengl32.dll`.
 2. `QT_OPENGL` is set to `desktop`.
 3. Both Qt and OpenUTV resolve their OpenGL symbols from the same DLL instance (`appDir\opengl32.dll`), ensuring shared contexts, texture IDs, and framebuffer objects operate seamlessly.
@@ -219,6 +228,7 @@ flowchart TD
    Creates a temporary 1x1 hidden window (`CreateWindowW(L"STATIC", ...)`), configures a pixel format, creates a WGL context, and queries `glGetString(GL_RENDERER)`. If the renderer contains `"GDI Generic"`, hardware acceleration is flagged as unavailable.
 
 ### Dynamic Switching Execution
+
 - **Hardware Mode**: Deletes any bundled `opengl32.dll` in the application directory. Windows then falls through to `System32\opengl32.dll`, which loads the native GPU ICD driver.
 - **Software Mode**: Deploys `opengl32sw.dll` as `appDir\opengl32.dll` and exports `QT_OPENGL=desktop`.
 

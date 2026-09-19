@@ -115,7 +115,7 @@ def collect_system_info(diag_dir):
     elif sys_name == "Windows":
         lines.append("--- Windows System Info ---")
         lines.append(f"Windows Version: {platform.win32_ver()}")
-        
+
         # Query CPU information via PowerShell CIM or WMIC fallback
         ps_cpu = run_cmd(
             [

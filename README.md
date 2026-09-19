@@ -71,7 +71,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ## Feature Comparison: OpenUTV vs. Upstream OpenRV
 
-| Feature / Capability | Upstream OpenRV | OpenUTV (2026.6+) |
+| Feature / Capability | Upstream OpenRV | OpenUTV (2026.7+) |
 | :--- | :--- | :--- |
 | **macOS Distribution** | Unsigned, manual build required, Gatekeeper blocks | **Signed & Apple Notarized**, instant `brew install --cask utv` |
 | **intelligent caching** | User must select cache behavior | **Intelligently sets cache behavior** based on media metadata |

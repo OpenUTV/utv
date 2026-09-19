@@ -79,8 +79,7 @@ namespace
     {
         // 1. Check if user explicitly requested software GL via environment variable
         wchar_t envBuf[32];
-        if (GetEnvironmentVariableW(L"OPENUTV_SOFTWARE_GL", envBuf, 32) > 0
-            || GetEnvironmentVariableW(L"QT_OPENGL", envBuf, 32) > 0)
+        if (GetEnvironmentVariableW(L"OPENUTV_SOFTWARE_GL", envBuf, 32) > 0 || GetEnvironmentVariableW(L"QT_OPENGL", envBuf, 32) > 0)
         {
             if (_wcsicmp(envBuf, L"software") == 0 || wcscmp(envBuf, L"1") == 0)
             {

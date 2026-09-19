@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       attach_to_release:
-        description: 'Tag of existing release to attach Windows zip asset to (e.g. 2026.6)'
+        description: 'Tag of existing release to attach Windows zip asset to (e.g. 2026.7)'
         required: false
-        default: '2026.6'
+        default: '2026.7'
         type: string
       skip_deps_cache:
         type: string
@@ -64,7 +64,7 @@ jobs:
 
       - uses: ./.github/actions/build-windows
         with:
-          version: ${{ inputs.attach_to_release || '2026.6' }}
+          version: ${{ inputs.attach_to_release || '2026.7' }}
 
       - name: Upload Windows Build Artifact
         uses: actions/upload-artifact@v4
