@@ -384,7 +384,7 @@ namespace Rv
         inferSequence = 0;
         autoRetime = 1;
         autoSetupACES = 0;
-        useNativeFileDialog = 0;
+        useNativeFileDialog = 1;
         aframesize = 0;
         acachesize = 2048;
         nukeSequence = 0;

@@ -627,7 +627,7 @@ namespace Rv
         }
         QSettings settings;
         settings.beginGroup("General");
-        bool val = settings.value("useNativeFileDialog", false).toBool();
+        bool val = settings.value("useNativeFileDialog", true).toBool();
         settings.endGroup();
         return val;
     }
