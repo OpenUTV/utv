@@ -246,24 +246,26 @@ jobs:
             echo "Signing PlugIns subcomponents"
             find "$APP_PATH/Contents/PlugIns" -type f ! -name "*.dylib" ! -name "*.so" -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
 
-            echo "Signing auxiliary executables in Contents/MacOS"
-            find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
-
-            echo "Signing any remaining Mach-O binaries in bundle"
-            find "$APP_PATH/Contents" -type f ! -name "$MAIN_EXE" ! -name "*.plist" | while read -r file; do
-              if file -b "$file" | grep -q "Mach-O"; then
+            echo "Signing any remaining Mach-O binaries in bundle (excluding Contents/MacOS)"
+            find "$APP_PATH/Contents" -path "$APP_PATH/Contents/MacOS" -prune -o -type f ! -name "*.plist" -print | while read -r file; do
+              if [ -f "$file" ] && file -b "$file" | grep -q "Mach-O"; then
                 echo "Signing Mach-O: $file"
                 codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$file"
               fi
             done
 
+            echo "Signing executables in Contents/MacOS with entitlements"
+            find "$APP_PATH/Contents/MacOS" -type f ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
             echo "Signing outer bundle UTV.app"
             codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
 
-            echo "--- Verifying signature ---"
+            echo "--- Verifying signature & entitlements ---"
             codesign --verify --deep --strict --verbose=2 "$APP_PATH"
             codesign -dvvv "$APP_PATH/Contents/MacOS/$MAIN_EXE"
             codesign -dvvv "$APP_PATH"
+            echo "Checking entitlements on UTV-bin:"
+            codesign -d --entitlements - "$APP_PATH/Contents/MacOS/UTV-bin" || true
 
             export COPYFILE_DISABLE=1
             find "$APP_PATH" -name "._*" -delete
