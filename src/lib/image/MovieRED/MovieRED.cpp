@@ -91,7 +91,9 @@ namespace TwkMovie
                 searchDirs.push_back(macosDir + "/../lib");
             }
         }
-        searchDirs.push_back("/Users/moliver/dev/openutv/proprietarySDKs/R3DSDKv9_2_1/Redistributable/mac");
+        searchDirs.push_back("/Applications/REDCINE-X Professional/RED PLAYER.app/Contents/MacOS");
+        searchDirs.push_back("/Applications/REDCINE-X Professional/REDCINE-X PRO.app/Contents/MacOS");
+        searchDirs.push_back("/Applications/RED PLAYER.app/Contents/MacOS");
         searchDirs.push_back("/Applications/REDCINE-X PRO/REDCINE-X PRO.app/Contents/MacOS");
         searchDirs.push_back("/Applications/REDCINE-X PRO/REDCINE-X PRO.app/Contents/Frameworks");
         searchDirs.push_back("/Library/Application Support/RED");
@@ -110,6 +112,9 @@ namespace TwkMovie
                 searchDirs.push_back(binDir + "\\PlugIns\\MovieFormats");
             }
         }
+        searchDirs.push_back("C:/Program Files/RED/RED PLAYER");
+        searchDirs.push_back("C:/Program Files/RED DIGITAL CINEMA/REDCINE-X PRO");
+        searchDirs.push_back("C:/Program Files/RED DIGITAL CINEMA/RED PLAYER");
         searchDirs.push_back("C:/Program Files/RED/REDCINE-X PRO");
         searchDirs.push_back("C:/Program Files/RED Digital Cinema");
 #elif defined(__linux__)
@@ -239,7 +244,7 @@ namespace TwkMovie
         if (!ensureREDInitialized())
         {
             TWK_THROW_STREAM(IOException, "Cannot open RED file: RED dynamic libraries (REDR3D) not found. "
-                                          "Please install RED SDK or set RED_SDK_PATH to the redistributable folder.");
+                                          "Please install RED PLAYER from https://www.red.com/downloads or set RED_SDK_PATH.");
         }
 
         m_filename = filename;

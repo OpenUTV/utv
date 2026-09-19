@@ -2,6 +2,8 @@
 # Copyright (C) 2026 The OpenUTV Contributors. All Rights Reserved. SPDX-License-Identifier: Apache-2.0
 #
 
+OPTION(RV_BUNDLE_RED_REDIST "Bundle proprietary RED dynamic libraries into application release" OFF)
+
 SET(_target
     "RV_DEPS_RED"
 )
@@ -10,8 +12,16 @@ SET(_version
 )
 
 SET(_red_candidates
-    "${RV_DEPS_RED_SDK_DIR}" "$ENV{RV_DEPS_RED_SDK_DIR}" "$ENV{RED_SDK_DIR}" "${CMAKE_SOURCE_DIR}/../proprietarySDKs/R3DSDKv9_2_1"
-    "${CMAKE_SOURCE_DIR}/../../proprietarySDKs/R3DSDKv9_2_1" "/Users/moliver/dev/openutv/proprietarySDKs/R3DSDKv9_2_1"
+    "${RV_DEPS_RED_SDK_DIR}"
+    "$ENV{RV_DEPS_RED_SDK_DIR}"
+    "$ENV{RED_SDK_DIR}"
+    "${CMAKE_SOURCE_DIR}/../openutv-vendor-sdks/RED/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/openutv-vendor-sdks/RED/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/../proprietarySDKs/RED/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/../proprietarySDKs/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/proprietarySDKs/RED/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/proprietarySDKs/R3DSDKv9_2_1"
+    "${CMAKE_SOURCE_DIR}/../../proprietarySDKs/R3DSDKv9_2_1"
 )
 
 SET(_red_sdk_root
