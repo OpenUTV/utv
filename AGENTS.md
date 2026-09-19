@@ -94,14 +94,25 @@ The launcher performs the following:
   - Added **File > Open Directory...** (`Ctrl+Shift+O` / `Cmd+Shift+O`).
   - Selecting directories in the file picker invokes unified sequence unpacking to load all image sequences and media within the folder recursively.
 
-### 2.6 macOS Notarization & Bundled Python Wheels
+### 2.6 macOS Notarization, Hardened Runtime & Codesigning Order
 
 - When Python wheels are installed via `requirements.txt` into `UTV.app/Contents/lib/python3.14/site-packages`, packages such as `opencolorio` bundle standalone CLI binaries under `PyOpenColorIO/bin/` (e.g. `ociocpuinfo`, `ocioconvert`).
 - **Apple Notarization Requirement**: Apple's Notary Service scans *every* Mach-O binary in the entire `.zip` archive. Unsigned CLI binaries or binaries missing a secure timestamp / hardened runtime will cause notarization rejection.
-- **Handling**:
   - OpenUTV only requires the in-process Python C-extension (`import PyOpenColorIO as OCIO`); the standalone CLI binaries are unnecessary inside the GUI application bundle.
   - `build.sh` and `build-and-release.yml` explicitly purge `bin/` directories inside `Contents/lib/**/site-packages/`.
-  - The macOS signing workflow scans for and signs all remaining Mach-O binaries in `Contents/` with `--options runtime --timestamp` before signing the outer bundle.
+- **Hardened Runtime & Library Validation (`com.apple.security.cs.disable-library-validation`)**:
+  - OpenUTV on macOS dynamically links against third-party and Homebrew libraries (such as Qt 6 in `/opt/homebrew`).
+  - Under Hardened Runtime (`--options runtime`), macOS dyld will reject loading non-Apple dylibs unless the process holds the `com.apple.security.cs.disable-library-validation` entitlement (defined in `src/bin/nsapps/UTV/entitlements.plist`).
+  - **Critical Signing Rule**: ALL executables in `Contents/MacOS` (especially `UTV-bin` and the `UTV` launcher) MUST be signed with `--entitlements "$ENTITLEMENTS"`.
+  - Any generic sweep to sign remaining Mach-O binaries in the bundle MUST prune `$APP_PATH/Contents/MacOS` (`find ... -path "$APP_PATH/Contents/MacOS" -prune -o ...`) so that `codesign --force` without entitlements NEVER touches or overwrites `UTV-bin`. Overwriting `UTV-bin` without entitlements immediately breaks dyld library loading on user machines with `EXC_CRASH (SIGABRT) / code signature not valid for use in process`.
+- **Strict Signing Order**:
+  1. Helper apps (`Contents/Helpers/*.app`)
+  2. Frameworks (`Contents/Frameworks/*.framework`)
+  3. Dynamic libraries and Python C-extensions (`*.dylib`, `*.so`)
+  4. PlugIns subcomponents (`Contents/PlugIns`)
+  5. Any remaining Mach-O binaries in `Contents` *outside* `Contents/MacOS`
+  6. All executables in `Contents/MacOS` (`UTV-bin`, `UTV`) WITH `--entitlements "$ENTITLEMENTS"`
+  7. Outer bundle (`UTV.app`) WITH `--entitlements "$ENTITLEMENTS"`
 
 ---
 
