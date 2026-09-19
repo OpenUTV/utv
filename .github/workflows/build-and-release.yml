@@ -226,6 +226,9 @@ jobs:
             rmdir "$APP_PATH/Contents/include" 2>/dev/null || true
             rmdir "$APP_PATH/Contents/src" 2>/dev/null || true
 
+            echo "--- Sanitizing Homebrew dynamic library links ---"
+            python3 "${PWD}/src/build/sanitize_homebrew_links.py" "$APP_PATH"
+
             echo "--- Signing nested components inside-out with Hardened Runtime ---"
             if [ -d "$APP_PATH/Contents/Helpers" ]; then
               find "$APP_PATH/Contents/Helpers" -maxdepth 1 -name "*.app" -type d 2>/dev/null | while read -r helper; do

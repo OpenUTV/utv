@@ -11,8 +11,8 @@ import subprocess
 import pathlib
 import re
 
-BREW_PREFIX = "/opt/homebrew"  # Default for Apple Silicon
-CELLAR_PATTERN = re.compile(rf"{BREW_PREFIX}/Cellar/([^/]+)/[^/]+/(.+)")
+BREW_PREFIX = os.environ.get("HOMEBREW_PREFIX", "/opt/homebrew" if os.uname().machine == "arm64" else "/usr/local")
+CELLAR_PATTERN = re.compile(rf"{re.escape(BREW_PREFIX)}/Cellar/([^/]+)/[^/]+/(.+)")
 
 
 def get_dependencies(binary_path):
@@ -35,7 +35,10 @@ def sanitize_binary(binary_path):
     changed = False
 
     for dep in deps:
-        match = CELLAR_PATTERN.match(dep)
+        current_dep = dep
+
+        # 1. Map /Cellar/<pkg>/<ver>/... paths to /opt/<pkg>/...
+        match = CELLAR_PATTERN.match(current_dep)
         if match:
             pkg_name = match.group(1)
             remaining_path = match.group(2)
@@ -43,14 +46,28 @@ def sanitize_binary(binary_path):
 
             # Verify stable path exists
             if os.path.exists(stable_path):
-                print(f"  Mapping: {dep} -> {stable_path}")
+                print(f"  Mapping Cellar link: {current_dep} -> {stable_path}")
                 try:
-                    subprocess.check_call(["install_name_tool", "-change", dep, stable_path, binary_path])
+                    subprocess.check_call(["install_name_tool", "-change", current_dep, stable_path, binary_path])
                     changed = True
+                    current_dep = stable_path
                 except subprocess.CalledProcessError as e:
                     print(f"  Error changing link: {e}")
             else:
-                print(f"  Warning: Stable path {stable_path} not found for {dep}")
+                print(f"  Warning: Stable path {stable_path} not found for {current_dep}")
+
+        # 2. Map versioned OpenJPH dylib (e.g. libopenjph.0.31.dylib) to unversioned symlink (libopenjph.dylib)
+        # This ensures OpenUTV remains compatible across Homebrew OpenJPH minor version updates
+        if "openjph" in current_dep and re.search(r"libopenjph\.[0-9.]+\.dylib", current_dep):
+            unversioned_jph = f"{BREW_PREFIX}/opt/openjph/lib/libopenjph.dylib"
+            if os.path.exists(unversioned_jph):
+                print(f"  Mapping OpenJPH versioned link: {current_dep} -> {unversioned_jph}")
+                try:
+                    subprocess.check_call(["install_name_tool", "-change", current_dep, unversioned_jph, binary_path])
+                    changed = True
+                    current_dep = unversioned_jph
+                except subprocess.CalledProcessError as e:
+                    print(f"  Error changing OpenJPH link: {e}")
 
     return changed
 
