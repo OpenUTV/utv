@@ -399,6 +399,8 @@ if [ -n "${PYTHON_STAGING_DIR}" ]; then
     else
         python3 -m pip install --target "${PYTHON_STAGING_DIR}" -r "${PROJECT_ROOT}/requirements.txt"
     fi
+    # Remove unnecessary CLI binaries from bundled site-packages (e.g. PyOpenColorIO/bin)
+    find "${PYTHON_STAGING_DIR}" -type d -name "bin" -exec rm -rf {} + 2>/dev/null || true
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then

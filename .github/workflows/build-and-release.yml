@@ -222,6 +222,7 @@ jobs:
             echo "--- Removing legacy symlinks, AppleDouble files, and empty directories from bundle ---"
             find "$APP_PATH/Contents/MacOS" -type l -delete
             find "$APP_PATH" -name "._*" -delete
+            find "$APP_PATH/Contents/lib" -type d -name "bin" -exec rm -rf {} + 2>/dev/null || true
             rmdir "$APP_PATH/Contents/include" 2>/dev/null || true
             rmdir "$APP_PATH/Contents/src" 2>/dev/null || true
 
@@ -247,6 +248,14 @@ jobs:
 
             echo "Signing auxiliary executables in Contents/MacOS"
             find "$APP_PATH/Contents/MacOS" -type f ! -name "$MAIN_EXE" ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
+            echo "Signing any remaining Mach-O binaries in bundle"
+            find "$APP_PATH/Contents" -type f ! -name "$MAIN_EXE" ! -name "*.plist" | while read -r file; do
+              if file -b "$file" | grep -q "Mach-O"; then
+                echo "Signing Mach-O: $file"
+                codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$file"
+              fi
+            done
 
             echo "Signing outer bundle UTV.app"
             codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"

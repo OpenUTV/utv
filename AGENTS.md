@@ -94,6 +94,15 @@ The launcher performs the following:
   - Added **File > Open Directory...** (`Ctrl+Shift+O` / `Cmd+Shift+O`).
   - Selecting directories in the file picker invokes unified sequence unpacking to load all image sequences and media within the folder recursively.
 
+### 2.6 macOS Notarization & Bundled Python Wheels
+
+- When Python wheels are installed via `requirements.txt` into `UTV.app/Contents/lib/python3.14/site-packages`, packages such as `opencolorio` bundle standalone CLI binaries under `PyOpenColorIO/bin/` (e.g. `ociocpuinfo`, `ocioconvert`).
+- **Apple Notarization Requirement**: Apple's Notary Service scans *every* Mach-O binary in the entire `.zip` archive. Unsigned CLI binaries or binaries missing a secure timestamp / hardened runtime will cause notarization rejection.
+- **Handling**:
+  - OpenUTV only requires the in-process Python C-extension (`import PyOpenColorIO as OCIO`); the standalone CLI binaries are unnecessary inside the GUI application bundle.
+  - `build.sh` and `build-and-release.yml` explicitly purge `bin/` directories inside `Contents/lib/**/site-packages/`.
+  - The macOS signing workflow scans for and signs all remaining Mach-O binaries in `Contents/` with `--options runtime --timestamp` before signing the outer bundle.
+
 ---
 
 ## 3. Versioning & Release Workflow
