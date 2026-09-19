@@ -67,7 +67,7 @@ jobs:
           version: ${{ inputs.attach_to_release || '2026.7' }}
 
       - name: Upload Windows Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: utv-windows-x64
           path: _install/
