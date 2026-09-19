@@ -114,6 +114,17 @@ The launcher performs the following:
   6. All executables in `Contents/MacOS` (`UTV-bin`, `UTV`) WITH `--entitlements "$ENTITLEMENTS"`
   7. Outer bundle (`UTV.app`) WITH `--entitlements "$ENTITLEMENTS"`
 
+### 2.7 Homebrew Dynamic Link Sanitization & Symlink Normalization
+
+- **Mach-O `LC_ID_DYLIB` Behavior**:
+  - macOS linkers (`ld64`/`dyld`) do not record the filename given on the command line; they copy the library's embedded install name (`LC_ID_DYLIB`).
+  - Homebrew formulas like OpenJPH (`openjph`) set their `LC_ID_DYLIB` to a versioned path (e.g. `/opt/homebrew/opt/openjph/lib/libopenjph.0.31.dylib`).
+  - Whenever Homebrew upgrades the package (e.g. from 0.31 to 0.32), the older dylib file is deleted from the user's system, causing plugins like `mio_ffmpeg.dylib` and `io_htj2k.dylib` to fail loading at runtime (`Library not loaded: libopenjph.0.31.dylib (no such file)`).
+- **Automated Normalization (`sanitize_homebrew_links.py`)**:
+  - `src/build/sanitize_homebrew_links.py` is invoked during `build.sh` and before codesigning in `build-and-release.yml`.
+  - It uses `install_name_tool -change` to rewrite Cellar paths to `/opt/homebrew/opt/...`.
+  - For OpenJPH, it automatically maps any versioned link (`libopenjph.*.dylib`) to the unversioned symlink `/opt/homebrew/opt/openjph/lib/libopenjph.dylib`. Because Homebrew always maintains this symlink to the currently installed version, OpenUTV remains compatible across Homebrew updates without crashing.
+
 ---
 
 ## 3. Versioning & Release Workflow
