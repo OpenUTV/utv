@@ -28,8 +28,7 @@ namespace TwkUtil
         : m_logger(nullptr)
     {
 #if defined(PLATFORM_DARWIN)
-        QString qLogDirPath =
-            QDir::homePath() + "/Library/Logs/" + QCoreApplication::organizationName() + "/";
+        QString qLogDirPath = QDir::homePath() + "/Library/Logs/" + QCoreApplication::organizationName() + "/";
 #else
         QString qLogDirPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/";
 #endif
@@ -58,17 +57,17 @@ namespace TwkUtil
             }
             else if (evFileLogSynchronous.getValue())
             {
-                m_logger =
-                    spdlog::rotating_logger_mt(name, logFilePath.append(name + ".log"), evFileLogSize.getValue(), evFileLogNumFiles.getValue())
-                        .get();
+                m_logger = spdlog::rotating_logger_mt(name, logFilePath.append(name + ".log"), evFileLogSize.getValue(),
+                                                      evFileLogNumFiles.getValue())
+                               .get();
 
                 m_logger->flush_on(spdlog::level::trace); // All message levels will
                                                           // be flush to disk
             }
             else
             {
-                m_logger = spdlog::rotating_logger_mt<spdlog::async_factory>(name, logFilePath.append(name + ".log"), evFileLogSize.getValue(),
-                                                                             evFileLogNumFiles.getValue())
+                m_logger = spdlog::rotating_logger_mt<spdlog::async_factory>(name, logFilePath.append(name + ".log"),
+                                                                             evFileLogSize.getValue(), evFileLogNumFiles.getValue())
                                .get();
                 m_logger->flush_on(spdlog::level::err);
             }
