@@ -109,25 +109,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         else
             echo "WARNING: Homebrew not found. Please install it first."
         fi
-    # Linux with Homebrew setup
-    elif command -v brew >/dev/null 2>&1 || [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-        if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ] && ! command -v brew >/dev/null 2>&1; then
-            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-        fi
-        echo "--- Installing Linux dependencies via Homebrew ---"
-        if command -v apt-get >/dev/null 2>&1; then
-            $SUDO apt-get update && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
-                build-essential curl git patchelf mold \
-                libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev \
-                libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
-                libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev \
-                libxkbcommon-dev libxkbcommon-x11-dev libffi-dev \
-                libasound2-dev libpulse-dev
-        fi
-        brew install --formula \
-            ninja pkg-config ccache glew doctest qt pyside \
-            ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
-            openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
     # RHEL / Rocky Setup
     elif command -v dnf >/dev/null 2>&1; then
         $SUDO dnf install -y epel-release dnf-plugins-core
@@ -195,7 +176,6 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 build-essential \
                 ca-certificates \
                 curl \
-                mold \
                 doctest-dev \
                 flex \
                 gh \
@@ -280,8 +260,6 @@ fi
 if [ ! -d "${VENV_DIR}" ]; then
     if [[ "$OSTYPE" == "darwin"* ]] && [ -x "/opt/homebrew/bin/python3" ]; then
         uv venv "${VENV_DIR}" --python "/opt/homebrew/bin/python3" --system-site-packages
-    elif [ -x "/home/linuxbrew/.linuxbrew/bin/python3" ]; then
-        uv venv "${VENV_DIR}" --python "/home/linuxbrew/.linuxbrew/bin/python3" --system-site-packages
     elif command -v python3 >/dev/null 2>&1; then
         uv venv "${VENV_DIR}" --python "$(command -v python3)" --system-site-packages
     else
@@ -299,31 +277,14 @@ fi
 echo "--- Locating Qt6 ---"
 if [ -z "$QT_HOME" ]; then
     if [[ "$OSTYPE" == "linux"* ]]; then
-        if command -v brew >/dev/null 2>&1 || [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]; then
-            if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ] && ! command -v brew >/dev/null 2>&1; then
-                eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-            fi
-            BREW_PREFIX=$(brew --prefix 2>/dev/null || echo "")
-            if [ -n "$BREW_PREFIX" ]; then
-                if [ -d "${BREW_PREFIX}/opt/qtbase/lib/cmake/Qt6" ]; then
-                    QT_HOME="${BREW_PREFIX}/opt/qtbase"
-                elif [ -d "${BREW_PREFIX}/opt/qt/lib/cmake/Qt6" ]; then
-                    QT_HOME="${BREW_PREFIX}/opt/qt"
-                elif [ -d "${BREW_PREFIX}/opt/qt@6/lib/cmake/Qt6" ]; then
-                    QT_HOME="${BREW_PREFIX}/opt/qt@6"
-                fi
-            fi
-        fi
+        QT_HOME=$(find /usr/lib64/qt6 /usr/lib/qt6 /usr/lib/x86_64-linux-gnu/qt6 ~/Qt*/6.* -maxdepth 4 -type d -path '*/gcc_64' 2>/dev/null | sort -V | tail -n 1)
         if [ -z "$QT_HOME" ]; then
-            QT_HOME=$(find /usr/lib64/qt6 /usr/lib/qt6 /usr/lib/x86_64-linux-gnu/qt6 ~/Qt*/6.* -maxdepth 4 -type d -path '*/gcc_64' 2>/dev/null | sort -V | tail -n 1)
-            if [ -z "$QT_HOME" ]; then
-                if [ -d "/usr/lib/x86_64-linux-gnu/qt6" ]; then
-                    QT_HOME="/usr/lib/x86_64-linux-gnu/qt6"
-                elif [ -d "/usr/lib64/qt6" ]; then
-                    QT_HOME="/usr/lib64/qt6"
-                else
-                    QT_HOME="/usr"
-                fi
+            if [ -d "/usr/lib/x86_64-linux-gnu/qt6" ]; then
+                QT_HOME="/usr/lib/x86_64-linux-gnu/qt6"
+            elif [ -d "/usr/lib64/qt6" ]; then
+                QT_HOME="/usr/lib64/qt6"
+            else
+                QT_HOME="/usr"
             fi
         fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
@@ -368,26 +329,14 @@ CMAKE_ARGS=(
     "-DRV_USE_SYSTEM_DEPS=ON"
 )
 
-# Linux Homebrew prefix injection
-if [[ "$OSTYPE" == "linux"* ]] && (command -v brew >/dev/null 2>&1 || [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ]); then
-    if [ -x "/home/linuxbrew/.linuxbrew/bin/brew" ] && ! command -v brew >/dev/null 2>&1; then
-        eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    fi
-    BREW_PREFIX=$(brew --prefix 2>/dev/null || echo "")
-    if [ -n "$BREW_PREFIX" ]; then
-        CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${BREW_PREFIX};${BREW_PREFIX}/opt/qt;${BREW_PREFIX}/opt/qtbase")
-        export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/opt/ffmpeg/lib/pkgconfig:$PKG_CONFIG_PATH"
-    fi
-fi
-
 # vcpkg fallback toolchain injection for missing Linux system dependencies
 if [ -f "${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" ]; then
     echo "Injecting vcpkg toolchain for system dependency fallbacks..."
     CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${PROJECT_ROOT}/vcpkg/scripts/buildsystems/vcpkg.cmake" "-DVCPKG_BUILD_TYPE=release")
 fi
 
-# On Ubuntu without Homebrew, OpenColorIO is installed to /usr/share/cmake, so we manually point it out
-if command -v apt-get >/dev/null 2>&1 && [ ! -d "/home/linuxbrew/.linuxbrew" ] && ! command -v brew >/dev/null 2>&1; then
+# On Ubuntu, OpenColorIO is installed to /usr/share/cmake, so we manually point it out
+if command -v apt-get >/dev/null 2>&1; then
     CMAKE_ARGS+=("-DOpenColorIO_DIR=/usr/share/cmake")
 fi
 

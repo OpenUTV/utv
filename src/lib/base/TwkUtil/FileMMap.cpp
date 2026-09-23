@@ -58,13 +58,7 @@ namespace TwkUtil
         {
             lseek(file, 0, SEEK_SET);
             unsigned char* p = new unsigned char[fileSize];
-            ssize_t bytesRead = read(file, p, fileSize);
-            if (bytesRead < 0)
-            {
-                delete[] p;
-                close(file);
-                TWK_THROW_EXC_STREAM("MMap read failed: " << strerror(errno) << ": " << filename);
-            }
+            read(file, p, fileSize);
             rawdata = p;
         }
     }
