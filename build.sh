@@ -118,7 +118,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         if command -v apt-get >/dev/null 2>&1; then
             $SUDO apt-get update && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
                 build-essential curl git patchelf \
-                libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev \
+                libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev \
                 libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
                 libxrandr-dev libxrender-dev libxkbcommon-dev libxkbcommon-x11-dev \
                 libasound2-dev libpulse-dev
