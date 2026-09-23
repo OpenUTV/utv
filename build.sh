@@ -117,7 +117,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
         echo "--- Installing Linux dependencies via Homebrew ---"
         if command -v apt-get >/dev/null 2>&1; then
             $SUDO apt-get update && DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y \
-                build-essential curl git patchelf \
+                build-essential curl git patchelf mold \
                 libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev \
                 libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
                 libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev \
@@ -195,6 +195,7 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 build-essential \
                 ca-certificates \
                 curl \
+                mold \
                 doctest-dev \
                 flex \
                 gh \
