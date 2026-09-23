@@ -125,7 +125,7 @@ jobs:
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
           cd _build/stage/app
-          ditto -c -k --keepParent UTV.app "../../_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
+          ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
 
       - name: Upload macOS Branch Artifact
@@ -219,7 +219,7 @@ jobs:
       - name: Install Homebrew dependencies
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          sudo apt-get update && sudo apt-get install -y build-essential patchelf libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxkbcommon-dev libxkbcommon-x11-dev libasound2-dev libpulse-dev
+          sudo apt-get update && sudo apt-get install -y build-essential patchelf libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxkbcommon-dev libxkbcommon-x11-dev libasound2-dev libpulse-dev
           brew install --formula \
                ninja pkg-config ccache glew doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \

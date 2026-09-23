@@ -14,7 +14,7 @@
 FIND_PATH(
   OSMESA_INCLUDE_DIR
   NAMES GL/osmesa.h
-  PATHS "${OSMESA_ROOT}/include" "$ENV{OSMESA_ROOT}/include"
+  PATHS "${OSMESA_ROOT}/include" "$ENV{OSMESA_ROOT}/include" /usr/include /usr/local/include
   DOC "OSMesa include directory"
 )
 MARK_AS_ADVANCED(OSMESA_INCLUDE_DIR)
@@ -22,7 +22,7 @@ MARK_AS_ADVANCED(OSMESA_INCLUDE_DIR)
 FIND_LIBRARY(
   OSMESA_LIBRARY
   NAMES OSMesa OSMesa16 OSMesa32
-  PATHS "${OSMESA_ROOT}/lib" "$ENV{OSMESA_ROOT}/lib"
+  PATHS "${OSMESA_ROOT}/lib" "$ENV{OSMESA_ROOT}/lib" /usr/lib /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/local/lib
   DOC "OSMesa library"
 )
 MARK_AS_ADVANCED(OSMESA_LIBRARY)

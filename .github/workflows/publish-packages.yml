@@ -173,13 +173,13 @@ jobs:
           $sha256 = (Get-FileHash -Path $tempZip -Algorithm SHA256).Hash.ToLower()
 
           # Update nuspec version
-          (Get-Content chocolatey\openutv.nuspec) -replace '<version>.*?</version>', "<version>$Version</version>" | Set-Content chocolatey\openutv.nuspec
+          (Get-Content chocolatey\openutv\openutv.nuspec) -replace '<version>.*?</version>', "<version>$Version</version>" | Set-Content chocolatey\openutv\openutv.nuspec
 
           # Update install script
-          (Get-Content chocolatey\tools\chocolateyInstall.ps1) `
+          (Get-Content chocolatey\openutv\tools\chocolateyInstall.ps1) `
             -replace 'url64\s*=\s*''.*?''', "url64         = '$Url'" `
-            -replace 'checksum64\s*=\s*''.*?''', "checksum64    = '$sha256'" | Set-Content chocolatey\tools\chocolateyInstall.ps1
+            -replace 'checksum64\s*=\s*''.*?''', "checksum64    = '$sha256'" | Set-Content chocolatey\openutv\tools\chocolateyInstall.ps1
 
-          choco pack chocolatey\openutv.nuspec --outputdirectory chocolatey
-          $nupkg = (Get-ChildItem chocolatey\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+          choco pack chocolatey\openutv\openutv.nuspec --outputdirectory chocolatey\openutv
+          $nupkg = (Get-ChildItem chocolatey\openutv\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
           choco push $nupkg --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
