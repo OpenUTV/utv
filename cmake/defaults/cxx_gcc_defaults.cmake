@@ -53,17 +53,7 @@ IF(RV_USE_MOLD)
 ENDIF()
 
 # Common options
-ADD_COMPILE_OPTIONS(
-  ${_verbose_invocation}
-  -fPIC
-  -fno-schedule-insns
-  -fno-schedule-insns2
-  ${__arch_options}
-  $<$<COMPILE_LANGUAGE:CXX>:-include>
-  $<$<COMPILE_LANGUAGE:CXX>:cstring>
-  $<$<COMPILE_LANGUAGE:CXX>:-include>
-  $<$<COMPILE_LANGUAGE:CXX>:cstdint>
-)
+ADD_COMPILE_OPTIONS(${_verbose_invocation} -fPIC -fno-schedule-insns -fno-schedule-insns2 ${__arch_options})
 
 IF(${CMAKE_BUILD_TYPE} STREQUAL "Release")
   # Release build specific options
