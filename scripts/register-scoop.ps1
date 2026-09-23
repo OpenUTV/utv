@@ -2,12 +2,13 @@
 .SYNOPSIS
     Registers and initializes the official Scoop bucket for OpenUTV.
 .DESCRIPTION
-    Creates or clones OpenUTV/scoop-utv, creates bucket/utv.json with
-    proper architecture, autoupdate, and shortcut rules, and pushes to GitHub.
+    Creates or clones OpenUTV/scoop-utv, creates bucket manifests for both
+    openutv-dependencies (MSI runtime) and openutv (application), and pushes to GitHub.
 #>
 [CmdletBinding()]
 param(
     [string]$Version = "2026.7",
+    [string]$DepsVersion = "26.5",
     [string]$RepoName = "OpenUTV/scoop-utv"
 )
 
@@ -54,7 +55,52 @@ Set-Location $tempDir
 # Ensure bucket directory exists
 New-Item -ItemType Directory -Force -Path "bucket" | Out-Null
 
-# 4. Fetch release asset info
+# 4. Manifest for openutv-dependencies
+Write-Host "Generating bucket\openutv-dependencies.json..." -ForegroundColor Yellow
+$depsMsiUrl = "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
+$depsSha = "2939e02f50d9c9877ed4615d9be35679491f37dfbd483fc7e793d71a0d365737"
+
+$depsManifest = @"
+{
+    "version": "$DepsVersion",
+    "description": "Compiled multimedia and VFX dependency toolchain (FFmpeg, Qt6, OpenEXR, OCIO, OIIO) for OpenUTV",
+    "homepage": "https://github.com/OpenUTV/utv-dependencies",
+    "license": "Apache-2.0",
+    "depends": "lessmsi",
+    "architecture": {
+        "64bit": {
+            "url": "$depsMsiUrl",
+            "hash": "$depsSha"
+        }
+    },
+    "installer": {
+        "script": [
+            "lessmsi x \"`$dir\\OpenUTVDeps-$DepsVersion-win64.msi\" \"`$dir\\unpacked\"",
+            "Get-ChildItem \"`$dir\\unpacked\\SourceDir\\OpenUTVDeps*\" | Copy-Item -Destination \"`$dir\" -Recurse -Force",
+            "Remove-Item -Recurse -Force \"`$dir\\unpacked\", \"`$dir\\OpenUTVDeps-$DepsVersion-win64.msi\""
+        ]
+    },
+    "env_add_path": "bin",
+    "env_set": {
+        "OPENUTV_DEPS_ROOT": "`$dir"
+    },
+    "checkver": {
+        "github": "https://github.com/OpenUTV/utv-dependencies",
+        "regex": "v([\\d.]+)"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/OpenUTV/utv-dependencies/releases/download/v`$version/OpenUTVDeps-`$version-win64.msi"
+            }
+        }
+    }
+}
+"@
+$depsManifestPath = Join-Path $tempDir "bucket\openutv-dependencies.json"
+$depsManifest | Set-Content -Path $depsManifestPath -Encoding UTF8
+
+# 5. Fetch UTV release asset info
 $assetUrl = "https://github.com/OpenUTV/utv/releases/download/$Version/UTV-$Version-windows-x64.zip"
 Write-Host "Calculating SHA256 for release $assetUrl..." -ForegroundColor Yellow
 $tempZip = Join-Path $env:TEMP "utv-test-sha.zip"
@@ -67,13 +113,14 @@ try {
     $sha256 = "SHA256_HASH_PLACEHOLDER"
 }
 
-# 5. Generate manifest JSON
+# 6. Generate UTV manifest JSON with dependency
 $manifest = @"
 {
     "version": "$Version",
     "description": "Lightweight and distributable framecycler and sequence viewer for VFX, animation, and digital media",
     "homepage": "https://github.com/OpenUTV/utv",
     "license": "Apache-2.0",
+    "depends": "openutv-dependencies",
     "architecture": {
         "64bit": {
             "url": "https://github.com/OpenUTV/utv/releases/download/$Version/UTV-$Version-windows-x64.zip",
@@ -102,23 +149,22 @@ $manifest = @"
 
 $manifestPath = Join-Path $tempDir "bucket\utv.json"
 $manifest | Set-Content -Path $manifestPath -Encoding UTF8
-Write-Host "Wrote manifest to $manifestPath" -ForegroundColor Green
+Write-Host "Wrote manifests to bucket\" -ForegroundColor Green
 
-# 6. Commit and Push
-git add bucket/utv.json
+# 7. Commit and Push
+git add bucket/openutv-dependencies.json bucket/utv.json
 $status = git status --porcelain
 if ($status) {
-    git commit -m "feat: initialize OpenUTV Scoop manifest for version $Version"
+    git commit -m "feat: initialize OpenUTV and OpenUTV Dependencies Scoop manifests"
     git push origin HEAD
-    Write-Host "Pushed initial manifest to $RepoName successfully!" -ForegroundColor Green
+    Write-Host "Pushed manifests to $RepoName successfully!" -ForegroundColor Green
 } else {
-    Write-Host "Manifest already up to date in repository." -ForegroundColor Yellow
+    Write-Host "Manifests already up to date in repository." -ForegroundColor Yellow
 }
 
-# 7. Print Installation Instructions
+# 8. Print Installation Instructions
 Write-Host "`n=== Installation Verification Instructions ===" -ForegroundColor Cyan
-Write-Host "Users can now install OpenUTV via Scoop with:" -ForegroundColor White
+Write-Host "Users can now install OpenUTV via Scoop with automatic dependency installation:" -ForegroundColor White
 Write-Host "  scoop bucket add openutv https://github.com/OpenUTV/scoop-utv" -ForegroundColor Green
 Write-Host "  scoop install openutv/utv" -ForegroundColor Green
-Write-Host "`nTo update in the future:" -ForegroundColor White
-Write-Host "  scoop update utv" -ForegroundColor Green
+Write-Host "`n(Scoop will automatically install openutv-dependencies first!)" -ForegroundColor Gray

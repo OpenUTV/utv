@@ -1,14 +1,16 @@
 <#
 .SYNOPSIS
-    Registers OpenUTV with the official Windows Package Manager (winget-pkgs).
+    Registers OpenUTV and OpenUTV Dependencies with the official Windows Package Manager (winget-pkgs).
 .DESCRIPTION
-    Installs wingetcreate if needed, generates package manifests for OpenUTV.UTV,
-    validates the manifest schema, and submits the initial Pull Request to microsoft/winget-pkgs.
+    Installs wingetcreate if needed, generates package manifests for OpenUTV.Dependencies (MSI)
+    and OpenUTV.UTV (Application zip), validates the manifest schema, and submits to microsoft/winget-pkgs.
 #>
 [CmdletBinding()]
 param(
-    [string]$Version = "2026.7",
-    [string]$PackageIdentifier = "OpenUTV.UTV",
+    [ValidateSet("App", "Dependencies", "Both")]
+    [string]$Target = "Both",
+    [string]$AppVersion = "2026.7",
+    [string]$DepsVersion = "26.5",
     [switch]$Submit = $false,
     [string]$Token = ""
 )
@@ -29,37 +31,40 @@ if (-not (Get-Command wingetcreate -ErrorAction SilentlyContinue)) {
     return
 }
 
-$installerUrl = "https://github.com/OpenUTV/utv/releases/download/$Version/UTV-$Version-windows-x64.zip"
-Write-Host "Target Release URL: $installerUrl" -ForegroundColor Green
-
-# 2. Run wingetcreate to generate or update manifests
-Write-Host "`nGenerating manifests for $PackageIdentifier version $Version..." -ForegroundColor Yellow
-$manifestOutputDir = Join-Path $env:TEMP "winget-manifests-$PackageIdentifier-$Version"
-New-Item -ItemType Directory -Force -Path $manifestOutputDir | Out-Null
-
-# Run wingetcreate new
-Write-Host "Launching wingetcreate wizard for initial package setup..." -ForegroundColor Cyan
-Write-Host "Recommended responses when prompted:" -ForegroundColor White
-Write-Host "  PackageIdentifier: $PackageIdentifier" -ForegroundColor Gray
-Write-Host "  PackageName: OpenUTV" -ForegroundColor Gray
-Write-Host "  Publisher: OpenUTV" -ForegroundColor Gray
-Write-Host "  License: Apache-2.0" -ForegroundColor Gray
-Write-Host "  ShortDescription: High-performance framecycler and sequence viewer for VFX and digital media" -ForegroundColor Gray
-Write-Host "  InstallerType: zip" -ForegroundColor Gray
-Write-Host "  NestedInstallerType: portable" -ForegroundColor Gray
-Write-Host "  NestedInstallerFile: bin\utv.exe" -ForegroundColor Gray
-
-if ($Submit) {
-    if ($Token) {
-        & wingetcreate new $installerUrl --out $manifestOutputDir --token $Token
+# 2. Register OpenUTV Dependencies (MSI)
+if ($Target -eq "Dependencies" -or $Target -eq "Both") {
+    $depsUrl = "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
+    Write-Host "`n--- Registering OpenUTV.Dependencies (v$DepsVersion) ---" -ForegroundColor Cyan
+    Write-Host "MSI URL: $depsUrl" -ForegroundColor Green
+    
+    $depsOutputDir = Join-Path $env:TEMP "winget-manifests-OpenUTV.Dependencies-$DepsVersion"
+    New-Item -ItemType Directory -Force -Path $depsOutputDir | Out-Null
+    
+    Write-Host "Generating manifests for OpenUTV.Dependencies..." -ForegroundColor Yellow
+    if ($Submit -and $Token) {
+        & wingetcreate new $depsUrl --out $depsOutputDir --token $Token
     } else {
-        & wingetcreate new $installerUrl --out $manifestOutputDir
-        Write-Host "`nTo submit to microsoft/winget-pkgs, run:" -ForegroundColor White
-        Write-Host "  wingetcreate submit $manifestOutputDir" -ForegroundColor Green
+        & wingetcreate new $depsUrl --out $depsOutputDir
+        Write-Host "To submit Dependencies manifest to microsoft/winget-pkgs, run:" -ForegroundColor White
+        Write-Host "  wingetcreate submit $depsOutputDir" -ForegroundColor Green
     }
-} else {
-    & wingetcreate new $installerUrl --out $manifestOutputDir
-    Write-Host "`nManifests generated in $manifestOutputDir" -ForegroundColor Green
-    Write-Host "To submit to microsoft/winget-pkgs, run:" -ForegroundColor White
-    Write-Host "  wingetcreate submit $manifestOutputDir" -ForegroundColor Green
+}
+
+# 3. Register OpenUTV (App)
+if ($Target -eq "App" -or $Target -eq "Both") {
+    $appUrl = "https://github.com/OpenUTV/utv/releases/download/$AppVersion/UTV-$AppVersion-windows-x64.zip"
+    Write-Host "`n--- Registering OpenUTV.UTV (v$AppVersion) ---" -ForegroundColor Cyan
+    Write-Host "App ZIP URL: $appUrl" -ForegroundColor Green
+
+    $appOutputDir = Join-Path $env:TEMP "winget-manifests-OpenUTV.UTV-$AppVersion"
+    New-Item -ItemType Directory -Force -Path $appOutputDir | Out-Null
+
+    Write-Host "Generating manifests for OpenUTV.UTV..." -ForegroundColor Yellow
+    if ($Submit -and $Token) {
+        & wingetcreate new $appUrl --out $appOutputDir --token $Token
+    } else {
+        & wingetcreate new $appUrl --out $appOutputDir
+        Write-Host "To submit App manifest to microsoft/winget-pkgs, run:" -ForegroundColor White
+        Write-Host "  wingetcreate submit $appOutputDir" -ForegroundColor Green
+    }
 }
