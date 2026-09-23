@@ -9,7 +9,8 @@
 param(
     [string]$Version = "2026.7",
     [string]$PackageIdentifier = "OpenUTV.UTV",
-    [switch]$Submit = $false
+    [switch]$Submit = $false,
+    [string]$Token = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,10 +50,16 @@ Write-Host "  NestedInstallerType: portable" -ForegroundColor Gray
 Write-Host "  NestedInstallerFile: bin\utv.exe" -ForegroundColor Gray
 
 if ($Submit) {
-    wingetcreate new $installerUrl --output $manifestOutputDir --submit
+    if ($Token) {
+        & wingetcreate new $installerUrl --out $manifestOutputDir --token $Token
+    } else {
+        & wingetcreate new $installerUrl --out $manifestOutputDir
+        Write-Host "`nTo submit to microsoft/winget-pkgs, run:" -ForegroundColor White
+        Write-Host "  wingetcreate submit $manifestOutputDir" -ForegroundColor Green
+    }
 } else {
-    wingetcreate new $installerUrl --output $manifestOutputDir
+    & wingetcreate new $installerUrl --out $manifestOutputDir
     Write-Host "`nManifests generated in $manifestOutputDir" -ForegroundColor Green
-    Write-Host "To submit to microsoft/winget-pkgs, re-run with -Submit or run:" -ForegroundColor White
+    Write-Host "To submit to microsoft/winget-pkgs, run:" -ForegroundColor White
     Write-Host "  wingetcreate submit $manifestOutputDir" -ForegroundColor Green
 }

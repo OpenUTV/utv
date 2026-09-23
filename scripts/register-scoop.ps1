@@ -25,18 +25,30 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     return
 }
 
-# 2. Check if repo exists, create if not
+# 2. Check if repo exists, create if not (safely without terminating on 404 stderr)
 Write-Host "Checking repository $RepoName..." -ForegroundColor Yellow
-$repoCheck = gh repo view $RepoName 2>&1
-if ($LASTEXITCODE -ne 0) {
+$repoExists = $false
+try {
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    $null = & gh repo view $RepoName 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $repoExists = $true
+    }
+    $ErrorActionPreference = $prevEAP
+} catch {
+    $repoExists = $false
+}
+
+if (-not $repoExists) {
     Write-Host "Repository $RepoName does not exist. Creating public repository..." -ForegroundColor Green
-    gh repo create $RepoName --public --description "Official Scoop bucket for OpenUTV" -y
+    & gh repo create $RepoName --public --description "Official Scoop bucket for OpenUTV" -y
 }
 
 # 3. Clone or setup working directory
 $tempDir = Join-Path $env:TEMP "scoop-utv-init-$(Get-Random)"
 Write-Host "Cloning $RepoName into $tempDir..." -ForegroundColor Yellow
-gh repo clone $RepoName $tempDir
+& gh repo clone $RepoName $tempDir
 Set-Location $tempDir
 
 # Ensure bucket directory exists

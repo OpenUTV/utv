@@ -16,9 +16,27 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "=== OpenUTV Chocolatey Package Registration ===" -ForegroundColor Cyan
 
-# 1. Ensure choco is available
+# 1. Ensure choco is available, checking common install paths
 if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-    Write-Error "Chocolatey CLI (choco.exe) is not installed or not in PATH. Please install from https://chocolatey.org/install"
+    # Check default Chocolatey installation directory
+    $chocoBin = "C:\ProgramData\chocolatey\bin"
+    if (Test-Path (Join-Path $chocoBin "choco.exe")) {
+        $env:Path = "$chocoBin;" + $env:Path
+        Write-Host "Located choco at $chocoBin (added to current session PATH)." -ForegroundColor Green
+    } else {
+        # Refresh environment variables from Registry
+        $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
+        $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+        $env:Path = "$machinePath;$userPath"
+    }
+}
+
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+    Write-Host "Chocolatey CLI (choco.exe) is not in PATH." -ForegroundColor Yellow
+    Write-Host "If you just installed Chocolatey, please restart your PowerShell terminal." -ForegroundColor White
+    Write-Host "Or install it from an elevated PowerShell with:" -ForegroundColor White
+    Write-Host "  Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))" -ForegroundColor Gray
+    Write-Error "Chocolatey CLI not found."
     return
 }
 
