@@ -17,6 +17,7 @@
 #include <TwkFB/Exception.h>
 #include <TwkFB/Operations.h>
 #include <algorithm>
+#include <cstring>
 #include <lcms2.h>
 #include <stl_ext/replace_alloc.h>
 
