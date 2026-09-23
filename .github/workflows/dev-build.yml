@@ -353,8 +353,14 @@ jobs:
 
   publish-dev-release:
     name: 5. Update dev-build Pre-Release
-    needs: [version, sign-macos, build-windows, build-linux]
-    if: always()
+    needs: [lint, version, sign-macos, build-windows, build-linux]
+    if: >-
+      needs.lint.result == 'success' &&
+      needs.version.result == 'success' &&
+      needs.sign-macos.result == 'success' &&
+      needs.build-windows.result == 'success' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled')
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository

@@ -505,9 +505,15 @@ jobs:
 
   release:
     name: 5. Publish Release
-    needs: [version, sign-macos, sign-windows, build-linux-ubuntu]
+    needs: [lint, version, sign-macos, sign-windows, build-linux-ubuntu]
     runs-on: ubuntu-latest
-    if: always() && inputs.create_release == true && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+    if: >-
+      inputs.create_release == true &&
+      needs.lint.result == 'success' &&
+      needs.version.result == 'success' &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
