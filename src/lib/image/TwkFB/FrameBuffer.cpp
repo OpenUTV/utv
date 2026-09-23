@@ -641,9 +641,8 @@ namespace TwkFB
                 default:
                     for (int i = 0; i < numChannels; ++i)
                     {
-                        char name[17];
-                        name[16] = 0;
-                        snprintf(name, 16, "Channel_%d", i);
+                        char name[32];
+                        snprintf(name, sizeof(name), "Channel_%d", i);
                         m_channelNames.push_back(name);
                     }
                     m_colorPermute[0] = 0;

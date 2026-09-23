@@ -25,6 +25,10 @@ ADD_COMPILE_OPTIONS(
   -msse2
   -mmmx
   -mfpmath=sse
+  $<$<COMPILE_LANGUAGE:CXX>:-include>
+  $<$<COMPILE_LANGUAGE:CXX>:cstring>
+  $<$<COMPILE_LANGUAGE:CXX>:-include>
+  $<$<COMPILE_LANGUAGE:CXX>:cstdint>
 )
 
 IF(${CMAKE_BUILD_TYPE} STREQUAL "Release")
