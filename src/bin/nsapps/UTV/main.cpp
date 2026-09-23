@@ -297,6 +297,16 @@ int main(int argc, char* argv[])
     // Device.
     QApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 
+    // Share resources across every QOpenGLContext in the process. The
+    // diagnostics tool is a QOpenGLWidget (ImGui OpenGL2) whose font atlas must
+    // share with the context that actually renders. On the Metal/Vulkan
+    // presentation backends that render context is an offscreen QOpenGLContext
+    // owned by the video device, so without a global share context the
+    // diagnostics font-texture uploads fail, static shader objects are not shared
+    // across contexts, and GL program linking fails.
+    // Must be set before the QApplication is constructed.
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+
     // Now supporting high DPI displays by default
     // Setting the following environment variable, disable the high DPI support
     const bool noHighDPISupport = getenv("RV_NO_QT_HDPI_SUPPORT") != nullptr;

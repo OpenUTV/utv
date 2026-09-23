@@ -287,6 +287,7 @@ namespace Rv
         connect(m_frameChangedTimer, SIGNAL(timeout()), this, SLOT(frameChanged()));
 
         m_menuTimer = new QTimer(this);
+        m_menuTimer->setSingleShot(true);
         m_menuTimer->setInterval(50);
         connect(m_menuTimer, SIGNAL(timeout()), this, SLOT(buildMenu()));
 
@@ -707,10 +708,7 @@ namespace Rv
         }
         else if (m == TwkApp::Document::menuChangedMessage())
         {
-            if (!m_menuExecuting)
-                mergeMenu(m_session->menu());
-            else
-                setBuildMenu();
+            setBuildMenu();
         }
         else if (m == TwkApp::Document::activeMessage())
         {

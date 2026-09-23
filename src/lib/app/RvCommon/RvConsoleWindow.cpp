@@ -345,14 +345,11 @@ namespace Rv
             html += "<font color=green>DEBUG: </font> ";
         }
 
-        html += line.c_str();
+        html += QString::fromStdString(line).toHtmlEscaped();
         m_fileLogger.logToFile(lineLogLevel, line);
-        if (line.size() && line[0] != '<')
-        {
-            if (out)
-                *out << line;
-            html += "<br>";
-        }
+        if (out)
+            *out << line;
+        html += "<br>";
 
         int showIndex = m_ui.showComboBox->currentIndex();
 

@@ -50,10 +50,12 @@
 
 #include <iostream>
 
-#if GTO_FLEX_APPLE == 1
+#if GTO_FLEX_APPLE == 1 || GTO_FLEX_MINOR_VERSION >= 6
 #define FLEX_SIZE_TYPE size_t
+#define FLEX_INPUT_RETURN_TYPE ssize_t
 #else
 #define FLEX_SIZE_TYPE int
+#define FLEX_INPUT_RETURN_TYPE int
 #endif
 
 extern "C++"
@@ -82,9 +84,9 @@ extern "C++"
         int YYLeng() const { return yyleng; }
 
         virtual void yy_switch_to_buffer(struct yy_buffer_state* new_buffer) = 0;
-        virtual struct yy_buffer_state* yy_create_buffer(std::istream* s, int size) = 0;
+        virtual struct yy_buffer_state* yy_create_buffer(std::istream* s, FLEX_SIZE_TYPE size) = 0;
 #if GTO_FLEX_MINOR_VERSION >= 6
-        virtual struct yy_buffer_state* yy_create_buffer(std::istream& s, int size) = 0;
+        virtual struct yy_buffer_state* yy_create_buffer(std::istream& s, FLEX_SIZE_TYPE size) = 0;
 #endif
         virtual void yy_delete_buffer(struct yy_buffer_state* b) = 0;
         virtual void yyrestart(std::istream* s) = 0;
@@ -155,9 +157,9 @@ extern "C++"
         virtual ~GTOFlexLexer();
 
         void yy_switch_to_buffer(struct yy_buffer_state* new_buffer);
-        struct yy_buffer_state* yy_create_buffer(std::istream* s, int size);
+        struct yy_buffer_state* yy_create_buffer(std::istream* s, FLEX_SIZE_TYPE size);
 #if GTO_FLEX_MINOR_VERSION >= 6
-        struct yy_buffer_state* yy_create_buffer(std::istream& s, int size);
+        struct yy_buffer_state* yy_create_buffer(std::istream& s, FLEX_SIZE_TYPE size);
 #endif
         void yy_delete_buffer(struct yy_buffer_state* b);
         void yyrestart(std::istream* s);
@@ -189,7 +191,7 @@ extern "C++"
         int yyIdentifier(const char*);
 
     protected:
-        virtual FLEX_SIZE_TYPE LexerInput(char* buf, FLEX_SIZE_TYPE max_size);
+        virtual FLEX_INPUT_RETURN_TYPE LexerInput(char* buf, FLEX_SIZE_TYPE max_size);
         virtual void LexerOutput(const char* buf, FLEX_SIZE_TYPE size);
         virtual void LexerError(const char* msg);
 

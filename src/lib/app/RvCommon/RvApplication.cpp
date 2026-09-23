@@ -738,6 +738,20 @@ namespace Rv
     RvDocument* RvApplication::newSessionFromFiles(const StringVector& files)
     {
         DB("RvApplication::newSessionFromFiles()");
+
+        // If there is already an existing single document that is empty (no sources loaded yet),
+        // and we have incoming files to load, reuse that existing document rather than opening
+        // a redundant empty window.
+        if (!files.empty() && documents().size() == 1)
+        {
+            Rv::RvSession* existingSession = static_cast<Rv::RvSession*>(documents().front());
+            if (existingSession && existingSession->sources().empty())
+            {
+                rebuildSessionFromFiles(existingSession, files);
+                return static_cast<RvDocument*>(existingSession->opaquePointer());
+            }
+        }
+
         Rv::RvDocument* doc = new Rv::RvDocument;
 
         doc->show();

@@ -618,8 +618,12 @@ namespace IPCore::Shader
             if (F->isInline())
                 continue;
 
-            if (!F->isCompiled())
+            if (!F->isCompiled() || !F->state() || !glIsShader(F->state()->shader))
             {
+                if (F->isCompiled())
+                {
+                    F->releaseCompiledState();
+                }
                 if (!F->compile())
                 {
                     cout << "ERROR: function " << F->name() << " failed to compile" << endl;

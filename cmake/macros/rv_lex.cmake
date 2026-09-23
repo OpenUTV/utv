@@ -30,16 +30,9 @@ SET(_flex_minor_version
 
 # Detect Apple flex (only relevant on macOS)
 IF(APPLE)
-  STRING(FIND "${_flex_version_output}" "Apple" _apple_pos)
-  IF(_apple_pos GREATER -1)
-    SET(_flex_apple
-        1
-    )
-  ELSE()
-    SET(_flex_apple
-        0
-    )
-  ENDIF()
+  SET(_flex_apple
+      1
+  )
 ELSE()
   SET(_flex_apple
       0
