@@ -129,7 +129,7 @@ jobs:
         shell: bash
 
       - name: Upload macOS Branch Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ github.ref_name }}-macOS
           path: _dist/*.zip
@@ -174,7 +174,7 @@ jobs:
           Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
 
       - name: Upload Windows Branch Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ github.ref_name }}-windows
           path: _dist/*.zip
@@ -213,7 +213,7 @@ jobs:
 
       - name: Upload Linux Branch Artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ github.ref_name }}-linux
           path: _dist/*.tar.gz

@@ -151,7 +151,7 @@ jobs:
         shell: bash
 
       - name: Upload Unsigned App Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: utv-dev-unsigned-${{ needs.version.outputs.short_sha }}
           path: _build/stage/unsigned/UTV.app.tar.gz
@@ -256,7 +256,7 @@ jobs:
         shell: bash
 
       - name: Upload Signed macOS Dev Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-dev-macOS-arm64
           path: _build/stage/app/UTV-dev-macOS-arm64.zip
@@ -309,7 +309,7 @@ jobs:
           Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
 
       - name: Upload Windows Dev Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-dev-windows-x64
           path: _dist/UTV-dev-windows-x64.zip
@@ -345,7 +345,7 @@ jobs:
 
       - name: Upload Linux Dev Artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-dev-linux-x64
           path: _dist/UTV-dev-linux-x64.tar.gz
