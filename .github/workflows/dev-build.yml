@@ -1,0 +1,450 @@
+name: Development Build (Rolling Pre-Release)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/actions/build-windows/**'
+      - 'requirements.txt'
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: dev-build
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: 1. Lint Codebase
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  version:
+    name: 2. Determine Dev Version
+    needs: [lint]
+    runs-on: ubuntu-latest
+    outputs:
+      dev_version: ${{ steps.ver.outputs.dev_version }}
+      clean_version: ${{ steps.ver.outputs.clean_version }}
+      short_sha: ${{ steps.ver.outputs.short_sha }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Calculate Dev Version
+        id: ver
+        run: |
+          LATEST_TAG=$(git tag -l "20*" | sort -V | tail -n 1 || echo "2026.0")
+          DEV_VERSION=$(git describe --tags --abbrev=7 --match "20*" 2>/dev/null || echo "${LATEST_TAG}-dev-${GITHUB_SHA:0:7}")
+          CLEAN_VERSION=$(echo "$LATEST_TAG" | cut -d'-' -f1)
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          echo "dev_version=${DEV_VERSION}" >> $GITHUB_OUTPUT
+          echo "clean_version=${CLEAN_VERSION}" >> $GITHUB_OUTPUT
+          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "Calculated dev version: $DEV_VERSION"
+
+  build-macos:
+    name: 3a. Build macOS
+    needs: [version]
+    runs-on: macos-26
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check out proprietary vendor SDKs
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: OpenUTV/openutv-vendor-sdks
+          token: ${{ secrets.GH_TOKEN_DEPS_READ }}
+          path: openutv-vendor-sdks
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore Homebrew cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
+            ${{ runner.os }}-brew-
+
+      - name: Install Homebrew dependencies
+        run: |
+          brew install --formula \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
+               ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+        shell: bash
+
+      - name: Save Homebrew cache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Build UTV (macOS)
+        run: |
+          export CCACHE_DIR=~/.ccache
+          export SDKROOT=$(xcrun --show-sdk-path)
+          chmod +x ./build.sh
+          ./build.sh --release --clean --version "${{ needs.version.outputs.clean_version }}"
+        shell: bash
+
+      - name: Save CCache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+
+      - name: Archive Unsigned App
+        run: |
+          export COPYFILE_DISABLE=1
+          find _build/stage/app/UTV.app -name "._*" -delete
+          mkdir -p _build/stage/unsigned
+          tar -czf _build/stage/unsigned/UTV.app.tar.gz -C _build/stage/app UTV.app
+        shell: bash
+
+      - name: Upload Unsigned App Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: utv-dev-unsigned-${{ needs.version.outputs.short_sha }}
+          path: _build/stage/unsigned/UTV.app.tar.gz
+          retention-days: 1
+
+  sign-macos:
+    name: 4a. Sign & Notarize macOS
+    needs: [version, build-macos]
+    runs-on: macos-26
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download Unsigned App Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: utv-dev-unsigned-${{ needs.version.outputs.short_sha }}
+          path: _build/stage/unsigned
+
+      - name: Extract Unsigned App
+        run: |
+          export COPYFILE_DISABLE=1
+          mkdir -p _build/stage/app
+          ARCHIVE=$(find _build/stage/unsigned -name "UTV.app.tar.gz" | head -n 1)
+          tar -xzf "$ARCHIVE" -C _build/stage/app
+          find _build/stage/app/UTV.app -name "._*" -delete
+        shell: bash
+
+      - name: Sign & Notarize macOS App
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+        run: |
+          ENTITLEMENTS="${PWD}/src/bin/nsapps/UTV/entitlements.plist"
+          APP_PATH="_build/stage/app/UTV.app"
+          ZIP_NAME="UTV-dev-macOS-arm64.zip"
+
+          if [ -n "${MACOS_CERTIFICATE}" ] && [ -n "${MACOS_CERTIFICATE_PWD}" ]; then
+            KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
+            KEYCHAIN_PASSWORD=$(openssl rand -base64 32)
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+            CERT_PATH=$RUNNER_TEMP/certificate.p12
+            echo "$MACOS_CERTIFICATE" | base64 --decode > "$CERT_PATH"
+            security import "$CERT_PATH" -P "$MACOS_CERTIFICATE_PWD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed -e 's/^[[:space:]]*//' | tr -d '"')
+
+            SIGNING_IDENTITY=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep "Developer ID Application" | head -n 1 | awk -F'"' '{print $2}')
+            MAIN_EXE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "UTV")
+
+            /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.OpenUTV.UTV" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
+            codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
+
+            find "$APP_PATH/Contents/MacOS" -type l -delete
+            find "$APP_PATH" -name "._*" -delete
+            find "$APP_PATH/Contents/lib" -type d -name "bin" -exec rm -rf {} + 2>/dev/null || true
+
+            python3 "${PWD}/src/build/sanitize_homebrew_links.py" "$APP_PATH"
+
+            if [ -d "$APP_PATH/Contents/Helpers" ]; then
+              find "$APP_PATH/Contents/Helpers" -maxdepth 1 -name "*.app" -type d 2>/dev/null | while read -r helper; do
+                find "$helper/Contents/MacOS" -type f -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+                codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$helper"
+              done
+            fi
+
+            if [ -d "$APP_PATH/Contents/Frameworks" ]; then
+              find "$APP_PATH/Contents/Frameworks" -type d -name "*.framework" -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+            fi
+
+            find "$APP_PATH/Contents" -type f \( -name "*.dylib" -o -name "*.so" \) -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+            find "$APP_PATH/Contents/PlugIns" -type f ! -name "*.dylib" ! -name "*.so" -exec codesign --force --options runtime --timestamp --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+
+            find "$APP_PATH/Contents/MacOS" -type f ! -name "*.plist" -exec codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" {} +
+            codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGNING_IDENTITY" --keychain "$KEYCHAIN_PATH" "$APP_PATH"
+
+            export COPYFILE_DISABLE=1
+            find "$APP_PATH" -name "._*" -delete
+            cd _build/stage/app
+            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+
+            if [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ] && [ -n "${APPLE_API_KEY}" ]; then
+              KEY_FILE=$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8
+              echo "$APPLE_API_KEY" | base64 --decode > "$KEY_FILE"
+              xcrun notarytool submit "$ZIP_NAME" --key "$KEY_FILE" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait
+              xcrun stapler staple UTV.app
+              rm -f "$ZIP_NAME"
+              /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+            fi
+          else
+            codesign --force --deep --sign - "$APP_PATH"
+            cd _build/stage/app
+            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+          fi
+        shell: bash
+
+      - name: Upload Signed macOS Dev Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-dev-macOS-arm64
+          path: _build/stage/app/UTV-dev-macOS-arm64.zip
+          retention-days: 7
+
+      - name: Clean up Keychain and Secrets
+        if: always()
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
+          if [ -f "$KEYCHAIN_PATH" ]; then
+            security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          fi
+          rm -f "$RUNNER_TEMP/certificate.p12" "$RUNNER_TEMP/AuthKey_"*.p8 2>/dev/null || true
+        shell: bash
+
+  build-windows:
+    name: 3b. Build Windows
+    needs: [version]
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check out proprietary vendor SDKs
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: OpenUTV/openutv-vendor-sdks
+          token: ${{ secrets.GH_TOKEN_DEPS_READ }}
+          path: openutv-vendor-sdks
+
+      - name: Build Windows Executable and Packages
+        uses: ./.github/actions/build-windows
+        with:
+          version: ${{ needs.version.outputs.clean_version }}
+
+      - name: Package Windows Distribution Archive
+        shell: powershell
+        run: |
+          $ZipName = "UTV-dev-windows-x64.zip"
+          Write-Host "Packaging _install into $ZipName..."
+          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
+          Rename-Item -Path "_install" -NewName "utv-windows-x64"
+          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
+
+      - name: Upload Windows Dev Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-dev-windows-x64
+          path: _dist/UTV-dev-windows-x64.zip
+          retention-days: 7
+
+  build-linux:
+    name: 3c. Build Linux (Ubuntu)
+    needs: [version]
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build UTV Linux
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake ninja-build build-essential python3 python3-pip
+          chmod +x ./build.sh
+          ./build.sh --install-deps --release --clean --version "${{ needs.version.outputs.clean_version }}"
+        shell: bash
+
+      - name: Package Linux Dev Archive
+        if: success()
+        run: |
+          mkdir -p _dist
+          if [ -d "_build/stage/app" ]; then
+            tar -czf "_dist/UTV-dev-linux-x64.tar.gz" -C _build/stage/app .
+          fi
+        shell: bash
+
+      - name: Upload Linux Dev Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-dev-linux-x64
+          path: _dist/UTV-dev-linux-x64.tar.gz
+          retention-days: 7
+
+  publish-dev-release:
+    name: 5. Update dev-build Pre-Release
+    needs: [version, sign-macos, build-windows, build-linux]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create Distribution Directory
+        run: mkdir -p _dist
+
+      - name: Download macOS Dev Artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: UTV-dev-macOS-arm64
+          path: _dist
+
+      - name: Download Windows Dev Artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: UTV-dev-windows-x64
+          path: _dist
+
+      - name: Download Linux Dev Artifact
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: UTV-dev-linux-x64
+          path: _dist
+
+      - name: Generate Checksums
+        run: |
+          cd _dist
+          sha256sum UTV-dev-* 2>/dev/null > checksums.sha256 || true
+          cat checksums.sha256
+        shell: bash
+
+      - name: Generate Dev Release Notes
+        id: changelog
+        run: |
+          chmod +x ./scripts/generate-changelog.sh
+          CHANGES=$(./scripts/generate-changelog.sh HEAD || echo "Development build updates.")
+
+          cat << EOF > dev_notes.md
+          > [!WARNING]
+          > This is an automated rolling development build from the latest \`main\` branch commit (\`${{ needs.version.outputs.short_sha }}\`).
+          > It is **not** an official stable release. For stable releases, see [Latest Release](https://github.com/OpenUTV/utv/releases/latest).
+
+          **Version:** \`${{ needs.version.outputs.dev_version }}\`  
+          **Built:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')  
+          **Commit:** ${{ github.sha }}
+
+          ---
+
+          ### Recent Changes Since Last Stable Release
+
+          $CHANGES
+          EOF
+        shell: bash
+
+      - name: Publish In-Place to dev-build Tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="dev-build"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Deleting stale assets from existing $tag release..."
+            gh release view "$tag" --json assets --jq '.assets[].name' |
+            while read -r asset; do
+              gh release delete-asset "$tag" "$asset" --yes || true
+            done
+
+            echo "Updating dev-build release in-place (no watcher email spam)..."
+            gh release edit "$tag" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --latest=false \
+              --title "OpenUTV Development Build" \
+              --notes-file dev_notes.md
+            
+            gh release upload "$tag" _dist/* --clobber
+          else
+            echo "Creating initial dev-build release..."
+            gh release create "$tag" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --latest=false \
+              --title "OpenUTV Development Build" \
+              --notes-file dev_notes.md \
+              _dist/*
+          fi
+        shell: bash

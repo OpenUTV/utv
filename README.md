@@ -98,57 +98,69 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ### macOS (Homebrew Cask — Recommended)
 
-Install the pre-compiled native macOS (Apple Silicon) binary directly from our custom Homebrew tap:
+Install the pre-compiled native macOS (Apple Silicon) binary directly from our Homebrew tap:
 
 ```bash
-brew tap OpenUTV/utv https://github.com/OpenUTV/utv
-brew trust OpenUTV/utv
+brew tap OpenUTV/utv
 brew install --cask utv
+```
+
+To upgrade an existing installation:
+
+```bash
+brew upgrade --cask utv
 ```
 
 This automatically installs `UTV.app` along with all required multimedia dependencies (`ffmpeg-full`, `qt`, `opencolorio`, `openimageio`, `openexr`, etc.).
 
-### macOS (Standalone ZIP Release)
+### Windows Package Managers
 
-You can also download the standalone `UTV-<version>-macOS-arm64.zip` directly from our **[Releases](https://github.com/OpenUTV/utv/releases)** page:
+#### Windows Package Manager (winget)
+
+```powershell
+winget install OpenUTV.UTV
+```
+
+#### Scoop
+
+```powershell
+scoop bucket add openutv https://github.com/OpenUTV/scoop-utv
+scoop install openutv/utv
+```
+
+#### Chocolatey
+
+```powershell
+choco install openutv
+```
+
+### Standalone Releases
+
+#### macOS (Standalone ZIP)
+
+Download `UTV-<version>-macOS-arm64.zip` directly from our **[Releases](https://github.com/OpenUTV/utv/releases)** page:
 
 1. Unzip `UTV.app` and drag it to `/Applications`.
 2. Launch `UTV.app`. Official releases are signed with an Apple Developer ID certificate and notarized by Apple with a stapled ticket, opening seamlessly on macOS.
-3. *Note for source / development builds*: If you build UTV from source (which is ad-hoc signed by default), macOS Gatekeeper may prompt that the app was blocked. Open **System Settings** -> **Privacy & Security**, scroll down to the **Security** section, and click **Open Anyway**:
 
-<p align="center">
-  <img src="docs/images/settings-security-open-anyway.png" alt="macOS Security Open Anyway" width="650" />
-</p>
+#### Windows (Standalone ZIP)
 
-Alternatively, you can clear the quarantine attribute via Terminal:
-
-```bash
-xattr -cr /Applications/UTV.app
-```
-
-### Windows (Standalone Release)
-
-1. **Install the Dependencies Package**:
-   Download and run the latest `OpenUTVDeps-*-win64.msi` installer from **[OpenUTV Dependencies Releases](https://github.com/OpenUTV/utv-dependencies/releases/latest)**. This automatically installs all multimedia libraries (FFmpeg, Qt, OpenColorIO, OpenEXR, OpenImageIO, etc.) and registers them with your system `PATH`.
+1. **Install Dependencies**:
+   Download and run the latest `OpenUTVDeps-*-win64.msi` installer from **[OpenUTV Dependencies Releases](https://github.com/OpenUTV/utv-dependencies/releases/latest)**. This automatically installs all multimedia libraries and registers them with your system `PATH`.
 2. **Download OpenUTV for Windows**:
-   Download the latest Windows release archive `utv-windows-x64.zip` from our **[Releases](https://github.com/OpenUTV/utv/releases)** page.
+   Download the latest `UTV-<version>-windows-x64.zip` archive from our **[Releases](https://github.com/OpenUTV/utv/releases)** page.
 3. **Extract and Run**:
-   Extract the archive to a folder of your choice (e.g. `C:\Program Files\OpenUTV` or your user directory) and launch `utv.exe` (or `UTV.bat`).
+   Extract to a folder of your choice and launch `bin\utv.exe`.
 
-#### Windows SmartScreen / Unsigned Executable Notice
+#### Windows SmartScreen Notice
 
-When launching `utv.exe` for the first time, Windows Defender SmartScreen may display a warning (*"Windows protected your PC – Microsoft Defender SmartScreen prevented an unrecognized app from starting"*):
+When launching `utv.exe` for the first time, Windows Defender SmartScreen may display a prompt (*"Windows protected your PC"*):
 
 1. Click **More info**.
 2. Click **Run anyway**.
 
 > [!NOTE]
-> **Why is the Windows binary unsigned?**
-> Microsoft requires an Extended Validation (EV) Code Signing Certificate or Azure Trusted Signing (~$10/month or several hundred dollars per year) to bypass SmartScreen warnings. As an independent open-source project, our binaries are 100% auditable, open-source, and built transparently on public GitHub Actions runners.
->
-> If an individual, studio, or corporate sponsor would like to fund a Windows code signing certificate for the project, please reach out via [GitHub Discussions](https://github.com/OpenUTV/utv/discussions) or sponsor us—we would be thrilled to set it up!
-
-*(Precompiled Linux `.deb` and `.rpm` packages are also available in our dependencies releases!)*
+> **Windows Code Signing:** Microsoft requires an EV Code Signing Certificate or Azure Trusted Signing to bypass SmartScreen warnings. As an independent open-source project, our binaries are 100% auditable and built transparently on public GitHub Actions runners. If an individual or sponsor would like to fund an EV certificate for the project, please reach out via [GitHub Discussions](https://github.com/OpenUTV/utv/discussions)!
 
 ---
 

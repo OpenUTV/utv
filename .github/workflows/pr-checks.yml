@@ -1,0 +1,108 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  semantic-pr-title:
+    name: Validate PR Title
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            docs
+            build
+            ci
+            test
+            chore
+            style
+            refactor
+
+  commit-lint:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install and Run Commitlint
+        run: |
+          npm install --no-save @commitlint/cli @commitlint/config-conventional
+          npx commitlint --from ${{ github.event.pull_request.base.sha }} \
+                         --to ${{ github.event.pull_request.head.sha }} \
+                         --verbose
+
+  lint:
+    name: Lint Codebase (pre-commit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  check-build:
+    name: Build Smoke Check
+    # Only run on repos within OpenUTV org (not external forks without secrets)
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Detect Code Changes
+        id: filter
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | grep -E '^(src/|cmake/|build\.sh|CMakeLists\.txt|\.github/actions/)' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "code_changed=true" >> $GITHUB_OUTPUT
+            echo "Code changes detected."
+          else
+            echo "code_changed=false" >> $GITHUB_OUTPUT
+            echo "No code changes detected."
+          fi
+
+      - name: Test Build Script Syntax
+        if: steps.filter.outputs.code_changed == 'true'
+        run: |
+          bash -n ./build.sh
+          echo "build.sh syntax validation passed."

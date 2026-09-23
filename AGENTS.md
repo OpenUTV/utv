@@ -127,69 +127,107 @@ The launcher performs the following:
 
 ---
 
-## 3. Versioning & Release Workflow
+## 3. CI/CD Architecture & Release Workflow
 
-### 3.1 Version Definition
+### 3.1 Conventional Commits & Branch Strategy
 
-OpenUTV follows calendar versioning: `YYYY.MINOR.REVISION` (e.g. `2026.7.0`).
+All contributions to OpenUTV must follow the **Conventional Commits** specification:
 
-- The canonical base version is defined in root [`CMakeLists.txt`](CMakeLists.txt):
+```text
+<type>(<optional scope>): <description>
 
-  ```cmake
-  SET(RV_MAJOR_VERSION "2026" CACHE STRING "RV's version major")
-  SET(RV_MINOR_VERSION "7" CACHE STRING "RV's version minor")
-  SET(RV_REVISION_NUMBER "0" CACHE STRING "RV's revision number")
-  SET(RV_VERSION_YEAR "2026" CACHE STRING "RV's year of release.")
-  ```
+[optional body]
 
-- Command-line build scripts pass `-DRV_MAJOR_VERSION=...`, `-DRV_MINOR_VERSION=...`, `-DRV_VERSION_EXPLICIT=ON`.
-
-### 3.2 What to Update for a New Release
-
-When preparing a new release (e.g. bumping from `2026.6` to `2026.7`):
-
-1. **`CMakeLists.txt`**: Increment `RV_MINOR_VERSION`.
-2. **`README.md`**: Update feature comparison table header (e.g. `OpenUTV (2026.7+)`).
-3. **`.github/RELEASE_NOTES.md`**: Write the release notes detailing features and bug fixes.
-4. **`.github/workflows/ci-windows.yml`**: Update default release tag input if applicable.
-
-### 3.3 NEVER Bump `Casks/utv.rb` Manually Before a Release
->
-> [!WARNING]
-> **Do NOT manually bump `version` or `sha256` in `Casks/utv.rb` in your release preparation commit.**
->
-> **Why?**
-> The GitHub Actions workflow (`.github/workflows/build-and-release.yml`) automatically handles Homebrew Cask updates in the `Update Homebrew Cask Formula` step:
->
-> 1. It builds and notarizes `UTV-YYYY.X-macOS-arm64.zip`.
-> 2. It calculates `sha256sum` of the resulting zip asset.
-> 3. It runs `sed -i` to update both `version` and `sha256` in `Casks/utv.rb`.
-> 4. It commits with message `chore(release): update homebrew cask for YYYY.X [skip ci]` and pushes to `main`.
->
-> If you manually bump `version` in `Casks/utv.rb` prior to release publication:
->
-> - The sha256 checksum in the repository will still belong to the previous release.
-> - The new zip asset is not yet published on GitHub Releases.
-> - Any macOS user running `brew update && brew upgrade --cask utv` against `main` will encounter a download 404 or SHA-256 checksum mismatch error.
->
-> Leave `Casks/utv.rb` untouched during release preparation; let CI publish the release and push the updated cask formula.
-
-### 3.4 Kicking Off a Release
-
-To trigger the automated release pipeline via GitHub CLI (`gh`):
-
-```bash
-gh workflow run build-and-release.yml -f create_release=true -f version_override=2026.7
+[optional footer(s)]
 ```
 
-(If `version_override` is omitted, the workflow auto-detects the latest git tag and increments the minor version.)
+- **Supported Types**: `feat`, `fix`, `perf`, `docs`, `build`, `ci`, `test`, `chore`, `style`, `refactor`.
+- **Enforcement**:
+  - All Pull Requests must use conventional PR titles and commit messages.
+  - Automated PR checking is enforced via `.github/workflows/pr-checks.yml` using `commitlint` with configuration in [`.commitlintrc.js`](.commitlintrc.js).
+  - Merges to `main` must occur via Pull Requests to ensure clean semantic history and commitlint validation.
 
-Pipeline stages:
+### 3.2 Automated Workflows Overview
 
-1. **Determine Version**: Parses inputs and tags.
-2. **Lint codebase**: Executes pre-commit hooks in an Ubuntu environment.
-3. **Build macOS**: Compiles on macOS ARM64 with ccache and Homebrew dependencies.
-4. **Sign & Notarize macOS**: Applies Developer ID / Ad-Hoc code signing and notarizes via Apple Notary API.
-5. **Build Windows**: Compiles on Windows MSVC 2022 with sccache and OpenUTVDeps.
-6. **Publish Release**: Creates git tag, publishes GitHub Release with `.github/RELEASE_NOTES.md`, and uploads macOS/Windows zip archives.
-7. **Update Homebrew Cask**: Computes macOS archive SHA-256 and commits the updated formula to `main`.
+The CI/CD pipeline consists of 7 modular workflows:
+
+1. **`pr-checks.yml`** (Pull Requests):
+   - Validates PR title and every commit message against Conventional Commits.
+   - Executes pre-commit hooks (Python/Ruff, clang-format, cmake-format, markdownlint).
+   - Validates build script syntax when code changes occur.
+2. **`dev-build.yml`** (Merges to `main`):
+   - Triggered on code path changes to `main` (`src/`, `cmake/`, `build.sh`, etc.).
+   - Compiles and packages macOS, Windows, and Linux.
+   - Applies full Apple Developer ID codesigning and Apple Notary Service notarization.
+   - Updates the rolling `dev-build` pre-release tag in-place without generating email notifications to repository watchers.
+   - Automatically generates a categorized changelog of commits since the last stable release.
+3. **`branch-build.yml`** (Feature Branches):
+   - Triggers on pushes to any branch in `OpenUTV/utv` (excluding forks).
+   - Builds ad-hoc test binaries for macOS, Windows, and Linux and uploads them as Actions artifacts for QA testing before opening a PR.
+4. **`release.yml`** (Production Release):
+   - Triggered via `workflow_dispatch`.
+   - Execution order: **Lint -> Determine Version -> Build (macOS/Win/Linux) -> Sign & Notarize -> Publish Release**.
+   - Generates release checksums (`checksums.sha256`).
+   - Automatically generates release notes categorized by Conventional Commit types (`scripts/generate-changelog.sh`).
+5. **`publish-packages.yml`** (Triggered on Release Publication):
+   - Automatically pushes cask updates to `OpenUTV/homebrew-utv`.
+   - Updates the Scoop manifest in `OpenUTV/scoop-utv`.
+   - Submits update PR to `microsoft/winget-pkgs` via `wingetcreate`.
+   - Packs and pushes Chocolatey `.nupkg` to `community.chocolatey.org`.
+6. **`codeql.yml`**:
+   - Weekly scheduled CodeQL security scanning for C++ and Python vulnerabilities.
+7. **`dependabot-auto-merge.yml`**:
+   - Automatically reviews and merges patch-level dependency updates.
+
+### 3.3 Triggering a Production Release
+
+To trigger a release build using the GitHub CLI:
+
+```bash
+gh workflow run release.yml -f create_release=true -f version_override=2026.8
+```
+
+Options for `release.yml`:
+
+- `version_override`: Optional custom version (e.g. `2026.8`). If left empty, CI automatically increments the minor version based on the latest git tag.
+- `create_release`: Set to `true` to publish the GitHub release and trigger `publish-packages.yml`. Set to `false` for a dry-run test build.
+- `platforms`: Choice of `all`, `macos-only`, `windows-only`, or `linux-only`.
+
+### 3.4 Package Manager Secrets & Configuration
+
+The package publishing pipeline requires the following per-service repository secrets:
+
+| Secret | Purpose | Permissions / Scope |
+| :--- | :--- | :--- |
+| `HOMEBREW_TAP_TOKEN` | Updates `OpenUTV/homebrew-utv` | GitHub PAT with `repo` scope |
+| `SCOOP_BUCKET_TOKEN` | Updates `OpenUTV/scoop-utv` | GitHub PAT with `repo` scope |
+| `WINGET_PAT` | Submits PR to `microsoft/winget-pkgs` | GitHub PAT with `public_repo` scope |
+| `CHOCO_API_KEY` | Pushes to Chocolatey Community Repository | API key from `community.chocolatey.org` |
+| `GH_TOKEN_DEPS_READ` | Accesses private vendor SDKs | GitHub PAT with `repo:read` scope |
+| `MACOS_CERTIFICATE` | Developer ID Application certificate (Base64) | Apple Developer Program |
+| `MACOS_CERTIFICATE_PWD` | Password for macOS certificate `.p12` | - |
+| `APPLE_API_KEY` | App Store Connect API Key (Base64) | Apple Notary Service API |
+| `APPLE_API_KEY_ID` | App Store Connect Key ID | Apple Notary Service API |
+| `APPLE_API_ISSUER` | App Store Connect Issuer UUID | Apple Notary Service API |
+
+### 3.5 One-Time Windows Package Manager Registration Scripts
+
+To bootstrap package manager registrations, execute the provided setup scripts on a Windows machine:
+
+1. **Scoop**:
+
+   ```powershell
+   pwsh .\scripts\register-scoop.ps1 -Version "2026.7"
+   ```
+
+2. **winget**:
+
+   ```powershell
+   pwsh .\scripts\register-winget.ps1 -Version "2026.7" -Submit
+   ```
+
+3. **Chocolatey**:
+
+   ```powershell
+   pwsh .\scripts\register-chocolatey.ps1 -Version "2026.7" -ApiKey "<YOUR_API_KEY>"
+   ```
