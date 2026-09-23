@@ -1,0 +1,41 @@
+name: Dependabot Auto-Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-Merge Dependabot Patch PR
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot PR Details
+        id: metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "PR Title: $TITLE"
+
+          # Only auto-merge if it looks like a semver patch (e.g. from X.Y.1 to X.Y.2)
+          # Or if labeled 'dependencies'
+          if echo "$TITLE" | grep -qE 'from [0-9]+\.[0-9]+\.[0-9]+ to [0-9]+\.[0-9]+\.[0-9]+'; then
+            echo "Identified semantic patch update. Enabling auto-merge."
+            echo "auto_merge=true" >> $GITHUB_OUTPUT
+          else
+            echo "Not a clear patch update; manual review recommended."
+            echo "auto_merge=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Approve and Auto-Merge PR
+        if: steps.metadata.outputs.auto_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr review ${{ github.event.pull_request.number }} --approve --body "Dependabot patch update automatically approved by CI."
+          gh pr merge ${{ github.event.pull_request.number }} --auto --squash

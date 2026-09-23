@@ -1,0 +1,22 @@
+name: Question or Support
+description: Ask a question about using or installing OpenUTV
+title: "question: <what would you like to know?>"
+labels: ["question"]
+
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question / Details
+      description: What do you need help with?
+      placeholder: "How do I configure..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/OpenUTV/utv/blob/main/.github/CODE_OF_CONDUCT.md)
+          required: true

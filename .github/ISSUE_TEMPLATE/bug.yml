@@ -1,67 +1,46 @@
 name: Bug Report
-
-description: File a bug report
-
-title: "[Bug]: <title>"
-
+description: Report a problem or unexpected behavior in OpenUTV
+title: "fix: <brief description of the issue>"
 labels: ["bug"]
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report! Before submitting it, please make sure it's not already covered by another issue (open or closed).
-
   - type: textarea
-    id: what-happened
+    id: description
     attributes:
-      label: What happened?
-      description: When possible, include steps to reproduce the bug. Also, what behaviour did you expect?
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      label: Description
+      description: What happened, and what did you expect to happen instead? If possible, include steps to reproduce.
+      placeholder: "When opening a directory with image sequences, the app..."
     validations:
       required: true
 
-  - type: input
-    id: operating-system-version
+  - type: dropdown
+    id: platform
     attributes:
-      label: List all the operating systems versions where this is happening
-      placeholder: Windows 10, macOS 12, macOS 13.2.1, RHEL 7.6
-    validations:
-      required: true
-
-  - type: input
-    id: hardware
-    attributes:
-      label: On what computer hardware is this happening?
-      description: Workstation type, GPU type, CPU + Number of Cores, Memory / RAM, Storage type, etc.
+      label: Operating System
+      options:
+        - macOS (Apple Silicon)
+        - Windows 10 / 11
+        - Linux (Ubuntu / Debian)
+        - Linux (RHEL / Rocky / Alma)
+        - Other
     validations:
       required: true
 
   - type: textarea
     id: logs
     attributes:
-      label: Relevant console log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted, so no need for backticks.
+      label: Logs or Console Output (Optional)
+      description: |
+        Paste log output or drag & drop your `UTV.log` file here.
+        - **macOS:** `~/Library/Logs/OpenUTV/UTV.log`
+        - **Windows:** `%APPDATA%\OpenUTV\Logs\UTV.log`
+        - On Windows, you can also run `openutv-diagnostics.bat` from your installation folder.
       render: shell
-
-  - type: textarea
-    id: environment
-    attributes:
-      label: Environment variables
-      description: Please copy and paste any relevant environment variables. They can be accessed through the "Help / Show environment" menu.
-
-  - type: textarea
-    id: extra
-    attributes:
-      label: Extra information
-      description: Please share anything else that might be relevant. RV Preference override? Significant behavior change because of a package?
 
   - type: checkboxes
     id: terms
     attributes:
       label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://docs.github.com/en/site-policy/github-terms/github-community-code-of-conduct)
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/OpenUTV/utv/blob/main/.github/CODE_OF_CONDUCT.md)
           required: true

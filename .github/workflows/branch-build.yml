@@ -1,0 +1,220 @@
+name: Branch CI (Feature Validation)
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - 'src/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/actions/build-windows/**'
+      - 'requirements.txt'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: branch-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: 1. Lint Codebase
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+  build-macos:
+    name: 2a. Build macOS (Ad-Hoc)
+    needs: [lint]
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: macos-26
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check out proprietary vendor SDKs
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: OpenUTV/openutv-vendor-sdks
+          token: ${{ secrets.GH_TOKEN_DEPS_READ }}
+          path: openutv-vendor-sdks
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore Homebrew cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
+            ${{ runner.os }}-brew-
+
+      - name: Install Homebrew dependencies
+        run: |
+          brew install --formula \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
+               ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+        shell: bash
+
+      - name: Save Homebrew cache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/Library/Caches/Homebrew/downloads
+            ~/Library/Caches/Homebrew/Casks
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Build UTV (macOS)
+        run: |
+          export CCACHE_DIR=~/.ccache
+          export SDKROOT=$(xcrun --show-sdk-path)
+          chmod +x ./build.sh
+          ./build.sh --release --clean
+        shell: bash
+
+      - name: Save CCache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+
+      - name: Package Ad-Hoc Signed App
+        run: |
+          python3 "${PWD}/src/build/sanitize_homebrew_links.py" "_build/stage/app/UTV.app" || true
+          codesign --force --deep --sign - "_build/stage/app/UTV.app"
+          mkdir -p _dist
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          cd _build/stage/app
+          ditto -c -k --keepParent UTV.app "../../_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
+        shell: bash
+
+      - name: Upload macOS Branch Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-${{ github.ref_name }}-macOS
+          path: _dist/*.zip
+          retention-days: 5
+
+  build-windows:
+    name: 2b. Build Windows
+    needs: [lint]
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check out proprietary vendor SDKs
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: OpenUTV/openutv-vendor-sdks
+          token: ${{ secrets.GH_TOKEN_DEPS_READ }}
+          path: openutv-vendor-sdks
+
+      - name: Build Windows Executable
+        uses: ./.github/actions/build-windows
+        with:
+          version: 'dev'
+
+      - name: Package Windows Branch Archive
+        shell: powershell
+        run: |
+          $ShortSha = git rev-parse --short=7 HEAD
+          $SafeBranch = "${{ github.ref_name }}".Replace("/", "-")
+          $ZipName = "UTV-$SafeBranch-$ShortSha-windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
+          Rename-Item -Path "_install" -NewName "utv-windows-x64"
+          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
+
+      - name: Upload Windows Branch Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-${{ github.ref_name }}-windows
+          path: _dist/*.zip
+          retention-days: 5
+
+  build-linux:
+    name: 2c. Build Linux (Ubuntu)
+    needs: [lint]
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build UTV Linux
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake ninja-build build-essential python3 python3-pip
+          chmod +x ./build.sh
+          ./build.sh --install-deps --release --clean
+        shell: bash
+
+      - name: Package Linux Branch Archive
+        if: success()
+        run: |
+          mkdir -p _dist
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          if [ -d "_build/stage/app" ]; then
+            tar -czf "_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-linux-x64.tar.gz" -C _build/stage/app .
+          fi
+        shell: bash
+
+      - name: Upload Linux Branch Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: UTV-${{ github.ref_name }}-linux
+          path: _dist/*.tar.gz
+          retention-days: 5

@@ -1,0 +1,26 @@
+name: CodeQL Security Analysis
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Runs weekly on Mondays at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  security-events: write
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL Analysis (C++ & Python)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

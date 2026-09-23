@@ -1,0 +1,28 @@
+name: Feature Request
+description: Propose a new feature, enhancement, or idea for OpenUTV
+title: "feat: <brief description of the idea>"
+labels: ["enhancement"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Feature Description
+      description: What would you like OpenUTV to do? Why is this feature needed or how would it improve your workflow?
+      placeholder: "It would be great if OpenUTV supported..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context (Optional)
+      description: Any screenshots, mockups, or examples from other tools that help illustrate the idea.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://github.com/OpenUTV/utv/blob/main/.github/CODE_OF_CONDUCT.md)
+          required: true

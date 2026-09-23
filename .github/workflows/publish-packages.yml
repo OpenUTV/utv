@@ -1,0 +1,185 @@
+name: Publish to Package Managers
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  verify-release:
+    name: Verify Release Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Download Release Assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p _assets
+          gh release download ${{ github.event.release.tag_name }} --dir _assets
+          ls -la _assets
+          if [ -f "_assets/checksums.sha256" ]; then
+            cd _assets
+            sha256sum -c checksums.sha256 || true
+          fi
+
+  publish-homebrew-tap:
+    name: Update Homebrew Tap (OpenUTV/homebrew-utv)
+    needs: [verify-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew Cask Formula
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "::warning::HOMEBREW_TAP_TOKEN secret is not set. Skipping Homebrew tap update."
+            exit 0
+          fi
+
+          VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
+          ASSET_NAME="UTV-${VERSION}-macOS-arm64.zip"
+          ASSET_URL="https://github.com/OpenUTV/utv/releases/download/${TAG_NAME}/${ASSET_NAME}"
+
+          echo "Downloading $ASSET_URL to compute SHA256..."
+          curl -f -L -o "$ASSET_NAME" "$ASSET_URL"
+          SHA256=$(sha256sum "$ASSET_NAME" | awk '{print $1}')
+          echo "SHA256 for $ASSET_NAME: $SHA256"
+
+          echo "Cloning OpenUTV/homebrew-utv..."
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/OpenUTV/homebrew-utv.git" tap_repo
+          cd tap_repo
+
+          mkdir -p Casks
+          CASK_FILE="Casks/utv.rb"
+
+          if [ -f "$CASK_FILE" ]; then
+            sed -i "s/version \".*\"/version \"${VERSION}\"/" "$CASK_FILE"
+            sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" "$CASK_FILE"
+          else
+            echo "::error::$CASK_FILE not found in tap repo. Please initialize it first."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$CASK_FILE"
+          git commit -m "chore(release): bump utv to ${VERSION}" || echo "No changes to commit"
+          git push origin main
+          echo "Successfully updated OpenUTV/homebrew-utv tap!"
+
+  publish-scoop:
+    name: Update Scoop Bucket (OpenUTV/scoop-utv)
+    needs: [verify-release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Scoop Manifest
+        env:
+          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -z "$SCOOP_BUCKET_TOKEN" ]; then
+            echo "::warning::SCOOP_BUCKET_TOKEN secret is not set. Skipping Scoop bucket update."
+            exit 0
+          fi
+
+          VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
+          ASSET_NAME="UTV-${VERSION}-windows-x64.zip"
+          ASSET_URL="https://github.com/OpenUTV/utv/releases/download/${TAG_NAME}/${ASSET_NAME}"
+
+          curl -f -L -o "$ASSET_NAME" "$ASSET_URL"
+          SHA256=$(sha256sum "$ASSET_NAME" | awk '{print $1}')
+
+          git clone "https://x-access-token:${SCOOP_BUCKET_TOKEN}@github.com/OpenUTV/scoop-utv.git" scoop_repo
+          cd scoop_repo
+
+          MANIFEST="bucket/utv.json"
+          if [ -f "$MANIFEST" ]; then
+            jq --arg ver "$VERSION" --arg hash "$SHA256" --arg url "$ASSET_URL" \
+              '.version = $ver | .architecture."64bit".hash = $hash | .architecture."64bit".url = $url' \
+              "$MANIFEST" > "${MANIFEST}.tmp" && mv "${MANIFEST}.tmp" "$MANIFEST"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "$MANIFEST"
+            git commit -m "chore(release): bump utv to ${VERSION}" || echo "No changes to commit"
+            git push origin HEAD
+            echo "Successfully updated Scoop bucket manifest!"
+          else
+            echo "::warning::$MANIFEST not found in scoop-utv repository. Run scripts/register-scoop.ps1 first."
+          fi
+
+  publish-winget:
+    name: Submit winget-pkgs PR
+    needs: [verify-release]
+    runs-on: windows-latest
+    steps:
+      - name: Update winget package via wingetcreate
+        shell: powershell
+        env:
+          WINGET_PAT: ${{ secrets.WINGET_PAT }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          if (-not $env:WINGET_PAT) {
+            Write-Warning "WINGET_PAT secret is not set. Skipping winget release."
+            exit 0
+          }
+
+          $Version = $env:TAG_NAME.TrimStart("v")
+          $Url = "https://github.com/OpenUTV/utv/releases/download/$($env:TAG_NAME)/UTV-$Version-windows-x64.zip"
+
+          Write-Host "Installing wingetcreate..."
+          winget install Microsoft.WingetCreate --accept-source-agreements --accept-package-agreements
+
+          Write-Host "Submitting update PR to microsoft/winget-pkgs..."
+          wingetcreate update OpenUTV.UTV `
+            --version $Version `
+            --urls $Url `
+            --submit `
+            --token $env:WINGET_PAT
+
+  publish-chocolatey:
+    name: Push to Chocolatey
+    needs: [verify-release]
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Pack and Push to Chocolatey Community Repository
+        shell: powershell
+        env:
+          CHOCO_API_KEY: ${{ secrets.CHOCO_API_KEY }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          if (-not $env:CHOCO_API_KEY) {
+            Write-Warning "CHOCO_API_KEY secret is not set. Skipping Chocolatey push."
+            exit 0
+          }
+
+          $Version = $env:TAG_NAME.TrimStart("v")
+          $Url = "https://github.com/OpenUTV/utv/releases/download/$($env:TAG_NAME)/UTV-$Version-windows-x64.zip"
+
+          $tempZip = Join-Path $env:TEMP "choco-dl.zip"
+          Invoke-WebRequest -Uri $Url -OutFile $tempZip -UseBasicParsing
+          $sha256 = (Get-FileHash -Path $tempZip -Algorithm SHA256).Hash.ToLower()
+
+          # Update nuspec version
+          (Get-Content chocolatey\openutv.nuspec) -replace '<version>.*?</version>', "<version>$Version</version>" | Set-Content chocolatey\openutv.nuspec
+
+          # Update install script
+          (Get-Content chocolatey\tools\chocolateyInstall.ps1) `
+            -replace 'url64\s*=\s*''.*?''', "url64         = '$Url'" `
+            -replace 'checksum64\s*=\s*''.*?''', "checksum64    = '$sha256'" | Set-Content chocolatey\tools\chocolateyInstall.ps1
+
+          choco pack chocolatey\openutv.nuspec --outputdirectory chocolatey
+          $nupkg = (Get-ChildItem chocolatey\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+          choco push $nupkg --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
