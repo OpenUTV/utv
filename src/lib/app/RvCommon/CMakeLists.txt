@@ -530,7 +530,7 @@ IF(RV_TARGET_LINUX)
         Gui
     )
     SET(_rvcommon_link_libraries
-        Qt::GuiPrivate
+        ${RV_QT_PACKAGE_NAME}::GuiPrivate
     )
   ENDIF()
 
@@ -539,10 +539,22 @@ IF(RV_TARGET_LINUX)
     COMPONENTS ${_rvcommon_qt_components}
     REQUIRED
   )
-  TARGET_LINK_LIBRARIES(
-    ${_target}
-    PRIVATE X11 ${_rvcommon_link_libraries}
-  )
+  IF(TARGET ${_rvcommon_link_libraries})
+    TARGET_LINK_LIBRARIES(
+      ${_target}
+      PRIVATE X11 ${_rvcommon_link_libraries}
+    )
+  ELSEIF(TARGET Qt6::GuiPrivate)
+    TARGET_LINK_LIBRARIES(
+      ${_target}
+      PRIVATE X11 Qt6::GuiPrivate
+    )
+  ELSE()
+    TARGET_LINK_LIBRARIES(
+      ${_target}
+      PRIVATE X11 ${RV_QT_PACKAGE_NAME}::Gui
+    )
+  ENDIF()
 ENDIF()
 
 IF(RV_TARGET_LINUX

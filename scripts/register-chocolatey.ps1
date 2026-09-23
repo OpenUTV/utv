@@ -59,7 +59,7 @@ $depsNuspec = @"
     <title>OpenUTV Dependencies</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>
-    <projectUrl>https://openutv.org</projectUrl>
+    <projectUrl>https://openutv.com</projectUrl>
     <projectSourceUrl>https://github.com/OpenUTV/utv-dependencies</projectSourceUrl>
     <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv-dependencies</packageSourceUrl>
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
@@ -126,7 +126,7 @@ $appNuspec = @"
     <title>OpenUTV</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>
-    <projectUrl>https://openutv.org</projectUrl>
+    <projectUrl>https://openutv.com</projectUrl>
     <projectSourceUrl>https://github.com/OpenUTV/utv</projectSourceUrl>
     <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv</packageSourceUrl>
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>

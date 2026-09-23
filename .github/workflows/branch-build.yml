@@ -131,7 +131,7 @@ jobs:
       - name: Upload macOS Branch Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-macOS
+          name: UTV-macOS-arm64
           path: _dist/*.zip
           retention-days: 5
 
@@ -176,7 +176,7 @@ jobs:
       - name: Upload Windows Branch Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-windows
+          name: UTV-windows-x64
           path: _dist/*.zip
           retention-days: 5
 
@@ -272,6 +272,6 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-linux
+          name: UTV-linux-x64
           path: _dist/*.tar.gz
           retention-days: 5
