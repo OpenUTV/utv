@@ -34,7 +34,7 @@ inputs:
     default: 'd3dcompiler_47 opengl32sw qt3d qtactiveqt qtbase qtconnectivity qtdeclarative qtgraphicaleffects qtimageformats qtlocation qtmultimedia qtquickcontrols qtquickcontrols2 qtremoteobjects qtscxml qtsensors qtsvg qttools qttranslations qtwebchannel qtwebsockets qtwebview qtwinextras qtxmlpatterns'
   windows_qt6_modules:
     required: false
-    default: 'qt5compat qtimageformats qtmultimedia qtpdf qtshadertools'
+    default: 'qtimageformats qtmultimedia qtpdf qtshadertools qtwebengine'
   windows_qt6_archives:
     required: false
     default: 'd3dcompiler_47 opengl32sw qtbase qtdeclarative qtsvg qttools qttranslations'
@@ -248,13 +248,12 @@ runs:
       shell: bash
 
     - name: Prepare Qt folder and 7-Zip
+      shell: powershell
       run: |
-        mkdir -p /c/qt
-        if [ -d "/c/Program Files/7-Zip" ]; then
-          echo "/c/Program Files/7-Zip" >> $GITHUB_PATH
-          echo "C:\Program Files\7-Zip" >> $GITHUB_PATH
-        fi
-      shell: bash
+        New-Item -ItemType Directory -Force -Path "C:\Qt" | Out-Null
+        if (Test-Path "C:\Program Files\7-Zip") {
+            "C:\Program Files\7-Zip" | Add-Content -Path $env:GITHUB_PATH
+        }
 
     - name: Install Qt ${{ inputs.qt-version }}
       uses: jurplel/install-qt-action@v4
@@ -271,6 +270,7 @@ runs:
         setup-python: 'true'
         set-env: 'true'
         tools-only: 'false'
+        extra: '--external 7z'
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Activate Bundled Python

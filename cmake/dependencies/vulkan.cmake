@@ -43,13 +43,13 @@ ELSE()
   FETCHCONTENT_DECLARE(
     vulkan_headers
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
-    GIT_TAG v1.4.354
+    GIT_TAG v1.4.304
     GIT_SHALLOW TRUE
   )
   FETCHCONTENT_DECLARE(
     vulkan_loader
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Loader.git
-    GIT_TAG v1.4.354
+    GIT_TAG v1.4.304
     GIT_SHALLOW TRUE
   )
 
@@ -69,7 +69,7 @@ ELSE()
     )
   ENDIF()
   SET(RV_DEPS_VULKAN_VERSION
-      "1.4.354"
+      "1.4.304"
   )
 ENDIF()
 
