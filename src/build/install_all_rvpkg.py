@@ -14,16 +14,37 @@ def get_packages_from_dir(packages_source_folder: pathlib.Path) -> [pathlib.Path
 def install_rvpkg_packages(
     *, rvpkg_path: pathlib.Path, packages_source_folder: pathlib.Path, packages_destination_folder: pathlib.Path
 ) -> None:
+    import os
+
+    env = dict(os.environ)
+    # Stage directory: rvpkg is located in <stage>/bin/rvpkg, so parent.parent is <stage>
+    stage_dir = rvpkg_path.resolve().parent.parent
+    lib_candidates = [
+        str(stage_dir / "lib"),
+        str(stage_dir / "lib64"),
+        "/home/linuxbrew/.linuxbrew/lib",
+    ]
+    existing_ld = env.get("LD_LIBRARY_PATH", "")
+    if existing_ld:
+        lib_candidates.append(existing_ld)
+    env["LD_LIBRARY_PATH"] = ":".join(p for p in lib_candidates if p)
+
+    existing_dyld = env.get("DYLD_FALLBACK_LIBRARY_PATH", "")
+    dyld_candidates = [str(stage_dir / "lib"), str(stage_dir / "Frameworks")]
+    if existing_dyld:
+        dyld_candidates.append(existing_dyld)
+    env["DYLD_FALLBACK_LIBRARY_PATH"] = ":".join(p for p in dyld_candidates if p)
+
     command = [
-        rvpkg_path,
+        str(rvpkg_path),
         "-force",
         "-install",
         "-add",
-        packages_destination_folder.resolve(),
-        *list(get_packages_from_dir(packages_source_folder)),
+        str(packages_destination_folder.resolve()),
+        *[str(p) for p in get_packages_from_dir(packages_source_folder)],
     ]
 
-    subprocess.run(command).check_returncode()
+    subprocess.run(command, env=env).check_returncode()
 
 
 if __name__ == "__main__":

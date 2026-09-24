@@ -377,6 +377,7 @@ if [[ "$OSTYPE" == "linux"* ]] && (command -v brew >/dev/null 2>&1 || [ -x "/hom
     if [ -n "$BREW_PREFIX" ]; then
         CMAKE_ARGS+=("-DCMAKE_PREFIX_PATH=${BREW_PREFIX};${BREW_PREFIX}/opt/qt;${BREW_PREFIX}/opt/qtbase")
         export PKG_CONFIG_PATH="${BREW_PREFIX}/lib/pkgconfig:${BREW_PREFIX}/opt/ffmpeg/lib/pkgconfig:$PKG_CONFIG_PATH"
+        export LD_LIBRARY_PATH="${BREW_PREFIX}/lib:${LD_LIBRARY_PATH:-}"
     fi
 fi
 
