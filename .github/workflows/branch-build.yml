@@ -195,7 +195,7 @@ jobs:
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -207,7 +207,7 @@ jobs:
         shell: bash
 
       - name: Restore Homebrew cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
@@ -228,14 +228,14 @@ jobs:
 
       - name: Save Homebrew cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -252,7 +252,7 @@ jobs:
 
       - name: Save CCache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
