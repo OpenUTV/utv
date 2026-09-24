@@ -218,11 +218,10 @@ runs:
     - name: Install build tools (Ninja, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
         choco feature enable -n allowEmptyChecksums
-        $chocoPkgs = "ninja winflexbison3 nasm patch pkgconfiglite"
+        choco install ninja winflexbison3 nasm patch pkgconfiglite --yes --no-progress --allow-empty-checksums --ignore-checksums
         if ("${{ steps.windows-vulkan-cache.outputs.cache-hit }}" -ne "true") {
-            $chocoPkgs += " vulkan-sdk"
+            choco install vulkan-sdk --yes --no-progress --allow-empty-checksums --ignore-checksums
         }
-        choco install $chocoPkgs --yes --no-progress --allow-empty-checksums --ignore-checksums
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
         $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
         if ($VulkanDir) {
