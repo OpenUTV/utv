@@ -21,7 +21,7 @@ namespace TwkFB
     IOsvg::IOsvg()
         : FrameBufferIO("IOsvg", "m4")
     {
-        unsigned int cap = ImageRead | BruteForceIO;
+        unsigned int cap = ImageRead;
         StringPairVector codecs;
         addType("svg", "Scalable Vector Graphics", cap, codecs);
     }
@@ -33,9 +33,11 @@ namespace TwkFB
     void IOsvg::getImageInfo(const string& filename, FBInfo& fbi) const
     {
         NSVGimage* g = nsvgParseFromFile(filename.c_str(), "px", 96.0f);
-        if (!g)
+        if (!g || !g->shapes)
         {
-            TWK_THROW_STREAM(IOException, "IOsvg: failed to parse SVG file: " << filename);
+            if (g)
+                nsvgDelete(g);
+            TWK_THROW_STREAM(IOException, "IOsvg: failed to parse SVG file or no shapes found: " << filename);
         }
 
         int w = (int)ceilf(g->width);

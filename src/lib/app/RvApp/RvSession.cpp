@@ -510,8 +510,13 @@ namespace Rv
                     }
                     else
                     {
-                        // not a directory, so it's a movie, add to preloader.
-                        m_session->startPreloadingMedia(filename);
+                        // not a directory, so it's a media or session file.
+                        // Only add to preloader if it's not a session/EDL file.
+                        string ext = extension(filename);
+                        if (ext != "rv" && ext != "rvedl" && ext != "edl")
+                        {
+                            m_session->startPreloadingMedia(filename);
+                        }
                     }
                 }
             }

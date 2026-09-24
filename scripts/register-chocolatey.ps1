@@ -59,10 +59,13 @@ $depsNuspec = @"
     <title>OpenUTV Dependencies</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>
-    <projectUrl>https://github.com/OpenUTV/utv-dependencies</projectUrl>
+    <projectUrl>https://openutv.com</projectUrl>
+    <projectSourceUrl>https://github.com/OpenUTV/utv-dependencies</projectSourceUrl>
+    <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv-dependencies</packageSourceUrl>
+    <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
+    <releaseNotes>https://github.com/OpenUTV/utv-dependencies/releases/tag/v$DepsVersion</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <projectSourceUrl>https://github.com/OpenUTV/utv-dependencies</projectSourceUrl>
     <docsUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/README.md</docsUrl>
     <tags>openutv dependencies ffmpeg qt6 openexr ocio oiio vfx</tags>
     <summary>Relocatable multimedia runtime toolchain for OpenUTV</summary>
@@ -123,10 +126,13 @@ $appNuspec = @"
     <title>OpenUTV</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>
-    <projectUrl>https://github.com/OpenUTV/utv</projectUrl>
+    <projectUrl>https://openutv.com</projectUrl>
+    <projectSourceUrl>https://github.com/OpenUTV/utv</projectSourceUrl>
+    <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv</packageSourceUrl>
+    <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
+    <releaseNotes>https://github.com/OpenUTV/utv/releases/tag/$AppVersion</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <projectSourceUrl>https://github.com/OpenUTV/utv</projectSourceUrl>
     <docsUrl>https://github.com/OpenUTV/utv/blob/main/README.md</docsUrl>
     <tags>openutv media-player sequence-viewer vfx rv video framecycler</tags>
     <summary>High-performance sequence viewer and media player for VFX, animation, and digital media</summary>

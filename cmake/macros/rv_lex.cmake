@@ -31,7 +31,9 @@ SET(_flex_minor_version
 # Detect Apple flex (only relevant on macOS)
 IF(APPLE)
   STRING(FIND "${_flex_version_output}" "Apple" _apple_pos)
-  IF(_apple_pos GREATER -1)
+  IF(_apple_pos GREATER -1
+     OR _lex STREQUAL "/usr/bin/flex"
+  )
     SET(_flex_apple
         1
     )
@@ -48,11 +50,11 @@ ENDIF()
 
 SET(RV_FLEX_MINOR_VERSION
     ${_flex_minor_version}
-    CACHE STRING "The Flex/Lex tool minor version used for building RV."
+    CACHE STRING "The Flex/Lex tool minor version used for building RV." FORCE
 )
 SET(RV_FLEX_APPLE
     ${_flex_apple}
-    CACHE BOOL "Wether or not we're building with an Apple-compiled version of Flex/Lex tool."
+    CACHE BOOL "Wether or not we're building with an Apple-compiled version of Flex/Lex tool." FORCE
 )
 
 #

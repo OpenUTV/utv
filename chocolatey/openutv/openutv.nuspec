@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>openutv</id>
+    <version>2026.7</version>
+    <title>OpenUTV</title>
+    <authors>OpenUTV Contributors</authors>
+    <owners>OpenUTV</owners>
+    <projectUrl>https://openutv.com</projectUrl>
+    <projectSourceUrl>https://github.com/OpenUTV/utv</projectSourceUrl>
+    <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv</packageSourceUrl>
+    <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
+    <releaseNotes>https://github.com/OpenUTV/utv/releases/tag/2026.7</releaseNotes>
+    <licenseUrl>https://github.com/OpenUTV/utv/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <docsUrl>https://github.com/OpenUTV/utv/blob/main/README.md</docsUrl>
+    <tags>openutv media-player sequence-viewer vfx rv video framecycler</tags>
+    <summary>High-performance sequence viewer and media player for VFX, animation, and digital media</summary>
+    <description>OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.</description>
+    <dependencies>
+      <dependency id="openutv-dependencies" version="26.5.0" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

@@ -125,13 +125,13 @@ jobs:
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
           cd _build/stage/app
-          ditto -c -k --keepParent UTV.app "../../_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
+          ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
 
       - name: Upload macOS Branch Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-macOS
+          name: UTV-macOS-arm64
           path: _dist/*.zip
           retention-days: 5
 
@@ -176,7 +176,7 @@ jobs:
       - name: Upload Windows Branch Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-windows
+          name: UTV-windows-x64
           path: _dist/*.zip
           retention-days: 5
 
@@ -215,6 +215,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: UTV-${{ github.ref_name }}-linux
+          name: UTV-linux-x64
           path: _dist/*.tar.gz
           retention-days: 5
+

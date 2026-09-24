@@ -37,6 +37,22 @@ Pre-commit checks are configured via `.pre-commit-config.yaml`:
   - Avoid running `pre-commit run --all-files` directly on Windows, as Ruff will parse these symlink text files as invalid Python scripts and attempt to reformat them.
   - Run `pre-commit run` only on staged files before committing.
 
+### 1.3 Multi-OS Architecture & Cross-Platform Integrity
+
+OpenUTV is a cross-platform desktop application targeting **macOS (Apple Silicon & Intel)**, **Windows (x64 MSVC)**, and **Linux (Ubuntu/glibc)**.
+
+- **Universal Core Fixes**:
+  - When fixing bugs or adding features (e.g. media loading, session serialization, OpenGL pipeline, shader compilation, UI event dispatch, menu synchronization), changes must resolve the root cause cleanly across all operating systems.
+  - Never apply superficial OS-specific band-aids to core shared modules (`src/lib/ip`, `src/lib/app`, `src/lib/image`, etc.) when the defect is architectural.
+- **Strict Isolation of Platform-Specific Behavior**:
+  - If platform-specific functionality is strictly required (e.g. Apple event loops, Windows registry probing, POSIX signal handling, X11/Wayland display handling), it **MUST** be explicitly isolated behind platform preprocessor guards:
+    - C++ preprocessor: `#ifdef PLATFORM_DARWIN`, `#ifdef PLATFORM_WINDOWS`, `#ifdef PLATFORM_LINUX`, or Qt macros `#if defined(Q_OS_MACOS)`, `#if defined(Q_OS_WIN)`, `#if defined(Q_OS_LINUX)`.
+    - CMake build logic: `IF(APPLE)`, `IF(RV_TARGET_WINDOWS)`, `IF(RV_TARGET_LINUX)`.
+    - Build scripts: separate shell/PowerShell blocks or platform conditionals.
+  - Never introduce non-standard or platform-bound types (e.g. POSIX `ssize_t`) in shared headers without explicit fallback typedefs for MSVC/Windows (`#if defined(_MSC_VER) ...`).
+- **Matrix Validation**:
+  - All Pull Requests must build cleanly across the GitHub Actions CI matrix (`macOS`, `Windows`, `Linux`).
+
 ---
 
 ## 2. Architecture: Launching & Runtime Initialization

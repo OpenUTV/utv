@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>openutv-dependencies</id>
+    <version>26.5.0</version>
+    <title>OpenUTV Dependencies</title>
+    <authors>OpenUTV Contributors</authors>
+    <owners>OpenUTV</owners>
+    <projectUrl>https://openutv.com</projectUrl>
+    <projectSourceUrl>https://github.com/OpenUTV/utv-dependencies</projectSourceUrl>
+    <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv-dependencies</packageSourceUrl>
+    <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
+    <releaseNotes>https://github.com/OpenUTV/utv-dependencies/releases/tag/v26.5</releaseNotes>
+    <licenseUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <docsUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/README.md</docsUrl>
+    <tags>openutv dependencies ffmpeg qt6 openexr ocio oiio vfx</tags>
+    <summary>Relocatable multimedia runtime toolchain for OpenUTV</summary>
+    <description>Compiled runtime dependencies and libraries (FFmpeg, Qt6, OpenEXR, OpenColorIO, OpenImageIO, Boost) for OpenUTV.</description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>
