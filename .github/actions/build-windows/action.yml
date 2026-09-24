@@ -270,7 +270,6 @@ runs:
         setup-python: 'true'
         set-env: 'true'
         tools-only: 'false'
-        extra: '--external 7z'
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
 
     - name: Activate Bundled Python
