@@ -122,12 +122,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
                 libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev \
                 libxkbcommon-dev libxkbcommon-x11-dev libffi-dev \
-                libasound2-dev libpulse-dev
+                libasound2-dev libpulse-dev libvulkan-dev
         fi
         brew install --formula \
             ninja pkg-config ccache glew doctest qt pyside \
             ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
-            openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
+            openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo \
+            vulkan-headers vulkan-loader
     # RHEL / Rocky Setup
     elif command -v dnf >/dev/null 2>&1; then
         $SUDO dnf install -y epel-release dnf-plugins-core

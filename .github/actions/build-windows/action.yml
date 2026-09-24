@@ -34,7 +34,7 @@ inputs:
     default: 'd3dcompiler_47 opengl32sw qt3d qtactiveqt qtbase qtconnectivity qtdeclarative qtgraphicaleffects qtimageformats qtlocation qtmultimedia qtquickcontrols qtquickcontrols2 qtremoteobjects qtscxml qtsensors qtsvg qttools qttranslations qtwebchannel qtwebsockets qtwebview qtwinextras qtxmlpatterns'
   windows_qt6_modules:
     required: false
-    default: 'qtimageformats qtmultimedia qtpdf qtshadertools qtwebengine'
+    default: 'qtimageformats qtmultimedia qtpdf qtpositioning qtshadertools qtwebchannel qtwebengine'
   windows_qt6_archives:
     required: false
     default: 'd3dcompiler_47 opengl32sw qtbase qtdeclarative qtsvg qttools qttranslations'
