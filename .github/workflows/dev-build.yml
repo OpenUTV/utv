@@ -328,12 +328,69 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+      - name: Check out proprietary vendor SDKs
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: OpenUTV/openutv-vendor-sdks
+          token: ${{ secrets.GH_TOKEN_DEPS_READ }}
+          path: openutv-vendor-sdks
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore Homebrew cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.cache/Homebrew/downloads
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-
+            ${{ runner.os }}-brew-
+
+      - name: Install Homebrew dependencies
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          sudo apt-get update && sudo apt-get install -y build-essential patchelf mold tcsh libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev libreadline-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev libxkbcommon-dev libxkbcommon-x11-dev libffi-dev libasound2-dev libpulse-dev
+          brew install --formula \
+               ninja pkg-config ccache glew doctest qt pyside \
+               ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
+               openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
+        shell: bash
+
+      - name: Save Homebrew cache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: |
+            ~/.cache/Homebrew/downloads
+          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
+
+      - name: Restore CCache
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
       - name: Build UTV Linux
         run: |
-          sudo apt-get update && sudo apt-get install -y cmake ninja-build build-essential python3 python3-pip
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          export CCACHE_DIR=~/.ccache
           chmod +x ./build.sh
-          ./build.sh --install-deps --release --clean --version "${{ needs.version.outputs.clean_version }}"
+          ./build.sh --release --clean --version "${{ needs.version.outputs.clean_version }}"
         shell: bash
+
+      - name: Save CCache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
 
       - name: Package Linux Dev Archive
         if: success()
