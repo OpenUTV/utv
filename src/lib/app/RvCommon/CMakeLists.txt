@@ -518,36 +518,15 @@ ENDIF()
 # private headers use QT += gui-private with qmake, or add a project dependency to Qt::GuiPrivate with CMake.
 
 IF(RV_TARGET_LINUX)
-  IF(RV_VFX_PLATFORM STREQUAL CY2023)
-    SET(_rvcommon_qt_components
-        X11Extras
+  IF(RV_VFX_PLATFORM STREQUAL "CY2023")
+    FIND_PACKAGE(
+      Qt5
+      COMPONENTS X11Extras
+      REQUIRED
     )
-    SET(_rvcommon_link_libraries
-        Qt::X11Extras
-    )
-  ELSEIF(RV_VFX_PLATFORM STRGREATER_EQUAL CY2024)
-    SET(_rvcommon_qt_components
-        Gui
-    )
-    SET(_rvcommon_link_libraries
-        ${RV_QT_PACKAGE_NAME}::GuiPrivate
-    )
-  ENDIF()
-
-  FIND_PACKAGE(
-    ${RV_QT_PACKAGE_NAME}
-    COMPONENTS ${_rvcommon_qt_components}
-    REQUIRED
-  )
-  IF(TARGET ${_rvcommon_link_libraries})
     TARGET_LINK_LIBRARIES(
       ${_target}
-      PRIVATE X11 ${_rvcommon_link_libraries}
-    )
-  ELSEIF(TARGET Qt6::GuiPrivate)
-    TARGET_LINK_LIBRARIES(
-      ${_target}
-      PRIVATE X11 Qt6::GuiPrivate
+      PRIVATE X11 Qt::X11Extras
     )
   ELSE()
     TARGET_LINK_LIBRARIES(

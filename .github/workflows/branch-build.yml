@@ -45,7 +45,7 @@ jobs:
   build-macos:
     name: 2a. Build macOS (Ad-Hoc)
     needs: [lint]
-    if: github.repository_owner == 'OpenUTV'
+    if: false # Temporarily disabled on feat/linux-build-optimizations to conserve runner minutes
     runs-on: macos-26
     steps:
       - name: Check out repository
@@ -138,7 +138,7 @@ jobs:
   build-windows:
     name: 2b. Build Windows
     needs: [lint]
-    if: github.repository_owner == 'OpenUTV'
+    if: false # Temporarily disabled on feat/linux-build-optimizations to conserve runner minutes
     runs-on: windows-2022
     timeout-minutes: 90
     env:
