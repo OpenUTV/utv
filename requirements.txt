@@ -17,4 +17,4 @@ PyOpenGL
 PyOpenGL_accelerate
 requests
 six
-opencolorio>=2.5.0
+opencolorio>=2.5.2
