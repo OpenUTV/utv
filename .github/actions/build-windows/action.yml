@@ -469,6 +469,34 @@ runs:
         }
       shell: powershell
 
+    - name: Windows Defender Supply Chain Security Scan
+      shell: powershell
+      run: |
+        $installDir = Join-Path $env:GITHUB_WORKSPACE "_install"
+        if (Test-Path $installDir) {
+            Write-Host "Unexcluding staged application from Defender for security verification..."
+            Remove-MpPreference -ExclusionPath "${{ github.workspace }}" -ErrorAction SilentlyContinue
+
+            $mpCmd = "C:\Program Files\Windows Defender\MpCmdRun.exe"
+            if (Test-Path $mpCmd) {
+                Write-Host "Scanning staged application with Windows Defender: $installDir"
+                & $mpCmd -Scan -ScanType 3 -File "$installDir"
+                if ($LASTEXITCODE -eq 2) {
+                    Write-Error "Windows Defender detected malware or malicious threat in staged application!"
+                    exit 1
+                } elseif ($LASTEXITCODE -eq 0) {
+                    Write-Host "Windows Defender scan clean. 0 threats detected."
+                } else {
+                    Write-Warning "Windows Defender scan completed with exit code: $LASTEXITCODE"
+                }
+            } else {
+                Write-Host "Running PowerShell Start-MpScan on $installDir..."
+                Start-MpScan -ScanType CustomScan -ScanPath "$installDir"
+            }
+        } else {
+            Write-Warning "Directory _install not found for Defender scan."
+        }
+
     - name: Sccache Statistics
       if: always()
       run: |
