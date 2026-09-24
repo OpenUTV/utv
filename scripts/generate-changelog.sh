@@ -32,21 +32,21 @@ format_section() {
   fi
 }
 
-format_section "✨ Features" "feat(\([^)]+\))?:"
-format_section "🐛 Bug Fixes" "fix(\([^)]+\))?:"
-format_section "⚡ Performance" "perf(\([^)]+\))?:"
-format_section "♻️ Refactoring" "refactor(\([^)]+\))?:"
-format_section "🎨 Code Style" "style(\([^)]+\))?:"
-format_section "🏗️ Build & Dependencies" "build(\([^)]+\))?:"
-format_section "🔧 CI/CD" "ci(\([^)]+\))?:"
-format_section "📚 Documentation" "docs(\([^)]+\))?:"
-format_section "🧪 Tests" "test(\([^)]+\))?:"
-format_section "📦 Chores" "chore(\([^)]+\))?:"
+format_section "Features" "feat(\([^)]+\))?:"
+format_section "Bug Fixes" "fix(\([^)]+\))?:"
+format_section "Performance Improvements" "perf(\([^)]+\))?:"
+format_section "Refactoring" "refactor(\([^)]+\))?:"
+format_section "Code Style" "style(\([^)]+\))?:"
+format_section "Build & Dependencies" "build(\([^)]+\))?:"
+format_section "CI/CD" "ci(\([^)]+\))?:"
+format_section "Documentation" "docs(\([^)]+\))?:"
+format_section "Tests" "test(\([^)]+\))?:"
+format_section "Chores" "chore(\([^)]+\))?:"
 
 # Check for non-conventional or unclassified commits
 OTHER=$(git log --pretty=format:"* %s (%h)" "$RANGE" | grep -v -E "^\* (feat|fix|perf|refactor|style|build|ci|docs|test|chore)(\([^)]+\))?:" || true)
 if [ -n "$OTHER" ]; then
-  echo "### 🪵 Other Changes"
+  echo "### Other Changes"
   echo "$OTHER"
   echo ""
 fi
