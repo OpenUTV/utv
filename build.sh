@@ -459,6 +459,12 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "--- Sanitizing Homebrew Links ---"
     python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${BUILD_DIR}/stage"
+    if [ -d "${BUILD_DIR}/stage/app/UTV.app" ]; then
+        codesign --force --deep --sign - "${BUILD_DIR}/stage/app/UTV.app" 2>/dev/null || true
+    fi
+elif [[ "$OSTYPE" == "linux"* ]]; then
+    echo "--- Sanitizing Dynamic Library Links ---"
+    python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${BUILD_DIR}/stage"
 fi
 
 if [ "${INSTALL}" -eq 1 ]; then
@@ -467,6 +473,12 @@ if [ "${INSTALL}" -eq 1 ]; then
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "--- Sanitizing Installed Homebrew Links ---"
+        python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${INST_DIR}"
+        if [ -d "${INST_DIR}/UTV.app" ]; then
+            codesign --force --deep --sign - "${INST_DIR}/UTV.app" 2>/dev/null || true
+        fi
+    elif [[ "$OSTYPE" == "linux"* ]]; then
+        echo "--- Sanitizing Installed Dynamic Library Links ---"
         python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${INST_DIR}"
     fi
 fi

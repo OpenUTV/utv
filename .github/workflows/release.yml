@@ -134,6 +134,7 @@ jobs:
           brew install --formula \
                ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+          brew upgrade openexr imath opencolorio libraw libtiff boost openimageio spdlog openjph || true
         shell: bash
 
       - name: Save Homebrew cache
