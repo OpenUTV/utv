@@ -337,24 +337,25 @@ gettimeofday (struct timeval *tp, void *not_used)
     {
         char temp[256];
         char temp2[256];
-        char temp3[256];
+        char temp3[1024];
 
         int hours, minutes;
         double secondsLeft;
 
         hms(elapsed(), hours, minutes, secondsLeft);
-        sprintf(temp, "%02d:%02d:%02d", hours, minutes, int(secondsLeft));
+        snprintf(temp, sizeof(temp), "%02d:%02d:%02d", hours, minutes, int(secondsLeft));
 
         if (remaining)
         {
             hms(estimate(n, ofn), hours, minutes, secondsLeft);
-            sprintf(temp2, "%02d:%02d:%02d", hours, minutes, int(secondsLeft));
+            snprintf(temp2, sizeof(temp2), "%02d:%02d:%02d", hours, minutes, int(secondsLeft));
 
-            sprintf(temp3, "%d%% done, %s elapsed... %s remaining... ", int(double(n) / double(ofn - 1) * 100.0), temp, temp2);
+            snprintf(temp3, sizeof(temp3), "%d%% done, %s elapsed... %s remaining... ", int(double(n) / double(ofn - 1) * 100.0), temp,
+                     temp2);
         }
         else
         {
-            sprintf(temp3, "%d%% done, %s elapsed... ", int(double(n) / double(ofn - 1) * 100.0), temp);
+            snprintf(temp3, sizeof(temp3), "%d%% done, %s elapsed... ", int(double(n) / double(ofn - 1) * 100.0), temp);
         }
 
         return std::string(temp3);

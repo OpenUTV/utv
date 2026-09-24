@@ -66,7 +66,7 @@
 #if defined(RV_VFX_CY2023)
 #include <QtX11Extras/QX11Info>
 #else
-#include <QtGui/private/qtx11extras_p.h>
+#include <QtGui/QGuiApplication>
 #endif
 #include <X11/Xlib.h>
 #endif
@@ -296,8 +296,16 @@ namespace Rv
 #ifdef PLATFORM_LINUX
 
         int op_ret, ev_ret, er_ret;
-
-        bool haveNV = XQueryExtension(QX11Info::display(), "NV-GLX", &op_ret, &ev_ret, &er_ret);
+#if defined(RV_VFX_CY2023)
+        Display* x11Display = QX11Info::display();
+#else
+        Display* x11Display = nullptr;
+        if (auto* x11App = qGuiApp->nativeInterface<QNativeInterface::QX11Application>())
+        {
+            x11Display = x11App->display();
+        }
+#endif
+        bool haveNV = x11Display && XQueryExtension(x11Display, "NV-GLX", &op_ret, &ev_ret, &er_ret);
 
         if (!haveNV)
         {

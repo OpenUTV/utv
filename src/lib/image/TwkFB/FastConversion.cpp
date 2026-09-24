@@ -12,6 +12,7 @@
 #include <TwkUtil/sgcHop.h>
 
 #include <algorithm>
+#include <cstring>
 #include <cstdint>
 
 using namespace ILMTHREAD_NAMESPACE;
