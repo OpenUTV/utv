@@ -34,7 +34,7 @@ inputs:
     default: 'd3dcompiler_47 opengl32sw qt3d qtactiveqt qtbase qtconnectivity qtdeclarative qtgraphicaleffects qtimageformats qtlocation qtmultimedia qtquickcontrols qtquickcontrols2 qtremoteobjects qtscxml qtsensors qtsvg qttools qttranslations qtwebchannel qtwebsockets qtwebview qtwinextras qtxmlpatterns'
   windows_qt6_modules:
     required: false
-    default: 'debug_info qt3d qt5compat qtactiveqt qtcharts qtconnectivity qtdatavis3d qtgrpc qthttpserver qtimageformats qtlanguageserver qtlocation qtlottie qtmultimedia qtnetworkauth qtpdf qtpositioning qtquick3d qtquick3dphysics qtquickeffectmaker qtquicktimeline qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtshadertools qtspeech qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets qtwebview'
+    default: 'qt5compat qtimageformats qtmultimedia qtpdf qtshadertools'
   windows_qt6_archives:
     required: false
     default: 'd3dcompiler_47 opengl32sw qtbase qtdeclarative qtsvg qttools qttranslations'
@@ -42,6 +42,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Disable Windows Defender Realtime Monitoring for Build Trees
+      shell: powershell
+      run: |
+        Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+        Add-MpPreference -ExclusionPath "${{ github.workspace }}", "C:\.sccache", "C:\Program Files\OpenUTVDeps", "C:\VulkanSDK" -ErrorAction SilentlyContinue
+
     - name: Download and Install Prebuilt Dependencies
       shell: powershell
       env:
@@ -191,7 +197,7 @@ runs:
       shell: powershell
 
     - name: Cache CMake for Windows
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       id: windows-cmake-cache
       with:
         path: "C:/Program Files/CMake"
@@ -202,10 +208,21 @@ runs:
       run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
-    - name: Install build tools (Ninja, JOM, flex, bison, nasm, patch, pkg-config, Vulkan)
+    - name: Cache Vulkan SDK for Windows
+      uses: actions/cache@v6
+      id: windows-vulkan-cache
+      with:
+        path: "C:/VulkanSDK"
+        key: ${{ runner.os }}-vulkan-sdk-1.4.350
+
+    - name: Install build tools (Ninja, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
         choco feature enable -n allowEmptyChecksums
-        choco install ninja jom winflexbison3 nasm patch pkgconfiglite vulkan-sdk --yes --no-progress --allow-empty-checksums --ignore-checksums
+        $chocoPkgs = "ninja winflexbison3 nasm patch pkgconfiglite"
+        if ("${{ steps.windows-vulkan-cache.outputs.cache-hit }}" -ne "true") {
+            $chocoPkgs += " vulkan-sdk"
+        }
+        choco install $chocoPkgs --yes --no-progress --allow-empty-checksums --ignore-checksums
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
         $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
         if ($VulkanDir) {
@@ -294,21 +311,26 @@ runs:
       shell: powershell
 
     - name: Setup sccache
-      # Used for this run only (SCCACHE_GHA_ENABLED=false); not stored in Actions cache.
-      # For sccache to actually cache the Windows/MSVC build, CMake must use it as the compiler
-      # launcher, e.g. -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
-      # in the Configure UTV step (and sccache must be on PATH when the build runs).
-      uses: mozilla-actions/sccache-action@v0.0.10
+      uses: mozilla-actions/sccache-action@v0.0.11
       with:
         version: "v0.15.0"
 
-    - name: Configure sccache for bash and powershell
+    - name: Configure sccache directory and cache
       run: |
-        # sccache is installed to cargo bin
         if (Test-Path "C:\Users\runneradmin\.cargo\bin") {
             "C:\Users\runneradmin\.cargo\bin" | Add-Content -Path $env:GITHUB_PATH
         }
+        "SCCACHE_DIR=C:\.sccache" | Add-Content -Path $env:GITHUB_ENV
+        "SCCACHE_CACHE_SIZE=5G" | Add-Content -Path $env:GITHUB_ENV
       shell: powershell
+
+    - name: Restore Sccache
+      uses: actions/cache/restore@v6
+      with:
+        path: "C:/.sccache"
+        key: ${{ runner.os }}-sccache-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-sccache-
 
     - name: Configure UTV
       run: |
@@ -454,4 +476,12 @@ runs:
             sccache --show-stats
         }
       shell: powershell
+
+    - name: Save Sccache
+      if: always()
+      uses: actions/cache/save@v6
+      with:
+        path: "C:/.sccache"
+        key: ${{ runner.os }}-sccache-${{ github.sha }}
+
 
