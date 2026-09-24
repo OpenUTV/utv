@@ -36,6 +36,10 @@ SET(SOURCES
     main.cpp utf8WinMain.cpp
 )
 
+IF(RV_TARGET_LINUX)
+  LIST(APPEND SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/../../imgtools/rvio_sw/glfix.c")
+ENDIF()
+
 IF(RV_TARGET_WINDOWS)
   IF(DEFINED RV_RC_ICON)
     SET(RV_ICON_PATH

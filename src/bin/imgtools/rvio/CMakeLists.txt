@@ -11,6 +11,9 @@ SET(_target
 )
 
 LIST(APPEND _sources UICommands.cpp main.cpp utf8Main.cpp)
+IF(RV_TARGET_LINUX)
+  LIST(APPEND _sources ../rvio_sw/glfix.c)
+ENDIF()
 
 ADD_EXECUTABLE(
   ${_target}
