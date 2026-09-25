@@ -124,12 +124,6 @@ This automatically installs `UTV.app` along with all required multimedia depende
 
 ### Windows Package Managers
 
-#### Windows Package Manager (winget)
-
-```powershell
-winget install OpenUTV.UTV
-```
-
 #### Scoop
 
 ```powershell
