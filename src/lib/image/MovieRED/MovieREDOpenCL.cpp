@@ -6,7 +6,7 @@
 //******************************************************************************
 
 #include <MovieRED/MovieREDOpenCL.h>
-#include <CL/opencl.h>
+#include <CL/cl.h>
 #include <R3DSDK.h>
 #include <R3DSDKOpenCL.h>
 
