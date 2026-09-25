@@ -633,9 +633,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cat << 'EOF' > release_notes.md
-          ${{ steps.changelog.outputs.notes }}
-          EOF
+          if [ -f .github/RELEASE_NOTES.md ] && grep -q "OpenUTV ${{ needs.version.outputs.version }}" .github/RELEASE_NOTES.md; then
+            echo "Using curated release notes from .github/RELEASE_NOTES.md"
+            cp .github/RELEASE_NOTES.md release_notes.md
+          else
+            cat << 'EOF' > release_notes.md
+${{ steps.changelog.outputs.notes }}
+EOF
+          fi
 
           if gh release view "${{ needs.version.outputs.version }}" >/dev/null 2>&1; then
             echo "Updating existing release..."
