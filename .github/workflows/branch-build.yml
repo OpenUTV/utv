@@ -122,17 +122,22 @@ jobs:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
 
-      - name: Sign Ad-Hoc App
+      - name: Package Ad-Hoc Signed App
         run: |
           python3 "${PWD}/src/build/sanitize_homebrew_links.py" "_build/stage/app/UTV.app" || true
           codesign --force --deep --sign - "_build/stage/app/UTV.app"
+          mkdir -p _dist
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          cd _build/stage/app
+          ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
 
       - name: Upload macOS Branch Artifact
         uses: actions/upload-artifact@v7
         with:
           name: UTV-macOS-arm64
-          path: _build/stage/app/UTV.app
+          path: _dist/*.zip
           retention-days: 5
 
   build-windows:
@@ -162,16 +167,21 @@ jobs:
         with:
           version: 'dev'
 
-      - name: Stage Windows Branch Directory
+      - name: Package Windows Branch Archive
         shell: powershell
         run: |
+          $ShortSha = git rev-parse --short=7 HEAD
+          $SafeBranch = "${{ github.ref_name }}".Replace("/", "-")
+          $ZipName = "UTV-$SafeBranch-$ShortSha-windows-x64.zip"
+          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
           Rename-Item -Path "_install" -NewName "utv-windows-x64"
+          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
 
       - name: Upload Windows Branch Artifact
         uses: actions/upload-artifact@v7
         with:
           name: UTV-windows-x64
-          path: utv-windows-x64
+          path: _dist/*.zip
           retention-days: 5
 
   build-linux:
@@ -255,11 +265,22 @@ jobs:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
 
+      - name: Package Linux Branch Archive
+        if: success()
+        run: |
+          mkdir -p _dist
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          if [ -d "_build/stage/app" ]; then
+            tar -czf "_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-linux-x64.tar.gz" -C _build/stage/app .
+          fi
+        shell: bash
+
       - name: Upload Linux Branch Artifact
         if: success()
         uses: actions/upload-artifact@v7
         with:
           name: UTV-linux-x64
-          path: _build/stage/app
+          path: _dist/*.tar.gz
           retention-days: 5
 
