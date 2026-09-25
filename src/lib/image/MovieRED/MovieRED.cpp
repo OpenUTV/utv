@@ -14,9 +14,7 @@
 #include <QtCore/QSettings>
 #include <QtCore/QString>
 
-#if defined(__APPLE__)
-#include <MovieRED/MovieREDMetal.h>
-#endif
+#include <MovieRED/MovieREDGpu.h>
 
 #include <R3DSDK.h>
 #include <R3DSDKMetadata.h>
@@ -287,7 +285,7 @@ namespace TwkMovie
 #if defined(__APPLE__)
                 unsigned int options = OPTION_RED_METAL;
 #else
-                unsigned int options = OPTION_RED_NONE;
+                unsigned int options = OPTION_RED_OPENCL;
 #endif
                 R3DSDK::InitializeStatus st = R3DSDK::InitializeSdk(dir.c_str(), options);
                 if (st != R3DSDK::ISInitializeOK && options != OPTION_RED_NONE)
@@ -301,12 +299,10 @@ namespace TwkMovie
                 {
                     s_redInitialized = true;
                     std::cout << "INFO: Initialized RED SDK from " << dir << ": " << R3DSDK::GetSdkVersion() << std::endl;
-#if defined(__APPLE__)
-                    if (options & OPTION_RED_METAL)
+                    if (options != OPTION_RED_NONE)
                     {
-                        REDMetalGpu::init(dir.c_str());
+                        REDGpu::init(dir.c_str());
                     }
-#endif
                     s_lastREDInitError.clear();
                     return true;
                 }
@@ -784,13 +780,10 @@ namespace TwkMovie
 
         R3DSDK::Metadata frameMeta;
         bool decodedOnGpu = false;
-#if defined(__APPLE__)
-        if (m_impl->useGpu && REDMetalGpu::isAvailable() && pixelFormat != RGBA8)
+        if (m_impl->useGpu && REDGpu::isAvailable() && pixelFormat != RGBA8)
         {
-            decodedOnGpu =
-                REDMetalGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded, &frameMeta);
+            decodedOnGpu = REDGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded, &frameMeta);
         }
-#endif
 
         if (!decodedOnGpu)
         {

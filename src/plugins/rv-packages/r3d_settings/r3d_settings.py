@@ -18,31 +18,59 @@ _gpu_supported_cache = None
 def isGPUSupported():
     """
     Check whether hardware-accelerated RED GPU debayering is supported on this system.
+    Supports Apple Metal on macOS and OpenCL on Windows, Linux, and macOS.
     Returns True if supported, False otherwise.
     """
     global _gpu_supported_cache
     if _gpu_supported_cache is not None:
         return _gpu_supported_cache
 
-    if sys.platform != "darwin":
-        # Currently, hardware RED debayering in MovieRED is Metal-accelerated on macOS.
-        # CUDA / OpenCL debayering on Windows/Linux will be detected here once enabled.
+    # 1. Check for hardware GPU framework/driver capability
+    has_gpu_runtime = False
+    if sys.platform == "darwin":
+        try:
+            metal = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/Metal.framework/Metal")
+            metal.MTLCreateSystemDefaultDevice.restype = ctypes.c_void_p
+            dev = metal.MTLCreateSystemDefaultDevice()
+            if dev:
+                has_gpu_runtime = True
+        except Exception:
+            pass
+
+    if not has_gpu_runtime:
+        # Check OpenCL across Windows, Linux, and macOS
+        opencl_names = []
+        if sys.platform == "win32":
+            opencl_names = ["OpenCL.dll"]
+        elif sys.platform == "darwin":
+            opencl_names = ["/System/Library/Frameworks/OpenCL.framework/OpenCL"]
+        else:
+            opencl_names = ["libOpenCL.so.1", "libOpenCL.so"]
+
+        for name in opencl_names:
+            try:
+                ctypes.cdll.LoadLibrary(name)
+                has_gpu_runtime = True
+                break
+            except Exception:
+                pass
+
+    if not has_gpu_runtime:
         _gpu_supported_cache = False
         return False
 
-    # 1. Check for Metal hardware capability via Metal framework
-    try:
-        metal = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/Metal.framework/Metal")
-        metal.MTLCreateSystemDefaultDevice.restype = ctypes.c_void_p
-        dev = metal.MTLCreateSystemDefaultDevice()
-        if not dev:
-            _gpu_supported_cache = False
-            return False
-    except Exception:
-        _gpu_supported_cache = False
-        return False
+    # 2. Check for matching RED dynamic GPU library in known search paths
+    # macOS: REDMetal.dylib or REDOpenCL.dylib
+    # Windows: REDOpenCL-x64.dll or REDCuda-x64.dll
+    # Linux: REDOpenCL-x64.so or REDCuda-x64.so
+    target_gpu_libs = []
+    if sys.platform == "darwin":
+        target_gpu_libs = ["REDMetal.dylib", "REDOpenCL.dylib"]
+    elif sys.platform == "win32":
+        target_gpu_libs = ["REDOpenCL-x64.dll", "REDCuda-x64.dll"]
+    else:
+        target_gpu_libs = ["REDOpenCL-x64.so", "REDCuda-x64.so"]
 
-    # 2. Check for REDMetal dynamic library in known search paths
     search_dirs = []
     if os.environ.get("RED_SDK_PATH"):
         search_dirs.append(os.environ["RED_SDK_PATH"])
@@ -53,6 +81,7 @@ def isGPUSupported():
         exe_dir = os.path.dirname(os.path.abspath(sys.executable))
         search_dirs.append(exe_dir)
         search_dirs.append(os.path.join(exe_dir, "..", "PlugIns", "MovieFormats"))
+        search_dirs.append(os.path.join(exe_dir, "PlugIns", "MovieFormats"))
         search_dirs.append(os.path.join(exe_dir, "..", "Frameworks"))
         search_dirs.append(os.path.join(exe_dir, "..", "lib"))
     except Exception:
@@ -62,6 +91,8 @@ def isGPUSupported():
     search_dirs.append(os.path.join(home, "Library", "Application Support", "OpenUTV", "RED"))
     search_dirs.append(os.path.join(home, "Library", "Application Support", "RED"))
     search_dirs.append(os.path.join(home, ".local", "share", "openutv", "red"))
+    if os.environ.get("APPDATA"):
+        search_dirs.append(os.path.join(os.environ["APPDATA"], "OpenUTV", "RED"))
 
     search_dirs.extend(
         [
@@ -73,14 +104,22 @@ def isGPUSupported():
             "/Library/Application Support/RED",
             "/usr/local/lib",
             "/opt/homebrew/lib",
+            "C:/Program Files/RED/RED PLAYER",
+            "C:/Program Files/RED DIGITAL CINEMA/REDCINE-X PRO",
+            "C:/Program Files/RED DIGITAL CINEMA/RED PLAYER",
+            "C:/Program Files/RED/REDCINE-X PRO",
+            "C:/Program Files/RED Digital Cinema",
+            "/usr/local/lib",
+            "/opt/red",
         ]
     )
 
     for d in search_dirs:
-        dylib_path = os.path.join(d, "REDMetal.dylib")
-        if os.path.isfile(dylib_path):
-            _gpu_supported_cache = True
-            return True
+        for lib in target_gpu_libs:
+            dylib_path = os.path.join(d, lib)
+            if os.path.isfile(dylib_path):
+                _gpu_supported_cache = True
+                return True
 
     _gpu_supported_cache = False
     return False
