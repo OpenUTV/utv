@@ -291,7 +291,7 @@ namespace TwkMovie
             }
             else
             {
-                std::cerr << "PRELOADER READ ERROR: " << reader->filename() << std::endl;
+                std::cerr << "PRELOADER READ ERROR: " << filename << std::endl;
             }
 
             return movieReader;

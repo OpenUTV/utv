@@ -14,9 +14,7 @@
 #include <QtCore/QSettings>
 #include <QtCore/QString>
 
-#if defined(__APPLE__)
-#include <MovieRED/MovieREDMetal.h>
-#endif
+#include <MovieRED/MovieREDGpu.h>
 
 #include <R3DSDK.h>
 #include <R3DSDKMetadata.h>
@@ -35,10 +33,12 @@
 #include <vector>
 
 #if defined(__APPLE__)
+#include <dlfcn.h>
 #include <mach-o/dyld.h>
 #elif defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__)
+#include <dlfcn.h>
 #include <unistd.h>
 #endif
 
@@ -62,6 +62,122 @@ namespace TwkMovie
         return ::stat(path.c_str(), &st) == 0;
     }
 
+    static const char* initializeStatusString(R3DSDK::InitializeStatus st)
+    {
+        switch (st)
+        {
+        case R3DSDK::ISInitializeOK:
+            return "OK";
+        case R3DSDK::ISLibraryNotLoaded:
+            return "Library not loaded";
+        case R3DSDK::ISR3DSDKLibraryNotFound:
+            return "R3DSDK library not found";
+        case R3DSDK::ISRedCudaLibraryNotFound:
+            return "RedCuda library not found";
+        case R3DSDK::ISRedOpenCLLibraryNotFound:
+            return "RedOpenCL library not found";
+        case R3DSDK::ISR3DDecoderLibraryNotFound:
+            return "R3DDecoder library not found";
+        case R3DSDK::ISRedMetalLibraryNotFound:
+            return "RedMetal library not found";
+        case R3DSDK::ISLibraryVersionMismatch:
+            return "Library version mismatch (SDK and dynamic library versions must match)";
+        case R3DSDK::ISInvalidR3DSDKLibrary:
+            return "Invalid R3DSDK library";
+        case R3DSDK::ISInvalidRedCudaLibrary:
+            return "Invalid RedCuda library";
+        case R3DSDK::ISInvalidRedOpenCLLibrary:
+            return "Invalid RedOpenCL library";
+        case R3DSDK::ISInvalidR3DDecoderLibrary:
+            return "Invalid R3DDecoder library";
+        case R3DSDK::ISInvalidRedMetalLibrary:
+            return "Invalid RedMetal library";
+        case R3DSDK::ISRedCudaLibraryInitializeFailed:
+            return "RedCuda initialization failed";
+        case R3DSDK::ISRedOpenCLLibraryInitializeFailed:
+            return "RedOpenCL initialization failed";
+        case R3DSDK::ISR3DDecoderLibraryInitializeFailed:
+            return "R3DDecoder initialization failed";
+        case R3DSDK::ISR3DSDKLibraryInitializeFailed:
+            return "R3DSDK library initialization failed";
+        case R3DSDK::ISRedMetalLibraryInitializeFailed:
+            return "RedMetal initialization failed";
+        case R3DSDK::ISInvalidPath:
+            return "Invalid path";
+        case R3DSDK::ISInternalError:
+            return "Internal error";
+        case R3DSDK::ISMetalNotAvailable:
+            return "Metal not available";
+        case R3DSDK::ISCudaNotAvailable:
+            return "CUDA not available";
+        default:
+            return "Unknown status";
+        }
+    }
+
+    struct REDLibVersion
+    {
+        bool valid = false;
+        unsigned int major = 0;
+        unsigned int minor = 0;
+        unsigned int patch = 0;
+        unsigned int minMajor = 0;
+        unsigned int minMinor = 0;
+    };
+
+    static REDLibVersion probeREDLibraryVersion(const std::string& libraryPath)
+    {
+        REDLibVersion v;
+#if defined(_WIN32)
+        HMODULE handle = LoadLibraryExA(libraryPath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        if (!handle)
+            handle = LoadLibraryA(libraryPath.c_str());
+        if (handle)
+        {
+            typedef unsigned int (*VersionFn)();
+            VersionFn fnMajor = (VersionFn)GetProcAddress(handle, "RED_LIB_MAJOR_VERSION");
+            VersionFn fnMinor = (VersionFn)GetProcAddress(handle, "RED_LIB_MINOR_VERSION");
+            VersionFn fnPatch = (VersionFn)GetProcAddress(handle, "RED_LIB_PATCH_VERSION");
+            VersionFn fnMinMajor = (VersionFn)GetProcAddress(handle, "RED_MINIMUM_MAJOR_VERSION");
+            VersionFn fnMinMinor = (VersionFn)GetProcAddress(handle, "RED_MINIMUM_MINOR_VERSION");
+            if (fnMajor && fnMinor)
+            {
+                v.valid = true;
+                v.major = fnMajor();
+                v.minor = fnMinor();
+                v.patch = fnPatch ? fnPatch() : 0;
+                v.minMajor = fnMinMajor ? fnMinMajor() : 0;
+                v.minMinor = fnMinMinor ? fnMinMinor() : 0;
+            }
+            FreeLibrary(handle);
+        }
+#else
+        void* handle = dlopen(libraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+        if (handle)
+        {
+            typedef unsigned int (*VersionFn)();
+            VersionFn fnMajor = (VersionFn)dlsym(handle, "RED_LIB_MAJOR_VERSION");
+            VersionFn fnMinor = (VersionFn)dlsym(handle, "RED_LIB_MINOR_VERSION");
+            VersionFn fnPatch = (VersionFn)dlsym(handle, "RED_LIB_PATCH_VERSION");
+            VersionFn fnMinMajor = (VersionFn)dlsym(handle, "RED_MINIMUM_MAJOR_VERSION");
+            VersionFn fnMinMinor = (VersionFn)dlsym(handle, "RED_MINIMUM_MINOR_VERSION");
+            if (fnMajor && fnMinor)
+            {
+                v.valid = true;
+                v.major = fnMajor();
+                v.minor = fnMinor();
+                v.patch = fnPatch ? fnPatch() : 0;
+                v.minMajor = fnMinMajor ? fnMinMajor() : 0;
+                v.minMinor = fnMinMinor ? fnMinMinor() : 0;
+            }
+            dlclose(handle);
+        }
+#endif
+        return v;
+    }
+
+    static std::string s_lastREDInitError;
+
     static bool ensureREDInitialized()
     {
         std::lock_guard<std::mutex> lock(s_redInitMutex);
@@ -74,6 +190,21 @@ namespace TwkMovie
             searchDirs.push_back(envPath);
         if (const char* envPath = getenv("R3DSDK_DIR"))
             searchDirs.push_back(envPath);
+
+        if (const char* home = getenv("HOME"))
+        {
+#if defined(__APPLE__)
+            searchDirs.push_back(std::string(home) + "/Library/Application Support/OpenUTV/RED");
+#elif defined(__linux__)
+            searchDirs.push_back(std::string(home) + "/.local/share/openutv/red");
+#endif
+        }
+#if defined(_WIN32)
+        if (const char* appData = getenv("APPDATA"))
+        {
+            searchDirs.push_back(std::string(appData) + "\\OpenUTV\\RED");
+        }
+#endif
 
 #if defined(__APPLE__)
         char execPath[1024];
@@ -137,14 +268,29 @@ namespace TwkMovie
             std::string fullPath = dir + "/" + targetLib;
             if (fileExists(fullPath))
             {
+                REDLibVersion ver = probeREDLibraryVersion(fullPath);
+                if (ver.valid)
+                {
+                    if (ver.major < 9 || (ver.major == 9 && ver.minor < 2))
+                    {
+                        std::string msg =
+                            "Found RED dynamic library in '" + dir + "' (version " + std::to_string(ver.major) + "."
+                            + std::to_string(ver.minor) + "." + std::to_string(ver.patch)
+                            + "), which is older than required (9.2.1+). Please update RED PLAYER from https://www.red.com/downloads.";
+                        std::cerr << "WARNING: " << msg << std::endl;
+                        s_lastREDInitError = msg;
+                    }
+                }
+
 #if defined(__APPLE__)
                 unsigned int options = OPTION_RED_METAL;
 #else
-                unsigned int options = OPTION_RED_NONE;
+                unsigned int options = OPTION_RED_OPENCL;
 #endif
                 R3DSDK::InitializeStatus st = R3DSDK::InitializeSdk(dir.c_str(), options);
                 if (st != R3DSDK::ISInitializeOK && options != OPTION_RED_NONE)
                 {
+                    R3DSDK::FinalizeSdk();
                     st = R3DSDK::InitializeSdk(dir.c_str(), OPTION_RED_NONE);
                     options = OPTION_RED_NONE;
                 }
@@ -153,13 +299,38 @@ namespace TwkMovie
                 {
                     s_redInitialized = true;
                     std::cout << "INFO: Initialized RED SDK from " << dir << ": " << R3DSDK::GetSdkVersion() << std::endl;
-#if defined(__APPLE__)
-                    if (options & OPTION_RED_METAL)
+                    if (options != OPTION_RED_NONE)
                     {
-                        REDMetalGpu::init(dir.c_str());
+                        REDGpu::init(dir.c_str());
                     }
-#endif
+                    s_lastREDInitError.clear();
                     return true;
+                }
+                else
+                {
+                    std::cerr << "WARNING: Found RED dynamic library in " << dir << ", but InitializeSdk failed (" << st << ": "
+                              << initializeStatusString(st) << ")" << std::endl;
+                    if (st == R3DSDK::ISLibraryVersionMismatch || st == R3DSDK::ISInvalidR3DSDKLibrary)
+                    {
+                        if (ver.valid && (ver.major > 9 || (ver.major == 9 && ver.minor > 2)))
+                        {
+                            std::string msg =
+                                "Installed RED library in '" + dir + "' is version " + std::to_string(ver.major) + "."
+                                + std::to_string(ver.minor) + "." + std::to_string(ver.patch)
+                                + " (newer than UTV's R3D SDK 9.2.1). Dynamic ABI mismatch detected. "
+                                  "Please place R3D SDK 9.2.1 Redistributables in application search paths or set RED_SDK_PATH.";
+                            std::cerr << "WARNING: " << msg << std::endl;
+                            s_lastREDInitError = msg;
+                        }
+                        else
+                        {
+                            std::cerr << "WARNING: OpenUTV was built against R3D SDK 9.2.1. The dynamic library in '" << dir
+                                      << "' is an incompatible version. "
+                                      << "Set RED_SDK_PATH or place R3D SDK 9.2.1 Redistributable libraries in application search paths."
+                                      << std::endl;
+                        }
+                    }
+                    R3DSDK::FinalizeSdk();
                 }
             }
         }
@@ -243,8 +414,16 @@ namespace TwkMovie
     {
         if (!ensureREDInitialized())
         {
-            TWK_THROW_STREAM(IOException, "Cannot open RED file: RED dynamic libraries (REDR3D) not found. "
-                                          "Please install RED PLAYER from https://www.red.com/downloads or set RED_SDK_PATH.");
+            std::string err = "Cannot open RED file: Compatible RED dynamic libraries (REDR3D) not found.";
+            if (!s_lastREDInitError.empty())
+            {
+                err += " " + s_lastREDInitError;
+            }
+            else
+            {
+                err += " Please install RED PLAYER from https://www.red.com/downloads or set RED_SDK_PATH.";
+            }
+            TWK_THROW_STREAM(IOException, err);
         }
 
         m_filename = filename;
@@ -601,13 +780,10 @@ namespace TwkMovie
 
         R3DSDK::Metadata frameMeta;
         bool decodedOnGpu = false;
-#if defined(__APPLE__)
-        if (m_impl->useGpu && REDMetalGpu::isAvailable() && pixelFormat != RGBA8)
+        if (m_impl->useGpu && REDGpu::isAvailable() && pixelFormat != RGBA8)
         {
-            decodedOnGpu =
-                REDMetalGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded, &frameMeta);
+            decodedOnGpu = REDGpu::debayerFrame(m_impl->clip.get(), videoFrameNo, jobMode, jobPixelType, imgBuffer, memNeeded, &frameMeta);
         }
-#endif
 
         if (!decodedOnGpu)
         {

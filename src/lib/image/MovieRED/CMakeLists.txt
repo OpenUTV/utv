@@ -9,7 +9,7 @@ SET(_target
 )
 
 SET(_sources
-    MovieRED.cpp
+    MovieRED.cpp MovieREDGpu.cpp MovieREDOpenCL.cpp
 )
 
 FIND_PACKAGE(
