@@ -62,6 +62,59 @@ namespace TwkMovie
         return ::stat(path.c_str(), &st) == 0;
     }
 
+    static const char* initializeStatusString(R3DSDK::InitializeStatus st)
+    {
+        switch (st)
+        {
+        case R3DSDK::ISInitializeOK:
+            return "OK";
+        case R3DSDK::ISLibraryNotLoaded:
+            return "Library not loaded";
+        case R3DSDK::ISR3DSDKLibraryNotFound:
+            return "R3DSDK library not found";
+        case R3DSDK::ISRedCudaLibraryNotFound:
+            return "RedCuda library not found";
+        case R3DSDK::ISRedOpenCLLibraryNotFound:
+            return "RedOpenCL library not found";
+        case R3DSDK::ISR3DDecoderLibraryNotFound:
+            return "R3DDecoder library not found";
+        case R3DSDK::ISRedMetalLibraryNotFound:
+            return "RedMetal library not found";
+        case R3DSDK::ISLibraryVersionMismatch:
+            return "Library version mismatch (SDK and dynamic library versions must match)";
+        case R3DSDK::ISInvalidR3DSDKLibrary:
+            return "Invalid R3DSDK library";
+        case R3DSDK::ISInvalidRedCudaLibrary:
+            return "Invalid RedCuda library";
+        case R3DSDK::ISInvalidRedOpenCLLibrary:
+            return "Invalid RedOpenCL library";
+        case R3DSDK::ISInvalidR3DDecoderLibrary:
+            return "Invalid R3DDecoder library";
+        case R3DSDK::ISInvalidRedMetalLibrary:
+            return "Invalid RedMetal library";
+        case R3DSDK::ISRedCudaLibraryInitializeFailed:
+            return "RedCuda initialization failed";
+        case R3DSDK::ISRedOpenCLLibraryInitializeFailed:
+            return "RedOpenCL initialization failed";
+        case R3DSDK::ISR3DDecoderLibraryInitializeFailed:
+            return "R3DDecoder initialization failed";
+        case R3DSDK::ISR3DSDKLibraryInitializeFailed:
+            return "R3DSDK library initialization failed";
+        case R3DSDK::ISRedMetalLibraryInitializeFailed:
+            return "RedMetal initialization failed";
+        case R3DSDK::ISInvalidPath:
+            return "Invalid path";
+        case R3DSDK::ISInternalError:
+            return "Internal error";
+        case R3DSDK::ISMetalNotAvailable:
+            return "Metal not available";
+        case R3DSDK::ISCudaNotAvailable:
+            return "CUDA not available";
+        default:
+            return "Unknown status";
+        }
+    }
+
     static bool ensureREDInitialized()
     {
         std::lock_guard<std::mutex> lock(s_redInitMutex);
@@ -74,6 +127,21 @@ namespace TwkMovie
             searchDirs.push_back(envPath);
         if (const char* envPath = getenv("R3DSDK_DIR"))
             searchDirs.push_back(envPath);
+
+        if (const char* home = getenv("HOME"))
+        {
+#if defined(__APPLE__)
+            searchDirs.push_back(std::string(home) + "/Library/Application Support/OpenUTV/RED");
+#elif defined(__linux__)
+            searchDirs.push_back(std::string(home) + "/.local/share/openutv/red");
+#endif
+        }
+#if defined(_WIN32)
+        if (const char* appData = getenv("APPDATA"))
+        {
+            searchDirs.push_back(std::string(appData) + "\\OpenUTV\\RED");
+        }
+#endif
 
 #if defined(__APPLE__)
         char execPath[1024];
@@ -145,6 +213,7 @@ namespace TwkMovie
                 R3DSDK::InitializeStatus st = R3DSDK::InitializeSdk(dir.c_str(), options);
                 if (st != R3DSDK::ISInitializeOK && options != OPTION_RED_NONE)
                 {
+                    R3DSDK::FinalizeSdk();
                     st = R3DSDK::InitializeSdk(dir.c_str(), OPTION_RED_NONE);
                     options = OPTION_RED_NONE;
                 }
@@ -160,6 +229,19 @@ namespace TwkMovie
                     }
 #endif
                     return true;
+                }
+                else
+                {
+                    std::cerr << "WARNING: Found RED dynamic library in " << dir << ", but InitializeSdk failed (" << st << ": "
+                              << initializeStatusString(st) << ")" << std::endl;
+                    if (st == R3DSDK::ISLibraryVersionMismatch)
+                    {
+                        std::cerr << "WARNING: OpenUTV was built against R3D SDK 9.2.1. The dynamic library in '" << dir
+                                  << "' is an incompatible version. "
+                                  << "Set RED_SDK_PATH or place R3D SDK 9.2.1 Redistributable libraries in application search paths."
+                                  << std::endl;
+                    }
+                    R3DSDK::FinalizeSdk();
                 }
             }
         }
