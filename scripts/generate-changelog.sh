@@ -50,3 +50,26 @@ if [ -n "$OTHER" ]; then
   echo "$OTHER"
   echo ""
 fi
+
+# Extract unique human contributors (commit authors + co-authors)
+CONTRIBUTORS=$( {
+  git log "$RANGE" --format="%aN"
+  git log "$RANGE" --format="%(trailers:key=Co-authored-by,valueonly=true)" | sed 's/ <.*//'
+} 2>/dev/null | grep -v -E "^\s*$" | grep -v -i "\[bot\]" | sort -u || true )
+
+if [ -n "$CONTRIBUTORS" ]; then
+  echo "### Contributors"
+  echo "Special thanks to all contributors who worked on this release:"
+  echo ""
+  while IFS= read -r contributor; do
+    if [ -n "$contributor" ]; then
+      if [ "$contributor" = "Michael Oliver" ]; then
+        echo "* @mcoliver (Michael Oliver)"
+      else
+        echo "* ${contributor}"
+      fi
+    fi
+  done <<< "$CONTRIBUTORS"
+  echo ""
+fi
+

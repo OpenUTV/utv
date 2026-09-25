@@ -1,42 +1,43 @@
-# OpenUTV 2026.7
+# OpenUTV 2026.8
 
-OpenUTV 2026.7 brings native OS file dialogs enabled by default, directory and folder-based media sequence loading, a brand new native C++ trampoline launcher for Windows with automatic hardware and software OpenGL fallback detection, hardened startup logging against crashes on customized user profiles, and bundled Windows diagnostic and update tools.
-
----
-
-### Native OS File Dialogs & Directory Loading
-
-- **Native File Dialogs by Default**: True native OS dialogs (macOS Finder / Windows Explorer / Linux desktop portal) are now enabled by default for a seamless, platform-consistent file browsing experience.
-- **File Dialog Preference**: Added a user preference under **Preferences > General > Use Native File Dialog** allowing users to switch between native OS dialogs and Qt dialogs at any time.
-- **Open Directory Support**: Added a dedicated **File > Open Directory...** menu action (`Ctrl+Shift+O` / `Cmd+Shift+O`) to quickly load entire media folders.
-- **Multi-File and Folder Selection**: The open dialog now supports selecting directories directly; OpenUTV automatically unpacks and loads all image sequences and media files contained within.
-- **Unified Sequence Unpacking**: Replaced fragmented directory traversal with a unified, robust sequence discovery engine.
+OpenUTV 2026.8 introduces out-of-the-box hardware GPU debayering for RED (R3D) media across macOS, Windows, and Linux, streamlined image settings, modern Linux toolchains with the mold linker and x86-64-v3 optimizations, session file loading fixes, and improved distribution packaging.
 
 ---
 
-### Windows Native Trampoline Launcher & Unbundled Architecture
+### RED (R3D) Hardware GPU Debayering & Search Paths
 
-- **Native Trampoline Launcher (`utv.exe`)**: Replaced legacy shell launch scripts with a fast, high-performance native C++ launcher executable that coordinates environment initialization and application startup.
-- **Automatic OpenGL Capability Detection**: Probes the host system's OpenGL hardware profile before launching the application. If OpenGL support is below 2.1 or using software GDI Generic renderers, it automatically enables Mesa software rasterization (`opengl32sw.dll`) for reliable fallback.
-- **Unified Desktop OpenGL**: Configures `QT_OPENGL=desktop` to ensure Qt and OpenUTV's internal viewport share the same desktop OpenGL context.
-- **Comprehensive Dependency Discovery**: Automatically discovers external runtime dependencies across `C:\Program Files\OpenUTVDeps*`, Windows registry uninstall entries, `OPENUTV_DEPS_ROOT`, and PySide6 Qt runtimes.
-
----
-
-### Startup Stability & Hardened Logging
-
-- **Pre-Created Log Paths**: Resolves startup crashes when initializing log files by pre-creating `%APPDATA%\OpenUTV\Logs` using Qt path utilities before file sinks are opened.
-- **Guarded Log Initialization**: Wrapped `spdlog` file helper sinks in structured exception handlers with graceful fallback to stderr/console output, preventing unhandled exceptions on systems with roaming profiles, non-ASCII paths, or restricted permissions.
-- **Null Safety Guards**: Hardened all internal log dispatch points to safely operate even if the logging sink fails to initialize.
+- **Automatic GPU Acceleration Out-of-the-Box**: OpenUTV now probes GPU acceleration capabilities across macOS (Metal/OpenCL), Windows (`OpenCL.dll`), and Linux (`libOpenCL.so.1`) on initial startup. If supported, GPU acceleration is automatically enabled by default, delivering immediate real-time playback.
+- **Cross-Platform OpenCL Hardware Debayering**: Introduced a native dynamic runtime OpenCL dispatch backend (`MovieREDOpenCL.cpp` and `MovieREDGpu.cpp`) for Windows and Linux that binds directly to system OpenCL drivers without hard build-time SDK dependencies.
+- **Streamlined UI**: Grouped all RED controls under **Image > RED**, featuring a top-level GPU Acceleration toggle alongside wavelet debayering resolution selections (Full, Half, Quarter, Eighth).
+- **User Library Search Paths**: Added automatic lookup for RED redistributable libraries in standard user configuration directories:
+  - macOS: `~/Library/Application Support/OpenUTV/RED`
+  - Linux: `~/.local/share/openutv/red`
+  - Windows: `%APPDATA%\OpenUTV\RED`
+- **Diagnostic & Version Handshake Probing**: Probes RED library version headers and provides clear user notifications on version mismatches (such as R3D SDK 9.2.1 vs. an external 9.3.0 RED PLAYER installation).
 
 ---
 
-### Windows Diagnostics & Tools
+### Core Stability & Session Loading
 
-- **Diagnostics Packager**: Deployed `openutv-diagnostics.bat` into the Windows release distribution, enabling 1-click collection of system info, graphics driver details, and crash logs for issue reporting.
-- **Update Checker**: Deployed `openutv-check-updates.bat` for fast command-line GitHub release checks on Windows.
-- **Bundled PyOpenColorIO**: Included PyOpenColorIO packages within the Windows distribution for out-of-the-box OpenColorIO 2.5 Python scripting.
-- **CLI Options**: Restored the `-workItemThreads` command-line argument in CLI option parsing.
+- **Session File Loading**: Fixed a crash regression when loading saved `.rv` session files (#39, #42).
+- **Shader Linking**: Resolved GLSL shader linking regressions.
+- **UI Reentrancy Guards**: Wrapped session manager checkbox states to eliminate Qt 6 reentrancy crashes and menu flashing.
+
+---
+
+### Linux & Windows Platform Modernization
+
+- **Linux Build & Runtime Modernization**: Linux builds now utilize Homebrew dependencies, the ultra-fast `mold` linker, and `x86-64-v3` compiler optimizations for higher playback throughput (#43).
+- **Windows Build & Caching**: Streamlined Windows compilation with cached MSVC environments and >99% ccache hit rates (#45).
+- **Archive Structure**: Fixed package compression to prevent redundant root folder nesting when extracting macOS (`ditto`), Windows, and Linux standalone archives (#49).
+
+---
+
+### Contributors
+
+Special thanks to all contributors who worked on this release:
+
+- @mcoliver (Michael Oliver)
 
 ---
 
@@ -57,10 +58,13 @@ brew upgrade --cask utv
 
 #### macOS (Standalone Archive)
 
-Download `UTV-2026.7-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
+Download `UTV-2026.8-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
 
 #### Windows (Standalone Archive)
 
-1. Download `UTV-2026.7-windows-x64.zip` below and extract the archive (e.g. to `C:\Program Files\OpenUTV` or `C:\Users\<User>\Downloads\utv-windows-x64`).
-2. Download and extract the runtime dependencies from [OpenUTVDeps 26.5](https://github.com/OpenUTV/utv-dependencies/releases/tag/v26.5) or install via the MSI package.
-3. Launch `bin\utv.exe`.
+1. Download `UTV-2026.8-windows-x64.zip` below and extract the archive (e.g. to `C:\Program Files\OpenUTV` or `C:\Users\<User>\Downloads\utv-windows-x64`).
+2. Launch `bin\utv.exe`.
+
+#### Linux (Standalone Archive)
+
+Download `UTV-2026.8-linux-x64.tar.gz` below and extract to your desired path.
