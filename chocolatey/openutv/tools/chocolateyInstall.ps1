@@ -4,8 +4,8 @@ $packageArgs = @{
   packageName   = 'openutv'
   unzipLocation = $toolsDir
   fileType      = 'zip'
-  url64         = 'https://github.com/OpenUTV/utv/releases/download/2026.7/UTV-2026.7-windows-x64.zip'
-  checksum64    = ''
+  url64         = 'https://github.com/OpenUTV/utv/releases/download/2026.8/UTV-2026.8-windows-x64.zip'
+  checksum64    = 'cb0e543e77d8d899dd914290c6a10fd84c3c0d9a7e51a7cf37c3d0797651fd96'
   checksumType64= 'sha256'
 }
 

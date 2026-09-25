@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>openutv</id>
-    <version>2026.7</version>
+    <version>2026.8</version>
     <title>OpenUTV</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>
@@ -10,7 +10,7 @@
     <projectSourceUrl>https://github.com/OpenUTV/utv</projectSourceUrl>
     <packageSourceUrl>https://github.com/OpenUTV/utv/tree/main/chocolatey/openutv</packageSourceUrl>
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
-    <releaseNotes>https://github.com/OpenUTV/utv/releases/tag/2026.7</releaseNotes>
+    <releaseNotes>https://github.com/OpenUTV/utv/releases/tag/2026.8</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <docsUrl>https://github.com/OpenUTV/utv/blob/main/README.md</docsUrl>
