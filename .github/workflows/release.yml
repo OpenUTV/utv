@@ -632,14 +632,13 @@ jobs:
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGELOG_NOTES: ${{ steps.changelog.outputs.notes }}
         run: |
           if [ -f .github/RELEASE_NOTES.md ] && grep -q "OpenUTV ${{ needs.version.outputs.version }}" .github/RELEASE_NOTES.md; then
             echo "Using curated release notes from .github/RELEASE_NOTES.md"
             cp .github/RELEASE_NOTES.md release_notes.md
           else
-            cat << 'EOF' > release_notes.md
-${{ steps.changelog.outputs.notes }}
-EOF
+            printf "%s\n" "$CHANGELOG_NOTES" > release_notes.md
           fi
 
           if gh release view "${{ needs.version.outputs.version }}" >/dev/null 2>&1; then
