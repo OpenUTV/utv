@@ -7,9 +7,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/OpenUTV/utv/releases"><img src="https://img.shields.io/github/v/release/OpenUTV/utv?label=Release&color=success" alt="Latest Release" /></a>
-  <a href="https://github.com/OpenUTV/utv/actions/workflows/build-and-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/OpenUTV/utv/build-and-release.yml?branch=main" alt="Build Status" /></a>
-  <img src="https://img.shields.io/badge/python-3.14-blue" alt="Python 3.14" />
+  <a href="https://github.com/OpenUTV/utv/releases/latest"><img src="https://img.shields.io/github/v/release/OpenUTV/utv?label=Release&color=success&logo=github" alt="Latest Release" /></a>
+  <a href="https://github.com/OpenUTV/utv/releases/tag/dev"><img src="https://img.shields.io/badge/Dev%20Build-Rolling%20Pre--Release-purple?logo=github" alt="Development Build" /></a>
+  <a href="https://github.com/OpenUTV/utv/actions/workflows/dev-build.yml"><img src="https://img.shields.io/github/actions/workflow/status/OpenUTV/utv/dev-build.yml?branch=main&label=Build%20Status&logo=github-actions" alt="Build Status" /></a>
+  <a href="#installation"><img src="https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey?logo=apple&logoColor=white" alt="Platforms: macOS | Windows | Linux" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache 2.0" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/C%2B%2B-20-00599C?logo=c%2B%2B&logoColor=white" alt="C++20" />
+  <img src="https://img.shields.io/badge/Qt-6.11-41CD52?logo=qt&logoColor=white" alt="Qt 6.11" />
+  <img src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white" alt="Python 3.14" />
+  <a href="https://github.com/OpenUTV/utv/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?logo=git&logoColor=white" alt="PRs Welcome" /></a>
   <a href="https://github.com/OpenUTV/utv/stargazers"><img src="https://img.shields.io/github/stars/OpenUTV/utv?style=social" alt="GitHub Stars" /></a>
 </p>
 

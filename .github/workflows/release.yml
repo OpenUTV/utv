@@ -27,6 +27,7 @@ on:
 permissions:
   contents: write
   pull-requests: read
+  actions: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -41,10 +42,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.14'
 
@@ -63,7 +64,7 @@ jobs:
       clean_version: ${{ steps.versioning.outputs.clean_version }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -99,14 +100,14 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -118,7 +119,7 @@ jobs:
         shell: bash
 
       - name: Restore Homebrew cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
@@ -129,15 +130,19 @@ jobs:
             ${{ runner.os }}-brew-
 
       - name: Install Homebrew dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "0"
         run: |
+          brew update
           brew install --formula \
                ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+          brew upgrade openexr imath opencolorio libraw libtiff boost openimageio spdlog openjph || true
         shell: bash
 
       - name: Save Homebrew cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
@@ -145,7 +150,7 @@ jobs:
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -162,7 +167,7 @@ jobs:
 
       - name: Save CCache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -176,7 +181,7 @@ jobs:
         shell: bash
 
       - name: Upload Unsigned App Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: utv-app-unsigned-${{ needs.version.outputs.version }}
           path: _build/stage/unsigned/UTV.app.tar.gz
@@ -189,10 +194,10 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download Unsigned App Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: utv-app-unsigned-${{ needs.version.outputs.version }}
           path: _build/stage/unsigned
@@ -355,7 +360,7 @@ jobs:
         shell: bash
 
       - name: Upload Signed Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ needs.version.outputs.version }}-macOS-arm64
           path: _build/stage/app/UTV-${{ needs.version.outputs.version }}-macOS-arm64.zip
@@ -381,14 +386,14 @@ jobs:
       SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -411,7 +416,7 @@ jobs:
           Write-Host "Created _dist\$ZipName successfully."
 
       - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ needs.version.outputs.version }}-windows-x64
           path: _dist/UTV-${{ needs.version.outputs.version }}-windows-x64.zip
@@ -424,7 +429,7 @@ jobs:
     runs-on: windows-2022
     steps:
       - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UTV-${{ needs.version.outputs.version }}-windows-x64
           path: _dist
@@ -445,14 +450,14 @@ jobs:
     continue-on-error: true
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -464,7 +469,7 @@ jobs:
         shell: bash
 
       - name: Restore Homebrew cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
@@ -474,25 +479,29 @@ jobs:
             ${{ runner.os }}-brew-
 
       - name: Install Homebrew dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "0"
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           sudo apt-get update && sudo apt-get install -y build-essential patchelf mold tcsh libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev libreadline-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev libxkbcommon-dev libxkbcommon-x11-dev libffi-dev libasound2-dev libpulse-dev
+          brew update
           brew install --formula \
                ninja pkg-config ccache glew doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
                openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
+          brew upgrade openexr imath opencolorio libraw libtiff boost openimageio spdlog openjph || true
         shell: bash
 
       - name: Save Homebrew cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -509,7 +518,7 @@ jobs:
 
       - name: Save CCache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -525,7 +534,7 @@ jobs:
 
       - name: Upload Linux Artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-${{ needs.version.outputs.version }}-linux-x64
           path: _dist/UTV-${{ needs.version.outputs.version }}-linux-x64.tar.gz
@@ -545,7 +554,7 @@ jobs:
           dnf config-manager --set-enabled crb || true
 
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
@@ -568,7 +577,7 @@ jobs:
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -577,21 +586,21 @@ jobs:
 
       - name: Download macOS Artifact
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UTV-${{ needs.version.outputs.version }}-macOS-arm64
           path: _dist
 
       - name: Download Windows Artifact
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UTV-${{ needs.version.outputs.version }}-windows-x64
           path: _dist
 
       - name: Download Linux Artifact
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: UTV-${{ needs.version.outputs.version }}-linux-x64
           path: _dist

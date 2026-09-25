@@ -122,12 +122,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
                 libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev \
                 libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev \
                 libxkbcommon-dev libxkbcommon-x11-dev libffi-dev \
-                libasound2-dev libpulse-dev
+                libasound2-dev libpulse-dev libvulkan-dev
         fi
         brew install --formula \
             ninja pkg-config ccache glew doctest qt pyside \
             ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
-            openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
+            openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo \
+            vulkan-headers vulkan-loader
     # RHEL / Rocky Setup
     elif command -v dnf >/dev/null 2>&1; then
         $SUDO dnf install -y epel-release dnf-plugins-core
@@ -458,6 +459,12 @@ fi
 if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "--- Sanitizing Homebrew Links ---"
     python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${BUILD_DIR}/stage"
+    if [ -d "${BUILD_DIR}/stage/app/UTV.app" ]; then
+        codesign --force --deep --sign - "${BUILD_DIR}/stage/app/UTV.app" 2>/dev/null || true
+    fi
+elif [[ "$OSTYPE" == "linux"* ]]; then
+    echo "--- Sanitizing Dynamic Library Links ---"
+    python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${BUILD_DIR}/stage"
 fi
 
 if [ "${INSTALL}" -eq 1 ]; then
@@ -466,6 +473,12 @@ if [ "${INSTALL}" -eq 1 ]; then
     
     if [[ "$OSTYPE" == "darwin"* ]]; then
         echo "--- Sanitizing Installed Homebrew Links ---"
+        python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${INST_DIR}"
+        if [ -d "${INST_DIR}/UTV.app" ]; then
+            codesign --force --deep --sign - "${INST_DIR}/UTV.app" 2>/dev/null || true
+        fi
+    elif [[ "$OSTYPE" == "linux"* ]]; then
+        echo "--- Sanitizing Installed Dynamic Library Links ---"
         python3 "${PROJECT_ROOT}/src/build/sanitize_homebrew_links.py" "${INST_DIR}"
     fi
 fi

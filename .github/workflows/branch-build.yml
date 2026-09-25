@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  actions: write
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -30,10 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.14'
 
@@ -49,14 +50,14 @@ jobs:
     runs-on: macos-26
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -68,7 +69,7 @@ jobs:
         shell: bash
 
       - name: Restore Homebrew cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
@@ -79,15 +80,19 @@ jobs:
             ${{ runner.os }}-brew-
 
       - name: Install Homebrew dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "0"
         run: |
+          brew update
           brew install --formula \
                ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
+          brew upgrade openexr imath opencolorio libraw libtiff boost openimageio spdlog openjph || true
         shell: bash
 
       - name: Save Homebrew cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/Library/Caches/Homebrew/downloads
@@ -95,7 +100,7 @@ jobs:
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -112,27 +117,22 @@ jobs:
 
       - name: Save CCache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
 
-      - name: Package Ad-Hoc Signed App
+      - name: Sign Ad-Hoc App
         run: |
           python3 "${PWD}/src/build/sanitize_homebrew_links.py" "_build/stage/app/UTV.app" || true
           codesign --force --deep --sign - "_build/stage/app/UTV.app"
-          mkdir -p _dist
-          SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
-          cd _build/stage/app
-          ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
 
       - name: Upload macOS Branch Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-macOS-arm64
-          path: _dist/*.zip
+          path: _build/stage/app/UTV.app
           retention-days: 5
 
   build-windows:
@@ -144,14 +144,14 @@ jobs:
       SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -162,21 +162,16 @@ jobs:
         with:
           version: 'dev'
 
-      - name: Package Windows Branch Archive
+      - name: Stage Windows Branch Directory
         shell: powershell
         run: |
-          $ShortSha = git rev-parse --short=7 HEAD
-          $SafeBranch = "${{ github.ref_name }}".Replace("/", "-")
-          $ZipName = "UTV-$SafeBranch-$ShortSha-windows-x64.zip"
-          New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
           Rename-Item -Path "_install" -NewName "utv-windows-x64"
-          Compress-Archive -Path "utv-windows-x64" -DestinationPath "_dist\$ZipName" -CompressionLevel Optimal
 
       - name: Upload Windows Branch Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-windows-x64
-          path: _dist/*.zip
+          path: utv-windows-x64
           retention-days: 5
 
   build-linux:
@@ -187,14 +182,14 @@ jobs:
     continue-on-error: true
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
         continue-on-error: true
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: OpenUTV/openutv-vendor-sdks
           token: ${{ secrets.GH_TOKEN_DEPS_READ }}
@@ -206,7 +201,7 @@ jobs:
         shell: bash
 
       - name: Restore Homebrew cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
@@ -216,25 +211,29 @@ jobs:
             ${{ runner.os }}-brew-
 
       - name: Install Homebrew dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "0"
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           sudo apt-get update && sudo apt-get install -y build-essential patchelf mold tcsh libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev libreadline-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev libxkbcommon-dev libxkbcommon-x11-dev libffi-dev libasound2-dev libpulse-dev
+          brew update
           brew install --formula \
                ninja pkg-config ccache glew doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
                openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
+          brew upgrade openexr imath opencolorio libraw libtiff boost openimageio spdlog openjph || true
         shell: bash
 
       - name: Save Homebrew cache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.cache/Homebrew/downloads
           key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
@@ -251,27 +250,16 @@ jobs:
 
       - name: Save CCache
         if: always()
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@v6
         with:
           path: ~/.ccache
           key: ${{ runner.os }}-ccache-${{ github.sha }}
 
-      - name: Package Linux Branch Archive
-        if: success()
-        run: |
-          mkdir -p _dist
-          SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
-          if [ -d "_build/stage/app" ]; then
-            tar -czf "_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-linux-x64.tar.gz" -C _build/stage/app .
-          fi
-        shell: bash
-
       - name: Upload Linux Branch Artifact
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: UTV-linux-x64
-          path: _dist/*.tar.gz
+          path: _build/stage/app
           retention-days: 5
 

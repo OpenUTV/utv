@@ -57,6 +57,8 @@ ADD_COMPILE_OPTIONS(
   -utf-8
   -Zc:forScope
   -Zc:sizedDealloc-
+  -Zc:inline
+  -Gw
   -Z7
 )
 
