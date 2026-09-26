@@ -1,444 +1,444 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="zh">
+<TS version="2.1" language="es">
 <context>
     <name>MainWindow</name>
     <message>
         <source>Default Sequence</source>
-        <translation>默认序列</translation>
+        <translation>Secuencia predeterminada</translation>
     </message>
 </context>
 <context>
     <name>Menu</name>
     <message>
         <source>File</source>
-        <translation>文件</translation>
+        <translation>Archivo</translation>
     </message>
     <message>
         <source>New Session</source>
-        <translation>新建会话</translation>
+        <translation>Nueva sesión</translation>
     </message>
     <message>
         <source>Open...</source>
-        <translation>打开...</translation>
+        <translation>Abrir...</translation>
     </message>
     <message>
         <source>Open Directory...</source>
-        <translation>打开目录...</translation>
+        <translation>Abrir directorio...</translation>
     </message>
     <message>
         <source>Merge...</source>
-        <translation>合并...</translation>
+        <translation>Combinar...</translation>
     </message>
     <message>
         <source>Open into Layer...</source>
-        <translation>打开到图层...</translation>
+        <translation>Abrir en capa...</translation>
     </message>
     <message>
         <source>Open in New Session...</source>
-        <translation>在新会话中打开...</translation>
+        <translation>Abrir en nueva sesión...</translation>
     </message>
     <message>
         <source>Clone Session</source>
-        <translation>克隆会话</translation>
+        <translation>Clonar sesión</translation>
     </message>
     <message>
         <source>Save Session</source>
-        <translation>保存会话</translation>
+        <translation>Guardar sesión</translation>
     </message>
     <message>
         <source>Save Session As...</source>
-        <translation>会话另存为...</translation>
+        <translation>Guardar sesión como...</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>导入</translation>
+        <translation>Importar</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation>导出</translation>
+        <translation>Exportar</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation>清除</translation>
+        <translation>Limpiar</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation>关闭会话</translation>
+        <translation>Cerrar sesión</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>编辑</translation>
+        <translation>Edición</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation>撤销</translation>
+        <translation>Deshacer</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>重做</translation>
+        <translation>Rehacer</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>剪切</translation>
+        <translation>Cortar</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>复制</translation>
+        <translation>Copiar</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation>粘贴</translation>
+        <translation>Pegar</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>全选</translation>
+        <translation>Seleccionar todo</translation>
     </message>
     <message>
         <source>Mark Frame</source>
-        <translation>标记帧</translation>
+        <translation>Marcar fotograma</translation>
     </message>
     <message>
         <source>Clear All Marks</source>
-        <translation>清除所有标记</translation>
+        <translation>Borrar todas las marcas</translation>
     </message>
     <message>
         <source>Mark Sequence Boundaries</source>
-        <translation>标记序列边界</translation>
+        <translation>Marcar límites de secuencia</translation>
     </message>
     <message>
         <source>Mark Annotated Frames</source>
-        <translation>标记有注释的帧</translation>
+        <translation>Marcar fotogramas anotados</translation>
     </message>
     <message>
         <source>Set Range In Point</source>
-        <translation>设置入点</translation>
+        <translation>Establecer punto de entrada del rango</translation>
     </message>
     <message>
         <source>Set Range Out Point</source>
-        <translation>设置出点</translation>
+        <translation>Establecer punto de salida del rango</translation>
     </message>
     <message>
         <source>View</source>
-        <translation>视图</translation>
+        <translation>Ver</translation>
     </message>
     <message>
         <source>Full Screen</source>
-        <translation>全屏</translation>
+        <translation>Pantalla completa</translation>
     </message>
     <message>
         <source>Fit to Window</source>
-        <translation>适应窗口</translation>
+        <translation>Ajustar a la ventana</translation>
     </message>
     <message>
         <source>Center</source>
-        <translation>居中</translation>
+        <translation>Centrar</translation>
     </message>
     <message>
         <source>Show Controls</source>
-        <translation>显示控件</translation>
+        <translation>Mostrar controles</translation>
     </message>
     <message>
         <source>Show Timeline</source>
-        <translation>显示时间线</translation>
+        <translation>Mostrar línea de tiempo</translation>
     </message>
     <message>
         <source>Show HUD</source>
-        <translation>显示HUD</translation>
+        <translation>Mostrar HUD</translation>
     </message>
     <message>
         <source>Image</source>
-        <translation>图像</translation>
+        <translation>Imagen</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>颜色</translation>
+        <translation>Color</translation>
     </message>
     <message>
         <source>Gamma</source>
-        <translation>伽玛</translation>
+        <translation>Gamma</translation>
     </message>
     <message>
         <source>Exposure</source>
-        <translation>曝光</translation>
+        <translation>Exposición</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation>通道</translation>
+        <translation>Canal</translation>
     </message>
     <message>
         <source>Playback</source>
-        <translation>播放</translation>
+        <translation>Reproducción</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation>播放</translation>
+        <translation>Reproducir</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>停止</translation>
+        <translation>Detener</translation>
     </message>
     <message>
         <source>Step Forward</source>
-        <translation>前进一帧</translation>
+        <translation>Avanzar un fotograma</translation>
     </message>
     <message>
         <source>Step Backward</source>
-        <translation>后退一帧</translation>
+        <translation>Retroceder un fotograma</translation>
     </message>
     <message>
         <source>Loop</source>
-        <translation>循环</translation>
+        <translation>Bucle</translation>
     </message>
     <message>
         <source>Session</source>
-        <translation>会话</translation>
+        <translation>Sesión</translation>
     </message>
     <message>
         <source>Session Manager</source>
-        <translation>会话管理器</translation>
+        <translation>Gestor de sesiones</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>帮助</translation>
+        <translation>Ayuda</translation>
     </message>
     <message>
         <source>Check for Updates...</source>
-        <translation>检查更新...</translation>
+        <translation>Buscar actualizaciones...</translation>
     </message>
     <message>
         <source>Report Issue on GitHub...</source>
-        <translation>在GitHub上报告问题...</translation>
+        <translation>Reportar problema en GitHub...</translation>
     </message>
     <message>
         <source>Online Resources</source>
-        <translation>在线资源</translation>
+        <translation>Recursos en línea</translation>
     </message>
     <message>
         <source>Utilities</source>
-        <translation>实用工具</translation>
+        <translation>Utilidades</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>首选项...</translation>
+        <translation>Preferencias...</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>Default Sequence</source>
-        <translation>默认序列</translation>
+        <translation>Secuencia predeterminada</translation>
     </message>
 </context>
 <context>
     <name>RvApplication</name>
     <message>
         <source>Preferences...</source>
-        <translation>首选项...</translation>
+        <translation>Preferencias...</translation>
     </message>
     <message>
         <source>Configure RV for this computer</source>
-        <translation>为此计算机配置RV</translation>
+        <translation>Configurar RV para este ordenador</translation>
     </message>
     <message>
         <source>Network...</source>
-        <translation>网络...</translation>
+        <translation>Red...</translation>
     </message>
 </context>
 <context>
     <name>RvBottomViewToolBar</name>
     <message>
         <source>Toggle Session Manager</source>
-        <translation>切换会话管理器</translation>
+        <translation>Alternar gestor de sesiones</translation>
     </message>
     <message>
         <source>Toggle Annotation tools</source>
-        <translation>切换注释工具</translation>
+        <translation>Alternar herramientas de anotación</translation>
     </message>
     <message>
         <source>Toggle Image Info</source>
-        <translation>切换图像信息</translation>
+        <translation>Alternar información de imagen</translation>
     </message>
     <message>
         <source>Toggle RV Networking Dialog</source>
-        <translation>切换RV网络对话框</translation>
+        <translation>Alternar diálogo de red RV</translation>
     </message>
     <message>
         <source>Toggle Timeline Magnifier</source>
-        <translation>切换时间线放大镜</translation>
+        <translation>Alternar lupa de línea de tiempo</translation>
     </message>
     <message>
         <source>Toggle Timeline</source>
-        <translation>切换时间线</translation>
+        <translation>Alternar línea de tiempo</translation>
     </message>
     <message>
         <source>Ghost</source>
-        <translation>残影</translation>
+        <translation>Fantasma</translation>
     </message>
     <message>
         <source>Hold</source>
-        <translation>定格</translation>
+        <translation>Mantener</translation>
     </message>
     <message>
         <source>Step back one frame</source>
-        <translation>后退一帧</translation>
+        <translation>Retroceder un fotograma</translation>
     </message>
     <message>
         <source>Step forward one frame</source>
-        <translation>前进一帧</translation>
+        <translation>Avanzar un fotograma</translation>
     </message>
     <message>
         <source>Play backwards</source>
-        <translation>倒序播放</translation>
+        <translation>Reproducir hacia atrás</translation>
     </message>
     <message>
         <source>Play forwards</source>
-        <translation>顺向播放</translation>
+        <translation>Reproducir hacia adelante</translation>
     </message>
     <message>
         <source>Skip to start of sequence</source>
-        <translation>跳至序列起始</translation>
+        <translation>Ir al inicio de la secuencia</translation>
     </message>
     <message>
         <source>Skip to end of sequence</source>
-        <translation>跳至序列末尾</translation>
+        <translation>Ir al final de la secuencia</translation>
     </message>
     <message>
         <source>Audio control</source>
-        <translation>音频控制</translation>
+        <translation>Control de audio</translation>
     </message>
 </context>
 <context>
     <name>RvDocument</name>
     <message>
         <source>Audio Failure</source>
-        <translation>音频故障</translation>
+        <translation>Fallo de audio</translation>
     </message>
     <message>
         <source>Audio Device is Currently Unavailable</source>
-        <translation>音频设备当前不可用</translation>
+        <translation>El dispositivo de audio no está disponible actualmente</translation>
     </message>
     <message>
         <source>Change Preferences Manually</source>
-        <translation>手动更改首选项</translation>
+        <translation>Cambiar preferencias manualmente</translation>
     </message>
 </context>
 <context>
     <name>RvPreferences</name>
     <message>
         <source>General</source>
-        <translation>常规</translation>
+        <translation>General</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>语言</translation>
+        <translation>Idioma</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation>字体大小</translation>
+        <translation>Tamaño de fuente</translation>
     </message>
     <message>
         <source>Session Manager Font Size</source>
-        <translation>会话管理器字体大小</translation>
+        <translation>Tamaño de fuente del gestor de sesiones</translation>
     </message>
     <message>
         <source>Default Playback Mode</source>
-        <translation>默认播放模式</translation>
+        <translation>Modo de reproducción predeterminado</translation>
     </message>
     <message>
         <source>Default Stereo Mode</source>
-        <translation>默认立体模式</translation>
+        <translation>Modo estéreo predeterminado</translation>
     </message>
     <message>
         <source>Default FPS</source>
-        <translation>默认FPS</translation>
+        <translation>FPS predeterminado</translation>
     </message>
     <message>
         <source>Startup Screen</source>
-        <translation>启动屏幕</translation>
+        <translation>Pantalla de inicio</translation>
     </message>
     <message>
         <source>Play on Start Up</source>
-        <translation>启动时播放</translation>
+        <translation>Reproducir al iniciar</translation>
     </message>
     <message>
         <source>Start in Fullscreen Mode</source>
-        <translation>全屏模式启动</translation>
+        <translation>Iniciar en modo pantalla completa</translation>
     </message>
     <message>
         <source>Desktop Aware</source>
-        <translation>识别桌面环境</translation>
+        <translation>Sensible al escritorio</translation>
     </message>
     <message>
         <source>Click in View to Play</source>
-        <translation>点击视图进行播放</translation>
+        <translation>Hacer clic en la vista para reproducir</translation>
     </message>
     <message>
         <source>Fit Window to First Media Loaded</source>
-        <translation>将窗口调整到首个加载媒体大小</translation>
+        <translation>Ajustar ventana al primer medio cargado</translation>
     </message>
     <message>
         <source>Hide Menu Bar by Default</source>
-        <translation>默认隐藏菜单栏</translation>
+        <translation>Ocultar barra de menú por defecto</translation>
     </message>
     <message>
         <source>Auto-Retime Mismatched FPS Media</source>
-        <translation>自动重定时不同帧率的媒体</translation>
+        <translation>Ajustar automáticamente medios con FPS discordantes</translation>
     </message>
     <message>
         <source>System Default</source>
-        <translation>系统默认</translation>
+        <translation>Predeterminado del sistema</translation>
     </message>
     <message>
         <source>English</source>
-        <translation>英语</translation>
+        <translation>Inglés</translation>
     </message>
     <message>
         <source>Language Changed</source>
-        <translation>语言已更改</translation>
+        <translation>Idioma cambiado</translation>
     </message>
     <message>
         <source>The user interface language has been changed. Please restart OpenUTV for all changes to take full effect.</source>
-        <translation>用户界面语言已更改。请重启 OpenUTV 以使所有更改完全生效。</translation>
+        <translation>Se ha cambiado el idioma de la interfaz. Reinicie OpenUTV para que todos los cambios surtan efecto.</translation>
     </message>
 </context>
 <context>
     <name>RvTopViewToolBar</name>
     <message>
         <source>Switch to previous View</source>
-        <translation>切换到上一个视图</translation>
+        <translation>Cambiar a la vista anterior</translation>
     </message>
     <message>
         <source>Switch to next View</source>
-        <translation>切换到下一个视图</translation>
+        <translation>Cambiar a la vista siguiente</translation>
     </message>
     <message>
         <source>Select a View</source>
-        <translation>选择视图</translation>
+        <translation>Seleccionar una vista</translation>
     </message>
     <message>
         <source>Toggle full-screen mode</source>
-        <translation>切换全屏模式</translation>
+        <translation>Alternar modo de pantalla completa</translation>
     </message>
     <message>
         <source>Frame image in view</source>
-        <translation>在视图中居中框选图像</translation>
+        <translation>Encuadrar imagen en vista</translation>
     </message>
     <message>
         <source>Select background style</source>
-        <translation>选择背景样式</translation>
+        <translation>Seleccionar estilo de fondo</translation>
     </message>
     <message>
         <source>Select stereoscopic output style</source>
-        <translation>选择立体输出样式</translation>
+        <translation>Seleccionar estilo de salida estereoscópica</translation>
     </message>
     <message>
         <source>Color channel view control</source>
-        <translation>颜色通道视图控制</translation>
+        <translation>Control de vista de canales de color</translation>
     </message>
     <message>
         <source>Configure display device</source>
-        <translation>配置显示设备</translation>
+        <translation>Configurar dispositivo de pantalla</translation>
     </message>
 </context>
 </TS>

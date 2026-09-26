@@ -701,8 +701,33 @@ int utf8Main(int argc, char* argv[])
     QApplication* app = new QApplication(argc, argv);
 
     QTranslator* translator = new QTranslator();
-    QLocale locale = QLocale(getenv("ORIGINALLOCAL"));
-    if (translator->load(locale, QLatin1String("i18n"), "_", QLatin1String(":/translations")))
+    bool loaded = false;
+
+    // Check user preference for language first
+    {
+        RV_QSETTINGS;
+        settings.beginGroup("General");
+        QString userLang = settings.value("language", "").toString();
+        settings.endGroup();
+
+        if (!userLang.isEmpty() && userLang != "system")
+        {
+            loaded = translator->load(QString(":/translations/i18n_%1.qm").arg(userLang));
+            if (!loaded)
+            {
+                QString baseLang = userLang.split('_').first();
+                loaded = translator->load(QString(":/translations/i18n_%1.qm").arg(baseLang));
+            }
+        }
+    }
+
+    if (!loaded)
+    {
+        QLocale locale = QLocale(getenv("ORIGINALLOCAL"));
+        loaded = translator->load(locale, QLatin1String("i18n"), "_", QLatin1String(":/translations"));
+    }
+
+    if (loaded)
     {
         app->installTranslator(translator);
     }

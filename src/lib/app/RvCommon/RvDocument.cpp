@@ -140,6 +140,30 @@ namespace Rv
         RvDocument* m_doc;
     };
 
+    static QString translateMenuText(const QString& rawTitle)
+    {
+        if (rawTitle.isEmpty() || rawTitle == "_")
+            return rawTitle;
+
+        int ws = 0;
+        while (ws < rawTitle.size() && rawTitle[ws] == ' ')
+            ws++;
+
+        QString prefix = rawTitle.left(ws);
+        QString core = rawTitle.mid(ws);
+
+        if (core.isEmpty())
+            return rawTitle;
+
+        QString trans = qApp->translate("Menu", core.toUtf8().constData());
+        if (trans.isEmpty() || trans == core)
+        {
+            trans = qApp->translate("QObject", core.toUtf8().constData());
+        }
+
+        return prefix + (trans.isEmpty() ? core : trans);
+    }
+
     RvDocument::RvDocument()
         : QMainWindow()
         , TwkUtil::Notifier()
@@ -2052,7 +2076,7 @@ namespace Rv
 
             if (item->subMenu())
             {
-                QMenu* subMenu = qmenu->addMenu(utf8(item->title()));
+                QMenu* subMenu = qmenu->addMenu(translateMenuText(utf8(item->title())));
                 subMenu->setFont(qmenu->font());
                 //  rt.go();
                 connect(subMenu, SIGNAL(aboutToShow()), this, SLOT(aboutToShowMenu()));
@@ -2076,7 +2100,7 @@ namespace Rv
                 }
                 else
                 {
-                    a->setText(utf8(item->title()));
+                    a->setText(translateMenuText(utf8(item->title())));
                 }
 
                 if (shortcuts)
@@ -2219,7 +2243,7 @@ namespace Rv
 
             if (item->subMenu())
             {
-                QString title = utf8(item->title());
+                QString title = translateMenuText(utf8(item->title()));
 
                 QMenu* menu = mb()->addMenu(title);
                 //  rt.go();

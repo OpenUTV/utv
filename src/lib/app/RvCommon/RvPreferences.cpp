@@ -348,6 +348,7 @@ namespace Rv
 
         m_ui.playbackModeCombo->installEventFilter(scrollEventEater);
         m_ui.startupScreenCombo->installEventFilter(scrollEventEater);
+        m_ui.languageCombo->installEventFilter(scrollEventEater);
         m_ui.stereoModeCombo->installEventFilter(scrollEventEater);
         m_ui.cacheModeCombo->installEventFilter(scrollEventEater);
         m_ui.resampleMethodCombo->installEventFilter(scrollEventEater);
@@ -438,6 +439,24 @@ namespace Rv
             m_ui.startupScreenCombo->addItem(QString("Screen %1").arg((unsigned int)(i)));
         }
         m_ui.startupScreenCombo->setCurrentIndex((opts.screen < m_ui.startupScreenCombo->count() - 1) ? opts.screen + 1 : 0);
+
+        m_ui.languageCombo->clear();
+        m_ui.languageCombo->addItem(tr("System Default"), "");
+        m_ui.languageCombo->addItem(tr("English"), "en");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Español (Spanish)"), "es");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Français (French)"), "fr");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Deutsch (German)"), "de");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Italiano (Italian)"), "it");
+        m_ui.languageCombo->addItem(QString::fromUtf8("日本語 (Japanese)"), "ja");
+        m_ui.languageCombo->addItem(QString::fromUtf8("한국어 (Korean)"), "ko");
+        m_ui.languageCombo->addItem(QString::fromUtf8("简体中文 (Simplified Chinese)"), "zh_CN");
+
+        QString curLang = settings.value("language", "").toString();
+        int langIdx = m_ui.languageCombo->findData(curLang);
+        if (langIdx >= 0)
+            m_ui.languageCombo->setCurrentIndex(langIdx);
+        else
+            m_ui.languageCombo->setCurrentIndex(0);
 
         n = 0;
         if (opts.stereoMode)
@@ -1253,6 +1272,17 @@ namespace Rv
         settings.setValue("autoSetupACES", m_ui.autoSetupACESToggle->checkState() == Qt::Checked);
         settings.setValue("useNativeFileDialog", m_ui.useNativeFileDialogToggle->checkState() == Qt::Checked);
         settings.setValue("startupScreenPolicy", m_ui.startupScreenCombo->currentIndex() - 1);
+
+        QString oldLang = settings.value("language", "").toString();
+        QString newLang = m_ui.languageCombo->currentData().toString();
+        settings.setValue("language", newLang);
+        if (oldLang != newLang)
+        {
+            QMessageBox::information(
+                this, tr("Language Changed"),
+                tr("The user interface language has been changed. Please restart OpenUTV for all changes to take full effect."));
+        }
+
         settings.setValue("fps", m_ui.fpsEdit->text().toDouble());
         settings.setValue("networkHost", m_ui.networkHostEdit->text());
         settings.setValue("readerThreads", m_ui.rthreadEdit->text().toInt());

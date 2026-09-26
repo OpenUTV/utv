@@ -117,32 +117,32 @@ namespace Rv
             case 0:
                 b->setProperty("tbstyle", QVariant(QString("left")));
                 a->setIcon(QIcon(":/images/smanager.png"));
-                a->setToolTip("Toggle Session Manager");
+                a->setToolTip(tr("Toggle Session Manager"));
                 m_smAction = a;
                 break;
             case 1:
                 a->setIcon(QIcon(":/images/paint_48x48.png"));
-                a->setToolTip("Toggle Annotation tools");
+                a->setToolTip(tr("Toggle Annotation tools"));
                 m_paintAction = a;
                 break;
             case 2:
                 a->setIcon(QIcon(":/images/about_48x48.png"));
-                a->setToolTip("Toggle Image Info");
+                a->setToolTip(tr("Toggle Image Info"));
                 m_infoAction = a;
                 break;
             case 3:
                 a->setIcon(QIcon(":/images/ntwrk_48x48.png"));
-                a->setToolTip("Toggle RV Networking Dialog");
+                a->setToolTip(tr("Toggle RV Networking Dialog"));
                 m_networkAction = a;
                 break;
             case 4:
                 a->setIcon(QIcon(":/images/timeline_mag.png"));
-                a->setToolTip("Toggle Timeline Magnifier");
+                a->setToolTip(tr("Toggle Timeline Magnifier"));
                 m_timelineMagAction = a;
                 break;
             case 5:
                 a->setIcon(QIcon(":/images/timeline.png"));
-                a->setToolTip("Toggle Timeline");
+                a->setToolTip(tr("Toggle Timeline"));
                 b->setProperty("tbstyle", QVariant(QString("right")));
                 m_timelineAction = a;
                 break;
@@ -158,7 +158,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/ghost.png"));
-        a->setToolTip("Ghost");
+        a->setToolTip(tr("Ghost"));
         a->setCheckable(true);
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
@@ -167,7 +167,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/hold.png"));
-        a->setToolTip("Hold");
+        a->setToolTip(tr("Hold"));
         a->setCheckable(true);
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
@@ -190,7 +190,7 @@ namespace Rv
         // play buts
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bstep.png"));
-        a->setToolTip("Step back one frame");
+        a->setToolTip(tr("Step back one frame"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -199,7 +199,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_fstep.png"));
-        a->setToolTip("Step forward one frame");
+        a->setToolTip(tr("Step forward one frame"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -208,7 +208,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bplay.png"));
-        a->setToolTip("Play backwards");
+        a->setToolTip(tr("Play backwards"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setProperty("tbsize", QVariant(QString("double")));
@@ -217,7 +217,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_play.png"));
-        a->setToolTip("Play forwards");
+        a->setToolTip(tr("Play forwards"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setProperty("tbsize", QVariant(QString("double")));
@@ -226,7 +226,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bmark.png"));
-        a->setToolTip("Skip to start of sequence");
+        a->setToolTip(tr("Skip to start of sequence"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -235,7 +235,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_fmark.png"));
-        a->setToolTip("Skip to end of sequence");
+        a->setToolTip(tr("Skip to end of sequence"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -317,7 +317,7 @@ namespace Rv
 
         int volumeLevel = (int)(100.0f * IPCore::SoundTrackIPNode::defaultVolume);
         m_audioAction = addAction("");
-        m_audioAction->setToolTip("Audio control");
+        m_audioAction->setToolTip(tr("Audio control"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_audioAction));
         setVolumeLevel<QToolButton>(*b, volumeLevel);
         b->setProperty("tbstyle", QVariant(QString("right_menu")));
