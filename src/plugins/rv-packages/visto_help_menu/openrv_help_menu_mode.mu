@@ -300,6 +300,21 @@ class: UTVHelpMenuMinorMode : MinorMode
         }
     }
 
+    \: checkUpdatesOnStartup (void;)
+    {
+        try
+        {
+            let script = findHelperScript("openutv-check-updates");
+            if (script != "")
+            {
+                let v = commands.getVersion();
+                string curVer = "%d.%d.%d" % (v[0], v[1], v[2]);
+                runHelperScript(script, string[] { "--startup", "--current-version", curVer });
+            }
+        }
+        catch (...) { ; }
+    }
+
     \: inactiveState (int;) { DisabledMenuState; }
 
     method: UTVHelpMenuMinorMode (UTVHelpMenuMinorMode;)
@@ -426,6 +441,8 @@ class: UTVHelpMenuMinorMode : MinorMode
                   menu,
                   "z",
                   9999);  // always last
+
+        checkUpdatesOnStartup();
     } 
 }
 
