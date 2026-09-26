@@ -246,7 +246,7 @@ int utf8Main(int argc, char* argv[])
     {
         if (!strcmp("--help", argv[i]))
         {
-            strcpy(argv[i], "-help");
+            argv[i] = const_cast<char*>("-help");
             break;
         }
     }

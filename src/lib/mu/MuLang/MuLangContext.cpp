@@ -221,7 +221,7 @@ namespace Mu
             if (dimensions[i] > 0)
             {
                 char temp[20];
-                sprintf(temp, "%ld", dimensions[i]);
+                snprintf(temp, sizeof(temp), "%ld", dimensions[i]);
                 name += temp;
                 staticArray = true;
             }

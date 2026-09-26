@@ -650,9 +650,10 @@ namespace Gto
     {
         va_list ap;
         va_start(ap, format);
-        char* m = new char[1024 * 10];
-        // vasprintf(&m, format, ap);
-        vsprintf(m, format, ap);
+        const size_t bufSize = 1024 * 10;
+        char* m = new char[bufSize];
+        vsnprintf(m, bufSize, format, ap);
+        va_end(ap);
         write(m, strlen(m));
         delete[] m;
     }

@@ -128,7 +128,7 @@ namespace Mu
         char temp[256];
         va_list ap;
         va_start(ap, msg);
-        vsprintf(temp, msg, ap);
+        vsnprintf(temp, sizeof(temp), msg, ap);
         va_end(ap);
 
         reportError(temp);
@@ -139,7 +139,7 @@ namespace Mu
         char temp[256];
         va_list ap;
         va_start(ap, msg);
-        vsprintf(temp, msg, ap);
+        vsnprintf(temp, sizeof(temp), msg, ap);
         va_end(ap);
 
         reportError(n, temp);
@@ -191,7 +191,7 @@ namespace Mu
         char temp[256];
         va_list ap;
         va_start(ap, msg);
-        vsprintf(temp, msg, ap);
+        vsnprintf(temp, sizeof(temp), msg, ap);
         va_end(ap);
 
         reportWarning(temp);
@@ -202,7 +202,7 @@ namespace Mu
         char temp[256];
         va_list ap;
         va_start(ap, msg);
-        vsprintf(temp, msg, ap);
+        vsnprintf(temp, sizeof(temp), msg, ap);
         va_end(ap);
 
         reportWarning(n, temp);
@@ -2398,7 +2398,7 @@ namespace Mu
     for (int i=0; true; i++)
     {
 	char temp[100];
-	sprintf(temp,"%s%d",name,i);
+	snprintf(temp, sizeof(temp), "%s%d", name.c_str(), i);
 
 	if (context()->namePool().exists(temp))
 	{
@@ -3044,7 +3044,7 @@ namespace Mu
                     for (int q = needsAlloc ? 1 : 0; q < F->numArgs(); q++)
                     {
                         char temp[80];
-                        sprintf(temp, "_%d", q);
+                        snprintf(temp, sizeof(temp), "_%d", q);
                         sl.push_back(new ParameterVariable(context(), temp, F->argType(q)));
                     }
 
@@ -3237,7 +3237,7 @@ namespace Mu
             for (int i = 0; i < mvars.size(); i++)
             {
                 char temp[40];
-                sprintf(temp, "_%d", i);
+                snprintf(temp, sizeof(temp), "_%d", i);
                 const Type* t = mvars[i]->storageClass();
 
                 //

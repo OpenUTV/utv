@@ -282,7 +282,7 @@ namespace Rv
         {
             char temp[256];
             size_t n = m_imageSources.size();
-            sprintf(temp, "sourceGroup" PAD "_source", n);
+            snprintf(temp, sizeof(temp), "sourceGroup" PAD "_source", n);
 
             finalName = temp;
         }

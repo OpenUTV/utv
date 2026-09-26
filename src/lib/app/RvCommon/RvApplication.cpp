@@ -610,18 +610,18 @@ namespace Rv
         ostringstream date;
         TWK_DEPLOY_SHOW_PROGRAM_BANNER(date);
 
-        vector<char> temp;
-        temp.reserve(2048);
+        QString aboutText;
         if (TWK_DEPLOY_PATCH_LEVEL() == 0)
         {
-            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
-                    TWK_DEPLOY_MINOR_VERSION(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
+            aboutText =
+                QString::asprintf("<h1>%s</h1><h2>%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
+                                  TWK_DEPLOY_MINOR_VERSION(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
         }
         else
         {
-            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
-                    TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME,
-                    COPYRIGHT_TEXT);
+            aboutText = QString::asprintf("<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME,
+                                          TWK_DEPLOY_MAJOR_VERSION(), TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD,
+                                          headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
         }
 
         const TwkApp::Document* doc = TwkApp::Document::activeDocument();
@@ -629,8 +629,8 @@ namespace Rv
         if (doc)
             parent = (RvDocument*)doc->opaquePointer();
 
-        QMessageBox* msgBox = new QMessageBox(QMessageBox::Information, "About " UI_APPLICATION_NAME, QString(temp.data()),
-                                              QMessageBox::NoButton, parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
+        QMessageBox* msgBox = new QMessageBox(QMessageBox::Information, "About " UI_APPLICATION_NAME, aboutText, QMessageBox::NoButton,
+                                              parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
         msgBox->setAttribute(Qt::WA_DeleteOnClose);
         QIcon icon = msgBox->windowIcon();
         QSize size = icon.actualSize(QSize(64, 64));
@@ -1390,29 +1390,22 @@ namespace Rv
         //  URL is baked, so un-bake
         //
         {
-            char* buf = new char[bakedUrl.size()];
-            strcpy(buf, rawPrefix);
+            string bufs = rawPrefix;
+            const char* bakedP = bakedUrl.c_str() + strlen(bakedPrefix);
+            const char* lim = bakedUrl.c_str() + bakedUrl.size();
 
-            char* bakedP = ((char*)(bakedUrl.c_str())) + strlen(bakedPrefix);
-            char* rawP = buf + strlen(rawPrefix);
-            char* lim = ((char*)(bakedUrl.c_str())) + bakedUrl.size() - -1;
-
-            while (bakedP < lim)
+            while (bakedP + 1 < lim)
             {
-                if (isxdigit(*bakedP) && isxdigit(*(bakedP + 1)))
+                if (isxdigit(bakedP[0]) && isxdigit(bakedP[1]))
                 {
-                    unsigned int c;
+                    unsigned int c = 0;
                     sscanf(bakedP, "%02x", &c);
-                    *(rawP++) = (char)c;
+                    bufs.push_back((char)c);
                     bakedP += 2;
                 }
                 else
                     ++bakedP;
             }
-            *rawP = '\0';
-
-            string bufs(buf);
-            delete[] buf;
             return bufs;
         }
         else
@@ -1594,12 +1587,12 @@ namespace Rv
         {
             if (encodeEverything)
             {
-                sprintf(hexBuf, "%02x", int(url[i]));
+                snprintf(hexBuf, sizeof(hexBuf), "%02x", static_cast<unsigned char>(url[i]));
                 newURL += string(hexBuf);
             }
-            else if (disallowed[url[i]])
+            else if (disallowed[static_cast<unsigned char>(url[i])])
             {
-                sprintf(hexBuf, "%%%02x", int(url[i]));
+                snprintf(hexBuf, sizeof(hexBuf), "%%%02x", static_cast<unsigned char>(url[i]));
                 newURL += string(hexBuf);
             }
             else

@@ -56,7 +56,7 @@ namespace Mu
                 else
                 {
                     char tname[20];
-                    sprintf(tname, "p%d", i);
+                    snprintf(tname, sizeof(tname), "p%d", i);
                     nv = new ParameterVariable(_as.context(), tname, f->argType(i));
                 }
 

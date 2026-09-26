@@ -55,9 +55,10 @@ namespace LUT
 
             if (tokens.size() && tokens.front()[0] != '#')
             {
-                if (s.size() < len)
+                if (len > 0 && s.size() < static_cast<size_t>(len))
                 {
-                    strcpy(buf, s.c_str());
+                    strncpy(buf, s.c_str(), len - 1);
+                    buf[len - 1] = '\0';
                     return true;
                 }
             }

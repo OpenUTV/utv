@@ -75,7 +75,7 @@ Pointer string_string_int(Mu::Thread& NODE_THREAD, int i)
     Process* p = NODE_THREAD.process();
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
     char temp[40];
-    sprintf(temp, "%d", i);
+    snprintf(temp, sizeof(temp), "%d", i);
     return c->stringType()->allocate(temp);
 }
 
@@ -84,7 +84,7 @@ Pointer string_string_int64(Mu::Thread& NODE_THREAD, int64 i)
     Process* p = NODE_THREAD.process();
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
     char temp[80];
-    sprintf(temp, "%lld", i);
+    snprintf(temp, sizeof(temp), "%lld", i);
     return c->stringType()->allocate(temp);
 }
 
@@ -93,7 +93,7 @@ Pointer string_string_float(Mu::Thread& NODE_THREAD, float i)
     Process* p = NODE_THREAD.process();
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
     char temp[40];
-    sprintf(temp, "%f", i);
+    snprintf(temp, sizeof(temp), "%f", i);
     return c->stringType()->allocate(temp);
 }
 
@@ -102,7 +102,7 @@ Pointer string_string_double(Mu::Thread& NODE_THREAD, double i)
     Process* p = NODE_THREAD.process();
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
     char temp[80];
-    sprintf(temp, "%f", i);
+    snprintf(temp, sizeof(temp), "%f", i);
     return c->stringType()->allocate(temp);
 }
 
@@ -111,7 +111,7 @@ Pointer string_string_byte(Mu::Thread& NODE_THREAD, char i)
     Process* p = NODE_THREAD.process();
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
     char temp[40];
-    sprintf(temp, "%d", int(i));
+    snprintf(temp, sizeof(temp), "%d", int(i));
     return c->stringType()->allocate(temp);
 }
 
@@ -178,7 +178,7 @@ Pointer string_string_vector_floatBSB_4ESB_(Mu::Thread& NODE_THREAD, Vector4f i)
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
 
     char temp[100];
-    sprintf(temp, "<%g, %g, %g, %g>", i[0], i[1], i[2], i[3]);
+    snprintf(temp, sizeof(temp), "<%g, %g, %g, %g>", i[0], i[1], i[2], i[3]);
     return c->stringType()->allocate(temp);
 }
 
@@ -188,7 +188,7 @@ Pointer string_string_vector_floatBSB_3ESB_(Mu::Thread& NODE_THREAD, Vector3f i)
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
 
     char temp[100];
-    sprintf(temp, "<%g, %g, %g>", i[0], i[1], i[2]);
+    snprintf(temp, sizeof(temp), "<%g, %g, %g>", i[0], i[1], i[2]);
     return c->stringType()->allocate(temp);
 }
 
@@ -198,7 +198,7 @@ Pointer string_string_vector_floatBSB_2ESB_(Mu::Thread& NODE_THREAD, Vector2f i)
     MuLangContext* c = static_cast<MuLangContext*>(p->context());
 
     char temp[100];
-    sprintf(temp, "<%g, %g>", i[0], i[1]);
+    snprintf(temp, sizeof(temp), "<%g, %g>", i[0], i[1]);
     return c->stringType()->allocate(temp);
 }
 
@@ -1146,7 +1146,7 @@ namespace Mu
     {
         // if (_utf8string && _utf8string != blank) MU_GC_FREE(_utf8string);
         char* p = (char*)MU_GC_ALLOC_ATOMIC(size + 1);
-        strcpy(p, s);
+        memcpy(p, s, size);
         p[size] = 0;
         _utf8string = p;
     }
@@ -1157,7 +1157,7 @@ namespace Mu
         // MU_GC_FREE((void*)_utf8string);
         size_t size = strlen(s);
         char* p = (char*)MU_GC_ALLOC_ATOMIC(size + 1);
-        strcpy(p, s);
+        memcpy(p, s, size);
         p[size] = 0;
         _utf8string = p;
     }
