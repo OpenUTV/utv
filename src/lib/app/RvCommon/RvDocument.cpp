@@ -18,6 +18,7 @@
 #include <RvCommon/QTUtils.h>
 #include <RvCommon/RvConsoleWindow.h>
 #include <RvCommon/RvNetworkDialog.h>
+#include <RvCommon/RvKeybindingsManager.h>
 #include <RvCommon/TwkQTAction.h>
 #include <TwkApp/EventNode.h>
 #ifdef PLATFORM_WINDOWS
@@ -422,6 +423,9 @@ namespace Rv
             setObjectName(QString("rv-") + QString(nm));
 
             mergeMenu(m_session->menu());
+
+            // Load and apply any custom user keybindings from keybindings.json
+            RvKeybindingsManager::instance()->loadAndApply();
 
             setAttribute(Qt::WA_DeleteOnClose);
             setAttribute(Qt::WA_QuitOnClose);
