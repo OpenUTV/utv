@@ -37,7 +37,7 @@ namespace IPCore
 
     static string uniqueName(string name, NameSet& disallowedNames)
     {
-        static char buf[24];
+        char buf[32];
         static regex endRE("(.*) \\(([0-9]+)\\)");
 
         if (disallowedNames.count(name) > 0)
@@ -53,7 +53,7 @@ namespace IPCore
                 do
                 {
                     ++n;
-                    sprintf(buf, " (%d)", n);
+                    snprintf(buf, sizeof(buf), " (%d)", n);
                     ostringstream str;
                     str << endMatch[0] << buf;
                     finalName = str.str();

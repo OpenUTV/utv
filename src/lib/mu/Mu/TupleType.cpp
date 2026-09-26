@@ -74,7 +74,7 @@ namespace Mu
         for (int i = 0; i < _types.size(); i++)
         {
             char name[80];
-            sprintf(name, "_%d", i);
+            snprintf(name, sizeof(name), "_%d", i);
             const Type* t = _types[i];
             addSymbol(new MemberVariable(c, name, t));
             params.push_back(new ParameterVariable(c, name, t));

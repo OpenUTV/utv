@@ -638,7 +638,7 @@ GTOParseError(void* state, const char *text, ...)
 
     va_list ap;
     va_start(ap,text);
-    vsprintf(temp,text,ap);
+    vsnprintf(temp, sizeof(temp), text, ap);
     va_end(ap);
 
     READER->parseError(temp);
@@ -652,7 +652,7 @@ GTOParseWarning(void* state, const char *text, ...)
 
     va_list ap;
     va_start(ap,text);
-    vsprintf(temp,text,ap);
+    vsnprintf(temp, sizeof(temp), text, ap);
     va_end(ap);
 
     READER->parseWarning(temp);

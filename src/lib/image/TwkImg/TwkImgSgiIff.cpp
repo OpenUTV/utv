@@ -50,7 +50,7 @@ namespace TwkImg
         numChannels = NC;
         minChannelVal = 0;
         maxChannelVal = 255;
-        sprintf(imageName, "Image name unsupported");
+        snprintf(imageName, sizeof(imageName), "Image name unsupported");
         colormapID = 0;
     }
 

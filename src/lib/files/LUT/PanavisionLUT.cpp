@@ -40,14 +40,7 @@ namespace LUT
         {
             if (!strncmp(s.c_str(), "# entries=", 10))
             {
-                char buf[64];
-
-                strcpy(buf, s.c_str());
-
-                char* val_s = &buf[10];
-
-                len = CubeRoot(atoi(val_s));
-
+                len = CubeRoot(atoi(s.c_str() + 10));
                 break;
             }
         }

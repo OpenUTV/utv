@@ -2048,9 +2048,8 @@ namespace TwkMovie
             rotation = rotationFromSideData < 0 ? lround(rotationFromSideData) + 360 : lround(rotationFromSideData);
 
             // Setting rotation
-            char charRotation[5]; // Expecting a number between -360 and 360
-                                  // (inclusive)
-            sprintf(charRotation, "%d", rotation);
+            char charRotation[16];
+            snprintf(charRotation, sizeof(charRotation), "%d", rotation);
             if (av_dict_set(&videoStream->metadata, "rotate", charRotation, 0) < 0)
             {
                 cout << "ERROR: Unable to rotate video, unable to parse "
@@ -3171,12 +3170,12 @@ namespace TwkMovie
 
         // Add audio metadata assuming it is shared for all tracks
         char temp[80];
-        sprintf(temp, "%g kHz", audioSampleRate / 1000.0);
+        snprintf(temp, sizeof(temp), "%g kHz", audioSampleRate / 1000.0);
         m_info.audioSampleRate = audioSampleRate;
         m_info.proxy.newAttribute("AudioSamplingRate", string(temp));
-        sprintf(temp, "%lld", audioInfoLength);
+        snprintf(temp, sizeof(temp), "%lld", audioInfoLength);
         m_info.proxy.newAttribute("AudioSamples", string(temp));
-        sprintf(temp, "%d", 8 * av_get_bytes_per_sample(audioFormat));
+        snprintf(temp, sizeof(temp), "%d", 8 * av_get_bytes_per_sample(audioFormat));
         m_info.proxy.newAttribute("AudioBitsPerSample", string(temp));
         m_info.proxy.newAttribute("AudioSampleFormat", string(av_get_sample_fmt_name(audioFormat)));
         m_info.proxy.newAttribute("AudioCodec", audioCodec);

@@ -2658,7 +2658,7 @@ namespace Rv
 
         string uniqueName(string name, NameSet& disallowedNames)
         {
-            static char buf[16];
+            char buf[32];
             static RegEx endRE("(.*[^0-9])([0-9]+)");
             static RegEx midRE("(.*[^0-9])([0-9][0-9][0-9][0-9][0-9][0-9])([^0-9].*)");
 
@@ -2678,7 +2678,7 @@ namespace Rv
                     do
                     {
                         ++n;
-                        sprintf(buf, PAD, size_t(n));
+                        snprintf(buf, sizeof(buf), PAD, size_t(n));
                         ostringstream str;
                         str << midMatch.subStr(0) << buf << midMatch.subStr(2);
                         finalName = str.str();
@@ -2701,7 +2701,7 @@ namespace Rv
                     do
                     {
                         ++n;
-                        sprintf(buf, PAD, size_t(n));
+                        snprintf(buf, sizeof(buf), PAD, size_t(n));
                         ostringstream str;
                         str << endMatch.subStr(0) << buf;
                         finalName = str.str();

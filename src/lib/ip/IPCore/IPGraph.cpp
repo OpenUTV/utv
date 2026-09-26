@@ -3693,7 +3693,7 @@ IPGraph::findNodesByAbstractPath(int frame,
     string IPGraph::uniqueName(const string& inname) const
     {
         string name = canonicalNodeName(inname);
-        static char buf[16];
+        char buf[32];
         static RegEx endRE("(.*[^0-9])([0-9]+)");
         static RegEx midRE("(.*[^0-9])([0-9][0-9][0-9][0-9][0-9][0-9])([^0-9].*)");
 
@@ -3713,7 +3713,7 @@ IPGraph::findNodesByAbstractPath(int frame,
                 do
                 {
                     ++n;
-                    sprintf(buf, PAD, size_t(n));
+                    snprintf(buf, sizeof(buf), PAD, size_t(n));
                     ostringstream str;
                     str << midMatch.subStr(0) << buf << midMatch.subStr(2);
                     finalName = str.str();
@@ -3736,7 +3736,7 @@ IPGraph::findNodesByAbstractPath(int frame,
                 do
                 {
                     ++n;
-                    sprintf(buf, PAD, size_t(n));
+                    snprintf(buf, sizeof(buf), PAD, size_t(n));
                     ostringstream str;
                     str << endMatch.subStr(0) << buf;
                     finalName = str.str();

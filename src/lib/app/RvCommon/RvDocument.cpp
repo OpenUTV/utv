@@ -417,7 +417,7 @@ namespace Rv
             //
 
             char nm[64];
-            sprintf(nm, "session%03d", sessionCount++);
+            snprintf(nm, sizeof(nm), "session%03d", sessionCount++);
             m_session->setEventNodeName(nm);
             setObjectName(QString("rv-") + QString(nm));
 

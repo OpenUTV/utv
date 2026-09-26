@@ -224,7 +224,7 @@ namespace Mu
             for (int i = 0; i < _dimensions.size(); i++)
             {
                 char temp[80];
-                sprintf(temp, "index%d", i);
+                snprintf(temp, sizeof(temp), "index%d", i);
                 parameters.push_back(new ParameterVariable(c, temp, intType));
             }
 

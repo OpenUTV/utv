@@ -225,7 +225,7 @@ namespace TwkFB
     string IOtiff::about() const
     {
         char temp[80];
-        sprintf(temp, "TIFF (libtiff %d)", TIFFLIB_VERSION);
+        snprintf(temp, sizeof(temp), "TIFF (libtiff %d)", TIFFLIB_VERSION);
         return temp;
     }
 
