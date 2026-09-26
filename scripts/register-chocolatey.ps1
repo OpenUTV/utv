@@ -65,6 +65,7 @@ $depsNuspec = @"
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
     <releaseNotes>https://github.com/OpenUTV/utv-dependencies/releases/tag/v$DepsVersion</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/LICENSE</licenseUrl>
+    <copyright>Copyright (c) OpenUTV Contributors</copyright>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <docsUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/README.md</docsUrl>
     <tags>openutv dependencies ffmpeg qt6 openexr ocio oiio vfx</tags>
@@ -84,7 +85,7 @@ $depsInstallPs1 = @"
   packageName   = 'openutv-dependencies'
   fileType      = 'msi'
   url64         = '$depsMsiUrl'
-  silentArgs    = '/qn /norestart'
+  silentArgs    = '/qn /norestart MSIFASTINSTALL=7 DISABLEROLLBACK=1'
   validExitCodes= @(0, 3010)
   checksum64    = '$depsMsiSha'
   checksumType64= 'sha256'
@@ -93,6 +94,19 @@ $depsInstallPs1 = @"
 Install-ChocolateyPackage @packageArgs
 "@
 $depsInstallPs1 | Set-Content -Path (Join-Path $depsToolsDir "chocolateyInstall.ps1") -Encoding UTF8
+
+$depsUninstallPs1 = @"
+`$ErrorActionPreference = 'Stop'
+`$packageArgs = @{
+  packageName    = 'openutv-dependencies'
+  fileType       = 'msi'
+  silentArgs     = '{F4EDD980-1E8E-46D2-8BED-AEA5CDA6FD7E} /qn /norestart MSIFASTINSTALL=7 DISABLEROLLBACK=1'
+  validExitCodes = @(0, 3010)
+}
+
+Uninstall-ChocolateyPackage @packageArgs
+"@
+$depsUninstallPs1 | Set-Content -Path (Join-Path $depsToolsDir "chocolateyUninstall.ps1") -Encoding UTF8
 
 Write-Host "Packing openutv-dependencies.nupkg..." -ForegroundColor Yellow
 choco pack (Join-Path $depsChocoDir "openutv-dependencies.nuspec") --outputdirectory $depsChocoDir
@@ -132,6 +146,7 @@ $appNuspec = @"
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
     <releaseNotes>https://github.com/OpenUTV/utv/releases/tag/$AppVersion</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv/blob/main/LICENSE</licenseUrl>
+    <copyright>Copyright (c) OpenUTV Contributors</copyright>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <docsUrl>https://github.com/OpenUTV/utv/blob/main/README.md</docsUrl>
     <tags>openutv media-player sequence-viewer vfx rv video framecycler</tags>
@@ -169,6 +184,19 @@ Install-ChocolateyShortcut -shortcutFilePath "`$env:PUBLIC\Desktop\OpenUTV.lnk" 
 Install-ChocolateyShortcut -shortcutFilePath "`$env:ProgramData\Microsoft\Windows\Start Menu\Programs\OpenUTV.lnk" -targetPath `$targetPath
 "@
 $appInstallPs1 | Set-Content -Path (Join-Path $appToolsDir "chocolateyInstall.ps1") -Encoding UTF8
+
+$appUninstallPs1 = @"
+`$ErrorActionPreference = 'Stop'
+`$toolsDir = "`$(Split-Path -parent `$MyInvocation.MyCommand.Definition)"
+
+Remove-Item -Force -ErrorAction SilentlyContinue "`$env:PUBLIC\Desktop\OpenUTV.lnk"
+Remove-Item -Force -ErrorAction SilentlyContinue "`$env:ProgramData\Microsoft\Windows\Start Menu\Programs\OpenUTV.lnk"
+`$appDir = Join-Path `$toolsDir "utv-windows-x64"
+if (Test-Path `$appDir) {
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue `$appDir
+}
+"@
+$appUninstallPs1 | Set-Content -Path (Join-Path $appToolsDir "chocolateyUninstall.ps1") -Encoding UTF8
 
 Write-Host "Packing openutv.nupkg..." -ForegroundColor Yellow
 choco pack (Join-Path $appChocoDir "openutv.nuspec") --outputdirectory $appChocoDir

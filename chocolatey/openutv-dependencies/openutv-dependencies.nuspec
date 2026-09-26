@@ -12,6 +12,7 @@
     <iconUrl>https://raw.githubusercontent.com/OpenUTV/utv/main/src/lib/app/RvCommon/qrc/images/RV_icon.png</iconUrl>
     <releaseNotes>https://github.com/OpenUTV/utv-dependencies/releases/tag/v26.5</releaseNotes>
     <licenseUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/LICENSE</licenseUrl>
+    <copyright>Copyright (c) OpenUTV Contributors</copyright>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <docsUrl>https://github.com/OpenUTV/utv-dependencies/blob/main/README.md</docsUrl>
     <tags>openutv dependencies ffmpeg qt6 openexr ocio oiio vfx</tags>

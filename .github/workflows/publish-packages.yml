@@ -187,6 +187,21 @@ jobs:
             -replace 'url64\s*=\s*''.*?''', "url64         = '$Url'" `
             -replace 'checksum64\s*=\s*''.*?''', "checksum64    = '$sha256'" | Set-Content chocolatey\openutv\tools\chocolateyInstall.ps1
 
+          # 1. Pack and push openutv-dependencies with speedup flags and copyright
+          Write-Host "Packing openutv-dependencies..."
+          choco pack chocolatey\openutv-dependencies\openutv-dependencies.nuspec --outputdirectory chocolatey\openutv-dependencies
+          $depsNupkg = (Get-ChildItem chocolatey\openutv-dependencies\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+          Write-Host "Attempting push of $depsNupkg to Chocolatey..."
+          try {
+            choco push $depsNupkg --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
+            Write-Host "Pushed openutv-dependencies to Chocolatey."
+          } catch {
+            Write-Warning "openutv-dependencies push note: $_"
+          }
+
+          # 2. Pack and push openutv
+          Write-Host "Packing openutv..."
           choco pack chocolatey\openutv\openutv.nuspec --outputdirectory chocolatey\openutv
           $nupkg = (Get-ChildItem chocolatey\openutv\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+          Write-Host "Pushing $nupkg to Chocolatey..."
           choco push $nupkg --source https://push.chocolatey.org/ --api-key $env:CHOCO_API_KEY
