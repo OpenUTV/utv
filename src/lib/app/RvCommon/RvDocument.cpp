@@ -667,19 +667,6 @@ namespace Rv
 #endif
     }
 
-    void RvDocument::changeEvent(QEvent* event)
-    {
-        if (event && event->type() == QEvent::LanguageChange)
-        {
-            buildMenu();
-            if (m_topViewToolBar)
-                m_topViewToolBar->retranslate();
-            if (m_bottomViewToolBar)
-                m_bottomViewToolBar->retranslate();
-        }
-        QMainWindow::changeEvent(event);
-    }
-
     bool RvDocument::receive(Notifier* originator, Notifier* sender, MessageId m, MessageData* data)
     {
         //
@@ -2393,6 +2380,14 @@ namespace Rv
 
     void RvDocument::changeEvent(QEvent* event)
     {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            buildMenu();
+            if (m_topViewToolBar)
+                m_topViewToolBar->retranslate();
+            if (m_bottomViewToolBar)
+                m_bottomViewToolBar->retranslate();
+        }
 #if 0
     DB ("changeEvent type " << event->type() << " active " << isActiveWindow() << 
             " paint completed " << view()->firstPaintCompleted());
@@ -2410,6 +2405,7 @@ namespace Rv
             waitingForFirstPaint = false;
         }
 #endif
+        QMainWindow::changeEvent(event);
     }
 
     void RvDocument::closeEvent(QCloseEvent* event)

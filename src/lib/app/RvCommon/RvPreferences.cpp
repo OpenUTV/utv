@@ -1787,16 +1787,13 @@ namespace Rv
             }
         }
 
-        // Refresh all open documents so that menus and toolbars reflect the new language immediately
+        // Notify all open document windows so that menus and toolbars reflect the new language immediately
         for (TwkApp::Document* doc : TwkApp::Document::documents())
         {
             if (RvDocument* rvDoc = reinterpret_cast<RvDocument*>(doc->opaquePointer()))
             {
-                rvDoc->buildMenu();
-                if (rvDoc->topViewToolBar())
-                    rvDoc->topViewToolBar()->retranslate();
-                if (rvDoc->bottomViewToolBar())
-                    rvDoc->bottomViewToolBar()->retranslate();
+                QEvent ev(QEvent::LanguageChange);
+                QApplication::sendEvent(rvDoc, &ev);
             }
         }
     }
@@ -1819,7 +1816,7 @@ namespace Rv
             m_ui.languageCombo->setItemText(1, tr("English"));
             m_ui.languageCombo->blockSignals(false);
         }
-        QMainWindow::changeEvent(event);
+        QDialog::changeEvent(event);
     }
 
     //----------------------------------------------------------------------

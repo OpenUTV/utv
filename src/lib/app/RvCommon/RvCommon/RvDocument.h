@@ -150,8 +150,6 @@ namespace Rv
         void setUIBlocked(bool blocked);
 
     protected:
-        virtual void changeEvent(QEvent* event) override;
-
         // Overrides for TwkUtil::Notifier
         virtual bool receive(Notifier*, Notifier*, MessageId, MessageData*) override;
 
