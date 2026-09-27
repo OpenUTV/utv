@@ -96,14 +96,14 @@ namespace Rv
 
         m_viewBackAction = addAction("");
         m_viewBackAction->setIcon(QIcon(":/images/view_back.png"));
-        m_viewBackAction->setToolTip("Switch to previous View");
+        m_viewBackAction->setToolTip(tr("Switch to previous View"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_viewBackAction));
         b->setProperty("tbstyle", QVariant(QString("view_menu")));
         b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
         m_viewForwardAction = addAction("");
         m_viewForwardAction->setIcon(QIcon(":/images/view_forwd.png"));
-        m_viewForwardAction->setToolTip("Switch to next View");
+        m_viewForwardAction->setToolTip(tr("Switch to next View"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_viewForwardAction));
         b->setProperty("tbstyle", QVariant(QString("view_menu")));
         b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -113,7 +113,7 @@ namespace Rv
 
         QToolButton* viewButton = new QToolButton(this);
         m_viewMenuAction = new QAction(this);
-        m_viewMenuAction->setToolTip("Select a View");
+        m_viewMenuAction->setToolTip(tr("Select a View"));
         viewButton->setDefaultAction(m_viewMenuAction);
         viewButton->setProperty("tbstyle", QVariant(QString("view_menu")));
         viewButton->setPopupMode(QToolButton::InstantPopup);
@@ -133,14 +133,14 @@ namespace Rv
 
         m_fullScreenAction = addAction("");
         m_fullScreenAction->setIcon(QIcon(":/images/fullscreen.png"));
-        m_fullScreenAction->setToolTip("Toggle full-screen mode");
+        m_fullScreenAction->setToolTip(tr("Toggle full-screen mode"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_fullScreenAction));
         b->setProperty("tbstyle", QVariant(QString("view_menu")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
         b->setPopupMode(QToolButton::InstantPopup);
 
         m_frameAction = addAction("");
-        m_frameAction->setToolTip("Frame image in view");
+        m_frameAction->setToolTip(tr("Frame image in view"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_frameAction));
         b->setIcon(QIcon(":/images/frame.png"));
         b->setProperty("tbstyle", QVariant(QString("view_menu")));
@@ -189,7 +189,7 @@ namespace Rv
         m_checkerBGAction->setIcon(QIcon(":/images/checker.png"));
         m_crossHatchBGAction->setIcon(QIcon(":/images/cross_hatch.png"));
         b->setMenu(m);
-        m_bgMenuAction->setToolTip("Select background style");
+        m_bgMenuAction->setToolTip(tr("Select background style"));
 
         connect(m, SIGNAL(aboutToShow()), this, SLOT(bgMenuUpdate()));
         connect(m_blackBGAction, SIGNAL(triggered()), this, SLOT(bgBlack()));
@@ -242,7 +242,7 @@ namespace Rv
         m_swapStereoAction->setCheckable(true);
         b->setMenu(m);
         stereoMenuUpdate();
-        m_stereoMenuAction->setToolTip("Select stereoscopic output style");
+        m_stereoMenuAction->setToolTip(tr("Select stereoscopic output style"));
 
         m_stereoActions.push_back(m_monoStereoAction);
         m_stereoActions.push_back(m_anaglyphStereoAction);
@@ -284,7 +284,7 @@ namespace Rv
         m_AChannelAction = m->addAction("  Alpha");
         m_LChannelAction = m->addAction("  Luminance");
         b->setMenu(m);
-        m_channelMenuAction->setToolTip("Color channel view control");
+        m_channelMenuAction->setToolTip(tr("Color channel view control"));
 
         m_RGBChannelAction->setCheckable(true);
         m_RChannelAction->setCheckable(true);
@@ -340,7 +340,7 @@ namespace Rv
         connect(m_deviceActionGroup, SIGNAL(triggered(QAction*)), this, SLOT(deviceActionTriggered(QAction*)));
         b->setMenu(m);
         m_monitorMenu = m;
-        m_monitorMenuAction->setToolTip("Configure display device");
+        m_monitorMenuAction->setToolTip(tr("Configure display device"));
 
         m_noTransferAction->setCheckable(true);
         m_srgbAction->setCheckable(true);
@@ -389,6 +389,47 @@ namespace Rv
 
         if (m_session)
             setSession(m_session);
+    }
+
+    void RvTopViewToolBar::retranslate()
+    {
+        if (m_viewBackAction)
+            m_viewBackAction->setToolTip(tr("Switch to previous View"));
+        if (m_viewForwardAction)
+            m_viewForwardAction->setToolTip(tr("Switch to next View"));
+        if (m_viewMenuAction)
+            m_viewMenuAction->setToolTip(tr("Select a View"));
+        if (m_fullScreenAction)
+            m_fullScreenAction->setToolTip(tr("Toggle Fullscreen"));
+        if (m_frameAction)
+            m_frameAction->setToolTip(tr("Frame/Fit View"));
+        if (m_bgMenuAction)
+            m_bgMenuAction->setToolTip(tr("Select Background Pattern"));
+        if (m_stereoMenuAction)
+            m_stereoMenuAction->setToolTip(tr("Select stereoscopic output style"));
+        if (m_channelMenuAction)
+            m_channelMenuAction->setToolTip(tr("Select Channel or Display Mode"));
+        if (m_monitorMenuAction)
+            m_monitorMenuAction->setToolTip(tr("Display Configuration"));
+
+        m_actionCategoryMappings = {{{m_viewBackAction, IPCore::EventCategories::viewNavigationCategory, m_viewBackAction->toolTip()},
+                                     {m_viewForwardAction, IPCore::EventCategories::viewNavigationCategory, m_viewForwardAction->toolTip()},
+                                     {m_viewMenuAction, IPCore::EventCategories::viewNavigationCategory, m_viewMenuAction->toolTip()},
+                                     {m_fullScreenAction, IPCore::EventCategories::fullscreenModeCategory, m_fullScreenAction->toolTip()},
+                                     {m_frameAction, IPCore::EventCategories::viewmodeCategory, m_frameAction->toolTip()},
+                                     {m_bgMenuAction, IPCore::EventCategories::backgroundStyleCategory, m_bgMenuAction->toolTip()},
+                                     {m_stereoMenuAction, IPCore::EventCategories::viewmodeCategory, m_stereoMenuAction->toolTip()},
+                                     {m_channelMenuAction, IPCore::EventCategories::viewmodeCategory, m_channelMenuAction->toolTip()},
+                                     {m_monitorMenuAction, IPCore::EventCategories::viewmodeCategory, m_monitorMenuAction->toolTip()}}};
+    }
+
+    void RvTopViewToolBar::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            retranslate();
+        }
+        QToolBar::changeEvent(event);
     }
 
     RvTopViewToolBar::~RvTopViewToolBar() {}

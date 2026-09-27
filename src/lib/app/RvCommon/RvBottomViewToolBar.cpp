@@ -117,32 +117,32 @@ namespace Rv
             case 0:
                 b->setProperty("tbstyle", QVariant(QString("left")));
                 a->setIcon(QIcon(":/images/smanager.png"));
-                a->setToolTip("Toggle Session Manager");
+                a->setToolTip(tr("Toggle Session Manager"));
                 m_smAction = a;
                 break;
             case 1:
                 a->setIcon(QIcon(":/images/paint_48x48.png"));
-                a->setToolTip("Toggle Annotation tools");
+                a->setToolTip(tr("Toggle Annotation tools"));
                 m_paintAction = a;
                 break;
             case 2:
                 a->setIcon(QIcon(":/images/about_48x48.png"));
-                a->setToolTip("Toggle Image Info");
+                a->setToolTip(tr("Toggle Image Info"));
                 m_infoAction = a;
                 break;
             case 3:
                 a->setIcon(QIcon(":/images/ntwrk_48x48.png"));
-                a->setToolTip("Toggle RV Networking Dialog");
+                a->setToolTip(tr("Toggle RV Networking Dialog"));
                 m_networkAction = a;
                 break;
             case 4:
                 a->setIcon(QIcon(":/images/timeline_mag.png"));
-                a->setToolTip("Toggle Timeline Magnifier");
+                a->setToolTip(tr("Toggle Timeline Magnifier"));
                 m_timelineMagAction = a;
                 break;
             case 5:
                 a->setIcon(QIcon(":/images/timeline.png"));
-                a->setToolTip("Toggle Timeline");
+                a->setToolTip(tr("Toggle Timeline"));
                 b->setProperty("tbstyle", QVariant(QString("right")));
                 m_timelineAction = a;
                 break;
@@ -158,7 +158,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/ghost.png"));
-        a->setToolTip("Ghost");
+        a->setToolTip(tr("Ghost"));
         a->setCheckable(true);
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
@@ -167,7 +167,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/hold.png"));
-        a->setToolTip("Hold");
+        a->setToolTip(tr("Hold"));
         a->setCheckable(true);
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
@@ -190,7 +190,7 @@ namespace Rv
         // play buts
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bstep.png"));
-        a->setToolTip("Step back one frame");
+        a->setToolTip(tr("Step back one frame"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -199,7 +199,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_fstep.png"));
-        a->setToolTip("Step forward one frame");
+        a->setToolTip(tr("Step forward one frame"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -208,7 +208,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bplay.png"));
-        a->setToolTip("Play backwards");
+        a->setToolTip(tr("Play backwards"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setProperty("tbsize", QVariant(QString("double")));
@@ -217,7 +217,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_play.png"));
-        a->setToolTip("Play forwards");
+        a->setToolTip(tr("Play forwards"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setProperty("tbsize", QVariant(QString("double")));
@@ -226,7 +226,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_bmark.png"));
-        a->setToolTip("Skip to start of sequence");
+        a->setToolTip(tr("Skip to start of sequence"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("left")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -235,7 +235,7 @@ namespace Rv
 
         a = addAction("");
         a->setIcon(QIcon(":/images/control_fmark.png"));
-        a->setToolTip("Skip to end of sequence");
+        a->setToolTip(tr("Skip to end of sequence"));
         b = dynamic_cast<QToolButton*>(widgetForAction(a));
         b->setProperty("tbstyle", QVariant(QString("right")));
         b->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -317,7 +317,7 @@ namespace Rv
 
         int volumeLevel = (int)(100.0f * IPCore::SoundTrackIPNode::defaultVolume);
         m_audioAction = addAction("");
-        m_audioAction->setToolTip("Audio control");
+        m_audioAction->setToolTip(tr("Audio control"));
         b = dynamic_cast<QToolButton*>(widgetForAction(m_audioAction));
         setVolumeLevel<QToolButton>(*b, volumeLevel);
         b->setProperty("tbstyle", QVariant(QString("right_menu")));
@@ -364,6 +364,64 @@ namespace Rv
 
         if (m_session)
             setSession(m_session);
+    }
+
+    void RvBottomViewToolBar::retranslate()
+    {
+        if (m_smAction)
+            m_smAction->setToolTip(tr("Toggle Session Manager"));
+        if (m_paintAction)
+            m_paintAction->setToolTip(tr("Toggle Annotation tools"));
+        if (m_infoAction)
+            m_infoAction->setToolTip(tr("Toggle Image Info"));
+        if (m_networkAction)
+            m_networkAction->setToolTip(tr("Toggle RV Networking Dialog"));
+        if (m_timelineMagAction)
+            m_timelineMagAction->setToolTip(tr("Toggle Timeline Magnifier"));
+        if (m_timelineAction)
+            m_timelineAction->setToolTip(tr("Toggle Timeline"));
+        if (m_ghostAction)
+            m_ghostAction->setToolTip(tr("Toggle Ghost Mode"));
+        if (m_holdAction)
+            m_holdAction->setToolTip(tr("Toggle Hold Mode"));
+        if (m_backStepAction)
+            m_backStepAction->setToolTip(tr("Step Backward"));
+        if (m_forwardStepAction)
+            m_forwardStepAction->setToolTip(tr("Step Forward"));
+        if (m_backwardPlayAction)
+            m_backwardPlayAction->setToolTip(tr("Play Backward"));
+        if (m_forwardPlayAction)
+            m_forwardPlayAction->setToolTip(tr("Play Forward"));
+        if (m_playModeAction)
+            m_playModeAction->setToolTip(tr("Playback Mode"));
+        if (m_backMarkAction)
+            m_backMarkAction->setToolTip(tr("Previous Mark"));
+        if (m_forwardMarkAction)
+            m_forwardMarkAction->setToolTip(tr("Next Mark"));
+
+        m_actionCategoryMappings = {{
+            {m_smAction, IPCore::EventCategories::sessionmanagerCategory, m_smAction->toolTip()},
+            {m_paintAction, IPCore::EventCategories::annotateCategory, m_paintAction->toolTip()},
+            {m_holdAction, IPCore::EventCategories::holdAndGhostCategory, m_holdAction->toolTip()},
+            {m_ghostAction, IPCore::EventCategories::holdAndGhostCategory, m_ghostAction->toolTip()},
+            {m_backStepAction, IPCore::EventCategories::playcontrolCategory, m_backStepAction->toolTip()},
+            {m_forwardStepAction, IPCore::EventCategories::playcontrolCategory, m_forwardStepAction->toolTip()},
+            {m_backwardPlayAction, IPCore::EventCategories::backwardplayCategory, m_backwardPlayAction->toolTip()},
+            {m_forwardPlayAction, IPCore::EventCategories::playcontrolCategory, m_forwardPlayAction->toolTip()},
+            {m_playModeAction, IPCore::EventCategories::playcontrolCategory, m_playModeAction->toolTip()},
+
+            {m_backMarkAction, IPCore::EventCategories::playcontrolCategory, m_backMarkAction->toolTip()},
+            {m_forwardMarkAction, IPCore::EventCategories::playcontrolCategory, m_forwardMarkAction->toolTip()},
+        }};
+    }
+
+    void RvBottomViewToolBar::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            retranslate();
+        }
+        QToolBar::changeEvent(event);
     }
 
     RvBottomViewToolBar::~RvBottomViewToolBar() {}

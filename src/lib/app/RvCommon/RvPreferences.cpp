@@ -33,6 +33,7 @@
 #include <IPCore/Profile.h>
 #include <IPCore/FBCache.h>
 #include <ImfThreading.h>
+#include <QtCore/QTranslator>
 #include <QtGui/QtGui>
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QMessageBox>
@@ -348,6 +349,7 @@ namespace Rv
 
         m_ui.playbackModeCombo->installEventFilter(scrollEventEater);
         m_ui.startupScreenCombo->installEventFilter(scrollEventEater);
+        m_ui.languageCombo->installEventFilter(scrollEventEater);
         m_ui.stereoModeCombo->installEventFilter(scrollEventEater);
         m_ui.cacheModeCombo->installEventFilter(scrollEventEater);
         m_ui.resampleMethodCombo->installEventFilter(scrollEventEater);
@@ -438,6 +440,26 @@ namespace Rv
             m_ui.startupScreenCombo->addItem(QString("Screen %1").arg((unsigned int)(i)));
         }
         m_ui.startupScreenCombo->setCurrentIndex((opts.screen < m_ui.startupScreenCombo->count() - 1) ? opts.screen + 1 : 0);
+
+        m_ui.languageCombo->clear();
+        m_ui.languageCombo->addItem(tr("System Default"), "");
+        m_ui.languageCombo->addItem(tr("English"), "en");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Español (Spanish)"), "es");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Français (French)"), "fr");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Deutsch (German)"), "de");
+        m_ui.languageCombo->addItem(QString::fromUtf8("Italiano (Italian)"), "it");
+        m_ui.languageCombo->addItem(QString::fromUtf8("日本語 (Japanese)"), "ja");
+        m_ui.languageCombo->addItem(QString::fromUtf8("한국어 (Korean)"), "ko");
+        m_ui.languageCombo->addItem(QString::fromUtf8("简体中文 (Simplified Chinese)"), "zh_CN");
+
+        QString curLang = settings.value("language", "").toString();
+        int langIdx = m_ui.languageCombo->findData(curLang);
+        if (langIdx >= 0)
+            m_ui.languageCombo->setCurrentIndex(langIdx);
+        else
+            m_ui.languageCombo->setCurrentIndex(0);
+
+        connect(m_ui.languageCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(languageIndexChanged(int)));
 
         n = 0;
         if (opts.stereoMode)
@@ -1253,6 +1275,10 @@ namespace Rv
         settings.setValue("autoSetupACES", m_ui.autoSetupACESToggle->checkState() == Qt::Checked);
         settings.setValue("useNativeFileDialog", m_ui.useNativeFileDialogToggle->checkState() == Qt::Checked);
         settings.setValue("startupScreenPolicy", m_ui.startupScreenCombo->currentIndex() - 1);
+
+        QString newLang = m_ui.languageCombo->currentData().toString();
+        settings.setValue("language", newLang);
+
         settings.setValue("fps", m_ui.fpsEdit->text().toDouble());
         settings.setValue("networkHost", m_ui.networkHostEdit->text());
         settings.setValue("readerThreads", m_ui.rthreadEdit->text().toInt());
@@ -1715,6 +1741,83 @@ namespace Rv
     void RvPreferences::startupResizeChanged(int state) { Options::sharedOptions().startupResize = (state == 0) ? 0 : 1; }
 
     void RvPreferences::useNativeFileDialogChanged(int state) { Options::sharedOptions().useNativeFileDialog = (state == 0) ? 0 : 1; }
+
+    static QTranslator* s_activeTranslator = nullptr;
+
+    void RvPreferences::applyLanguage(const QString& langCode)
+    {
+        if (s_activeTranslator)
+        {
+            qApp->removeTranslator(s_activeTranslator);
+            delete s_activeTranslator;
+            s_activeTranslator = nullptr;
+        }
+
+        QString code = langCode;
+        if (code.isEmpty() || code == "system")
+        {
+            const char* origLocale = getenv("ORIGINALLOCAL");
+            if (origLocale && strlen(origLocale) > 0)
+            {
+                code = QString::fromUtf8(origLocale);
+            }
+            else
+            {
+                code = QLocale::system().name();
+            }
+        }
+
+        if (!code.isEmpty() && code != "en" && !code.startsWith("en_"))
+        {
+            s_activeTranslator = new QTranslator(qApp);
+            bool loaded = s_activeTranslator->load(QString(":/translations/i18n_%1.qm").arg(code));
+            if (!loaded)
+            {
+                QString base = code.split('_').first();
+                loaded = s_activeTranslator->load(QString(":/translations/i18n_%1.qm").arg(base));
+            }
+            if (loaded)
+            {
+                qApp->installTranslator(s_activeTranslator);
+            }
+            else
+            {
+                delete s_activeTranslator;
+                s_activeTranslator = nullptr;
+            }
+        }
+
+        // Notify all open document windows so that menus and toolbars reflect the new language immediately
+        for (TwkApp::Document* doc : TwkApp::Document::documents())
+        {
+            if (RvDocument* rvDoc = reinterpret_cast<RvDocument*>(doc->opaquePointer()))
+            {
+                QEvent ev(QEvent::LanguageChange);
+                QApplication::sendEvent(rvDoc, &ev);
+            }
+        }
+    }
+
+    void RvPreferences::languageIndexChanged(int index)
+    {
+        if (index < 0)
+            return;
+        QString langCode = m_ui.languageCombo->itemData(index).toString();
+        applyLanguage(langCode);
+    }
+
+    void RvPreferences::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            m_ui.retranslateUi(this);
+            m_ui.languageCombo->blockSignals(true);
+            m_ui.languageCombo->setItemText(0, tr("System Default"));
+            m_ui.languageCombo->setItemText(1, tr("English"));
+            m_ui.languageCombo->blockSignals(false);
+        }
+        QDialog::changeEvent(event);
+    }
 
     //----------------------------------------------------------------------
     //

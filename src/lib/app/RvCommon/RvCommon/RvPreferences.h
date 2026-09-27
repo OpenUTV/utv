@@ -83,7 +83,10 @@ namespace Rv
 
         void updateStyleSheet();
 
+        static void applyLanguage(const QString& langCode);
+
     public slots:
+        void languageIndexChanged(int index);
         void write();
         void exrAutoThreads(int state);
         void exrThreadNumChanged(const QString& text);
@@ -210,6 +213,9 @@ namespace Rv
 
         bool initAudioRatesMenu(IPCore::AudioRenderer::RendererParameters& params, const IPCore::AudioRenderer::RateVector& rates,
                                 const size_t& currentRate);
+
+    protected:
+        virtual void changeEvent(QEvent* event) override;
 
     private:
         Ui::RvPreferences m_ui;

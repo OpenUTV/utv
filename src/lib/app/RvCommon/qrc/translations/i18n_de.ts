@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="ko">
+<TS version="2.1" language="de">
 <context>
     <name>Connection</name>
     <message>
         <source>undefined</source>
-        <translation>정의되지 않음</translation>
+        <translation>undefiniert</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation>알 수 없음</translation>
+        <translation>unbekannt</translation>
     </message>
 </context>
 <context>
     <name>CreateProfileDialog</name>
     <message>
         <source>(Color Settings Taken From Here)</source>
-        <translation>(여기서 가져온 색상 설정)</translation>
+        <translation>(Farbeinstellungen von hier übernommen)</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;NOTE:&lt;/span&gt; This is the device color settings the profile will come from. Once the profile is saved it can be used on any device.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style="font-weight:600;"&gt;참고:&lt;/span&gt; 이는 프로필의 출처가 되는 장치 색상 설정입니다. 프로필이 저장되면 모든 기기에서 사용할 수 있습니다.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;HINWEIS:&lt;/span&gt; Dies sind die Farbeinstellungen des Geräts, von denen das Profil stammt. Sobald das Profil gespeichert ist, kann es auf jedem Gerät verwendet werden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Comments</source>
-        <translation>댓글</translation>
+        <translation>Kommentare</translation>
     </message>
     <message>
         <source>Create Display Profie</source>
-        <translation>디스플레이 프로필 생성</translation>
+        <translation>Anzeigeprofil erstellen</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation>장치</translation>
+        <translation>Gerät</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>이름</translation>
+        <translation>Name</translation>
     </message>
 </context>
 <context>
     <name>Dialog</name>
     <message>
         <source>Codec:</source>
-        <translation>코덱:</translation>
+        <translation>Codec:</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>색상</translation>
+        <translation>Farbe</translation>
     </message>
     <message>
         <source>Color Bars</source>
-        <translation>컬러 바</translation>
+        <translation>Farbbalken</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>FPS</source>
@@ -63,35 +63,35 @@
     </message>
     <message>
         <source>Image Size</source>
-        <translation>이미지 크기</translation>
+        <translation>Bildgröße</translation>
     </message>
     <message>
         <source>Length</source>
-        <translation>길이</translation>
+        <translation>Länge</translation>
     </message>
     <message>
         <source>New Media</source>
-        <translation>뉴미디어</translation>
+        <translation>Neue Medien</translation>
     </message>
     <message>
         <source>New Node</source>
-        <translation>새 노드</translation>
+        <translation>Neuer Knoten</translation>
     </message>
     <message>
         <source>Node Type</source>
-        <translation>노드 유형</translation>
+        <translation>Knotentyp</translation>
     </message>
     <message>
         <source>PIX</source>
-        <translation>픽스</translation>
+        <translation>PIX</translation>
     </message>
     <message>
         <source>QPushButton { background-color: rgb(0,0,0); }</source>
-        <translation>QPushButton { 배경색: rgb(0,0,0); }</translation>
+        <translation>QPushButton { Hintergrundfarbe: rgb(0,0,0); }</translation>
     </message>
     <message>
         <source>frames</source>
-        <translation>프레임</translation>
+        <translation>Frames</translation>
     </message>
 </context>
 <context>
@@ -102,112 +102,112 @@
     </message>
     <message>
         <source>Actual FPS:</source>
-        <translation>실제 FPS:</translation>
+        <translation>Tatsächliche FPS:</translation>
     </message>
     <message>
         <source>Computed FPS:</source>
-        <translation>계산된 FPS:</translation>
+        <translation>Berechnete FPS:</translation>
     </message>
     <message>
         <source>End Frame:</source>
-        <translation>끝 프레임:</translation>
+        <translation>Endrahmen:</translation>
     </message>
     <message>
         <source>End Time</source>
-        <translation>종료 시간</translation>
+        <translation>Endzeit</translation>
     </message>
     <message>
         <source>Max Refresh Rate</source>
-        <translation>최대 재생률</translation>
+        <translation>Max. Aktualisierungsrate</translation>
     </message>
     <message>
         <source>Min Refresh Rate</source>
-        <translation>최소 새로 고침 빈도</translation>
+        <translation>Min. Aktualisierungsrate</translation>
     </message>
     <message>
         <source>RMS Computed Refresh Rate:</source>
-        <translation>RMS 계산된 재생률:</translation>
+        <translation>RMS Berechnete Bildwiederholfrequenz:</translation>
     </message>
     <message>
         <source>Show Eval Timing</source>
-        <translation>평가 타이밍 표시</translation>
+        <translation>Bewertungszeitpunkt anzeigen</translation>
     </message>
     <message>
         <source>Show Ideal Frames</source>
-        <translation>이상적인 프레임 표시</translation>
+        <translation>Zeigen Sie ideale Rahmen</translation>
     </message>
     <message>
         <source>Start Frame:</source>
-        <translation>시작 프레임:</translation>
+        <translation>Startrahmen:</translation>
     </message>
     <message>
         <source>Start Time</source>
-        <translation>시작 시간</translation>
+        <translation>Startzeit</translation>
     </message>
     <message>
         <source>Statistics</source>
-        <translation>통계</translation>
+        <translation>Statistik</translation>
     </message>
     <message>
         <source>Total Time:</source>
-        <translation>총 시간:</translation>
+        <translation>Gesamtzeit:</translation>
     </message>
 </context>
 <context>
     <name>EDL</name>
     <message>
         <source>Automatic EDL Creation</source>
-        <translation>자동 EDL 생성</translation>
+        <translation>Automatische EDL-Erstellung</translation>
     </message>
     <message>
         <source>Fill View with Content</source>
-        <translation>뷰를 콘텐츠로 채우기</translation>
+        <translation>Ansicht mit Inhalt füllen</translation>
     </message>
     <message>
         <source>GroupBox</source>
-        <translation>그룹박스</translation>
+        <translation>GroupBox</translation>
     </message>
     <message>
         <source>Output FPS</source>
-        <translation>출력 FPS</translation>
+        <translation>Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Output Size</source>
-        <translation>출력 크기</translation>
+        <translation>Ausgabegröße</translation>
     </message>
     <message>
         <source>Retime Inputs to Output FPS</source>
-        <translation>FPS 출력을 위한 입력 시간 재조정</translation>
+        <translation>Retime von Eingaben zu Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Sequence/EDL</source>
-        <translation>시퀀스/EDL</translation>
+        <translation>Sequenz/EDL</translation>
     </message>
     <message>
         <source>Size Determined from Inputs</source>
-        <translation>입력에 따라 결정되는 크기</translation>
+        <translation>Größe aus Eingaben ermittelt</translation>
     </message>
     <message>
         <source>Use Source Cut Information</source>
-        <translation>소스컷 정보 활용</translation>
+        <translation>Verwenden Sie Quellschnittinformationen</translation>
     </message>
 </context>
 <context>
     <name>FileViewDialog</name>
     <message>
         <source>Raw File</source>
-        <translation>원시 파일</translation>
+        <translation>Rohdatei</translation>
     </message>
 </context>
 <context>
     <name>Form</name>
     <message>
         <source>Enable</source>
-        <translation>활성화</translation>
+        <translation>Aktivieren</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>양식</translation>
+        <translation>Formular</translation>
     </message>
     <message>
         <source>K1</source>
@@ -223,251 +223,251 @@
     </message>
     <message>
         <source>RadialDistort</source>
-        <translation>방사형왜곡</translation>
+        <translation>RadialVerzerrung</translation>
     </message>
 </context>
 <context>
     <name>GLView</name>
     <message>
         <source>Continue</source>
-        <translation>계속</translation>
+        <translation>Weiter</translation>
     </message>
     <message>
         <source>Ouput Display Format</source>
-        <translation>출력 표시 형식</translation>
+        <translation>Ausgabe-Anzeigeformat</translation>
     </message>
 </context>
 <context>
     <name>GroupBox</name>
     <message>
         <source>Active Input</source>
-        <translation>활성 입력</translation>
+        <translation>Aktiver Eingang</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>추가</translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Align Start Frames</source>
-        <translation>시작 프레임 정렬</translation>
+        <translation>Startrahmen ausrichten</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>오디오</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Audio Offset (sec)</source>
-        <translation>오디오 오프셋(초)</translation>
+        <translation>Audio-Offset (Sek.)</translation>
     </message>
     <message>
         <source>Audio Scale</source>
-        <translation>오디오 스케일</translation>
+        <translation>Audio-Skala</translation>
     </message>
     <message>
         <source>Clear In/Out</source>
-        <translation>인/아웃 지우기</translation>
+        <translation>Ein/Aus löschen</translation>
     </message>
     <message>
         <source>Column</source>
-        <translation>칼럼</translation>
+        <translation>Spalte</translation>
     </message>
     <message>
         <source>Composite</source>
-        <translation>복합</translation>
+        <translation>Verbundwerkstoff</translation>
     </message>
     <message>
         <source>Cut In</source>
-        <translation>컷인</translation>
+        <translation>Einschneiden</translation>
     </message>
     <message>
         <source>Cut Out</source>
-        <translation>컷아웃</translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <source>Difference</source>
-        <translation>차이</translation>
+        <translation>Unterschied</translation>
     </message>
     <message>
         <source>Dissolve</source>
-        <translation>디졸브</translation>
+        <translation>Auflösen</translation>
     </message>
     <message>
         <source>Dissolve Amount</source>
-        <translation>용해량</translation>
+        <translation>Menge auflösen</translation>
     </message>
     <message>
         <source>Dissolve amount (0-100%)</source>
-        <translation>용해량(0-100%)</translation>
+        <translation>Menge auflösen (0-100%)</translation>
     </message>
     <message>
         <source>Dissolve amount (0.0 to 1.0)</source>
-        <translation>용해량(0.0~1.0)</translation>
+        <translation>Auflösungsmenge (0,0 bis 1,0)</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation>폴더</translation>
+        <translation>Ordner</translation>
     </message>
     <message>
         <source>Grid</source>
-        <translation>그리드</translation>
+        <translation>Gitter</translation>
     </message>
     <message>
         <source>Grid Columns</source>
-        <translation>그리드 열</translation>
+        <translation>Rasterspalten</translation>
     </message>
     <message>
         <source>Grid Rows</source>
-        <translation>그리드 행</translation>
+        <translation>Gitterzeilen</translation>
     </message>
     <message>
         <source>GroupBox</source>
-        <translation>그룹박스</translation>
+        <translation>GroupBox</translation>
     </message>
     <message>
         <source>Interactive Resize</source>
-        <translation>대화형 크기 조정</translation>
+        <translation>Interaktive Größenänderung</translation>
     </message>
     <message>
         <source>Inv Difference</source>
-        <translation>Inv 차이</translation>
+        <translation>Inv-Differenz</translation>
     </message>
     <message>
         <source>Layout</source>
-        <translation>레이아웃</translation>
+        <translation>Layout</translation>
     </message>
     <message>
         <source>Length Multiplier</source>
-        <translation>길이 승수</translation>
+        <translation>Längenmultiplikator</translation>
     </message>
     <message>
         <source>Manual</source>
-        <translation>수동</translation>
+        <translation>Manuell</translation>
     </message>
     <message>
         <source>Mode</source>
-        <translation>모드</translation>
+        <translation>Modus</translation>
     </message>
     <message>
         <source>Offset (frames)</source>
-        <translation>오프셋(프레임)</translation>
+        <translation>Offset (Frames)</translation>
     </message>
     <message>
         <source>Operation</source>
-        <translation>작동</translation>
+        <translation>Betrieb</translation>
     </message>
     <message>
         <source>Output FPS</source>
-        <translation>출력 FPS</translation>
+        <translation>Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Output Size</source>
-        <translation>출력 크기</translation>
+        <translation>Ausgabegröße</translation>
     </message>
     <message>
         <source>Over</source>
-        <translation>오버</translation>
+        <translation>Vorbei</translation>
     </message>
     <message>
         <source>Packed</source>
-        <translation>포장됨</translation>
+        <translation>Verpackt</translation>
     </message>
     <message>
         <source>Packed Layout</source>
-        <translation>패킹 레이아웃</translation>
+        <translation>Gepacktes Layout</translation>
     </message>
     <message>
         <source>Packed With Fluid Layout</source>
-        <translation>유동적인 레이아웃으로 가득 차 있음</translation>
+        <translation>Vollgepackt mit flüssigem Layout</translation>
     </message>
     <message>
         <source>Replace</source>
-        <translation>바꾸기</translation>
+        <translation>Ersetzen</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>재설정</translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Retime</source>
-        <translation>재시간</translation>
+        <translation>Retime</translation>
     </message>
     <message>
         <source>Retime Inputs to Output FPS</source>
-        <translation>FPS 출력을 위한 입력 시간 재조정</translation>
+        <translation>Retime von Eingaben zu Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation>역방향</translation>
+        <translation>Rückwärts</translation>
     </message>
     <message>
         <source>Row</source>
-        <translation>행</translation>
+        <translation>Reihe</translation>
     </message>
     <message>
         <source>Size Determined from Input</source>
-        <translation>입력에서 결정된 크기</translation>
+        <translation>Größe aus Eingabe ermittelt</translation>
     </message>
     <message>
         <source>Size Determined from Inputs</source>
-        <translation>입력에 따라 결정되는 크기</translation>
+        <translation>Größe aus Eingaben ermittelt</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation>출처</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>Spacing</source>
-        <translation>간격</translation>
+        <translation>Abstand</translation>
     </message>
     <message>
         <source>Stack</source>
-        <translation>스택</translation>
+        <translation>Stapel</translation>
     </message>
     <message>
         <source>Static</source>
-        <translation>정적</translation>
+        <translation>Statisch</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation>스위치</translation>
+        <translation>Schalter</translation>
     </message>
     <message>
         <source>Sync GUI In/Out to Source</source>
-        <translation>소스에 대한 GUI 입/출력 동기화</translation>
+        <translation>GUI-Ein-/Ausgänge mit der Quelle synchronisieren</translation>
     </message>
     <message>
         <source>Topmost</source>
-        <translation>최상위</translation>
+        <translation>Ganz oben</translation>
     </message>
     <message>
         <source>Use Source Cut Information</source>
-        <translation>소스컷 정보 활용</translation>
+        <translation>Verwenden Sie Quellschnittinformationen</translation>
     </message>
     <message>
         <source>Use Strict Frame Ranges</source>
-        <translation>엄격한 프레임 범위 사용</translation>
+        <translation>Verwenden Sie strenge Rahmenbereiche</translation>
     </message>
     <message>
         <source>View As</source>
-        <translation>다음으로 보기</translation>
+        <translation>Anzeigen als</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
         <source>Default Sequence</source>
-        <translation>기본 시퀀스</translation>
+        <translation>Standardsequenz</translation>
     </message>
 </context>
 <context>
     <name>Menu</name>
     <message>
         <source>+90 Clockwise</source>
-        <translation>+90 시계방향</translation>
+        <translation>+90 Im Uhrzeigersinn</translation>
     </message>
     <message>
         <source>+90 Counter-Clockwise</source>
-        <translation>+90 시계 반대 방향</translation>
+        <translation>+90 Gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <source>00BA</source>
@@ -479,43 +479,43 @@
     </message>
     <message>
         <source>10 Bit</source>
-        <translation>10비트</translation>
+        <translation>10 Bit</translation>
     </message>
     <message>
         <source>10 Bit [0, 1023]</source>
-        <translation>10 비트 [0, 1023]</translation>
+        <translation>10 Bit [0, 1023]</translation>
     </message>
     <message>
         <source>12 Bit [0, 4095]</source>
-        <translation>12 비트 [0, 4095]</translation>
+        <translation>12 Bit [0, 4095]</translation>
     </message>
     <message>
         <source>16 Bit [0, 65535]</source>
-        <translation>16 비트 [0, 65535]</translation>
+        <translation>16 Bit [0, 65535]</translation>
     </message>
     <message>
         <source>18% Grey</source>
-        <translation>18% 그레이</translation>
+        <translation>18% Grau</translation>
     </message>
     <message>
         <source>50% Grey</source>
-        <translation>50% 회색</translation>
+        <translation>50% Grau</translation>
     </message>
     <message>
         <source>8 Bit</source>
-        <translation>8 비트</translation>
+        <translation>8 Bit</translation>
     </message>
     <message>
         <source>8 Bit [0, 255]</source>
-        <translation>8 비트 [0, 255]</translation>
+        <translation>8 Bit [0, 255]</translation>
     </message>
     <message>
         <source>90 Clockwise</source>
-        <translation>90 시계방향</translation>
+        <translation>90 Im Uhrzeigersinn</translation>
     </message>
     <message>
         <source>90 Counter-Clockwise</source>
-        <translation>90 시계 반대 방향</translation>
+        <translation>90 Gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <source>ABGR</source>
@@ -523,11 +523,11 @@
     </message>
     <message>
         <source>ALEXA LogC</source>
-        <translation>알렉사 로그C</translation>
+        <translation>ALEXA LogC</translation>
     </message>
     <message>
         <source>ALEXA LogC Film</source>
-        <translation>ALEXA LogC 필름</translation>
+        <translation>ALEXA LogC Film</translation>
     </message>
     <message>
         <source>ARGB</source>
@@ -535,99 +535,99 @@
     </message>
     <message>
         <source>Accept</source>
-        <translation>수락</translation>
+        <translation>Akzeptieren</translation>
     </message>
     <message>
         <source>Active</source>
-        <translation>활성</translation>
+        <translation>Aktiv</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>추가</translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Add as Layer</source>
-        <translation>레이어로 추가</translation>
+        <translation>Als Ebene hinzufügen</translation>
     </message>
     <message>
         <source>Air Brush</source>
-        <translation>에어브러시</translation>
+        <translation>Airbrush</translation>
     </message>
     <message>
         <source>Air Brush Erase</source>
-        <translation>에어브러쉬 지우기</translation>
+        <translation>Airbrush-Löschen</translation>
     </message>
     <message>
         <source>Align Start Frames</source>
-        <translation>시작 프레임 정렬</translation>
+        <translation>Startrahmen ausrichten</translation>
     </message>
     <message>
         <source>All Node Definitions ...</source>
-        <translation>모든 노드 정의...</translation>
+        <translation>Alle Knotendefinitionen ...</translation>
     </message>
     <message>
         <source>Allow Floating Point</source>
-        <translation>부동 소수점 허용</translation>
+        <translation>Gleitkomma zulassen</translation>
     </message>
     <message>
         <source>Alpha</source>
-        <translation>알파</translation>
+        <translation>Alpha</translation>
     </message>
     <message>
         <source>Alpha Type</source>
-        <translation>알파형</translation>
+        <translation>Alpha-Typ</translation>
     </message>
     <message>
         <source>Always Save Settings as Defaults On Exit</source>
-        <translation>종료 시 항상 설정을 기본값으로 저장</translation>
+        <translation>Speichern Sie die Einstellungen beim Beenden immer als Standardeinstellungen</translation>
     </message>
     <message>
         <source>Anaglyph</source>
-        <translation>애너글리프</translation>
+        <translation>Anaglyphe</translation>
     </message>
     <message>
         <source>Anamorphic  2:1</source>
-        <translation>아나모픽 2:1</translation>
+        <translation>Anamorphisch 2:1</translation>
     </message>
     <message>
         <source>Annotated Frames...</source>
-        <translation>주석이 달린 프레임...</translation>
+        <translation>Annotierte Frames...</translation>
     </message>
     <message>
         <source>Annotation</source>
-        <translation>주석</translation>
+        <translation>Anmerkung</translation>
     </message>
     <message>
         <source>Arbitrary (Rotate Mode)</source>
-        <translation>임의(회전 모드)</translation>
+        <translation>Beliebig (Rotationsmodus)</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>오디오</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Audio File...</source>
-        <translation>오디오 파일...</translation>
+        <translation>Audiodatei...</translation>
     </message>
     <message>
         <source>Audio Offset...</source>
-        <translation>오디오 오프셋...</translation>
+        <translation>Audio-Offset...</translation>
     </message>
     <message>
         <source>Audio Scale...</source>
-        <translation>오디오 스케일...</translation>
+        <translation>Audioskala...</translation>
     </message>
     <message>
         <source>Auto EDL</source>
-        <translation>자동 EDL</translation>
+        <translation>Auto EDL</translation>
     </message>
     <message>
         <source>Automatically Mark Annotated Frames</source>
-        <translation>주석이 달린 프레임 자동 표시</translation>
+        <translation>Markieren Sie kommentierte Frames automatisch</translation>
     </message>
     <message>
         <source>Automatically Retime Inputs</source>
-        <translation>자동으로 입력 시간 재설정</translation>
+        <translation>Automatische Neuzeit von Eingaben</translation>
     </message>
     <message>
         <source>BGRA</source>
@@ -639,407 +639,407 @@
     </message>
     <message>
         <source>Background</source>
-        <translation>배경</translation>
+        <translation>Hintergrund</translation>
     </message>
     <message>
         <source>Balance</source>
-        <translation>균형</translation>
+        <translation>Balance</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation>흑인</translation>
+        <translation>Schwarz</translation>
     </message>
     <message>
         <source>Blue</source>
-        <translation>블루</translation>
+        <translation>Blau</translation>
     </message>
     <message>
         <source>Bottom View Toolbar</source>
-        <translation>하단 보기 도구 모음</translation>
+        <translation>Symbolleiste der unteren Ansicht</translation>
     </message>
     <message>
         <source>Box Pointer</source>
-        <translation>박스 포인터</translation>
+        <translation>Box-Zeiger</translation>
     </message>
     <message>
         <source>Brush Size Relative to View</source>
-        <translation>뷰에 상대적인 브러시 크기</translation>
+        <translation>Pinselgröße relativ zur Ansicht</translation>
     </message>
     <message>
         <source>Burn</source>
-        <translation>번</translation>
+        <translation>Brennen</translation>
     </message>
     <message>
         <source>Cache Off</source>
-        <translation>캐시 꺼짐</translation>
+        <translation>Cache aus</translation>
     </message>
     <message>
         <source>Center</source>
-        <translation>가운데 맞춤</translation>
+        <translation>Zentrieren</translation>
     </message>
     <message>
         <source>Center Fit</source>
-        <translation>센터핏</translation>
+        <translation>Center Fit</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation>채널</translation>
+        <translation>Kanal</translation>
     </message>
     <message>
         <source>Channel Display</source>
-        <translation>채널 디스플레이</translation>
+        <translation>Kanalanzeige</translation>
     </message>
     <message>
         <source>Channel Order</source>
-        <translation>채널 순서</translation>
+        <translation>Kanalreihenfolge</translation>
     </message>
     <message>
         <source>Check for Updates...</source>
-        <translation>업데이트 확인...</translation>
+        <translation>Nach Updates suchen...</translation>
     </message>
     <message>
         <source>Checker</source>
-        <translation>체커</translation>
+        <translation>Checker</translation>
     </message>
     <message>
         <source>Cineon/DPX Log</source>
-        <translation>시네온/DPX 로그</translation>
+        <translation>Cineon/DPX-Protokoll</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation>지우기</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>Clear All Drawings</source>
-        <translation>모든 도면 지우기</translation>
+        <translation>Alle Zeichnungen löschen</translation>
     </message>
     <message>
         <source>Clear All Marks</source>
-        <translation>모든 표시 지우기</translation>
+        <translation>Alle Markierungen löschen</translation>
     </message>
     <message>
         <source>Clear Drawings</source>
-        <translation>그림 지우기</translation>
+        <translation>Zeichnungen löschen</translation>
     </message>
     <message>
         <source>Clear In/Out Frames</source>
-        <translation>인/아웃 프레임 지우기</translation>
+        <translation>In/Out-Frames löschen</translation>
     </message>
     <message>
         <source>Clear Marks</source>
-        <translation>표시 지우기</translation>
+        <translation>Klare Markierungen</translation>
     </message>
     <message>
         <source>Clear Range</source>
-        <translation>범위 지우기</translation>
+        <translation>Bereich löschen</translation>
     </message>
     <message>
         <source>Clear Source Cut In/Out</source>
-        <translation>클리어 소스 컷 인/아웃</translation>
+        <translation>Quelle ein-/ausschneiden</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>클론</translation>
+        <translation>Klonen</translation>
     </message>
     <message>
         <source>Clone RV</source>
-        <translation>클론 RV</translation>
+        <translation>Wohnmobil klonen</translation>
     </message>
     <message>
         <source>Clone Session</source>
-        <translation>세션 복제</translation>
+        <translation>Sitzung klonen</translation>
     </message>
     <message>
         <source>Clone Synced RV</source>
-        <translation>클론 동기화 RV</translation>
+        <translation>Synchronisiertes Wohnmobil klonen</translation>
     </message>
     <message>
         <source>Close Button Always</source>
-        <translation>닫기 버튼 항상</translation>
+        <translation>Schließen-Schaltfläche immer</translation>
     </message>
     <message>
         <source>Close Button When Nearby</source>
-        <translation>근처에 있으면 닫기 버튼</translation>
+        <translation>Schließen-Taste, wenn in der Nähe</translation>
     </message>
     <message>
         <source>Close Inspector</source>
-        <translation>감찰관 닫기</translation>
+        <translation>Inspektor schließen</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation>세션 닫기</translation>
+        <translation>Sitzung schließen</translation>
     </message>
     <message>
         <source>Collect Diagnostics Package...</source>
-        <translation>진단 패키지 수집...</translation>
+        <translation>Diagnosepaket abholen...</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>색상</translation>
+        <translation>Farbe</translation>
     </message>
     <message>
         <source>Color (All Channels)</source>
-        <translation>색상(모든 채널)</translation>
+        <translation>Farbe (Alle Kanäle)</translation>
     </message>
     <message>
         <source>Color Inspector</source>
-        <translation>컬러 인스펙터</translation>
+        <translation>Farbinspektor</translation>
     </message>
     <message>
         <source>Color Offset</source>
-        <translation>색상 오프셋</translation>
+        <translation>Farbversatz</translation>
     </message>
     <message>
         <source>Color Resolution</source>
-        <translation>색상 해상도</translation>
+        <translation>Farbauflösung</translation>
     </message>
     <message>
         <source>Color Space</source>
-        <translation>색공간</translation>
+        <translation>Farbraum</translation>
     </message>
     <message>
         <source>Column</source>
-        <translation>칼럼</translation>
+        <translation>Spalte</translation>
     </message>
     <message>
         <source>Composite</source>
-        <translation>복합</translation>
+        <translation>Verbundwerkstoff</translation>
     </message>
     <message>
         <source>Configure</source>
-        <translation>구성</translation>
+        <translation>Konfigurieren</translation>
     </message>
     <message>
         <source>Console</source>
-        <translation>콘솔</translation>
+        <translation>Konsole</translation>
     </message>
     <message>
         <source>Contour 10</source>
-        <translation>윤곽 10</translation>
+        <translation>Kontur 10</translation>
     </message>
     <message>
         <source>Contour 100</source>
-        <translation>윤곽 100</translation>
+        <translation>Kontur 100</translation>
     </message>
     <message>
         <source>Contour 20</source>
-        <translation>윤곽 20</translation>
+        <translation>Kontur 20</translation>
     </message>
     <message>
         <source>Contour 3</source>
-        <translation>윤곽 3</translation>
+        <translation>Kontur 3</translation>
     </message>
     <message>
         <source>Contour 4</source>
-        <translation>윤곽 4</translation>
+        <translation>Kontur 4</translation>
     </message>
     <message>
         <source>Contour 6</source>
-        <translation>윤곽 6</translation>
+        <translation>Kontur 6</translation>
     </message>
     <message>
         <source>Contract Range From Marks/Boundaries</source>
-        <translation>표시/경계로부터의 계약 범위</translation>
+        <translation>Vertragsbereich ab Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Contrast</source>
-        <translation>명암</translation>
+        <translation>Kontrast</translation>
     </message>
     <message>
         <source>Control</source>
-        <translation>제어</translation>
+        <translation>Kontrolle</translation>
     </message>
     <message>
         <source>Convert to FPS</source>
-        <translation>FPS로 변환</translation>
+        <translation>In FPS konvertieren</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>복사</translation>
+        <translation>Kopieren</translation>
     </message>
     <message>
         <source>Copy All Metadata to Clipboard</source>
-        <translation>모든 메타데이터를 클립보드에 복사</translation>
+        <translation>Kopieren Sie alle Metadaten in die Zwischenablage</translation>
     </message>
     <message>
         <source>Copy Session URL</source>
-        <translation>세션 URL 복사</translation>
+        <translation>Sitzungs-URL kopieren</translation>
     </message>
     <message>
         <source>Copy Sync Session URL</source>
-        <translation>동기화 세션 URL 복사</translation>
+        <translation>Synchronisierungssitzungs-URL kopieren</translation>
     </message>
     <message>
         <source>Create Full Checkpoint</source>
-        <translation>전체 체크포인트 생성</translation>
+        <translation>Vollständigen Prüfpunkt erstellen</translation>
     </message>
     <message>
         <source>Create Nuke Read Node</source>
-        <translation>Nuke 읽기 노드 생성</translation>
+        <translation>Nuke-Leseknoten erstellen</translation>
     </message>
     <message>
         <source>Create/Edit Display Profiles...</source>
-        <translation>디스플레이 프로필 생성/편집...</translation>
+        <translation>Anzeigeprofile erstellen/bearbeiten...</translation>
     </message>
     <message>
         <source>Cross Hatch</source>
-        <translation>크로스 해치</translation>
+        <translation>Cross Hatch</translation>
     </message>
     <message>
         <source>Cross Pointer</source>
-        <translation>크로스 포인터</translation>
+        <translation>Kreuzzeiger</translation>
     </message>
     <message>
         <source>Current Source Frame...</source>
-        <translation>현재 소스 프레임...</translation>
+        <translation>Aktueller Quellrahmen...</translation>
     </message>
     <message>
         <source>Custom...</source>
-        <translation>커스텀...</translation>
+        <translation>Benutzerdefiniert...</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>잘라내기</translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <source>Cycle Backward</source>
-        <translation>뒤로 순환</translation>
+        <translation>Rückwärts radeln</translation>
     </message>
     <message>
         <source>Cycle Forward</source>
-        <translation>주기 앞으로</translation>
+        <translation>Zyklus vorwärts</translation>
     </message>
     <message>
         <source>Cycle Stack Backward</source>
-        <translation>사이클 스택 뒤로</translation>
+        <translation>Stapel rückwärts durchlaufen</translation>
     </message>
     <message>
         <source>Cycle Stack Forward</source>
-        <translation>사이클 스택 포워드</translation>
+        <translation>Zyklusstapel vorwärts</translation>
     </message>
     <message>
         <source>DLP Checker</source>
-        <translation>DLP 검사기</translation>
+        <translation>DLP-Prüfer</translation>
     </message>
     <message>
         <source>Debug</source>
-        <translation>디버그</translation>
+        <translation>Debug</translation>
     </message>
     <message>
         <source>Definition of Current View Node ...</source>
-        <translation>현재 뷰 노드 정의...</translation>
+        <translation>Definition des aktuellen Ansichtsknotens ...</translation>
     </message>
     <message>
         <source>Describe Key Binding...</source>
-        <translation>키 바인딩 설명...</translation>
+        <translation>Beschreiben Sie die Tastenzuordnung...</translation>
     </message>
     <message>
         <source>Describe...</source>
-        <translation>설명...</translation>
+        <translation>Beschreiben...</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation>진단</translation>
+        <translation>Diagnose</translation>
     </message>
     <message>
         <source>Difference</source>
-        <translation>차이</translation>
+        <translation>Unterschied</translation>
     </message>
     <message>
         <source>Difference (Inverted)</source>
-        <translation>차이(역전)</translation>
+        <translation>Differenz (Invertiert)</translation>
     </message>
     <message>
         <source>Direct</source>
-        <translation>직접</translation>
+        <translation>Direkt</translation>
     </message>
     <message>
         <source>Disable Click in View to Play</source>
-        <translation>재생하려면 보기에서 클릭 비활성화</translation>
+        <translation>Deaktivieren Sie „Click in View to Play“.</translation>
     </message>
     <message>
         <source>Disable Scrubbing in View</source>
-        <translation>뷰에서 스크러빙 비활성화</translation>
+        <translation>Deaktivieren Sie das Scrubbing in der Ansicht</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>디스플레이</translation>
+        <translation>Anzeige</translation>
     </message>
     <message>
         <source>Display Brightness (Interactive)</source>
-        <translation>디스플레이 밝기(대화형)</translation>
+        <translation>Display-Helligkeit (interaktiv)</translation>
     </message>
     <message>
         <source>Display Feedback Message</source>
-        <translation>피드백 메시지 표시</translation>
+        <translation>Feedback-Nachricht anzeigen</translation>
     </message>
     <message>
         <source>Display Gamma 2.2</source>
-        <translation>디스플레이 감마 2.2</translation>
+        <translation>Anzeige Gamma 2.2</translation>
     </message>
     <message>
         <source>Display Gamma 2.4</source>
-        <translation>디스플레이 감마 2.4</translation>
+        <translation>Anzeige Gamma 2.4</translation>
     </message>
     <message>
         <source>Display Gamma...</source>
-        <translation>디스플레이 감마...</translation>
+        <translation>Gamma anzeigen...</translation>
     </message>
     <message>
         <source>Display ICC Active</source>
-        <translation>ICC 활성 표시</translation>
+        <translation>Anzeige ICC aktiv</translation>
     </message>
     <message>
         <source>Display LUT Active</source>
-        <translation>디스플레이 LUT 활성</translation>
+        <translation>Anzeige LUT aktiv</translation>
     </message>
     <message>
         <source>Display LUT...</source>
-        <translation>디스플레이 LUT...</translation>
+        <translation>LUT anzeigen...</translation>
     </message>
     <message>
         <source>Dissolve</source>
-        <translation>디졸브</translation>
+        <translation>Auflösen</translation>
     </message>
     <message>
         <source>Dither</source>
-        <translation>디더</translation>
+        <translation>Dither</translation>
     </message>
     <message>
         <source>Dodge</source>
-        <translation>닷지</translation>
+        <translation>Ausweichen</translation>
     </message>
     <message>
         <source>Download from GitHub</source>
-        <translation>GitHub에서 다운로드</translation>
+        <translation>Von GitHub herunterladen</translation>
     </message>
     <message>
         <source>Draw Magnifier Over Imagery</source>
-        <translation>이미지 위에 돋보기 그리기</translation>
+        <translation>Zeichnen Sie eine Lupe über die Bilder</translation>
     </message>
     <message>
         <source>Draw On Source When Possible</source>
-        <translation>가능한 경우 소스에 그리기</translation>
+        <translation>Verwenden Sie nach Möglichkeit die Quelle</translation>
     </message>
     <message>
         <source>Draw Timeline Over Imagery</source>
-        <translation>이미지 위에 타임라인 그리기</translation>
+        <translation>Zeichnen Sie eine Zeitleiste über Bildern</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>편집</translation>
+        <translation>Bearbeiten</translation>
     </message>
     <message>
         <source>Expand Range From Marks/Boundaries</source>
-        <translation>마크/경계에서 범위 확장</translation>
+        <translation>Erweitern Sie den Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation>내보내기</translation>
+        <translation>Exportieren</translation>
     </message>
     <message>
         <source>Exposure</source>
-        <translation>노출</translation>
+        <translation>Belichtung</translation>
     </message>
     <message>
         <source>FPS</source>
@@ -1047,111 +1047,111 @@
     </message>
     <message>
         <source>Feedback Messages</source>
-        <translation>피드백 메시지</translation>
+        <translation>Feedback-Nachrichten</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>파일</translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <source>File CDL</source>
-        <translation>파일 CDL</translation>
+        <translation>Datei CDL</translation>
     </message>
     <message>
         <source>File CDL...</source>
-        <translation>CDL 파일...</translation>
+        <translation>Datei CDL...</translation>
     </message>
     <message>
         <source>File Gamma 2.2</source>
-        <translation>파일 감마 2.2</translation>
+        <translation>Datei Gamma 2.2</translation>
     </message>
     <message>
         <source>File Gamma...</source>
-        <translation>파일 감마...</translation>
+        <translation>Datei-Gamma...</translation>
     </message>
     <message>
         <source>File ICC</source>
-        <translation>파일 ICC</translation>
+        <translation>Datei ICC</translation>
     </message>
     <message>
         <source>File LUT</source>
-        <translation>파일 LUT</translation>
+        <translation>Datei-LUT</translation>
     </message>
     <message>
         <source>File LUT...</source>
-        <translation>파일 LUT...</translation>
+        <translation>Datei-LUT...</translation>
     </message>
     <message>
         <source>File OTIO...</source>
-        <translation>파일 OTIO...</translation>
+        <translation>Datei OTIO...</translation>
     </message>
     <message>
         <source>Final Rendered Color</source>
-        <translation>최종 렌더링 색상</translation>
+        <translation>Endgültige gerenderte Farbe</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation>핏</translation>
+        <translation>Fit</translation>
     </message>
     <message>
         <source>Fit All Images</source>
-        <translation>모든 이미지에 맞춤</translation>
+        <translation>Alle Bilder anpassen</translation>
     </message>
     <message>
         <source>Fit to Window</source>
-        <translation>창에 맞추기</translation>
+        <translation>An Fenster anpassen</translation>
     </message>
     <message>
         <source>Flip</source>
-        <translation>플립</translation>
+        <translation>Umdrehen</translation>
     </message>
     <message>
         <source>Flip Right Eye</source>
-        <translation>오른쪽 눈 뒤집기</translation>
+        <translation>Rechtes Auge umdrehen</translation>
     </message>
     <message>
         <source>Floating Selector</source>
-        <translation>플로팅 선택기</translation>
+        <translation>Schwimmender Selektor</translation>
     </message>
     <message>
         <source>Flop</source>
-        <translation>플롭</translation>
+        <translation>Flop</translation>
     </message>
     <message>
         <source>Flop Right Eye</source>
-        <translation>오른쪽 눈 플롭</translation>
+        <translation>Flop Rechtes Auge</translation>
     </message>
     <message>
         <source>Footage Display</source>
-        <translation>영상 표시</translation>
+        <translation>Videoanzeige</translation>
     </message>
     <message>
         <source>Force Reload Current Frame</source>
-        <translation>현재 프레임 강제 다시 로드</translation>
+        <translation>Neuladen des aktuellen Frames erzwingen</translation>
     </message>
     <message>
         <source>Force Reload Region</source>
-        <translation>강제 재장전 지역</translation>
+        <translation>Region neu laden erzwingen</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation>프레임</translation>
+        <translation>Rahmen</translation>
     </message>
     <message>
         <source>Frame Width</source>
-        <translation>프레임 폭</translation>
+        <translation>Rahmenbreite</translation>
     </message>
     <message>
         <source>From Image</source>
-        <translation>이미지에서</translation>
+        <translation>Vom Bild</translation>
     </message>
     <message>
         <source>Full Range</source>
-        <translation>전체 범위</translation>
+        <translation>Vollsortiment</translation>
     </message>
     <message>
         <source>Full Screen</source>
-        <translation>전체 화면</translation>
+        <translation>Vollbild</translation>
     </message>
     <message>
         <source>GBRA</source>
@@ -1163,59 +1163,59 @@
     </message>
     <message>
         <source>GTO File Format (.rv files)</source>
-        <translation>GTO 파일 형식(.rv 파일)</translation>
+        <translation>GTO-Dateiformat (.rv-Dateien)</translation>
     </message>
     <message>
         <source>Gamma</source>
-        <translation>감마</translation>
+        <translation>Gamma</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>일반</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Global Flip Right Eye</source>
-        <translation>글로벌 플립 오른쪽 눈</translation>
+        <translation>Global Flip Right Eye</translation>
     </message>
     <message>
         <source>Global Flop Right Eye</source>
-        <translation>글로벌 플롭 오른쪽 눈</translation>
+        <translation>Globaler Flop Rechtes Auge</translation>
     </message>
     <message>
         <source>Global Frame Numbers</source>
-        <translation>글로벌 프레임 번호</translation>
+        <translation>Globale Rahmennummern</translation>
     </message>
     <message>
         <source>Global Relative Eye Offset (%)</source>
-        <translation>전역 상대 눈 오프셋(%)</translation>
+        <translation>Globaler relativer Augenversatz (%)</translation>
     </message>
     <message>
         <source>Global Right Eye Only Offset (%)</source>
-        <translation>전역 오른쪽 눈 전용 오프셋(%)</translation>
+        <translation>Globaler Offset nur für das rechte Auge (%)</translation>
     </message>
     <message>
         <source>Global Seconds</source>
-        <translation>글로벌 초</translation>
+        <translation>Globale Sekunden</translation>
     </message>
     <message>
         <source>Global Swap Eyes</source>
-        <translation>글로벌스왑아이즈</translation>
+        <translation>Global Swap Eyes</translation>
     </message>
     <message>
         <source>Global Time Code Display</source>
-        <translation>글로벌 타임코드 디스플레이</translation>
+        <translation>Globale Timecode-Anzeige</translation>
     </message>
     <message>
         <source>Go To Frame...</source>
-        <translation>프레임으로 이동...</translation>
+        <translation>Gehe zu Frame...</translation>
     </message>
     <message>
         <source>Green</source>
-        <translation>그린</translation>
+        <translation>Grün</translation>
     </message>
     <message>
         <source>Grid</source>
-        <translation>그리드</translation>
+        <translation>Gitter</translation>
     </message>
     <message>
         <source>HSV</source>
@@ -1223,251 +1223,251 @@
     </message>
     <message>
         <source>Hard Erase</source>
-        <translation>하드 지우기</translation>
+        <translation>Festes Löschen</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>도움말</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Help ...</source>
-        <translation>도와주세요...</translation>
+        <translation>Hilfe ...</translation>
     </message>
     <message>
         <source>Hold</source>
-        <translation>고정</translation>
+        <translation>Halten</translation>
     </message>
     <message>
         <source>Hue</source>
-        <translation>후에</translation>
+        <translation>Hue</translation>
     </message>
     <message>
         <source>Hybrid Log-Gamma</source>
-        <translation>하이브리드 로그 감마</translation>
+        <translation>Hybrid Log-Gamma</translation>
     </message>
     <message>
         <source>Ignore File Primaries</source>
-        <translation>파일 기본 무시</translation>
+        <translation>Dateiprimärdateien ignorieren</translation>
     </message>
     <message>
         <source>Image</source>
-        <translation>이미지</translation>
+        <translation>Bild</translation>
     </message>
     <message>
         <source>Image Attributes...</source>
-        <translation>이미지 속성...</translation>
+        <translation>Bildattribute...</translation>
     </message>
     <message>
         <source>Image Info</source>
-        <translation>이미지 정보</translation>
+        <translation>Bildinformationen</translation>
     </message>
     <message>
         <source>Image Resolution</source>
-        <translation>이미지 해상도</translation>
+        <translation>Bildauflösung</translation>
     </message>
     <message>
         <source>Image Sequence...</source>
-        <translation>이미지 순서...</translation>
+        <translation>Bildsequenz...</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>가져오기</translation>
+        <translation>Importieren</translation>
     </message>
     <message>
         <source>Info Strip</source>
-        <translation>정보 스트립</translation>
+        <translation>Infostreifen</translation>
     </message>
     <message>
         <source>Install Maya Support File</source>
-        <translation>Maya 지원 파일 설치</translation>
+        <translation>Installieren Sie die Maya-Supportdatei</translation>
     </message>
     <message>
         <source>Install Nuke Support Files</source>
-        <translation>Nuke 지원 파일 설치</translation>
+        <translation>Installieren Sie die Nuke-Supportdateien</translation>
     </message>
     <message>
         <source>Invert</source>
-        <translation>반전</translation>
+        <translation>Invertieren</translation>
     </message>
     <message>
         <source>Inverted Difference</source>
-        <translation>역차</translation>
+        <translation>Umgekehrte Differenz</translation>
     </message>
     <message>
         <source>Jump To Beginning</source>
-        <translation>처음으로 이동</translation>
+        <translation>Zum Anfang springen</translation>
     </message>
     <message>
         <source>Jump To Ending</source>
-        <translation>엔딩으로 이동</translation>
+        <translation>Zum Ende springen</translation>
     </message>
     <message>
         <source>Large</source>
-        <translation>대형</translation>
+        <translation>Groß</translation>
     </message>
     <message>
         <source>Layout</source>
-        <translation>레이아웃</translation>
+        <translation>Layout</translation>
     </message>
     <message>
         <source>Left Eye Only</source>
-        <translation>왼쪽 눈만</translation>
+        <translation>Nur linkes Auge</translation>
     </message>
     <message>
         <source>Linear Filter</source>
-        <translation>선형 필터</translation>
+        <translation>Linearer Filter</translation>
     </message>
     <message>
         <source>Linearize</source>
-        <translation>선형화</translation>
+        <translation>Linearisieren</translation>
     </message>
     <message>
         <source>Live Drawing in Sync</source>
-        <translation>실시간 드로잉 동기화</translation>
+        <translation>Live-Zeichnung synchron</translation>
     </message>
     <message>
         <source>Lock Pixel Scale During Resize</source>
-        <translation>크기 조정 중 픽셀 크기 잠금</translation>
+        <translation>Pixelskalierung während der Größenänderung sperren</translation>
     </message>
     <message>
         <source>Look</source>
-        <translation>보세요</translation>
+        <translation>Schau</translation>
     </message>
     <message>
         <source>Look CDL</source>
-        <translation>보세요 CDL</translation>
+        <translation>Schau CDL</translation>
     </message>
     <message>
         <source>Look CDL...</source>
-        <translation>CDL 보세요...</translation>
+        <translation>Schau CDL...</translation>
     </message>
     <message>
         <source>Look LUT</source>
-        <translation>봐요 ㅋㅋㅋ</translation>
+        <translation>Schau LUT</translation>
     </message>
     <message>
         <source>Look LUT...</source>
-        <translation>봐요 ㅋㅋㅋ...</translation>
+        <translation>Schau LUT...</translation>
     </message>
     <message>
         <source>Look-Ahead Cache</source>
-        <translation>예측 캐시</translation>
+        <translation>Look-Ahead-Cache</translation>
     </message>
     <message>
         <source>Loop</source>
-        <translation>반복</translation>
+        <translation>Schleife</translation>
     </message>
     <message>
         <source>Luminance</source>
-        <translation>휘도</translation>
+        <translation>Leuchtdichte</translation>
     </message>
     <message>
         <source>Luminance Anaglyph</source>
-        <translation>휘도 애너글리프</translation>
+        <translation>Leuchtdichte-Anaglyphe</translation>
     </message>
     <message>
         <source>Luminance Look Up Table</source>
-        <translation>휘도 조회 테이블</translation>
+        <translation>Luminanz-Nachschlagetabelle</translation>
     </message>
     <message>
         <source>Manual</source>
-        <translation>수동</translation>
+        <translation>Manuell</translation>
     </message>
     <message>
         <source>Mark Annotated Frames</source>
-        <translation>주석 달린 프레임 표시</translation>
+        <translation>Kommentierte Frames markieren</translation>
     </message>
     <message>
         <source>Mark Current Frame</source>
-        <translation>현재 프레임 표시</translation>
+        <translation>Markieren Sie den aktuellen Frame</translation>
     </message>
     <message>
         <source>Mark Frame</source>
-        <translation>프레임 표시</translation>
+        <translation>Frame markieren</translation>
     </message>
     <message>
         <source>Mark Frame %s</source>
-        <translation>마크 프레임 %s</translation>
+        <translation>Frame markieren %s</translation>
     </message>
     <message>
         <source>Mark Selected as Target</source>
-        <translation>마크가 대상으로 선정됨</translation>
+        <translation>Ausgewählt als Ziel markieren</translation>
     </message>
     <message>
         <source>Mark Sequence Boundaries</source>
-        <translation>시퀀스 경계 표시</translation>
+        <translation>Sequenzgrenzen markieren</translation>
     </message>
     <message>
         <source>Mark in Range</source>
-        <translation>범위 내 마크</translation>
+        <translation>Mark in Reichweite</translation>
     </message>
     <message>
         <source>Marked Frames...</source>
-        <translation>표시된 프레임...</translation>
+        <translation>Markierte Frames...</translation>
     </message>
     <message>
         <source>Marked Regions as Movie/Audio/Sequences...</source>
-        <translation>영화/오디오/시퀀스로 표시된 영역...</translation>
+        <translation>Markierte Regionen als Film/Audio/Sequenzen...</translation>
     </message>
     <message>
         <source>Matching Frame Of Next Source</source>
-        <translation>다음 소스의 프레임 일치</translation>
+        <translation>Passender Rahmen der nächsten Quelle</translation>
     </message>
     <message>
         <source>Matching Frame Of Previous Source</source>
-        <translation>이전 소스의 프레임 일치</translation>
+        <translation>Übereinstimmender Rahmen der vorherigen Quelle</translation>
     </message>
     <message>
         <source>Matte</source>
-        <translation>매트</translation>
+        <translation>Matt</translation>
     </message>
     <message>
         <source>Matte Opacity</source>
-        <translation>매트 불투명도</translation>
+        <translation>Matte Deckkraft</translation>
     </message>
     <message>
         <source>Maximum Allowed</source>
-        <translation>최대 허용</translation>
+        <translation>Maximal zulässig</translation>
     </message>
     <message>
         <source>Maya</source>
-        <translation>마야</translation>
+        <translation>Maya</translation>
     </message>
     <message>
         <source>Media Information...</source>
-        <translation>미디어 정보...</translation>
+        <translation>Medieninformationen...</translation>
     </message>
     <message>
         <source>Medium</source>
-        <translation>중형</translation>
+        <translation>Mittel</translation>
     </message>
     <message>
         <source>Menu Bar</source>
-        <translation>메뉴바</translation>
+        <translation>Menüleiste</translation>
     </message>
     <message>
         <source>Merge...</source>
-        <translation>병합...</translation>
+        <translation>Zusammenführen...</translation>
     </message>
     <message>
         <source>Mirror Side-by-Side</source>
-        <translation>나란히 거울</translation>
+        <translation>Spiegeln nebeneinander</translation>
     </message>
     <message>
         <source>Missing Frames</source>
-        <translation>프레임 누락</translation>
+        <translation>Fehlende Frames</translation>
     </message>
     <message>
         <source>Mu Command API Browser...</source>
-        <translation>Mu 명령 API 브라우저...</translation>
+        <translation>Mu Command API Browser...</translation>
     </message>
     <message>
         <source>Mu User's Manual</source>
-        <translation>Mu 사용자 매뉴얼</translation>
+        <translation>Mu-Benutzerhandbuch</translation>
     </message>
     <message>
         <source>Mute</source>
-        <translation>음소거</translation>
+        <translation>Stumm</translation>
     </message>
     <message>
         <source>NTSC D1 DV  16:9</source>
@@ -1479,247 +1479,247 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>이름</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>Narrow to Range</source>
-        <translation>범위가 좁음</translation>
+        <translation>Narrow to Range</translation>
     </message>
     <message>
         <source>New Session</source>
-        <translation>새 세션</translation>
+        <translation>Neue Sitzung</translation>
     </message>
     <message>
         <source>Next Annotated Frame</source>
-        <translation>다음 주석이 달린 프레임</translation>
+        <translation>Nächster kommentierter Frame</translation>
     </message>
     <message>
         <source>Next Marked Frame</source>
-        <translation>다음 표시된 프레임</translation>
+        <translation>Nächster markierter Frame</translation>
     </message>
     <message>
         <source>Next Range From Marks/Boundaries</source>
-        <translation>마크/경계의 다음 범위</translation>
+        <translation>Nächster Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>No Audio Display</source>
-        <translation>오디오 디스플레이 없음</translation>
+        <translation>Keine Audioanzeige</translation>
     </message>
     <message>
         <source>No Conversion</source>
-        <translation>전환 없음</translation>
+        <translation>Keine Konvertierung</translation>
     </message>
     <message>
         <source>No Correction</source>
-        <translation>수정 없음</translation>
+        <translation>Keine Korrektur</translation>
     </message>
     <message>
         <source>No Matte</source>
-        <translation>매트 없음</translation>
+        <translation>Nein Matt</translation>
     </message>
     <message>
         <source>No Rotation</source>
-        <translation>회전 없음</translation>
+        <translation>Keine Rotation</translation>
     </message>
     <message>
         <source>Normalize</source>
-        <translation>정규화</translation>
+        <translation>Normalisieren</translation>
     </message>
     <message>
         <source>Normalized [0.0, 1.0]</source>
-        <translation>정규화 [0.0, 1.0]</translation>
+        <translation>Normalisiert [0,0, 1,0]</translation>
     </message>
     <message>
         <source>Nuke</source>
-        <translation>누크</translation>
+        <translation>Nuke</translation>
     </message>
     <message>
         <source>OTIO File...</source>
-        <translation>OTIO 파일...</translation>
+        <translation>OTIO-Datei...</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation>끄기</translation>
+        <translation>Aus</translation>
     </message>
     <message>
         <source>Offset (frames)</source>
-        <translation>오프셋(프레임)</translation>
+        <translation>Offset (Frames)</translation>
     </message>
     <message>
         <source>Offset (seconds)</source>
-        <translation>오프셋(초)</translation>
+        <translation>Offset (Sekunden)</translation>
     </message>
     <message>
         <source>Online Resources</source>
-        <translation>온라인 리소스</translation>
+        <translation>Online-Ressourcen</translation>
     </message>
     <message>
         <source>Open Directory...</source>
-        <translation>디렉토리 열기...</translation>
+        <translation>Verzeichnis öffnen...</translation>
     </message>
     <message>
         <source>Open Network Dialog...</source>
-        <translation>네트워크 대화 상자 열기...</translation>
+        <translation>Offener Netzwerkdialog...</translation>
     </message>
     <message>
         <source>Open in New Session...</source>
-        <translation>새 세션에서 열기...</translation>
+        <translation>In neuer Sitzung öffnen...</translation>
     </message>
     <message>
         <source>Open into Layer...</source>
-        <translation>레이어로 열기...</translation>
+        <translation>In Ebene öffnen...</translation>
     </message>
     <message>
         <source>Open...</source>
-        <translation>열기...</translation>
+        <translation>Öffnen...</translation>
     </message>
     <message>
         <source>OpenUTV on GitHub</source>
-        <translation>GitHub의 OpenUTV</translation>
+        <translation>OpenUTV auf GitHub</translation>
     </message>
     <message>
         <source>Over</source>
-        <translation>오버</translation>
+        <translation>Vorbei</translation>
     </message>
     <message>
         <source>PAL  16:9</source>
-        <translation>팔 16:9</translation>
+        <translation>PAL 16:9</translation>
     </message>
     <message>
         <source>PAL  4:3</source>
-        <translation>팔 4:3</translation>
+        <translation>PAL 4:3</translation>
     </message>
     <message>
         <source>Packed</source>
-        <translation>포장됨</translation>
+        <translation>Verpackt</translation>
     </message>
     <message>
         <source>Packed With Fluid Layout</source>
-        <translation>유동적인 레이아웃으로 가득 차 있음</translation>
+        <translation>Vollgepackt mit flüssigem Layout</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation>붙여넣기</translation>
+        <translation>Einfügen</translation>
     </message>
     <message>
         <source>Pen</source>
-        <translation>펜</translation>
+        <translation>Stift</translation>
     </message>
     <message>
         <source>PingPong</source>
-        <translation>핑퐁</translation>
+        <translation>PingPong</translation>
     </message>
     <message>
         <source>Pixel Aspect Ratio</source>
-        <translation>픽셀 종횡비</translation>
+        <translation>Pixel-Seitenverhältnis</translation>
     </message>
     <message>
         <source>Plain Pointer</source>
-        <translation>일반 포인터</translation>
+        <translation>Einfacher Zeiger</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation>재생</translation>
+        <translation>Abspielen</translation>
     </message>
     <message>
         <source>Play All Frames</source>
-        <translation>모든 프레임 재생</translation>
+        <translation>Alle Frames abspielen</translation>
     </message>
     <message>
         <source>Play Backward</source>
-        <translation>뒤로 재생</translation>
+        <translation>Rückwärts abspielen</translation>
     </message>
     <message>
         <source>Play Forward</source>
-        <translation>앞으로 플레이</translation>
+        <translation>Vorwärts abspielen</translation>
     </message>
     <message>
         <source>Play Once</source>
-        <translation>한 번 플레이</translation>
+        <translation>Einmal spielen</translation>
     </message>
     <message>
         <source>Playback</source>
-        <translation>재생</translation>
+        <translation>Wiedergabe</translation>
     </message>
     <message>
         <source>Pointer</source>
-        <translation>포인터</translation>
+        <translation>Zeiger</translation>
     </message>
     <message>
         <source>Position Magnifier At Top</source>
-        <translation>상단 위치 돋보기</translation>
+        <translation>Positionslupe oben</translation>
     </message>
     <message>
         <source>Position Timeline At Top</source>
-        <translation>위치 타임라인 상단</translation>
+        <translation>Zeitleiste oben positionieren</translation>
     </message>
     <message>
         <source>Pre-Cache LUT</source>
-        <translation>사전 캐시 LUT</translation>
+        <translation>Pre-Cache-LUT</translation>
     </message>
     <message>
         <source>Pre-Cache LUT...</source>
-        <translation>사전 캐시 LUT...</translation>
+        <translation>Pre-Cache LUT...</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>환경설정...</translation>
+        <translation>Einstellungen...</translation>
     </message>
     <message>
         <source>Premultiplied</source>
-        <translation>미리 곱해진</translation>
+        <translation>Vormultipliziert</translation>
     </message>
     <message>
         <source>Presentation Mode</source>
-        <translation>프레젠테이션 모드</translation>
+        <translation>Präsentationsmodus</translation>
     </message>
     <message>
         <source>Presentation Settings</source>
-        <translation>프레젠테이션 설정</translation>
+        <translation>Präsentationseinstellungen</translation>
     </message>
     <message>
         <source>Preserve Image Height in Pixel Aspect Scaling</source>
-        <translation>픽셀 비율 조정에서 이미지 높이 유지</translation>
+        <translation>Behalten Sie die Bildhöhe bei der Pixel-Seitenskalierung bei</translation>
     </message>
     <message>
         <source>Prev Marked Frame</source>
-        <translation>이전 표시된 프레임</translation>
+        <translation>Vorheriger markierter Rahmen</translation>
     </message>
     <message>
         <source>Prev Range From Marks/Boundaries</source>
-        <translation>이전 표시/경계의 범위</translation>
+        <translation>Vorheriger Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Previous Annotated Frame</source>
-        <translation>이전 주석 프레임</translation>
+        <translation>Vorheriger kommentierter Frame</translation>
     </message>
     <message>
         <source>Process Info</source>
-        <translation>프로세스 정보</translation>
+        <translation>Prozessinformationen</translation>
     </message>
     <message>
         <source>Pull Session</source>
-        <translation>풀 세션</translation>
+        <translation>Pull-Sitzung</translation>
     </message>
     <message>
         <source>Push Session To All Contacts</source>
-        <translation>모든 연락처에 세션 푸시</translation>
+        <translation>Push-Sitzung an alle Kontakte</translation>
     </message>
     <message>
         <source>Quicktime Movie...</source>
-        <translation>퀵타임 영화...</translation>
+        <translation>Quicktime-Film...</translation>
     </message>
     <message>
         <source>Quit Sync</source>
-        <translation>동기화 종료</translation>
+        <translation>Synchronisierung beenden</translation>
     </message>
     <message>
         <source>Quit Wipes</source>
-        <translation>물티슈 그만둬</translation>
+        <translation>Wischtücher beenden</translation>
     </message>
     <message>
         <source>Quit Wipes (without resetting)</source>
-        <translation>Wipes 종료(재설정하지 않음)</translation>
+        <translation>Wipes beenden (ohne Zurücksetzen)</translation>
     </message>
     <message>
         <source>R00A</source>
@@ -1735,23 +1735,23 @@
     </message>
     <message>
         <source>RV Reference Manual</source>
-        <translation>RV 참조 매뉴얼</translation>
+        <translation>RV-Referenzhandbuch</translation>
     </message>
     <message>
         <source>RV User's Manual</source>
-        <translation>RV 사용자 매뉴얼</translation>
+        <translation>RV-Benutzerhandbuch</translation>
     </message>
     <message>
         <source>RVIO Ready Session...</source>
-        <translation>RVIO 준비 세션...</translation>
+        <translation>RVIO-Ready-Sitzung...</translation>
     </message>
     <message>
         <source>Random</source>
-        <translation>임의</translation>
+        <translation>Zufällig</translation>
     </message>
     <message>
         <source>Range</source>
-        <translation>범위</translation>
+        <translation>Reichweite</translation>
     </message>
     <message>
         <source>Rec. 2020</source>
@@ -1771,131 +1771,131 @@
     </message>
     <message>
         <source>Red</source>
-        <translation>레드</translation>
+        <translation>Rot</translation>
     </message>
     <message>
         <source>Red Log</source>
-        <translation>레드 로그</translation>
+        <translation>Roter Baumstamm</translation>
     </message>
     <message>
         <source>Red Log Film</source>
-        <translation>레드로그필름</translation>
+        <translation>Red Log Film</translation>
     </message>
     <message>
         <source>Red X</source>
-        <translation>레드엑스</translation>
+        <translation>Rotes X</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>다시 실행</translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <source>Region Cache</source>
-        <translation>지역 캐시</translation>
+        <translation>Region-Cache</translation>
     </message>
     <message>
         <source>Relative Eye Offset (%)</source>
-        <translation>상대 눈 오프셋(%)</translation>
+        <translation>Relativer Augenversatz (%)</translation>
     </message>
     <message>
         <source>Release All Cached Images</source>
-        <translation>캐시된 이미지 모두 해제</translation>
+        <translation>Alle zwischengespeicherten Bilder freigeben</translation>
     </message>
     <message>
         <source>Reload Changed Frames</source>
-        <translation>변경된 프레임 다시 로드</translation>
+        <translation>Geänderte Frames neu laden</translation>
     </message>
     <message>
         <source>Relocate Movie or Image Sequence...</source>
-        <translation>동영상 또는 이미지 시퀀스 재배치...</translation>
+        <translation>Film- oder Bildsequenz verschieben...</translation>
     </message>
     <message>
         <source>Remap Source Image Channels...</source>
-        <translation>소스 이미지 채널 다시 매핑...</translation>
+        <translation>Quellbildkanäle neu zuordnen...</translation>
     </message>
     <message>
         <source>Remote Sync Pointers</source>
-        <translation>원격 동기화 포인터</translation>
+        <translation>Remote-Synchronisierungszeiger</translation>
     </message>
     <message>
         <source>Renderer</source>
-        <translation>렌더러</translation>
+        <translation>Renderer</translation>
     </message>
     <message>
         <source>Replace</source>
-        <translation>바꾸기</translation>
+        <translation>Ersetzen</translation>
     </message>
     <message>
         <source>Replace Source Media...</source>
-        <translation>소스 미디어 교체...</translation>
+        <translation>Quellmedium ersetzen...</translation>
     </message>
     <message>
         <source>Report Issue on GitHub...</source>
-        <translation>GitHub에서 문제 신고...</translation>
+        <translation>Problem auf GitHub melden...</translation>
     </message>
     <message>
         <source>Reset All Color</source>
-        <translation>모든 색상 재설정</translation>
+        <translation>Alle Farben zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Manips</source>
-        <translation>모든 마닙 재설정</translation>
+        <translation>Alle Manips zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Offsets</source>
-        <translation>모든 오프셋 재설정</translation>
+        <translation>Alle Offsets zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Stereo Offsets</source>
-        <translation>모든 스테레오 오프셋 재설정</translation>
+        <translation>Alle Stereo-Offsets zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Wipes</source>
-        <translation>모든 물티슈 재설정</translation>
+        <translation>Alle Löschvorgänge zurücksetzen</translation>
     </message>
     <message>
         <source>Reset MBPS</source>
-        <translation>MBPS 재설정</translation>
+        <translation>MBPS zurücksetzen</translation>
     </message>
     <message>
         <source>Reset Range</source>
-        <translation>범위 재설정</translation>
+        <translation>Bereich zurücksetzen</translation>
     </message>
     <message>
         <source>Reset Timing</source>
-        <translation>타이밍 재설정</translation>
+        <translation>Timing zurücksetzen</translation>
     </message>
     <message>
         <source>Restore Checkpoint</source>
-        <translation>체크포인트 복원</translation>
+        <translation>Prüfpunkt wiederherstellen</translation>
     </message>
     <message>
         <source>Retime</source>
-        <translation>재시간</translation>
+        <translation>Retime</translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation>역방향</translation>
+        <translation>Rückwärts</translation>
     </message>
     <message>
         <source>Right Eye Only</source>
-        <translation>오른쪽 눈만</translation>
+        <translation>Nur rechtes Auge</translation>
     </message>
     <message>
         <source>Right Eye Only Offset (%)</source>
-        <translation>오른쪽 눈 전용 오프셋(%)</translation>
+        <translation>Offset nur für das rechte Auge (%)</translation>
     </message>
     <message>
         <source>Rotation</source>
-        <translation>회전</translation>
+        <translation>Rotation</translation>
     </message>
     <message>
         <source>Row</source>
-        <translation>행</translation>
+        <translation>Reihe</translation>
     </message>
     <message>
         <source>Run Render</source>
-        <translation>렌더링 실행</translation>
+        <translation>Run Render ausführen</translation>
     </message>
     <message>
         <source>SMPTE 2084</source>
@@ -1903,487 +1903,487 @@
     </message>
     <message>
         <source>Sample Color</source>
-        <translation>샘플 색상</translation>
+        <translation>Musterfarbe</translation>
     </message>
     <message>
         <source>Saturation</source>
-        <translation>포화</translation>
+        <translation>Sättigung</translation>
     </message>
     <message>
         <source>Save Current Settings as Defaults</source>
-        <translation>현재 설정을 기본값으로 저장</translation>
+        <translation>Aktuelle Einstellungen als Standardeinstellungen speichern</translation>
     </message>
     <message>
         <source>Save Session</source>
-        <translation>세션 저장</translation>
+        <translation>Sitzung speichern</translation>
     </message>
     <message>
         <source>Save Session As...</source>
-        <translation>다른 이름으로 세션 저장...</translation>
+        <translation>Sitzung speichern unter...</translation>
     </message>
     <message>
         <source>Save as Default Settings</source>
-        <translation>기본 설정으로 저장</translation>
+        <translation>Als Standardeinstellungen speichern</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation>규모</translation>
+        <translation>Skala</translation>
     </message>
     <message>
         <source>Scale with Resolution</source>
-        <translation>해상도에 따른 확장</translation>
+        <translation>Skalierung mit Auflösung</translation>
     </message>
     <message>
         <source>Scanline</source>
-        <translation>스캔라인</translation>
+        <translation>Scanline</translation>
     </message>
     <message>
         <source>Scrub Stops At In/Out</source>
-        <translation>스크럽이 인/아웃 시 중지됨</translation>
+        <translation>Schrubbstopps am Eingang/Ausgang</translation>
     </message>
     <message>
         <source>Scrubbing</source>
-        <translation>스크러빙</translation>
+        <translation>Schrubben</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>선택</translation>
+        <translation>Auswählen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>모두 선택</translation>
+        <translation>Alles auswählen</translation>
     </message>
     <message>
         <source>Send</source>
-        <translation>보내기</translation>
+        <translation>Senden</translation>
     </message>
     <message>
         <source>Sequence</source>
-        <translation>순서</translation>
+        <translation>Sequenz</translation>
     </message>
     <message>
         <source>Session</source>
-        <translation>세션</translation>
+        <translation>Sitzung</translation>
     </message>
     <message>
         <source>Session Manager</source>
-        <translation>세션 관리자</translation>
+        <translation>Sitzungsmanager</translation>
     </message>
     <message>
         <source>Set Display LUT</source>
-        <translation>디스플레이 LUT 설정</translation>
+        <translation>Stellen Sie die Anzeige-LUT ein</translation>
     </message>
     <message>
         <source>Set File CDL</source>
-        <translation>파일 CDL 설정</translation>
+        <translation>Datei-CDL festlegen</translation>
     </message>
     <message>
         <source>Set In Frame to %s</source>
-        <translation>프레임 내를 %s로 설정</translation>
+        <translation>In Frame auf %s setzen</translation>
     </message>
     <message>
         <source>Set In Frame to Current</source>
-        <translation>프레임 내를 현재로 설정</translation>
+        <translation>Setzen Sie „In Frame“ auf „Aktuell“.</translation>
     </message>
     <message>
         <source>Set Out Frame to %s</source>
-        <translation>프레임을 %s로 설정</translation>
+        <translation>Out-Frame auf %s setzen</translation>
     </message>
     <message>
         <source>Set Out Frame to Current</source>
-        <translation>프레임을 현재로 설정</translation>
+        <translation>Stellen Sie Out Frame auf Current ein</translation>
     </message>
     <message>
         <source>Set Range From Marks/Boundaries</source>
-        <translation>마크/경계로부터 범위 설정</translation>
+        <translation>Bereich von Markierungen/Grenzen festlegen</translation>
     </message>
     <message>
         <source>Set Range In Point</source>
-        <translation>시작점 설정</translation>
+        <translation>Bereich-Startpunkt setzen</translation>
     </message>
     <message>
         <source>Set Range Offset</source>
-        <translation>범위 오프셋 설정</translation>
+        <translation>Bereichsoffset einstellen</translation>
     </message>
     <message>
         <source>Set Range Out Point</source>
-        <translation>끝점 설정</translation>
+        <translation>Bereich-Endpunkt setzen</translation>
     </message>
     <message>
         <source>Set Source Cut In ...</source>
-        <translation>소스 컷인 설정...</translation>
+        <translation>Quelleneinschnitt festlegen ...</translation>
     </message>
     <message>
         <source>Set Source Cut Out ...</source>
-        <translation>소스 컷아웃 설정...</translation>
+        <translation>Quellenausschnitt festlegen ...</translation>
     </message>
     <message>
         <source>Set Source FPS...</source>
-        <translation>소스 FPS 설정...</translation>
+        <translation>Quell-FPS festlegen...</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>설정</translation>
+        <translation>Einstellungen</translation>
     </message>
     <message>
         <source>Show Brush</source>
-        <translation>쇼브러쉬</translation>
+        <translation>Pinsel anzeigen</translation>
     </message>
     <message>
         <source>Show Contacts Network Errors</source>
-        <translation>연락처 네트워크 오류 표시</translation>
+        <translation>Kontakte-Netzwerkfehler anzeigen</translation>
     </message>
     <message>
         <source>Show Contacts Pointers</source>
-        <translation>연락처 포인터 표시</translation>
+        <translation>Kontaktzeiger anzeigen</translation>
     </message>
     <message>
         <source>Show Controls</source>
-        <translation>컨트롤 표시</translation>
+        <translation>Steuerelemente anzeigen</translation>
     </message>
     <message>
         <source>Show Current Bindings</source>
-        <translation>현재 바인딩 표시</translation>
+        <translation>Aktuelle Bindungen anzeigen</translation>
     </message>
     <message>
         <source>Show Drawings</source>
-        <translation>그림 보기</translation>
+        <translation>Zeichnungen anzeigen</translation>
     </message>
     <message>
         <source>Show Environment</source>
-        <translation>쇼 환경</translation>
+        <translation>Umgebung anzeigen</translation>
     </message>
     <message>
         <source>Show Filename</source>
-        <translation>파일 이름 표시</translation>
+        <translation>Dateinamen anzeigen</translation>
     </message>
     <message>
         <source>Show Frame Number</source>
-        <translation>프레임 번호 표시</translation>
+        <translation>Rahmennummer anzeigen</translation>
     </message>
     <message>
         <source>Show HUD</source>
-        <translation>HUD 표시</translation>
+        <translation>HUD anzeigen</translation>
     </message>
     <message>
         <source>Show In/Out Frame Numbers</source>
-        <translation>인/아웃 프레임 번호 표시</translation>
+        <translation>Ein-/Ausgangsrahmennummern anzeigen</translation>
     </message>
     <message>
         <source>Show Out Of Range Colors</source>
-        <translation>범위를 벗어난 색상 표시</translation>
+        <translation>Farben außerhalb des Bereichs anzeigen</translation>
     </message>
     <message>
         <source>Show Play Controls</source>
-        <translation>재생 컨트롤 표시</translation>
+        <translation>Wiedergabesteuerung anzeigen</translation>
     </message>
     <message>
         <source>Show Play Direction Indicator</source>
-        <translation>재생 방향 표시 표시</translation>
+        <translation>Spielrichtungsanzeige anzeigen</translation>
     </message>
     <message>
         <source>Show Pointer Trails</source>
-        <translation>포인터 트레일 표시</translation>
+        <translation>Zeigerspuren anzeigen</translation>
     </message>
     <message>
         <source>Show Source List</source>
-        <translation>소스 목록 표시</translation>
+        <translation>Quellenliste anzeigen</translation>
     </message>
     <message>
         <source>Show Source/Input at Frame</source>
-        <translation>프레임에 소스/입력 표시</translation>
+        <translation>Quelle/Eingabe im Frame anzeigen</translation>
     </message>
     <message>
         <source>Show Sync Messages</source>
-        <translation>동기화 메시지 표시</translation>
+        <translation>Synchronisierungsnachrichten anzeigen</translation>
     </message>
     <message>
         <source>Show Timeline</source>
-        <translation>타임라인 표시</translation>
+        <translation>Timeline anzeigen</translation>
     </message>
     <message>
         <source>Show UI Name</source>
-        <translation>UI 이름 표시</translation>
+        <translation>Benutzeroberflächennamen anzeigen</translation>
     </message>
     <message>
         <source>Shutter Glasses</source>
-        <translation>셔터 안경</translation>
+        <translation>Shutter-Brille</translation>
     </message>
     <message>
         <source>Side-by-Side</source>
-        <translation>나란히</translation>
+        <translation>Seite an Seite</translation>
     </message>
     <message>
         <source>Simple EDL...</source>
-        <translation>간단한 EDL...</translation>
+        <translation>Einfache EDL...</translation>
     </message>
     <message>
         <source>Slow Down by Factor...</source>
-        <translation>인자에 따라 속도를 늦추세요...</translation>
+        <translation>Faktor langsamer...</translation>
     </message>
     <message>
         <source>Small</source>
-        <translation>스몰</translation>
+        <translation>Klein</translation>
     </message>
     <message>
         <source>Smudge</source>
-        <translation>스머지</translation>
+        <translation>Verschmieren</translation>
     </message>
     <message>
         <source>Snapshot...</source>
-        <translation>스냅샷...</translation>
+        <translation>Schnappschuss...</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation>출처</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>Source Color</source>
-        <translation>소스 색상</translation>
+        <translation>Quellfarbe</translation>
     </message>
     <message>
         <source>Source Details</source>
-        <translation>소스 세부정보</translation>
+        <translation>Quellendetails</translation>
     </message>
     <message>
         <source>Source Frame Numbers</source>
-        <translation>소스 프레임 번호</translation>
+        <translation>Quellrahmennummern</translation>
     </message>
     <message>
         <source>Source Time Code Display</source>
-        <translation>소스 타임코드 표시</translation>
+        <translation>Quellzeitcode-Anzeige</translation>
     </message>
     <message>
         <source>Speed Up By Factor...</source>
-        <translation>요소별 속도 향상...</translation>
+        <translation>Beschleunigung um Faktor...</translation>
     </message>
     <message>
         <source>Square</source>
-        <translation>스퀘어</translation>
+        <translation>Quadrat</translation>
     </message>
     <message>
         <source>Stack</source>
-        <translation>스택</translation>
+        <translation>Stapel</translation>
     </message>
     <message>
         <source>Start Automatically During Sync</source>
-        <translation>동기화 중에 자동으로 시작</translation>
+        <translation>Automatisch während der Synchronisierung starten</translation>
     </message>
     <message>
         <source>Static</source>
-        <translation>정적</translation>
+        <translation>Statisch</translation>
     </message>
     <message>
         <source>Step Backward</source>
-        <translation>1프레임 뒤로</translation>
+        <translation>Einen Frame zurück</translation>
     </message>
     <message>
         <source>Step Forward</source>
-        <translation>1프레임 앞으로</translation>
+        <translation>Einen Frame vorwärts</translation>
     </message>
     <message>
         <source>Step Wraps At In/Out</source>
-        <translation>인/아웃 시 스텝 랩</translation>
+        <translation>Step Wraps beim Ein-/Aussteigen</translation>
     </message>
     <message>
         <source>Stereo</source>
-        <translation>스테레오</translation>
+        <translation>Stereo</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>정지</translation>
+        <translation>Stopp</translation>
     </message>
     <message>
         <source>Swap Eyes</source>
-        <translation>눈 바꾸기</translation>
+        <translation>Augen tauschen</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation>스위치</translation>
+        <translation>Schalter</translation>
     </message>
     <message>
         <source>Sync</source>
-        <translation>동기화</translation>
+        <translation>Sync</translation>
     </message>
     <message>
         <source>Sync GUI With Source Cut In/Out</source>
-        <translation>소스 컷인/아웃으로 GUI 동기화</translation>
+        <translation>GUI mit Ein-/Ausschneiden der Quelle synchronisieren</translation>
     </message>
     <message>
         <source>Sync With Connected RVs</source>
-        <translation>연결된 RV와 동기화</translation>
+        <translation>Sync mit angeschlossenen Wohnmobilen</translation>
     </message>
     <message>
         <source>Sync with Contacts' Contacts</source>
-        <translation>연락처의 연락처와 동기화</translation>
+        <translation>Mit den Kontakten von Kontakten synchronisieren</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation>텍스트</translation>
+        <translation>Text</translation>
     </message>
     <message>
         <source>Tile</source>
-        <translation>타일</translation>
+        <translation>Kachel</translation>
     </message>
     <message>
         <source>Tile Selected Playblasts</source>
-        <translation>타일 선택 플레이블래스트</translation>
+        <translation>Kacheln Sie ausgewählte Playblasts</translation>
     </message>
     <message>
         <source>Tile Selected Views</source>
-        <translation>선택한 뷰 타일링</translation>
+        <translation>Ausgewählte Ansichten kacheln</translation>
     </message>
     <message>
         <source>Timeline</source>
-        <translation>타임라인</translation>
+        <translation>Zeitleiste</translation>
     </message>
     <message>
         <source>Timeline Magnifier</source>
-        <translation>타임라인 돋보기</translation>
+        <translation>Timeline-Lupe</translation>
     </message>
     <message>
         <source>Timeline Magnitifer</source>
-        <translation>타임라인 매그니티퍼</translation>
+        <translation>Timeline Magnitifer</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation>도구</translation>
+        <translation>Werkzeuge</translation>
     </message>
     <message>
         <source>Top View Toolbar</source>
-        <translation>상위 보기 도구 모음</translation>
+        <translation>Symbolleiste der Draufsicht</translation>
     </message>
     <message>
         <source>Topmost</source>
-        <translation>최상위</translation>
+        <translation>Ganz oben</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation>실행 취소</translation>
+        <translation>Rückgängig</translation>
     </message>
     <message>
         <source>Unique Color For Each Tool</source>
-        <translation>각 도구의 고유한 색상</translation>
+        <translation>Einzigartige Farbe für jedes Werkzeug</translation>
     </message>
     <message>
         <source>Unpremultiplied</source>
-        <translation>미리 곱셈되지 않음</translation>
+        <translation>Unvormultipliziert</translation>
     </message>
     <message>
         <source>Update View During Render</source>
-        <translation>렌더링 중 뷰 업데이트</translation>
+        <translation>Ansicht während des Renderns aktualisieren</translation>
     </message>
     <message>
         <source>Upgrade via Homebrew</source>
-        <translation>Homebrew를 통해 업그레이드</translation>
+        <translation>Upgrade über Homebrew</translation>
     </message>
     <message>
         <source>Use Source Cut Info</source>
-        <translation>소스컷 정보 활용</translation>
+        <translation>Quellenschnittinformationen verwenden</translation>
     </message>
     <message>
         <source>Use Strict Frame Ranges</source>
-        <translation>엄격한 프레임 범위 사용</translation>
+        <translation>Verwenden Sie strenge Rahmenbereiche</translation>
     </message>
     <message>
         <source>Utilities</source>
-        <translation>유틸리티</translation>
+        <translation>Dienstprogramme</translation>
     </message>
     <message>
         <source>Video Format</source>
-        <translation>비디오 형식</translation>
+        <translation>Videoformat</translation>
     </message>
     <message>
         <source>Video Range</source>
-        <translation>비디오 범위</translation>
+        <translation>Videobereich</translation>
     </message>
     <message>
         <source>View</source>
-        <translation>보기</translation>
+        <translation>Ansicht</translation>
     </message>
     <message>
         <source>View Latest Playblast</source>
-        <translation>최신 플레이블라스트 보기</translation>
+        <translation>Neueste Playblast anzeigen</translation>
     </message>
     <message>
         <source>Viper Log</source>
-        <translation>바이퍼 로그</translation>
+        <translation>Viper-Protokoll</translation>
     </message>
     <message>
         <source>Visual Offset...</source>
-        <translation>시각적 오프셋...</translation>
+        <translation>Visueller Offset...</translation>
     </message>
     <message>
         <source>Visual Scale...</source>
-        <translation>비주얼 스케일...</translation>
+        <translation>Visuelle Skala...</translation>
     </message>
     <message>
         <source>Volume</source>
-        <translation>볼륨</translation>
+        <translation>Volumen</translation>
     </message>
     <message>
         <source>White</source>
-        <translation>화이트</translation>
+        <translation>Weiß</translation>
     </message>
     <message>
         <source>Widen to Full Range</source>
-        <translation>전체 범위로 확대</translation>
+        <translation>Auf vollen Bereich erweitern</translation>
     </message>
     <message>
         <source>Window</source>
-        <translation>창</translation>
+        <translation>Fenster</translation>
     </message>
     <message>
         <source>Wipe Selected Playblasts</source>
-        <translation>선택한 플레이블래스트 삭제</translation>
+        <translation>Ausgewählte Playblasts löschen</translation>
     </message>
     <message>
         <source>Wipe Selected Views</source>
-        <translation>선택한 보기 지우기</translation>
+        <translation>Ausgewählte Ansichten löschen</translation>
     </message>
     <message>
         <source>Wipes</source>
-        <translation>물티슈</translation>
+        <translation>Tücher</translation>
     </message>
     <message>
         <source>Wrap Long Fields</source>
-        <translation>긴 필드 래핑</translation>
+        <translation>Lange Felder umbrechen</translation>
     </message>
     <message>
         <source>and</source>
-        <translation>그리고</translation>
+        <translation>und</translation>
     </message>
     <message>
         <source>annotation</source>
-        <translation>주석</translation>
+        <translation>Anmerkung</translation>
     </message>
     <message>
         <source>boo</source>
-        <translation>부</translation>
+        <translation>buh</translation>
     </message>
     <message>
         <source>channel</source>
-        <translation>채널</translation>
+        <translation>Kanal</translation>
     </message>
     <message>
         <source>clap</source>
-        <translation>박수</translation>
+        <translation>klatschen</translation>
     </message>
     <message>
         <source>clap2</source>
-        <translation>박수2</translation>
+        <translation>klatschen2</translation>
     </message>
     <message>
         <source>foo</source>
-        <translation>푸</translation>
+        <translation>foo</translation>
     </message>
     <message>
         <source>hello</source>
-        <translation>안녕하세요</translation>
+        <translation>Hallo</translation>
     </message>
     <message>
         <source>layer</source>
-        <translation>레이어</translation>
+        <translation>Schicht</translation>
     </message>
     <message>
         <source>math.sin</source>
@@ -2391,15 +2391,15 @@
     </message>
     <message>
         <source>one</source>
-        <translation>하나</translation>
+        <translation>eins</translation>
     </message>
     <message>
         <source>output LUT to shell</source>
-        <translation>쉘로 LUT 출력</translation>
+        <translation>Geben Sie die LUT an die Shell aus</translation>
     </message>
     <message>
         <source>rvload</source>
-        <translation>rv로드</translation>
+        <translation>rvload</translation>
     </message>
     <message>
         <source>sRGB</source>
@@ -2407,136 +2407,136 @@
     </message>
     <message>
         <source>sit1</source>
-        <translation>앉아1</translation>
+        <translation>sit1</translation>
     </message>
     <message>
         <source>sit2</source>
-        <translation>앉아2</translation>
+        <translation>sit2</translation>
     </message>
     <message>
         <source>sit3</source>
-        <translation>앉아3</translation>
+        <translation>sit3</translation>
     </message>
     <message>
         <source>sit4</source>
-        <translation>앉아4</translation>
+        <translation>sit4</translation>
     </message>
     <message>
         <source>stand</source>
-        <translation>스탠드</translation>
+        <translation>stand</translation>
     </message>
     <message>
         <source>standClap</source>
-        <translation>스탠드박수</translation>
+        <translation>standClap</translation>
     </message>
     <message>
         <source>view</source>
-        <translation>보기</translation>
+        <translation>Ansicht</translation>
     </message>
     <message>
         <source>yo</source>
-        <translation>요</translation>
+        <translation>Jahre</translation>
     </message>
 </context>
 <context>
     <name>PrefVideoLatencyDialog</name>
     <message>
         <source>60 ms</source>
-        <translation>60ms</translation>
+        <translation>60 ms</translation>
     </message>
     <message>
         <source>600 ms</source>
-        <translation>600ms</translation>
+        <translation>600 ms</translation>
     </message>
     <message>
         <source>Device Latency</source>
-        <translation>장치 지연 시간</translation>
+        <translation>Gerätelatenz</translation>
     </message>
     <message>
         <source>Fixed Latency</source>
-        <translation>고정 대기 시간</translation>
+        <translation>Feste Latenz</translation>
     </message>
     <message>
         <source>Frame Latency</source>
-        <translation>프레임 지연 시간</translation>
+        <translation>Frame-Latenz</translation>
     </message>
     <message>
         <source>The total latency can be used to offset audio output.</source>
-        <translation>총 대기 시간은 오디오 출력을 상쇄하는 데 사용될 수 있습니다.</translation>
+        <translation>Die Gesamtlatenz kann zum Versetzen der Audioausgabe genutzt werden.</translation>
     </message>
     <message>
         <source>Total Latency</source>
-        <translation>총 지연 시간</translation>
+        <translation>Gesamtlatenz</translation>
     </message>
     <message>
         <source>Video device latency is the sum of the latency computed by the video device (the known latency), an external fixed latency in seconds, and an additional external latency in frames relative to the current video format frame rate.</source>
-        <translation>비디오 장치 대기 시간은 비디오 장치에서 계산한 대기 시간(알려진 대기 시간), 외부 고정 대기 시간(초), 현재 비디오 형식 프레임 속도에 따른 프레임 단위의 추가 외부 대기 시간의 합입니다.</translation>
+        <translation>Die Latenz des Videogeräts ist die Summe der vom Videogerät berechneten Latenz (die bekannte Latenz), einer externen festen Latenz in Sekunden und einer zusätzlichen externen Latenz in Bildern relativ zur aktuellen Bildrate des Videoformats.</translation>
     </message>
     <message>
         <source>frames</source>
-        <translation>프레임</translation>
+        <translation>Frames</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation>초</translation>
+        <translation>Sekunden</translation>
     </message>
 </context>
 <context>
     <name>PublishDialog</name>
     <message>
         <source>Approximate Fetches</source>
-        <translation>대략적인 가져오기</translation>
+        <translation>Ungefähre Abrufe</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation>작성자</translation>
+        <translation>Autor</translation>
     </message>
     <message>
         <source>Comment</source>
-        <translation>댓글</translation>
+        <translation>Kommentar</translation>
     </message>
     <message>
         <source>Company</source>
-        <translation>회사</translation>
+        <translation>Unternehmen</translation>
     </message>
     <message>
         <source>Output Node Definition File</source>
-        <translation>출력 노드 정의 파일</translation>
+        <translation>Ausgabeknotendefinitionsdatei</translation>
     </message>
     <message>
         <source>Publish Node Definition</source>
-        <translation>게시 노드 정의</translation>
+        <translation>Knotendefinition veröffentlichen</translation>
     </message>
     <message>
         <source>Type Name</source>
-        <translation>유형 이름</translation>
+        <translation>Name eingeben</translation>
     </message>
     <message>
         <source>User Visible</source>
-        <translation>사용자 표시</translation>
+        <translation>Benutzer sichtbar</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation>버전</translation>
+        <translation>Version</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>(Color Settings Taken From Here)</source>
-        <translation>(여기서 가져온 색상 설정)</translation>
+        <translation>(Farbeinstellungen von hier übernommen)</translation>
     </message>
     <message>
         <source>(Requires Restart)</source>
-        <translation>(다시 시작해야 함)</translation>
+        <translation>(Neustart erforderlich)</translation>
     </message>
     <message>
         <source>+90 Clockwise</source>
-        <translation>+90 시계방향</translation>
+        <translation>+90 Im Uhrzeigersinn</translation>
     </message>
     <message>
         <source>+90 Counter-Clockwise</source>
-        <translation>+90 시계 반대 방향</translation>
+        <translation>+90 Gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <source>--Hz</source>
@@ -2552,95 +2552,95 @@
     </message>
     <message>
         <source>10 Bit</source>
-        <translation>10비트</translation>
+        <translation>10 Bit</translation>
     </message>
     <message>
         <source>10 Bit Display Bit Depth</source>
-        <translation>10비트 디스플레이 비트 깊이</translation>
+        <translation>10 Bit Anzeigebittiefe</translation>
     </message>
     <message>
         <source>10 Bit [0, 1023]</source>
-        <translation>10 비트 [0, 1023]</translation>
+        <translation>10 Bit [0, 1023]</translation>
     </message>
     <message>
         <source>10 Bits/Channel</source>
-        <translation>10 비트/채널</translation>
+        <translation>10 Bits/Kanal</translation>
     </message>
     <message>
         <source>10 Bits/Channel Reversed</source>
-        <translation>10 비트/채널 반전됨</translation>
+        <translation>10 Bits/Kanal umgekehrt</translation>
     </message>
     <message>
         <source>12 Bit [0, 4095]</source>
-        <translation>12 비트 [0, 4095]</translation>
+        <translation>12 Bit [0, 4095]</translation>
     </message>
     <message>
         <source>16 Bit [0, 65535]</source>
-        <translation>16 비트 [0, 65535]</translation>
+        <translation>16 Bit [0, 65535]</translation>
     </message>
     <message>
         <source>16 Bits/Channel</source>
-        <translation>16비트/채널</translation>
+        <translation>16 Bits/Kanal</translation>
     </message>
     <message>
         <source>16 Bits/Channel + Alpha</source>
-        <translation>16비트/채널 + 알파</translation>
+        <translation>16 Bits/Kanal + Alpha</translation>
     </message>
     <message>
         <source>16 Bits/Channel Planar</source>
-        <translation>16비트/채널 평면</translation>
+        <translation>16 Bits/Kanalplanar</translation>
     </message>
     <message>
         <source>18% Grey</source>
-        <translation>18% 그레이</translation>
+        <translation>18% Grau</translation>
     </message>
     <message>
         <source>32 Bits/Channel</source>
-        <translation>32 비트/채널</translation>
+        <translation>32 Bits/Kanal</translation>
     </message>
     <message>
         <source>4K/8K Transport</source>
-        <translation>4K/8K 전송</translation>
+        <translation>4K/8K-Transport</translation>
     </message>
     <message>
         <source>50% Grey</source>
-        <translation>50% 회색</translation>
+        <translation>50% Grau</translation>
     </message>
     <message>
         <source>60 ms</source>
-        <translation>60ms</translation>
+        <translation>60 ms</translation>
     </message>
     <message>
         <source>600 ms</source>
-        <translation>600ms</translation>
+        <translation>600 ms</translation>
     </message>
     <message>
         <source>8 Bit</source>
-        <translation>8 비트</translation>
+        <translation>8 Bit</translation>
     </message>
     <message>
         <source>8 Bit [0, 255]</source>
-        <translation>8 비트 [0, 255]</translation>
+        <translation>8 Bit [0, 255]</translation>
     </message>
     <message>
         <source>8 Bits/Channel</source>
-        <translation>8 비트/채널</translation>
+        <translation>8 Bits/Kanal</translation>
     </message>
     <message>
         <source>8 Bits/Channel + Alpha</source>
-        <translation>8 비트/채널 + 알파</translation>
+        <translation>8 Bits/Kanal + Alpha</translation>
     </message>
     <message>
         <source>8 Bits/Channel Planar</source>
-        <translation>8 비트/채널 평면</translation>
+        <translation>8 Bits/Kanalplanar</translation>
     </message>
     <message>
         <source>90 Clockwise</source>
-        <translation>90 시계방향</translation>
+        <translation>90 Im Uhrzeigersinn</translation>
     </message>
     <message>
         <source>90 Counter-Clockwise</source>
-        <translation>90 시계 반대 방향</translation>
+        <translation>90 Gegen den Uhrzeigersinn</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd"&gt;
@@ -2660,7 +2660,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;NOTE:&lt;/span&gt; This is the device color settings the profile will come from. Once the profile is saved it can be used on any device.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style="font-weight:600;"&gt;참고:&lt;/span&gt; 이는 프로필의 출처가 되는 장치 색상 설정입니다. 프로필이 저장되면 모든 기기에서 사용할 수 있습니다.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;HINWEIS:&lt;/span&gt; Dies sind die Farbeinstellungen des Geräts, von denen das Profil stammt. Sobald das Profil gespeichert ist, kann es auf jedem Gerät verwendet werden.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>A-Z</source>
@@ -2672,11 +2672,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>ALEXA LogC</source>
-        <translation>알렉사 로그C</translation>
+        <translation>ALEXA LogC</translation>
     </message>
     <message>
         <source>ALEXA LogC Film</source>
-        <translation>ALEXA LogC 필름</translation>
+        <translation>ALEXA LogC Film</translation>
     </message>
     <message>
         <source>ARGB</source>
@@ -2684,247 +2684,247 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Abort</source>
-        <translation>중단</translation>
+        <translation>Abbruch</translation>
     </message>
     <message>
         <source>Abort Install</source>
-        <translation>설치 중단</translation>
+        <translation>Installation abbrechen</translation>
     </message>
     <message>
         <source>Accept</source>
-        <translation>수락</translation>
+        <translation>Akzeptieren</translation>
     </message>
     <message>
         <source>Activate Network on Startup</source>
-        <translation>시작 시 네트워크 활성화</translation>
+        <translation>Netzwerk beim Start aktivieren</translation>
     </message>
     <message>
         <source>Active</source>
-        <translation>활성</translation>
+        <translation>Aktiv</translation>
     </message>
     <message>
         <source>Active Input</source>
-        <translation>활성 입력</translation>
+        <translation>Aktiver Eingang</translation>
     </message>
     <message>
         <source>Active desktop display</source>
-        <translation>액티브 데스크탑 디스플레이</translation>
+        <translation>Aktive Desktop-Anzeige</translation>
     </message>
     <message>
         <source>Active presentation device (click to disable presentation mode)</source>
-        <translation>활성 프레젠테이션 장치(프레젠테이션 모드를 비활성화하려면 클릭)</translation>
+        <translation>Aktives Präsentationsgerät (klicken, um den Präsentationsmodus zu deaktivieren)</translation>
     </message>
     <message>
         <source>Actual FPS:</source>
-        <translation>실제 FPS:</translation>
+        <translation>Tatsächliche FPS:</translation>
     </message>
     <message>
         <source>Add</source>
-        <translation>추가</translation>
+        <translation>Hinzufügen</translation>
     </message>
     <message>
         <source>Add Packages...</source>
-        <translation>패키지 추가...</translation>
+        <translation>Pakete hinzufügen...</translation>
     </message>
     <message>
         <source>Add as Layer</source>
-        <translation>레이어로 추가</translation>
+        <translation>Als Ebene hinzufügen</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation>추가옵션</translation>
+        <translation>Zusätzliche Optionen</translation>
     </message>
     <message>
         <source>Air Brush</source>
-        <translation>에어브러시</translation>
+        <translation>Airbrush</translation>
     </message>
     <message>
         <source>Air Brush Erase</source>
-        <translation>에어브러쉬 지우기</translation>
+        <translation>Airbrush-Löschen</translation>
     </message>
     <message>
         <source>Align Start Frames</source>
-        <translation>시작 프레임 정렬</translation>
+        <translation>Startrahmen ausrichten</translation>
     </message>
     <message>
         <source>All Node Definitions ...</source>
-        <translation>모든 노드 정의...</translation>
+        <translation>Alle Knotendefinitionen ...</translation>
     </message>
     <message>
         <source>Allow Floating Point</source>
-        <translation>부동 소수점 허용</translation>
+        <translation>Gleitkomma zulassen</translation>
     </message>
     <message>
         <source>Alpha</source>
-        <translation>알파</translation>
+        <translation>Alpha</translation>
     </message>
     <message>
         <source>Alpha Type</source>
-        <translation>알파형</translation>
+        <translation>Alpha-Typ</translation>
     </message>
     <message>
         <source>Always Allow New Contacts</source>
-        <translation>항상 새 연락처 허용</translation>
+        <translation>Neue Kontakte immer zulassen</translation>
     </message>
     <message>
         <source>Always Read as RGBA</source>
-        <translation>항상 RGBA로 읽음</translation>
+        <translation>Immer als RGBA lesen</translation>
     </message>
     <message>
         <source>Always Read as RGBA (for non-multipart files only)</source>
-        <translation>항상 RGBA로 읽기(비멀티파트 파일에만 해당)</translation>
+        <translation>Immer als RGBA lesen (nur für nicht mehrteilige Dateien)</translation>
     </message>
     <message>
         <source>Always Save Settings as Defaults On Exit</source>
-        <translation>종료 시 항상 설정을 기본값으로 저장</translation>
+        <translation>Speichern Sie die Einstellungen beim Beenden immer als Standardeinstellungen</translation>
     </message>
     <message>
         <source>Anaglyph</source>
-        <translation>애너글리프</translation>
+        <translation>Anaglyphe</translation>
     </message>
     <message>
         <source>Anamorphic  2:1</source>
-        <translation>아나모픽 2:1</translation>
+        <translation>Anamorphisch 2:1</translation>
     </message>
     <message>
         <source>Annotated Frames...</source>
-        <translation>주석이 달린 프레임...</translation>
+        <translation>Annotierte Frames...</translation>
     </message>
     <message>
         <source>Annotation</source>
-        <translation>주석</translation>
+        <translation>Anmerkung</translation>
     </message>
     <message>
         <source>Any Output</source>
-        <translation>모든 출력</translation>
+        <translation>Beliebige Ausgabe</translation>
     </message>
     <message>
         <source>Apple Client Storage</source>
-        <translation>Apple 클라이언트 스토리지</translation>
+        <translation>Apple Client-Speicher</translation>
     </message>
     <message>
         <source>Apply</source>
-        <translation>신청</translation>
+        <translation>Bewerben</translation>
     </message>
     <message>
         <source>Approximate Fetches</source>
-        <translation>대략적인 가져오기</translation>
+        <translation>Ungefähre Abrufe</translation>
     </message>
     <message>
         <source>Arbitrary (Rotate Mode)</source>
-        <translation>임의(회전 모드)</translation>
+        <translation>Beliebig (Rotationsmodus)</translation>
     </message>
     <message>
         <source>Are you sure you want to delete the profile?</source>
-        <translation>프로필을 삭제하시겠습니까?</translation>
+        <translation>Sind Sie sicher, dass Sie das Profil löschen möchten?</translation>
     </message>
     <message>
         <source>Area</source>
-        <translation>면적</translation>
+        <translation>Bereich</translation>
     </message>
     <message>
         <source>Ask Permission for New Contacts</source>
-        <translation>새 연락처에 대한 권한 요청</translation>
+        <translation>Bitten Sie um Erlaubnis für neue Kontakte</translation>
     </message>
     <message>
         <source>Asyn I/O Chunk Size in Bytes</source>
-        <translation>Asyn I/O 청크 크기(바이트)</translation>
+        <translation>Asyn-E/A-Chunk-Größe in Bytes</translation>
     </message>
     <message>
         <source>Async I/O Chunk Size in Bytes</source>
-        <translation>Async I/O 청크 크기(바이트)</translation>
+        <translation>Async-E/A-Chunk-Größe in Bytes</translation>
     </message>
     <message>
         <source>Asynchronous Buffered</source>
-        <translation>비동기 버퍼링</translation>
+        <translation>Asynchron gepuffert</translation>
     </message>
     <message>
         <source>Asynchronous Unbuffered</source>
-        <translation>비동기 버퍼링되지 않음</translation>
+        <translation>Asynchron ungepuffert</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>오디오</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Audio Device is Currently Unavailable</source>
-        <translation>오디오 장치를 현재 사용할 수 없습니다</translation>
+        <translation>Das Audiogerät ist derzeit nicht verfügbar</translation>
     </message>
     <message>
         <source>Audio Failure</source>
-        <translation>오디오 오류</translation>
+        <translation>Audiofehler</translation>
     </message>
     <message>
         <source>Audio File...</source>
-        <translation>오디오 파일...</translation>
+        <translation>Audiodatei...</translation>
     </message>
     <message>
         <source>Audio Format</source>
-        <translation>오디오 형식</translation>
+        <translation>Audioformat</translation>
     </message>
     <message>
         <source>Audio Offset (sec)</source>
-        <translation>오디오 오프셋(초)</translation>
+        <translation>Audio-Offset (Sek.)</translation>
     </message>
     <message>
         <source>Audio Offset...</source>
-        <translation>오디오 오프셋...</translation>
+        <translation>Audio-Offset...</translation>
     </message>
     <message>
         <source>Audio Scale</source>
-        <translation>오디오 스케일</translation>
+        <translation>Audio-Skala</translation>
     </message>
     <message>
         <source>Audio Scale...</source>
-        <translation>오디오 스케일...</translation>
+        <translation>Audioskala...</translation>
     </message>
     <message>
         <source>Audio control</source>
-        <translation>오디오 제어</translation>
+        <translation>Audiosteuerung</translation>
     </message>
     <message>
         <source>Author</source>
-        <translation>작성자</translation>
+        <translation>Autor</translation>
     </message>
     <message>
         <source>Auto (All Supported Codecs)</source>
-        <translation>Auto(지원되는 모든 코덱)</translation>
+        <translation>Auto (Alle unterstützten Codecs)</translation>
     </message>
     <message>
         <source>Auto (Smart Media Detection)</source>
-        <translation>자동(스마트 미디어 감지)</translation>
+        <translation>Auto (Smart Media-Erkennung)</translation>
     </message>
     <message>
         <source>Auto EDL</source>
-        <translation>자동 EDL</translation>
+        <translation>Auto EDL</translation>
     </message>
     <message>
         <source>Auto-Refresh</source>
-        <translation>자동 새로 고침</translation>
+        <translation>Automatische Aktualisierung</translation>
     </message>
     <message>
         <source>Auto-Retime Mismatched FPS Media</source>
-        <translation>일치하지 않는 FPS 미디어 자동 리타임</translation>
+        <translation>Medien mit abweichender FPS automatisch anpassen</translation>
     </message>
     <message>
         <source>Automatic EDL Creation</source>
-        <translation>자동 EDL 생성</translation>
+        <translation>Automatische EDL-Erstellung</translation>
     </message>
     <message>
         <source>Automatic Threads</source>
-        <translation>자동 스레드</translation>
+        <translation>Automatische Threads</translation>
     </message>
     <message>
         <source>Automatically Mark Annotated Frames</source>
-        <translation>주석이 달린 프레임 자동 표시</translation>
+        <translation>Markieren Sie kommentierte Frames automatisch</translation>
     </message>
     <message>
         <source>Automatically Retime Inputs</source>
-        <translation>자동으로 입력 시간 재설정</translation>
+        <translation>Automatische Neuzeit von Eingaben</translation>
     </message>
     <message>
         <source>Automatically Setup ACES (ACEScg → sRGB)</source>
-        <translation>ACES 자동 설정(ACEScg → sRGB)</translation>
+        <translation>Automatisches Einrichten von ACES (ACEScg → sRGB)</translation>
     </message>
     <message>
         <source>BGRA</source>
@@ -2937,539 +2937,539 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Back
 Frame</source>
-        <translation>뒤로</translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation>배경</translation>
+        <translation>Hintergrund</translation>
     </message>
     <message>
         <source>Balance</source>
-        <translation>균형</translation>
+        <translation>Balance</translation>
     </message>
     <message>
         <source>Bicubic</source>
-        <translation>바이큐빅</translation>
+        <translation>Bikubisch</translation>
     </message>
     <message>
         <source>Bigger</source>
-        <translation>더 크다</translation>
+        <translation>Größer</translation>
     </message>
     <message>
         <source>Bigger Text</source>
-        <translation>큰 텍스트</translation>
+        <translation>Größerer Text</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation>흑인</translation>
+        <translation>Schwarz</translation>
     </message>
     <message>
         <source>Blue</source>
-        <translation>블루</translation>
+        <translation>Blau</translation>
     </message>
     <message>
         <source>Bottom View Toolbar</source>
-        <translation>하단 보기 도구 모음</translation>
+        <translation>Symbolleiste der unteren Ansicht</translation>
     </message>
     <message>
         <source>Box Pointer</source>
-        <translation>박스 포인터</translation>
+        <translation>Box-Zeiger</translation>
     </message>
     <message>
         <source>Brush Size Relative to View</source>
-        <translation>뷰에 상대적인 브러시 크기</translation>
+        <translation>Pinselgröße relativ zur Ansicht</translation>
     </message>
     <message>
         <source>Buffered</source>
-        <translation>버퍼링됨</translation>
+        <translation>Gepuffert</translation>
     </message>
     <message>
         <source>Burn</source>
-        <translation>번</translation>
+        <translation>Brennen</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation>캐시</translation>
+        <translation>Cache</translation>
     </message>
     <message>
         <source>Cache Frames Outside In/Out Region</source>
-        <translation>In/Out 영역 외부의 캐시 프레임</translation>
+        <translation>Cache-Frames außerhalb der In/Out-Region</translation>
     </message>
     <message>
         <source>Cache Off</source>
-        <translation>캐시 꺼짐</translation>
+        <translation>Cache aus</translation>
     </message>
     <message>
         <source>Cache Packet Size</source>
-        <translation>캐시 패킷 크기</translation>
+        <translation>Cache-Paketgröße</translation>
     </message>
     <message>
         <source>Caching</source>
-        <translation>캐싱</translation>
+        <translation>Caching</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Cannot start presentation mode when multiple sessions are active</source>
-        <translation>여러 세션이 활성화되어 있으면 프레젠테이션 모드를 시작할 수 없습니다.</translation>
+        <translation>Der Präsentationsmodus kann nicht gestartet werden, wenn mehrere Sitzungen aktiv sind</translation>
     </message>
     <message>
         <source>Center</source>
-        <translation>가운데 맞춤</translation>
+        <translation>Zentrieren</translation>
     </message>
     <message>
         <source>Center Fit</source>
-        <translation>센터핏</translation>
+        <translation>Center Fit</translation>
     </message>
     <message>
         <source>Change Preferences Manually</source>
-        <translation>수동으로 환경설정 변경</translation>
+        <translation>Einstellungen manuell ändern</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation>채널</translation>
+        <translation>Kanal</translation>
     </message>
     <message>
         <source>Channel Display</source>
-        <translation>채널 디스플레이</translation>
+        <translation>Kanalanzeige</translation>
     </message>
     <message>
         <source>Channel Order</source>
-        <translation>채널 순서</translation>
+        <translation>Kanalreihenfolge</translation>
     </message>
     <message>
         <source>Check for Updates...</source>
-        <translation>업데이트 확인...</translation>
+        <translation>Nach Updates suchen...</translation>
     </message>
     <message>
         <source>Checker</source>
-        <translation>체커</translation>
+        <translation>Checker</translation>
     </message>
     <message>
         <source>Choose Package Installation Location</source>
-        <translation>패키지 설치 위치 선택</translation>
+        <translation>Wählen Sie den Installationsort des Pakets</translation>
     </message>
     <message>
         <source>Cineon</source>
-        <translation>시네온</translation>
+        <translation>Cineon</translation>
     </message>
     <message>
         <source>Cineon/DPX Log</source>
-        <translation>시네온/DPX 로그</translation>
+        <translation>Cineon/DPX-Protokoll</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation>지우기</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>Clear All Drawings</source>
-        <translation>모든 도면 지우기</translation>
+        <translation>Alle Zeichnungen löschen</translation>
     </message>
     <message>
         <source>Clear All Marks</source>
-        <translation>모든 표시 지우기</translation>
+        <translation>Alle Markierungen löschen</translation>
     </message>
     <message>
         <source>Clear Display</source>
-        <translation>표시 지우기</translation>
+        <translation>Klare Anzeige</translation>
     </message>
     <message>
         <source>Clear Drawings</source>
-        <translation>그림 지우기</translation>
+        <translation>Zeichnungen löschen</translation>
     </message>
     <message>
         <source>Clear In/Out</source>
-        <translation>인/아웃 지우기</translation>
+        <translation>Ein/Aus löschen</translation>
     </message>
     <message>
         <source>Clear In/Out Frames</source>
-        <translation>인/아웃 프레임 지우기</translation>
+        <translation>In/Out-Frames löschen</translation>
     </message>
     <message>
         <source>Clear Marks</source>
-        <translation>표시 지우기</translation>
+        <translation>Klare Markierungen</translation>
     </message>
     <message>
         <source>Clear Range</source>
-        <translation>범위 지우기</translation>
+        <translation>Bereich löschen</translation>
     </message>
     <message>
         <source>Clear Source Cut In/Out</source>
-        <translation>클리어 소스 컷 인/아웃</translation>
+        <translation>Quelle ein-/ausschneiden</translation>
     </message>
     <message>
         <source>Click in View to Play</source>
-        <translation>뷰를 클릭하여 재생</translation>
+        <translation>Zum Abspielen in Ansicht klicken</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>클론</translation>
+        <translation>Klonen</translation>
     </message>
     <message>
         <source>Clone RV</source>
-        <translation>클론 RV</translation>
+        <translation>Wohnmobil klonen</translation>
     </message>
     <message>
         <source>Clone Session</source>
-        <translation>세션 복제</translation>
+        <translation>Sitzung klonen</translation>
     </message>
     <message>
         <source>Clone Synced RV</source>
-        <translation>클론 동기화 RV</translation>
+        <translation>Synchronisiertes Wohnmobil klonen</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>닫기</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Close Button Always</source>
-        <translation>닫기 버튼 항상</translation>
+        <translation>Schließen-Schaltfläche immer</translation>
     </message>
     <message>
         <source>Close Button When Nearby</source>
-        <translation>근처에 있으면 닫기 버튼</translation>
+        <translation>Schließen-Taste, wenn in der Nähe</translation>
     </message>
     <message>
         <source>Close Inspector</source>
-        <translation>감찰관 닫기</translation>
+        <translation>Inspektor schließen</translation>
     </message>
     <message>
         <source>Close Session</source>
-        <translation>세션 닫기</translation>
+        <translation>Sitzung schließen</translation>
     </message>
     <message>
         <source>Codec:</source>
-        <translation>코덱:</translation>
+        <translation>Codec:</translation>
     </message>
     <message>
         <source>Collect Diagnostics Package...</source>
-        <translation>진단 패키지 수집...</translation>
+        <translation>Diagnosepaket abholen...</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>색상</translation>
+        <translation>Farbe</translation>
     </message>
     <message>
         <source>Color (All Channels)</source>
-        <translation>색상(모든 채널)</translation>
+        <translation>Farbe (Alle Kanäle)</translation>
     </message>
     <message>
         <source>Color Bars</source>
-        <translation>컬러 바</translation>
+        <translation>Farbbalken</translation>
     </message>
     <message>
         <source>Color Inspector</source>
-        <translation>컬러 인스펙터</translation>
+        <translation>Farbinspektor</translation>
     </message>
     <message>
         <source>Color Offset</source>
-        <translation>색상 오프셋</translation>
+        <translation>Farbversatz</translation>
     </message>
     <message>
         <source>Color Resolution</source>
-        <translation>색상 해상도</translation>
+        <translation>Farbauflösung</translation>
     </message>
     <message>
         <source>Color Space</source>
-        <translation>색공간</translation>
+        <translation>Farbraum</translation>
     </message>
     <message>
         <source>Color channel view control</source>
-        <translation>색상 채널 뷰 제어</translation>
+        <translation>Farbkanal-Ansichtssteuerung</translation>
     </message>
     <message>
         <source>Column</source>
-        <translation>칼럼</translation>
+        <translation>Spalte</translation>
     </message>
     <message>
         <source>Column View</source>
-        <translation>컬럼뷰</translation>
+        <translation>Spaltenansicht</translation>
     </message>
     <message>
         <source>Comment</source>
-        <translation>댓글</translation>
+        <translation>Kommentar</translation>
     </message>
     <message>
         <source>Comments</source>
-        <translation>댓글</translation>
+        <translation>Kommentare</translation>
     </message>
     <message>
         <source>Company</source>
-        <translation>회사</translation>
+        <translation>Unternehmen</translation>
     </message>
     <message>
         <source>Compile</source>
-        <translation>컴파일</translation>
+        <translation>Kompilieren</translation>
     </message>
     <message>
         <source>Composite</source>
-        <translation>복합</translation>
+        <translation>Verbundwerkstoff</translation>
     </message>
     <message>
         <source>Computed FPS:</source>
-        <translation>계산된 FPS:</translation>
+        <translation>Berechnete FPS:</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation>구성</translation>
+        <translation>Konfiguration</translation>
     </message>
     <message>
         <source>Configure</source>
-        <translation>구성</translation>
+        <translation>Konfigurieren</translation>
     </message>
     <message>
         <source>Configure Latency...</source>
-        <translation>대기 시간 구성...</translation>
+        <translation>Latenz konfigurieren...</translation>
     </message>
     <message>
         <source>Configure RV for this computer</source>
-        <translation>이 컴퓨터에 맞게 RV 구성</translation>
+        <translation>RV für diesen Computer konfigurieren</translation>
     </message>
     <message>
         <source>Configure display device</source>
-        <translation>디스플레이 장치 구성</translation>
+        <translation>Anzeigegerät konfigurieren</translation>
     </message>
     <message>
         <source>Confirm Removal</source>
-        <translation>삭제 확인</translation>
+        <translation>Entfernung bestätigen</translation>
     </message>
     <message>
         <source>Connect...</source>
-        <translation>연결...</translation>
+        <translation>Verbinden...</translation>
     </message>
     <message>
         <source>Connected to %1</source>
-        <translation>%1에 연결됨</translation>
+        <translation>Verbunden mit %1</translation>
     </message>
     <message>
         <source>Connections</source>
-        <translation>연결</translation>
+        <translation>Verbindungen</translation>
     </message>
     <message>
         <source>Console</source>
-        <translation>콘솔</translation>
+        <translation>Konsole</translation>
     </message>
     <message>
         <source>Contact Name:</source>
-        <translation>연락처 이름:</translation>
+        <translation>Kontaktname:</translation>
     </message>
     <message>
         <source>Contacts</source>
-        <translation>연락처</translation>
+        <translation>Kontakte</translation>
     </message>
     <message>
         <source>Context Dependant</source>
-        <translation>상황에 따라 다름</translation>
+        <translation>Kontextabhängig</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>계속</translation>
+        <translation>Weiter</translation>
     </message>
     <message>
         <source>Contour 10</source>
-        <translation>윤곽 10</translation>
+        <translation>Kontur 10</translation>
     </message>
     <message>
         <source>Contour 100</source>
-        <translation>윤곽 100</translation>
+        <translation>Kontur 100</translation>
     </message>
     <message>
         <source>Contour 20</source>
-        <translation>윤곽 20</translation>
+        <translation>Kontur 20</translation>
     </message>
     <message>
         <source>Contour 3</source>
-        <translation>윤곽 3</translation>
+        <translation>Kontur 3</translation>
     </message>
     <message>
         <source>Contour 4</source>
-        <translation>윤곽 4</translation>
+        <translation>Kontur 4</translation>
     </message>
     <message>
         <source>Contour 6</source>
-        <translation>윤곽 6</translation>
+        <translation>Kontur 6</translation>
     </message>
     <message>
         <source>Contract Range From Marks/Boundaries</source>
-        <translation>표시/경계로부터의 계약 범위</translation>
+        <translation>Vertragsbereich ab Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Contrast</source>
-        <translation>명암</translation>
+        <translation>Kontrast</translation>
     </message>
     <message>
         <source>Control</source>
-        <translation>제어</translation>
+        <translation>Kontrolle</translation>
     </message>
     <message>
         <source>Convert to FPS</source>
-        <translation>FPS로 변환</translation>
+        <translation>In FPS konvertieren</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>복사</translation>
+        <translation>Kopieren</translation>
     </message>
     <message>
         <source>Copy All Metadata to Clipboard</source>
-        <translation>모든 메타데이터를 클립보드에 복사</translation>
+        <translation>Kopieren Sie alle Metadaten in die Zwischenablage</translation>
     </message>
     <message>
         <source>Copy Session URL</source>
-        <translation>세션 URL 복사</translation>
+        <translation>Sitzungs-URL kopieren</translation>
     </message>
     <message>
         <source>Copy Sync Session URL</source>
-        <translation>동기화 세션 URL 복사</translation>
+        <translation>Synchronisierungssitzungs-URL kopieren</translation>
     </message>
     <message>
         <source>Could not copy package files.\n\nDetails:\n</source>
-        <translation>패키지 파일을 복사할 수 없습니다.\n\n세부 정보:\n</translation>
+        <translation>Paketdateien konnten nicht kopiert werden.\n\nDetails:\n</translation>
     </message>
     <message>
         <source>Could not remove some of the package files.\n\nDetails:\n</source>
-        <translation>일부 패키지 파일을 제거할 수 없습니다.\n\n세부정보:\n</translation>
+        <translation>Einige der Paketdateien konnten nicht entfernt werden.\n\nDetails:\n</translation>
     </message>
     <message>
         <source>Create Display Profie</source>
-        <translation>디스플레이 프로필 생성</translation>
+        <translation>Anzeigeprofil erstellen</translation>
     </message>
     <message>
         <source>Create Full Checkpoint</source>
-        <translation>전체 체크포인트 생성</translation>
+        <translation>Vollständigen Prüfpunkt erstellen</translation>
     </message>
     <message>
         <source>Create Nuke Read Node</source>
-        <translation>Nuke 읽기 노드 생성</translation>
+        <translation>Nuke-Leseknoten erstellen</translation>
     </message>
     <message>
         <source>Create/Edit Display Profiles...</source>
-        <translation>디스플레이 프로필 생성/편집...</translation>
+        <translation>Anzeigeprofile erstellen/bearbeiten...</translation>
     </message>
     <message>
         <source>Cross Hatch</source>
-        <translation>크로스 해치</translation>
+        <translation>Cross Hatch</translation>
     </message>
     <message>
         <source>Cross Pointer</source>
-        <translation>크로스 포인터</translation>
+        <translation>Kreuzzeiger</translation>
     </message>
     <message>
         <source>Cross-Hatch</source>
-        <translation>크로스해치</translation>
+        <translation>Kreuzschraffur</translation>
     </message>
     <message>
         <source>Ctrl+-</source>
-        <translation>Ctrl+-</translation>
+        <translation>Strg+-</translation>
     </message>
     <message>
         <source>Ctrl+=</source>
-        <translation>Ctrl+=</translation>
+        <translation>Strg+=</translation>
     </message>
     <message>
         <source>Ctrl+A</source>
-        <translation>Ctrl+A</translation>
+        <translation>Strg+A</translation>
     </message>
     <message>
         <source>Ctrl+B</source>
-        <translation>Ctrl+B</translation>
+        <translation>Strg+B</translation>
     </message>
     <message>
         <source>Ctrl+C</source>
-        <translation>Ctrl+C</translation>
+        <translation>Strg+C</translation>
     </message>
     <message>
         <source>Ctrl+F</source>
-        <translation>Ctrl+F</translation>
+        <translation>Strg+F</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation>Ctrl+N</translation>
+        <translation>Strg+N</translation>
     </message>
     <message>
         <source>Ctrl+O</source>
-        <translation>Ctrl+O</translation>
+        <translation>Strg+O</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation>Ctrl+P</translation>
+        <translation>Strg+P</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation>Ctrl+Q</translation>
+        <translation>Strg+Q</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Ctrl+S</translation>
+        <translation>Strg+S</translation>
     </message>
     <message>
         <source>Ctrl+Shift+,</source>
-        <translation>Ctrl+Shift+,</translation>
+        <translation>Strg+Umschalt+,</translation>
     </message>
     <message>
         <source>Ctrl+Shift+.</source>
-        <translation>Ctrl+Shift+.</translation>
+        <translation>Strg+Umschalt+.</translation>
     </message>
     <message>
         <source>Ctrl+Shift+Z</source>
-        <translation>Ctrl+Shift+Z</translation>
+        <translation>Strg+Umschalt+Z</translation>
     </message>
     <message>
         <source>Ctrl+V</source>
-        <translation>Ctrl+V</translation>
+        <translation>Strg+V</translation>
     </message>
     <message>
         <source>Ctrl+X</source>
-        <translation>Ctrl+X</translation>
+        <translation>Strg+X</translation>
     </message>
     <message>
         <source>Ctrl+Z</source>
-        <translation>Ctrl+Z</translation>
+        <translation>Strg+Z</translation>
     </message>
     <message>
         <source>Current Source Frame...</source>
-        <translation>현재 소스 프레임...</translation>
+        <translation>Aktueller Quellrahmen...</translation>
     </message>
     <message>
         <source>Custom...</source>
-        <translation>커스텀...</translation>
+        <translation>Benutzerdefiniert...</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>잘라내기</translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <source>Cut In</source>
-        <translation>컷인</translation>
+        <translation>Einschneiden</translation>
     </message>
     <message>
         <source>Cut Out</source>
-        <translation>컷아웃</translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <source>Cycle Backward</source>
-        <translation>뒤로 순환</translation>
+        <translation>Rückwärts radeln</translation>
     </message>
     <message>
         <source>Cycle Forward</source>
-        <translation>주기 앞으로</translation>
+        <translation>Zyklus vorwärts</translation>
     </message>
     <message>
         <source>Cycle Stack Backward</source>
-        <translation>사이클 스택 뒤로</translation>
+        <translation>Stapel rückwärts durchlaufen</translation>
     </message>
     <message>
         <source>Cycle Stack Forward</source>
-        <translation>사이클 스택 포워드</translation>
+        <translation>Zyklusstapel vorwärts</translation>
     </message>
     <message>
         <source>DLP Checker</source>
-        <translation>DLP 검사기</translation>
+        <translation>DLP-Prüfer</translation>
     </message>
     <message>
         <source>DLP Stereo</source>
-        <translation>DLP 스테레오</translation>
+        <translation>DLP-Stereo</translation>
     </message>
     <message>
         <source>DPX</source>
@@ -3477,295 +3477,295 @@ Frame</source>
     </message>
     <message>
         <source>Data Window</source>
-        <translation>데이터 창</translation>
+        <translation>Datenfenster</translation>
     </message>
     <message>
         <source>Data Window Inside of Display Window</source>
-        <translation>디스플레이 창 내부의 데이터 창</translation>
+        <translation>Datenfenster im Anzeigefenster</translation>
     </message>
     <message>
         <source>Debug</source>
-        <translation>디버그</translation>
+        <translation>Debug</translation>
     </message>
     <message>
         <source>Default Background Pattern</source>
-        <translation>기본 배경 패턴</translation>
+        <translation>Standard-Hintergrundmuster</translation>
     </message>
     <message>
         <source>Default Cache Mode</source>
-        <translation>기본 캐시 모드</translation>
+        <translation>Standard-Cache-Modus</translation>
     </message>
     <message>
         <source>Default FPS</source>
-        <translation>기본 FPS</translation>
+        <translation>Standard-FPS</translation>
     </message>
     <message>
         <source>Default Hardware Texture Filter</source>
-        <translation>기본 하드웨어 텍스처 필터</translation>
+        <translation>Standard-Hardware-Texturfilter</translation>
     </message>
     <message>
         <source>Default Playback Mode</source>
-        <translation>기본 재생 모드</translation>
+        <translation>Standard-Wiedergabemodus</translation>
     </message>
     <message>
         <source>Default Sequence</source>
-        <translation>기본 시퀀스</translation>
+        <translation>Standardsequenz</translation>
     </message>
     <message>
         <source>Default Software Resampling Method</source>
-        <translation>기본 소프트웨어 리샘플링 방법</translation>
+        <translation>Standard-Software-Resampling-Methode</translation>
     </message>
     <message>
         <source>Default Stereo Mode</source>
-        <translation>기본 스테레오 모드</translation>
+        <translation>Standard-Stereomodus</translation>
     </message>
     <message>
         <source>Definition of Current View Node ...</source>
-        <translation>현재 뷰 노드 정의...</translation>
+        <translation>Definition des aktuellen Ansichtsknotens ...</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>삭제</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>Delete Profile</source>
-        <translation>프로필 삭제</translation>
+        <translation>Profil löschen</translation>
     </message>
     <message>
         <source>Deny New Contacts</source>
-        <translation>새 연락처 거부</translation>
+        <translation>Neue Kontakte ablehnen</translation>
     </message>
     <message>
         <source>Describe Key Binding...</source>
-        <translation>키 바인딩 설명...</translation>
+        <translation>Beschreiben Sie die Tastenzuordnung...</translation>
     </message>
     <message>
         <source>Describe...</source>
-        <translation>설명...</translation>
+        <translation>Beschreiben...</translation>
     </message>
     <message>
         <source>Deselect All</source>
-        <translation>모두 선택 취소</translation>
+        <translation>Alle abwählen</translation>
     </message>
     <message>
         <source>Desktop Aware</source>
-        <translation>데스크톱 인식</translation>
+        <translation>Desktop-orientiert</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation>장치</translation>
+        <translation>Gerät</translation>
     </message>
     <message>
         <source>Device Latency</source>
-        <translation>장치 지연 시간</translation>
+        <translation>Gerätelatenz</translation>
     </message>
     <message>
         <source>Device Packet Size</source>
-        <translation>장치 패킷 크기</translation>
+        <translation>Gerätepaketgröße</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation>진단</translation>
+        <translation>Diagnose</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Difference</source>
-        <translation>차이</translation>
+        <translation>Unterschied</translation>
     </message>
     <message>
         <source>Difference (Inverted)</source>
-        <translation>차이(역전)</translation>
+        <translation>Differenz (Invertiert)</translation>
     </message>
     <message>
         <source>Direct</source>
-        <translation>직접</translation>
+        <translation>Direkt</translation>
     </message>
     <message>
         <source>Disable Click in View to Play</source>
-        <translation>재생하려면 보기에서 클릭 비활성화</translation>
+        <translation>Deaktivieren Sie „Click in View to Play“.</translation>
     </message>
     <message>
         <source>Disable Presentation Mode</source>
-        <translation>프레젠테이션 모드 비활성화</translation>
+        <translation>Präsentationsmodus deaktivieren</translation>
     </message>
     <message>
         <source>Disable Scrubbing in View</source>
-        <translation>뷰에서 스크러빙 비활성화</translation>
+        <translation>Deaktivieren Sie das Scrubbing in der Ansicht</translation>
     </message>
     <message>
         <source>Disabled (Software CPU)</source>
-        <translation>비활성화됨(소프트웨어 CPU)</translation>
+        <translation>Deaktiviert (Software-CPU)</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation>디스플레이</translation>
+        <translation>Anzeige</translation>
     </message>
     <message>
         <source>Display Brightness (Interactive)</source>
-        <translation>디스플레이 밝기(대화형)</translation>
+        <translation>Display-Helligkeit (interaktiv)</translation>
     </message>
     <message>
         <source>Display Configuration</source>
-        <translation>디스플레이 구성</translation>
+        <translation>Anzeigekonfiguration</translation>
     </message>
     <message>
         <source>Display Configuration is Invalid</source>
-        <translation>디스플레이 구성이 잘못되었습니다.</translation>
+        <translation>Anzeigekonfiguration ist ungültig</translation>
     </message>
     <message>
         <source>Display Feedback Message</source>
-        <translation>피드백 메시지 표시</translation>
+        <translation>Feedback-Nachricht anzeigen</translation>
     </message>
     <message>
         <source>Display Gamma 2.2</source>
-        <translation>디스플레이 감마 2.2</translation>
+        <translation>Anzeige Gamma 2.2</translation>
     </message>
     <message>
         <source>Display Gamma 2.4</source>
-        <translation>디스플레이 감마 2.4</translation>
+        <translation>Anzeige Gamma 2.4</translation>
     </message>
     <message>
         <source>Display Gamma...</source>
-        <translation>디스플레이 감마...</translation>
+        <translation>Gamma anzeigen...</translation>
     </message>
     <message>
         <source>Display ICC Active</source>
-        <translation>ICC 활성 표시</translation>
+        <translation>Anzeige ICC aktiv</translation>
     </message>
     <message>
         <source>Display LUT Active</source>
-        <translation>디스플레이 LUT 활성</translation>
+        <translation>Anzeige LUT aktiv</translation>
     </message>
     <message>
         <source>Display LUT...</source>
-        <translation>디스플레이 LUT...</translation>
+        <translation>LUT anzeigen...</translation>
     </message>
     <message>
         <source>Display Output Format</source>
-        <translation>디스플레이 출력 형식</translation>
+        <translation>Ausgabeformat anzeigen</translation>
     </message>
     <message>
         <source>Display Window</source>
-        <translation>디스플레이 창</translation>
+        <translation>Anzeigefenster</translation>
     </message>
     <message>
         <source>Dissolve</source>
-        <translation>디졸브</translation>
+        <translation>Auflösen</translation>
     </message>
     <message>
         <source>Dissolve Amount</source>
-        <translation>용해량</translation>
+        <translation>Menge auflösen</translation>
     </message>
     <message>
         <source>Dissolve amount (0-100%)</source>
-        <translation>용해량(0-100%)</translation>
+        <translation>Menge auflösen (0-100%)</translation>
     </message>
     <message>
         <source>Dissolve amount (0.0 to 1.0)</source>
-        <translation>용해량(0.0~1.0)</translation>
+        <translation>Auflösungsmenge (0,0 bis 1,0)</translation>
     </message>
     <message>
         <source>Dither</source>
-        <translation>디더</translation>
+        <translation>Dither</translation>
     </message>
     <message>
         <source>Dodge</source>
-        <translation>닷지</translation>
+        <translation>Ausweichen</translation>
     </message>
     <message>
         <source>Download from GitHub</source>
-        <translation>GitHub에서 다운로드</translation>
+        <translation>Von GitHub herunterladen</translation>
     </message>
     <message>
         <source>Draw Magnifier Over Imagery</source>
-        <translation>이미지 위에 돋보기 그리기</translation>
+        <translation>Zeichnen Sie eine Lupe über die Bilder</translation>
     </message>
     <message>
         <source>Draw On Source When Possible</source>
-        <translation>가능한 경우 소스에 그리기</translation>
+        <translation>Verwenden Sie nach Möglichkeit die Quelle</translation>
     </message>
     <message>
         <source>Draw Timeline Over Imagery</source>
-        <translation>이미지 위에 타임라인 그리기</translation>
+        <translation>Zeichnen Sie eine Zeitleiste über Bildern</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>편집</translation>
+        <translation>Bearbeiten</translation>
     </message>
     <message>
         <source>Emacs Keys</source>
-        <translation>Emacs 키</translation>
+        <translation>Emacs-Schlüssel</translation>
     </message>
     <message>
         <source>Enable</source>
-        <translation>활성화</translation>
+        <translation>Aktivieren</translation>
     </message>
     <message>
         <source>End</source>
-        <translation>끝</translation>
+        <translation>Ende</translation>
     </message>
     <message>
         <source>End Frame:</source>
-        <translation>끝 프레임:</translation>
+        <translation>Endrahmen:</translation>
     </message>
     <message>
         <source>End Time</source>
-        <translation>종료 시간</translation>
+        <translation>Endzeit</translation>
     </message>
     <message>
         <source>End of Buffer</source>
-        <translation>버퍼 끝</translation>
+        <translation>Ende des Puffers</translation>
     </message>
     <message>
         <source>English</source>
-        <translation>영어</translation>
+        <translation>Englisch</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>오류</translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <source>Error or Warning</source>
-        <translation>오류 또는 경고</translation>
+        <translation>Fehler oder Warnung</translation>
     </message>
     <message>
         <source>Error, Warning, or Info</source>
-        <translation>오류, 경고 또는 정보</translation>
+        <translation>Fehler, Warnung oder Info</translation>
     </message>
     <message>
         <source>Evaluation</source>
-        <translation>평가</translation>
+        <translation>Bewertung</translation>
     </message>
     <message>
         <source>Evaluation Type</source>
-        <translation>평가 유형</translation>
+        <translation>Bewertungstyp</translation>
     </message>
     <message>
         <source>Event</source>
-        <translation>이벤트</translation>
+        <translation>Ereignis</translation>
     </message>
     <message>
         <source>Existing Package Files</source>
-        <translation>기존 패키지 파일</translation>
+        <translation>Vorhandene Paketdateien</translation>
     </message>
     <message>
         <source>Expand Range From Marks/Boundaries</source>
-        <translation>마크/경계에서 범위 확장</translation>
+        <translation>Erweitern Sie den Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation>내보내기</translation>
+        <translation>Exportieren</translation>
     </message>
     <message>
         <source>Exposure</source>
-        <translation>노출</translation>
+        <translation>Belichtung</translation>
     </message>
     <message>
         <source>Extension</source>
-        <translation>확장</translation>
+        <translation>Erweiterung</translation>
     </message>
     <message>
         <source>FPS</source>
@@ -3773,189 +3773,189 @@ Frame</source>
     </message>
     <message>
         <source>Fast Loopback+PreRoll Audio on Device Open (Platform Audio only)</source>
-        <translation>Fast 루프백+열린 장치의 프리롤 오디오(플랫폼 오디오만 해당)</translation>
+        <translation>Schnelles Loopback+PreRoll-Audio beim Öffnen des Geräts (nur Plattform-Audio)</translation>
     </message>
     <message>
         <source>Feedback</source>
-        <translation>피드백</translation>
+        <translation>Feedback</translation>
     </message>
     <message>
         <source>Feedback Messages</source>
-        <translation>피드백 메시지</translation>
+        <translation>Feedback-Nachrichten</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>파일</translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <source>File CDL</source>
-        <translation>파일 CDL</translation>
+        <translation>Datei CDL</translation>
     </message>
     <message>
         <source>File CDL...</source>
-        <translation>CDL 파일...</translation>
+        <translation>Datei CDL...</translation>
     </message>
     <message>
         <source>File Details View</source>
-        <translation>파일 세부정보 보기</translation>
+        <translation>Dateidetails-Ansicht</translation>
     </message>
     <message>
         <source>File Gamma 2.2</source>
-        <translation>파일 감마 2.2</translation>
+        <translation>Datei Gamma 2.2</translation>
     </message>
     <message>
         <source>File Gamma...</source>
-        <translation>파일 감마...</translation>
+        <translation>Datei-Gamma...</translation>
     </message>
     <message>
         <source>File ICC</source>
-        <translation>파일 ICC</translation>
+        <translation>Datei ICC</translation>
     </message>
     <message>
         <source>File LUT</source>
-        <translation>파일 LUT</translation>
+        <translation>Datei-LUT</translation>
     </message>
     <message>
         <source>File LUT...</source>
-        <translation>파일 LUT...</translation>
+        <translation>Datei-LUT...</translation>
     </message>
     <message>
         <source>File OTIO...</source>
-        <translation>파일 OTIO...</translation>
+        <translation>Datei OTIO...</translation>
     </message>
     <message>
         <source>File Type:</source>
-        <translation>파일 유형:</translation>
+        <translation>Dateityp:</translation>
     </message>
     <message>
         <source>File Write Failed</source>
-        <translation>파일 쓰기 실패</translation>
+        <translation>Schreiben der Datei fehlgeschlagen</translation>
     </message>
     <message>
         <source>File cannot be written:\n</source>
-        <translation>파일을 쓸 수 없습니다.\n</translation>
+        <translation>Datei kann nicht geschrieben werden:\n</translation>
     </message>
     <message>
         <source>Fill View with Content</source>
-        <translation>뷰를 콘텐츠로 채우기</translation>
+        <translation>Ansicht mit Inhalt füllen</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>필터</translation>
+        <translation>Filter</translation>
     </message>
     <message>
         <source>Final Rendered Color</source>
-        <translation>최종 렌더링 색상</translation>
+        <translation>Endgültige gerenderte Farbe</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation>핏</translation>
+        <translation>Fit</translation>
     </message>
     <message>
         <source>Fit All Images</source>
-        <translation>모든 이미지에 맞춤</translation>
+        <translation>Alle Bilder anpassen</translation>
     </message>
     <message>
         <source>Fit Window to First Media Loaded</source>
-        <translation>처음 로드된 미디어에 창 맞추기</translation>
+        <translation>Fenster an erstes geladenes Medium anpassen</translation>
     </message>
     <message>
         <source>Fit to Window</source>
-        <translation>창에 맞추기</translation>
+        <translation>An Fenster anpassen</translation>
     </message>
     <message>
         <source>Fixed Latency</source>
-        <translation>고정 대기 시간</translation>
+        <translation>Feste Latenz</translation>
     </message>
     <message>
         <source>Flip</source>
-        <translation>플립</translation>
+        <translation>Umdrehen</translation>
     </message>
     <message>
         <source>Flip Right Eye</source>
-        <translation>오른쪽 눈 뒤집기</translation>
+        <translation>Rechtes Auge umdrehen</translation>
     </message>
     <message>
         <source>Floating Selector</source>
-        <translation>플로팅 선택기</translation>
+        <translation>Schwimmender Selektor</translation>
     </message>
     <message>
         <source>Flop</source>
-        <translation>플롭</translation>
+        <translation>Flop</translation>
     </message>
     <message>
         <source>Flop Right Eye</source>
-        <translation>오른쪽 눈 플롭</translation>
+        <translation>Flop Rechtes Auge</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation>폴더</translation>
+        <translation>Ordner</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation>글꼴 크기</translation>
+        <translation>Schriftgröße</translation>
     </message>
     <message>
         <source>Footage Display</source>
-        <translation>영상 표시</translation>
+        <translation>Videoanzeige</translation>
     </message>
     <message>
         <source>Force Reload Current Frame</source>
-        <translation>현재 프레임 강제 다시 로드</translation>
+        <translation>Neuladen des aktuellen Frames erzwingen</translation>
     </message>
     <message>
         <source>Force Reload Region</source>
-        <translation>강제 재장전 지역</translation>
+        <translation>Region neu laden erzwingen</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>양식</translation>
+        <translation>Formular</translation>
     </message>
     <message>
         <source>Formats</source>
-        <translation>형식</translation>
+        <translation>Formate</translation>
     </message>
     <message>
         <source>Forward
 Frame</source>
-        <translation>앞으로</translation>
+        <translation>Vorwärts</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation>프레임</translation>
+        <translation>Rahmen</translation>
     </message>
     <message>
         <source>Frame Latency</source>
-        <translation>프레임 지연 시간</translation>
+        <translation>Frame-Latenz</translation>
     </message>
     <message>
         <source>Frame Width</source>
-        <translation>프레임 폭</translation>
+        <translation>Rahmenbreite</translation>
     </message>
     <message>
         <source>Frame image in view</source>
-        <translation>뷰에 이미지 맞추기</translation>
+        <translation>Bild in Ansicht einpassen</translation>
     </message>
     <message>
         <source>Frame/Fit View</source>
-        <translation>프레임/맞춤 보기</translation>
+        <translation>Frame/Fit-Ansicht</translation>
     </message>
     <message>
         <source>From Image</source>
-        <translation>이미지에서</translation>
+        <translation>Vom Bild</translation>
     </message>
     <message>
         <source>Full
 Screen</source>
-        <translation>전체</translation>
+        <translation>Voll</translation>
     </message>
     <message>
         <source>Full Range</source>
-        <translation>전체 범위</translation>
+        <translation>Vollsortiment</translation>
     </message>
     <message>
         <source>Full Screen</source>
-        <translation>전체 화면</translation>
+        <translation>Vollbild</translation>
     </message>
     <message>
         <source>GB</source>
@@ -3967,7 +3967,7 @@ Screen</source>
     </message>
     <message>
         <source>GLSL 3D LUT Interpolation</source>
-        <translation>GLSL 3D LUT 보간</translation>
+        <translation>GLSL 3D LUT-Interpolation</translation>
     </message>
     <message>
         <source>GRBA</source>
@@ -3975,83 +3975,83 @@ Screen</source>
     </message>
     <message>
         <source>GTO File Format (.rv files)</source>
-        <translation>GTO 파일 형식(.rv 파일)</translation>
+        <translation>GTO-Dateiformat (.rv-Dateien)</translation>
     </message>
     <message>
         <source>Gamma</source>
-        <translation>감마</translation>
+        <translation>Gamma</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>일반</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Ghost</source>
-        <translation>고스트</translation>
+        <translation>Geisterbild</translation>
     </message>
     <message>
         <source>Global Audio Offset</source>
-        <translation>글로벌 오디오 오프셋</translation>
+        <translation>Globaler Audio-Offset</translation>
     </message>
     <message>
         <source>Global Flip Right Eye</source>
-        <translation>글로벌 플립 오른쪽 눈</translation>
+        <translation>Global Flip Right Eye</translation>
     </message>
     <message>
         <source>Global Flop Right Eye</source>
-        <translation>글로벌 플롭 오른쪽 눈</translation>
+        <translation>Globaler Flop Rechtes Auge</translation>
     </message>
     <message>
         <source>Global Frame Numbers</source>
-        <translation>글로벌 프레임 번호</translation>
+        <translation>Globale Rahmennummern</translation>
     </message>
     <message>
         <source>Global Relative Eye Offset (%)</source>
-        <translation>전역 상대 눈 오프셋(%)</translation>
+        <translation>Globaler relativer Augenversatz (%)</translation>
     </message>
     <message>
         <source>Global Right Eye Only Offset (%)</source>
-        <translation>전역 오른쪽 눈 전용 오프셋(%)</translation>
+        <translation>Globaler Offset nur für das rechte Auge (%)</translation>
     </message>
     <message>
         <source>Global Seconds</source>
-        <translation>글로벌 초</translation>
+        <translation>Globale Sekunden</translation>
     </message>
     <message>
         <source>Global Swap Eyes</source>
-        <translation>글로벌스왑아이즈</translation>
+        <translation>Global Swap Eyes</translation>
     </message>
     <message>
         <source>Global Time Code Display</source>
-        <translation>글로벌 타임코드 디스플레이</translation>
+        <translation>Globale Timecode-Anzeige</translation>
     </message>
     <message>
         <source>Go To Frame...</source>
-        <translation>프레임으로 이동...</translation>
+        <translation>Gehe zu Frame...</translation>
     </message>
     <message>
         <source>Green</source>
-        <translation>그린</translation>
+        <translation>Grün</translation>
     </message>
     <message>
         <source>Grid</source>
-        <translation>그리드</translation>
+        <translation>Gitter</translation>
     </message>
     <message>
         <source>Grid Columns</source>
-        <translation>그리드 열</translation>
+        <translation>Rasterspalten</translation>
     </message>
     <message>
         <source>Grid Rows</source>
-        <translation>그리드 행</translation>
+        <translation>Gitterzeilen</translation>
     </message>
     <message>
         <source>GroupBox</source>
-        <translation>그룹박스</translation>
+        <translation>GroupBox</translation>
     </message>
     <message>
         <source>Guess Channel Inheritance</source>
-        <translation>Guess 채널 상속</translation>
+        <translation>Kanalvererbung erraten</translation>
     </message>
     <message>
         <source>HSV</source>
@@ -4059,47 +4059,47 @@ Screen</source>
     </message>
     <message>
         <source>Handle URLS in Current Session</source>
-        <translation>현재 세션에서 URL 처리</translation>
+        <translation>URLs in der aktuellen Sitzung verarbeiten</translation>
     </message>
     <message>
         <source>Hard Erase</source>
-        <translation>하드 지우기</translation>
+        <translation>Festes Löschen</translation>
     </message>
     <message>
         <source>Hardware Audio and Video Synchronization</source>
-        <translation>하드웨어 오디오 및 비디오 동기화</translation>
+        <translation>Hardware-Audio- und Videosynchronisation</translation>
     </message>
     <message>
         <source>Hardware Video Decoding</source>
-        <translation>하드웨어 비디오 디코딩</translation>
+        <translation>Hardware-Videodekodierung</translation>
     </message>
     <message>
         <source>Help</source>
-        <translation>도움말</translation>
+        <translation>Hilfe</translation>
     </message>
     <message>
         <source>Help ...</source>
-        <translation>도와주세요...</translation>
+        <translation>Hilfe ...</translation>
     </message>
     <message>
         <source>Hide Menu Bar by Default</source>
-        <translation>기본적으로 메뉴 바 숨기기</translation>
+        <translation>Menüleiste standardmäßig ausblenden</translation>
     </message>
     <message>
         <source>Hold</source>
-        <translation>고정</translation>
+        <translation>Halten</translation>
     </message>
     <message>
         <source>Hostname:</source>
-        <translation>호스트 이름:</translation>
+        <translation>Hostname:</translation>
     </message>
     <message>
         <source>Hue</source>
-        <translation>후에</translation>
+        <translation>Hue</translation>
     </message>
     <message>
         <source>Hybrid Log-Gamma</source>
-        <translation>하이브리드 로그 감마</translation>
+        <translation>Hybrid Log-Gamma</translation>
     </message>
     <message>
         <source>Hz</source>
@@ -4107,83 +4107,83 @@ Screen</source>
     </message>
     <message>
         <source>I/O Method</source>
-        <translation>I/O 방법</translation>
+        <translation>I/O-Methode</translation>
     </message>
     <message>
         <source>Ignore File Primaries</source>
-        <translation>파일 기본 무시</translation>
+        <translation>Dateiprimärdateien ignorieren</translation>
     </message>
     <message>
         <source>Image</source>
-        <translation>이미지</translation>
+        <translation>Bild</translation>
     </message>
     <message>
         <source>Image Attributes...</source>
-        <translation>이미지 속성...</translation>
+        <translation>Bildattribute...</translation>
     </message>
     <message>
         <source>Image Info</source>
-        <translation>이미지 정보</translation>
+        <translation>Bildinformationen</translation>
     </message>
     <message>
         <source>Image Resolution</source>
-        <translation>이미지 해상도</translation>
+        <translation>Bildauflösung</translation>
     </message>
     <message>
         <source>Image Sequence...</source>
-        <translation>이미지 순서...</translation>
+        <translation>Bildsequenz...</translation>
     </message>
     <message>
         <source>Image Size</source>
-        <translation>이미지 크기</translation>
+        <translation>Bildgröße</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation>가져오기</translation>
+        <translation>Importieren</translation>
     </message>
     <message>
         <source>Import File</source>
-        <translation>파일 가져오기</translation>
+        <translation>Datei importieren</translation>
     </message>
     <message>
         <source>Incorporate Video Latency into Audio Offset</source>
-        <translation>비디오 지연 시간을 오디오 오프셋에 통합</translation>
+        <translation>Integrieren Sie die Videolatenz in den Audio-Offset</translation>
     </message>
     <message>
         <source>Info Strip</source>
-        <translation>정보 스트립</translation>
+        <translation>Infostreifen</translation>
     </message>
     <message>
         <source>Initial Volume</source>
-        <translation>초기 볼륨</translation>
+        <translation>Anfangslautstärke</translation>
     </message>
     <message>
         <source>Inputs</source>
-        <translation>입력</translation>
+        <translation>Eingänge</translation>
     </message>
     <message>
         <source>Install Maya Support File</source>
-        <translation>Maya 지원 파일 설치</translation>
+        <translation>Installieren Sie die Maya-Supportdatei</translation>
     </message>
     <message>
         <source>Install Nuke Support Files</source>
-        <translation>Nuke 지원 파일 설치</translation>
+        <translation>Installieren Sie die Nuke-Supportdateien</translation>
     </message>
     <message>
         <source>Interactive Resize</source>
-        <translation>대화형 크기 조정</translation>
+        <translation>Interaktive Größenänderung</translation>
     </message>
     <message>
         <source>Inv Difference</source>
-        <translation>Inv 차이</translation>
+        <translation>Inv-Differenz</translation>
     </message>
     <message>
         <source>Invert</source>
-        <translation>반전</translation>
+        <translation>Invertieren</translation>
     </message>
     <message>
         <source>Inverted Difference</source>
-        <translation>역차</translation>
+        <translation>Umgekehrte Differenz</translation>
     </message>
     <message>
         <source>JPEG</source>
@@ -4191,11 +4191,11 @@ Screen</source>
     </message>
     <message>
         <source>Jump To Beginning</source>
-        <translation>처음으로 이동</translation>
+        <translation>Zum Anfang springen</translation>
     </message>
     <message>
         <source>Jump To Ending</source>
-        <translation>엔딩으로 이동</translation>
+        <translation>Zum Ende springen</translation>
     </message>
     <message>
         <source>K1</source>
@@ -4211,287 +4211,287 @@ Screen</source>
     </message>
     <message>
         <source>Keep Audio Device Open When Not Playing</source>
-        <translation>재생하지 않을 때 오디오 장치를 열어두세요</translation>
+        <translation>Halten Sie das Audiogerät geöffnet, wenn es nicht abgespielt wird</translation>
     </message>
     <message>
         <source>Keep Trying</source>
-        <translation>계속 노력하세요</translation>
+        <translation>Versuchen Sie es weiter</translation>
     </message>
     <message>
         <source>LCD Scanline</source>
-        <translation>LCD 스캔라인</translation>
+        <translation>LCD-Scanline</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>언어</translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <source>Language Changed</source>
-        <translation>언어가 변경되었습니다</translation>
+        <translation>Sprache geändert</translation>
     </message>
     <message>
         <source>Large</source>
-        <translation>대형</translation>
+        <translation>Groß</translation>
     </message>
     <message>
         <source>Layout</source>
-        <translation>레이아웃</translation>
+        <translation>Layout</translation>
     </message>
     <message>
         <source>Left Eye Only</source>
-        <translation>왼쪽 눈만</translation>
+        <translation>Nur linkes Auge</translation>
     </message>
     <message>
         <source>Left Only</source>
-        <translation>왼쪽만</translation>
+        <translation>Nur links</translation>
     </message>
     <message>
         <source>Length</source>
-        <translation>길이</translation>
+        <translation>Länge</translation>
     </message>
     <message>
         <source>Length Multiplier</source>
-        <translation>길이 승수</translation>
+        <translation>Längenmultiplikator</translation>
     </message>
     <message>
         <source>Linear</source>
-        <translation>선형</translation>
+        <translation>Linear</translation>
     </message>
     <message>
         <source>Linear Filter</source>
-        <translation>선형 필터</translation>
+        <translation>Linearer Filter</translation>
     </message>
     <message>
         <source>Linearize</source>
-        <translation>선형화</translation>
+        <translation>Linearisieren</translation>
     </message>
     <message>
         <source>Live Drawing in Sync</source>
-        <translation>실시간 드로잉 동기화</translation>
+        <translation>Live-Zeichnung synchron</translation>
     </message>
     <message>
         <source>Load Image...</source>
-        <translation>이미지 로드...</translation>
+        <translation>Bild laden...</translation>
     </message>
     <message>
         <source>Loadable Package Dependencies</source>
-        <translation>로드 가능한 패키지 종속성</translation>
+        <translation>Ladbare Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Lock Pixel Scale During Resize</source>
-        <translation>크기 조정 중 픽셀 크기 잠금</translation>
+        <translation>Pixelskalierung während der Größenänderung sperren</translation>
     </message>
     <message>
         <source>Look</source>
-        <translation>보세요</translation>
+        <translation>Schau</translation>
     </message>
     <message>
         <source>Look CDL</source>
-        <translation>보세요 CDL</translation>
+        <translation>Schau CDL</translation>
     </message>
     <message>
         <source>Look CDL...</source>
-        <translation>CDL 보세요...</translation>
+        <translation>Schau CDL...</translation>
     </message>
     <message>
         <source>Look LUT</source>
-        <translation>봐요 ㅋㅋㅋ</translation>
+        <translation>Schau LUT</translation>
     </message>
     <message>
         <source>Look LUT...</source>
-        <translation>봐요 ㅋㅋㅋ...</translation>
+        <translation>Schau LUT...</translation>
     </message>
     <message>
         <source>Look-Ahead Cache</source>
-        <translation>예측 캐시</translation>
+        <translation>Look-Ahead-Cache</translation>
     </message>
     <message>
         <source>Look-Ahead Cache Size</source>
-        <translation>예측 캐시 크기</translation>
+        <translation>Look-Ahead-Cache-Größe</translation>
     </message>
     <message>
         <source>Loop</source>
-        <translation>반복</translation>
+        <translation>Schleife</translation>
     </message>
     <message>
         <source>Luminance</source>
-        <translation>휘도</translation>
+        <translation>Leuchtdichte</translation>
     </message>
     <message>
         <source>Luminance Anaglyph</source>
-        <translation>휘도 애너글리프</translation>
+        <translation>Leuchtdichte-Anaglyphe</translation>
     </message>
     <message>
         <source>Luminance Look Up Table</source>
-        <translation>휘도 조회 테이블</translation>
+        <translation>Luminanz-Nachschlagetabelle</translation>
     </message>
     <message>
         <source>MainWindow</source>
-        <translation>메인창</translation>
+        <translation>Hauptfenster</translation>
     </message>
     <message>
         <source>Manual</source>
-        <translation>수동</translation>
+        <translation>Manuell</translation>
     </message>
     <message>
         <source>Manually</source>
-        <translation>수동으로</translation>
+        <translation>Manuell</translation>
     </message>
     <message>
         <source>Mark Annotated Frames</source>
-        <translation>주석 달린 프레임 표시</translation>
+        <translation>Kommentierte Frames markieren</translation>
     </message>
     <message>
         <source>Mark Current Frame</source>
-        <translation>현재 프레임 표시</translation>
+        <translation>Markieren Sie den aktuellen Frame</translation>
     </message>
     <message>
         <source>Mark Frame</source>
-        <translation>프레임 표시</translation>
+        <translation>Frame markieren</translation>
     </message>
     <message>
         <source>Mark Frame %s</source>
-        <translation>마크 프레임 %s</translation>
+        <translation>Frame markieren %s</translation>
     </message>
     <message>
         <source>Mark Selected as Target</source>
-        <translation>마크가 대상으로 선정됨</translation>
+        <translation>Ausgewählt als Ziel markieren</translation>
     </message>
     <message>
         <source>Mark Sequence Boundaries</source>
-        <translation>시퀀스 경계 표시</translation>
+        <translation>Sequenzgrenzen markieren</translation>
     </message>
     <message>
         <source>Mark in Range</source>
-        <translation>범위 내 마크</translation>
+        <translation>Mark in Reichweite</translation>
     </message>
     <message>
         <source>Marked Frames...</source>
-        <translation>표시된 프레임...</translation>
+        <translation>Markierte Frames...</translation>
     </message>
     <message>
         <source>Marked Regions as Movie/Audio/Sequences...</source>
-        <translation>영화/오디오/시퀀스로 표시된 영역...</translation>
+        <translation>Markierte Regionen als Film/Audio/Sequenzen...</translation>
     </message>
     <message>
         <source>Matching Frame Of Next Source</source>
-        <translation>다음 소스의 프레임 일치</translation>
+        <translation>Passender Rahmen der nächsten Quelle</translation>
     </message>
     <message>
         <source>Matching Frame Of Previous Source</source>
-        <translation>이전 소스의 프레임 일치</translation>
+        <translation>Übereinstimmender Rahmen der vorherigen Quelle</translation>
     </message>
     <message>
         <source>Matte</source>
-        <translation>매트</translation>
+        <translation>Matt</translation>
     </message>
     <message>
         <source>Matte Opacity</source>
-        <translation>매트 불투명도</translation>
+        <translation>Matte Deckkraft</translation>
     </message>
     <message>
         <source>Max Asyn Requests</source>
-        <translation>Max Asyn 요청</translation>
+        <translation>Max Asyn-Anfragen</translation>
     </message>
     <message>
         <source>Max Async Requests</source>
-        <translation>최대 비동기 요청</translation>
+        <translation>Maximale asynchrone Anfragen</translation>
     </message>
     <message>
         <source>Max Look-Ahead Wait Time</source>
-        <translation>최대 예측 대기 시간</translation>
+        <translation>Maximale Look-Ahead-Wartezeit</translation>
     </message>
     <message>
         <source>Max Refresh Rate</source>
-        <translation>최대 재생률</translation>
+        <translation>Max. Aktualisierungsrate</translation>
     </message>
     <message>
         <source>Maximum Allowed</source>
-        <translation>최대 허용</translation>
+        <translation>Maximal zulässig</translation>
     </message>
     <message>
         <source>Maximum Image Bit Depth</source>
-        <translation>최대 이미지 비트 깊이</translation>
+        <translation>Maximale Bildbittiefe</translation>
     </message>
     <message>
         <source>Maya</source>
-        <translation>마야</translation>
+        <translation>Maya</translation>
     </message>
     <message>
         <source>Media Details View</source>
-        <translation>미디어 세부정보 보기</translation>
+        <translation>Mediendetails anzeigen</translation>
     </message>
     <message>
         <source>Media Information...</source>
-        <translation>미디어 정보...</translation>
+        <translation>Medieninformationen...</translation>
     </message>
     <message>
         <source>Medium</source>
-        <translation>중형</translation>
+        <translation>Mittel</translation>
     </message>
     <message>
         <source>Memory Map</source>
-        <translation>메모리 맵</translation>
+        <translation>Speicherkarte</translation>
     </message>
     <message>
         <source>Menu Bar</source>
-        <translation>메뉴바</translation>
+        <translation>Menüleiste</translation>
     </message>
     <message>
         <source>Merge</source>
-        <translation>병합</translation>
+        <translation>Zusammenführen</translation>
     </message>
     <message>
         <source>Merge...</source>
-        <translation>병합...</translation>
+        <translation>Zusammenführen...</translation>
     </message>
     <message>
         <source>Min Refresh Rate</source>
-        <translation>최소 새로 고침 빈도</translation>
+        <translation>Min. Aktualisierungsrate</translation>
     </message>
     <message>
         <source>Min/Max Buffer Size in Seconds</source>
-        <translation>최소/최대 버퍼 크기(초)</translation>
+        <translation>Min./Max. Puffergröße in Sekunden</translation>
     </message>
     <message>
         <source>Mirror Side-by-Side</source>
-        <translation>나란히 거울</translation>
+        <translation>Spiegeln nebeneinander</translation>
     </message>
     <message>
         <source>Missing Frames</source>
-        <translation>프레임 누락</translation>
+        <translation>Fehlende Frames</translation>
     </message>
     <message>
         <source>Missing Package Dependencies</source>
-        <translation>패키지 종속성 누락</translation>
+        <translation>Fehlende Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Mode</source>
-        <translation>모드</translation>
+        <translation>Modus</translation>
     </message>
     <message>
         <source>Modification Time</source>
-        <translation>수정 시간</translation>
+        <translation>Änderungszeit</translation>
     </message>
     <message>
         <source>Mouse Scrub in View</source>
-        <translation>보기에서 마우스 스크럽</translation>
+        <translation>Maus-Scrub in der Ansicht</translation>
     </message>
     <message>
         <source>Mu Command API Browser...</source>
-        <translation>Mu 명령 API 브라우저...</translation>
+        <translation>Mu Command API Browser...</translation>
     </message>
     <message>
         <source>Mu User's Manual</source>
-        <translation>Mu 사용자 매뉴얼</translation>
+        <translation>Mu-Benutzerhandbuch</translation>
     </message>
     <message>
         <source>Multithread GPU Uploads</source>
-        <translation>멀티스레드 GPU 업로드</translation>
+        <translation>Multithread-GPU-Uploads</translation>
     </message>
     <message>
         <source>Mute</source>
-        <translation>음소거</translation>
+        <translation>Stumm</translation>
     </message>
     <message>
         <source>NTSC D1 DV  16:9</source>
@@ -4503,491 +4503,491 @@ Screen</source>
     </message>
     <message>
         <source>Name</source>
-        <translation>이름</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation>이름:</translation>
+        <translation>Name:</translation>
     </message>
     <message>
         <source>Narrow to Range</source>
-        <translation>범위가 좁음</translation>
+        <translation>Narrow to Range</translation>
     </message>
     <message>
         <source>Nearest Neighbor</source>
-        <translation>가장 가까운 이웃</translation>
+        <translation>Nächster Nachbar</translation>
     </message>
     <message>
         <source>Network Hostname/Address</source>
-        <translation>네트워크 호스트 이름/주소</translation>
+        <translation>Netzwerk-Hostname/-Adresse</translation>
     </message>
     <message>
         <source>Network...</source>
-        <translation>네트워크...</translation>
+        <translation>Netzwerk...</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>새 폴더</translation>
+        <translation>Neuer Ordner</translation>
     </message>
     <message>
         <source>New Media</source>
-        <translation>뉴미디어</translation>
+        <translation>Neue Medien</translation>
     </message>
     <message>
         <source>New Node</source>
-        <translation>새 노드</translation>
+        <translation>Neuer Knoten</translation>
     </message>
     <message>
         <source>New Session</source>
-        <translation>새 세션</translation>
+        <translation>Neue Sitzung</translation>
     </message>
     <message>
         <source>Next</source>
-        <translation>다음</translation>
+        <translation>Weiter</translation>
     </message>
     <message>
         <source>Next Annotated Frame</source>
-        <translation>다음 주석이 달린 프레임</translation>
+        <translation>Nächster kommentierter Frame</translation>
     </message>
     <message>
         <source>Next Line</source>
-        <translation>다음 줄</translation>
+        <translation>Nächste Zeile</translation>
     </message>
     <message>
         <source>Next Mark</source>
-        <translation>다음 마크</translation>
+        <translation>Nächstes Mark</translation>
     </message>
     <message>
         <source>Next Marked Frame</source>
-        <translation>다음 표시된 프레임</translation>
+        <translation>Nächster markierter Frame</translation>
     </message>
     <message>
         <source>Next Range From Marks/Boundaries</source>
-        <translation>마크/경계의 다음 범위</translation>
+        <translation>Nächster Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Next Word</source>
-        <translation>다음 단어</translation>
+        <translation>Nächstes Wort</translation>
     </message>
     <message>
         <source>No Audio Display</source>
-        <translation>오디오 디스플레이 없음</translation>
+        <translation>Keine Audioanzeige</translation>
     </message>
     <message>
         <source>No Caching</source>
-        <translation>캐싱 없음</translation>
+        <translation>Kein Caching</translation>
     </message>
     <message>
         <source>No Conversion</source>
-        <translation>전환 없음</translation>
+        <translation>Keine Konvertierung</translation>
     </message>
     <message>
         <source>No Correction</source>
-        <translation>수정 없음</translation>
+        <translation>Keine Korrektur</translation>
     </message>
     <message>
         <source>No Matte</source>
-        <translation>매트 없음</translation>
+        <translation>Nein Matt</translation>
     </message>
     <message>
         <source>No Rotation</source>
-        <translation>회전 없음</translation>
+        <translation>Keine Rotation</translation>
     </message>
     <message>
         <source>No Stereo</source>
-        <translation>스테레오 없음</translation>
+        <translation>Keine Stereoanlage</translation>
     </message>
     <message>
         <source>No longer connected to %1</source>
-        <translation>%1에 더 이상 연결되지 않습니다.</translation>
+        <translation>Keine Verbindung mehr zu %1</translation>
     </message>
     <message>
         <source>No package installation locations were found.</source>
-        <translation>패키지 설치 위치를 찾을 수 없습니다.</translation>
+        <translation>Es wurden keine Paketinstallationsorte gefunden.</translation>
     </message>
     <message>
         <source>Node Type</source>
-        <translation>노드 유형</translation>
+        <translation>Knotentyp</translation>
     </message>
     <message>
         <source>Normalize</source>
-        <translation>정규화</translation>
+        <translation>Normalisieren</translation>
     </message>
     <message>
         <source>Normalized [0.0, 1.0]</source>
-        <translation>정규화 [0.0, 1.0]</translation>
+        <translation>Normalisiert [0,0, 1,0]</translation>
     </message>
     <message>
         <source>Nuke</source>
-        <translation>누크</translation>
+        <translation>Nuke</translation>
     </message>
     <message>
         <source>OTIO File...</source>
-        <translation>OTIO 파일...</translation>
+        <translation>OTIO-Datei...</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation>끄기</translation>
+        <translation>Aus</translation>
     </message>
     <message>
         <source>Offset (frames)</source>
-        <translation>오프셋(프레임)</translation>
+        <translation>Offset (Frames)</translation>
     </message>
     <message>
         <source>Offset (seconds)</source>
-        <translation>오프셋(초)</translation>
+        <translation>Offset (Sekunden)</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation>알겠습니다</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Online Resources</source>
-        <translation>온라인 리소스</translation>
+        <translation>Online-Ressourcen</translation>
     </message>
     <message>
         <source>Opacity</source>
-        <translation>불투명도</translation>
+        <translation>Deckkraft</translation>
     </message>
     <message>
         <source>Open Directory...</source>
-        <translation>디렉토리 열기...</translation>
+        <translation>Verzeichnis öffnen...</translation>
     </message>
     <message>
         <source>Open Network Dialog...</source>
-        <translation>네트워크 대화 상자 열기...</translation>
+        <translation>Offener Netzwerkdialog...</translation>
     </message>
     <message>
         <source>Open in New Session...</source>
-        <translation>새 세션에서 열기...</translation>
+        <translation>In neuer Sitzung öffnen...</translation>
     </message>
     <message>
         <source>Open into Layer...</source>
-        <translation>레이어로 열기...</translation>
+        <translation>In Ebene öffnen...</translation>
     </message>
     <message>
         <source>Open...</source>
-        <translation>열기...</translation>
+        <translation>Öffnen...</translation>
     </message>
     <message>
         <source>OpenEXR</source>
-        <translation>오픈EXR</translation>
+        <translation>OpenEXR</translation>
     </message>
     <message>
         <source>OpenGL 32 RGB+A 10+2 bits/ch</source>
-        <translation>OpenGL 32 RGB+A 10+2비트/채널</translation>
+        <translation>OpenGL 32 RGB+A 10+2 Bit/Kanal</translation>
     </message>
     <message>
         <source>OpenGL 32 RGBA 8 bits/ch</source>
-        <translation>OpenGL 32 RGBA 8비트/채널</translation>
+        <translation>OpenGL 32 RGBA 8 Bit/Kanal</translation>
     </message>
     <message>
         <source>OpenGL Default Format</source>
-        <translation>OpenGL 기본 형식</translation>
+        <translation>OpenGL-Standardformat</translation>
     </message>
     <message>
         <source>OpenGL Hardware</source>
-        <translation>OpenGL 하드웨어</translation>
+        <translation>OpenGL-Hardware</translation>
     </message>
     <message>
         <source>OpenUTV on GitHub</source>
-        <translation>GitHub의 OpenUTV</translation>
+        <translation>OpenUTV auf GitHub</translation>
     </message>
     <message>
         <source>Operation</source>
-        <translation>작동</translation>
+        <translation>Betrieb</translation>
     </message>
     <message>
         <source>Ouput Display Format</source>
-        <translation>출력 표시 형식</translation>
+        <translation>Ausgabe-Anzeigeformat</translation>
     </message>
     <message>
         <source>Output Audio to this Device</source>
-        <translation>이 장치로 오디오 출력</translation>
+        <translation>Audio auf dieses Gerät ausgeben</translation>
     </message>
     <message>
         <source>Output Data Format</source>
-        <translation>출력 데이터 형식</translation>
+        <translation>Ausgabedatenformat</translation>
     </message>
     <message>
         <source>Output Device</source>
-        <translation>출력 장치</translation>
+        <translation>Ausgabegerät</translation>
     </message>
     <message>
         <source>Output FPS</source>
-        <translation>출력 FPS</translation>
+        <translation>Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Output Format and Rate</source>
-        <translation>출력 형식 및 속도</translation>
+        <translation>Ausgabeformat und -rate</translation>
     </message>
     <message>
         <source>Output Module</source>
-        <translation>출력 모듈</translation>
+        <translation>Ausgabemodul</translation>
     </message>
     <message>
         <source>Output Node Definition File</source>
-        <translation>출력 노드 정의 파일</translation>
+        <translation>Ausgabeknotendefinitionsdatei</translation>
     </message>
     <message>
         <source>Output Size</source>
-        <translation>출력 크기</translation>
+        <translation>Ausgabegröße</translation>
     </message>
     <message>
         <source>Output Video Format</source>
-        <translation>출력 비디오 형식</translation>
+        <translation>Ausgabevideoformat</translation>
     </message>
     <message>
         <source>Over</source>
-        <translation>오버</translation>
+        <translation>Vorbei</translation>
     </message>
     <message>
         <source>Overwrite</source>
-        <translation>덮어쓰기</translation>
+        <translation>Überschreiben</translation>
     </message>
     <message>
         <source>PAL  16:9</source>
-        <translation>팔 16:9</translation>
+        <translation>PAL 16:9</translation>
     </message>
     <message>
         <source>PAL  4:3</source>
-        <translation>팔 4:3</translation>
+        <translation>PAL 4:3</translation>
     </message>
     <message>
         <source>PIX</source>
-        <translation>픽스</translation>
+        <translation>PIX</translation>
     </message>
     <message>
         <source>Package Failed to Copy</source>
-        <translation>패키지를 복사하지 못했습니다.</translation>
+        <translation>Paket konnte nicht kopiert werden</translation>
     </message>
     <message>
         <source>Package is currently installed</source>
-        <translation>패키지가 현재 설치되어 있습니다.</translation>
+        <translation>Paket ist derzeit installiert</translation>
     </message>
     <message>
         <source>Packages</source>
-        <translation>패키지</translation>
+        <translation>Pakete</translation>
     </message>
     <message>
         <source>Packed</source>
-        <translation>포장됨</translation>
+        <translation>Verpackt</translation>
     </message>
     <message>
         <source>Packed Layout</source>
-        <translation>패킹 레이아웃</translation>
+        <translation>Gepacktes Layout</translation>
     </message>
     <message>
         <source>Packed With Fluid Layout</source>
-        <translation>유동적인 레이아웃으로 가득 차 있음</translation>
+        <translation>Vollgepackt mit flüssigem Layout</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation>붙여넣기</translation>
+        <translation>Einfügen</translation>
     </message>
     <message>
         <source>Pen</source>
-        <translation>펜</translation>
+        <translation>Stift</translation>
     </message>
     <message>
         <source>PingPong</source>
-        <translation>핑퐁</translation>
+        <translation>PingPong</translation>
     </message>
     <message>
         <source>Pixel Aspect Ratio</source>
-        <translation>픽셀 종횡비</translation>
+        <translation>Pixel-Seitenverhältnis</translation>
     </message>
     <message>
         <source>Pixels</source>
-        <translation>픽셀</translation>
+        <translation>Pixel</translation>
     </message>
     <message>
         <source>Plain Pointer</source>
-        <translation>일반 포인터</translation>
+        <translation>Einfacher Zeiger</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation>재생</translation>
+        <translation>Abspielen</translation>
     </message>
     <message>
         <source>Play All Frames</source>
-        <translation>모든 프레임 재생</translation>
+        <translation>Alle Frames abspielen</translation>
     </message>
     <message>
         <source>Play Backward</source>
-        <translation>뒤로 재생</translation>
+        <translation>Rückwärts abspielen</translation>
     </message>
     <message>
         <source>Play Controls</source>
-        <translation>Play 제어</translation>
+        <translation>Spielsteuerung</translation>
     </message>
     <message>
         <source>Play Forward</source>
-        <translation>앞으로 플레이</translation>
+        <translation>Vorwärts abspielen</translation>
     </message>
     <message>
         <source>Play Once</source>
-        <translation>한 번 플레이</translation>
+        <translation>Einmal spielen</translation>
     </message>
     <message>
         <source>Play backwards</source>
-        <translation>뒤로 재생</translation>
+        <translation>Rückwärts abspielen</translation>
     </message>
     <message>
         <source>Play forwards</source>
-        <translation>앞으로 재생</translation>
+        <translation>Vorwärts abspielen</translation>
     </message>
     <message>
         <source>Play on Start Up</source>
-        <translation>시작 시 재생</translation>
+        <translation>Beim Start abspielen</translation>
     </message>
     <message>
         <source>Playback</source>
-        <translation>재생</translation>
+        <translation>Wiedergabe</translation>
     </message>
     <message>
         <source>Playback Control</source>
-        <translation>재생 제어</translation>
+        <translation>Wiedergabesteuerung</translation>
     </message>
     <message>
         <source>Playback Mode</source>
-        <translation>재생 모드</translation>
+        <translation>Wiedergabemodus</translation>
     </message>
     <message>
         <source>Pointer</source>
-        <translation>포인터</translation>
+        <translation>Zeiger</translation>
     </message>
     <message>
         <source>Port</source>
-        <translation>포트</translation>
+        <translation>Hafen</translation>
     </message>
     <message>
         <source>Port:</source>
-        <translation>포트:</translation>
+        <translation>Hafen:</translation>
     </message>
     <message>
         <source>Portion Of Look-Ahead Cache Behind Playhead</source>
-        <translation>플레이헤드 뒤의 미리보기 캐시 부분</translation>
+        <translation>Teil des Look-Ahead-Cache hinter dem Abspielkopf</translation>
     </message>
     <message>
         <source>Position Magnifier At Top</source>
-        <translation>상단 위치 돋보기</translation>
+        <translation>Positionslupe oben</translation>
     </message>
     <message>
         <source>Position Timeline At Top</source>
-        <translation>위치 타임라인 상단</translation>
+        <translation>Zeitleiste oben positionieren</translation>
     </message>
     <message>
         <source>Pre-Cache LUT</source>
-        <translation>사전 캐시 LUT</translation>
+        <translation>Pre-Cache-LUT</translation>
     </message>
     <message>
         <source>Pre-Cache LUT...</source>
-        <translation>사전 캐시 LUT...</translation>
+        <translation>Pre-Cache LUT...</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>환경설정...</translation>
+        <translation>Einstellungen...</translation>
     </message>
     <message>
         <source>Prefetch Images</source>
-        <translation>이미지 프리페치</translation>
+        <translation>Bilder vorab abrufen</translation>
     </message>
     <message>
         <source>Premultiplied</source>
-        <translation>미리 곱해진</translation>
+        <translation>Vormultipliziert</translation>
     </message>
     <message>
         <source>Presentation Mode</source>
-        <translation>프레젠테이션 모드</translation>
+        <translation>Präsentationsmodus</translation>
     </message>
     <message>
         <source>Presentation Settings</source>
-        <translation>프레젠테이션 설정</translation>
+        <translation>Präsentationseinstellungen</translation>
     </message>
     <message>
         <source>Preserve Image Height in Pixel Aspect Scaling</source>
-        <translation>픽셀 비율 조정에서 이미지 높이 유지</translation>
+        <translation>Behalten Sie die Bildhöhe bei der Pixel-Seitenskalierung bei</translation>
     </message>
     <message>
         <source>Prev Marked Frame</source>
-        <translation>이전 표시된 프레임</translation>
+        <translation>Vorheriger markierter Rahmen</translation>
     </message>
     <message>
         <source>Prev Range From Marks/Boundaries</source>
-        <translation>이전 표시/경계의 범위</translation>
+        <translation>Vorheriger Bereich von Markierungen/Grenzen</translation>
     </message>
     <message>
         <source>Previous</source>
-        <translation>이전</translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Previous Annotated Frame</source>
-        <translation>이전 주석 프레임</translation>
+        <translation>Vorheriger kommentierter Frame</translation>
     </message>
     <message>
         <source>Previous Line</source>
-        <translation>이전라인</translation>
+        <translation>Vorherige Zeile</translation>
     </message>
     <message>
         <source>Previous Mark</source>
-        <translation>이전 마크</translation>
+        <translation>Vorherige Marke</translation>
     </message>
     <message>
         <source>Previous Word</source>
-        <translation>이전 단어</translation>
+        <translation>Vorheriges Wort</translation>
     </message>
     <message>
         <source>ProRes Only</source>
-        <translation>ProRes 전용</translation>
+        <translation>Nur ProRes</translation>
     </message>
     <message>
         <source>Process Info</source>
-        <translation>프로세스 정보</translation>
+        <translation>Prozessinformationen</translation>
     </message>
     <message>
         <source>Profile Manager</source>
-        <translation>프로필관리자</translation>
+        <translation>Profilmanager</translation>
     </message>
     <message>
         <source>Publish</source>
-        <translation>게시</translation>
+        <translation>Veröffentlichen</translation>
     </message>
     <message>
         <source>Publish Node Definition</source>
-        <translation>게시 노드 정의</translation>
+        <translation>Knotendefinition veröffentlichen</translation>
     </message>
     <message>
         <source>Pull Session</source>
-        <translation>풀 세션</translation>
+        <translation>Pull-Sitzung</translation>
     </message>
     <message>
         <source>Push Session To All Contacts</source>
-        <translation>모든 연락처에 세션 푸시</translation>
+        <translation>Push-Sitzung an alle Kontakte</translation>
     </message>
     <message>
         <source>QPushButton { background-color: rgb(0,0,0); }</source>
-        <translation>QPushButton { 배경색: rgb(0,0,0); }</translation>
+        <translation>QPushButton { Hintergrundfarbe: rgb(0,0,0); }</translation>
     </message>
     <message>
         <source>Quicktime Movie...</source>
-        <translation>퀵타임 영화...</translation>
+        <translation>Quicktime-Film...</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>그만둬</translation>
+        <translation>Beenden</translation>
     </message>
     <message>
         <source>Quit Sync</source>
-        <translation>동기화 종료</translation>
+        <translation>Synchronisierung beenden</translation>
     </message>
     <message>
         <source>Quit Wipes</source>
-        <translation>물티슈 그만둬</translation>
+        <translation>Wischtücher beenden</translation>
     </message>
     <message>
         <source>Quit Wipes (without resetting)</source>
-        <translation>Wipes 종료(재설정하지 않음)</translation>
+        <translation>Wipes beenden (ohne Zurücksetzen)</translation>
     </message>
     <message>
         <source>R00A</source>
@@ -5003,71 +5003,71 @@ Screen</source>
     </message>
     <message>
         <source>RMS Computed Refresh Rate:</source>
-        <translation>RMS 계산된 재생률:</translation>
+        <translation>RMS Berechnete Bildwiederholfrequenz:</translation>
     </message>
     <message>
         <source>RV Networking</source>
-        <translation>RV 네트워킹</translation>
+        <translation>RV-Netzwerke</translation>
     </message>
     <message>
         <source>RV Profile Viewer</source>
-        <translation>RV 프로필 뷰어</translation>
+        <translation>RV-Profilbetrachter</translation>
     </message>
     <message>
         <source>RV Reference Manual</source>
-        <translation>RV 참조 매뉴얼</translation>
+        <translation>RV-Referenzhandbuch</translation>
     </message>
     <message>
         <source>RV User's Manual</source>
-        <translation>RV 사용자 매뉴얼</translation>
+        <translation>RV-Benutzerhandbuch</translation>
     </message>
     <message>
         <source>RVIO Ready Session...</source>
-        <translation>RVIO 준비 세션...</translation>
+        <translation>RVIO-Ready-Sitzung...</translation>
     </message>
     <message>
         <source>RadialDistort</source>
-        <translation>방사형왜곡</translation>
+        <translation>RadialVerzerrung</translation>
     </message>
     <message>
         <source>Random</source>
-        <translation>임의</translation>
+        <translation>Zufällig</translation>
     </message>
     <message>
         <source>Range</source>
-        <translation>범위</translation>
+        <translation>Reichweite</translation>
     </message>
     <message>
         <source>Raw Event</source>
-        <translation>원시 이벤트</translation>
+        <translation>Raw-Ereignis</translation>
     </message>
     <message>
         <source>Raw File</source>
-        <translation>원시 파일</translation>
+        <translation>Rohdatei</translation>
     </message>
     <message>
         <source>Read 3-Channel Images into Planar (Single-Channel) Textures</source>
-        <translation>3채널 이미지를 평면(단일 채널) 텍스처로 읽어옵니다.</translation>
+        <translation>Lesen Sie 3-Kanal-Bilder in planare (Einkanal-)Texturen</translation>
     </message>
     <message>
         <source>Read Window</source>
-        <translation>읽기 창</translation>
+        <translation>Lesefenster</translation>
     </message>
     <message>
         <source>Read Window is Display Window</source>
-        <translation>읽기 창은 표시 창입니다.</translation>
+        <translation>Lesefenster ist Anzeigefenster</translation>
     </message>
     <message>
         <source>Reader Threads</source>
-        <translation>리더 스레드</translation>
+        <translation>Leserthreads</translation>
     </message>
     <message>
         <source>Reader/Decoder Threads</source>
-        <translation>리더/디코더 스레드</translation>
+        <translation>Reader/Decoder-Threads</translation>
     </message>
     <message>
         <source>Realtime</source>
-        <translation>실시간</translation>
+        <translation>Echtzeit</translation>
     </message>
     <message>
         <source>Rec. 2020</source>
@@ -5087,183 +5087,183 @@ Screen</source>
     </message>
     <message>
         <source>Red</source>
-        <translation>레드</translation>
+        <translation>Rot</translation>
     </message>
     <message>
         <source>Red Log</source>
-        <translation>레드 로그</translation>
+        <translation>Roter Baumstamm</translation>
     </message>
     <message>
         <source>Red Log Film</source>
-        <translation>레드로그필름</translation>
+        <translation>Red Log Film</translation>
     </message>
     <message>
         <source>Red X</source>
-        <translation>레드엑스</translation>
+        <translation>Rotes X</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>다시 실행</translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>새로고침</translation>
+        <translation>Aktualisieren</translation>
     </message>
     <message>
         <source>Region Cache</source>
-        <translation>지역 캐시</translation>
+        <translation>Region-Cache</translation>
     </message>
     <message>
         <source>Region Cache Max Size</source>
-        <translation>지역 캐시 최대 크기</translation>
+        <translation>Maximale Größe des Regionscache</translation>
     </message>
     <message>
         <source>Relative Eye Offset (%)</source>
-        <translation>상대 눈 오프셋(%)</translation>
+        <translation>Relativer Augenversatz (%)</translation>
     </message>
     <message>
         <source>Release All Cached Images</source>
-        <translation>캐시된 이미지 모두 해제</translation>
+        <translation>Alle zwischengespeicherten Bilder freigeben</translation>
     </message>
     <message>
         <source>Reload Changed Frames</source>
-        <translation>변경된 프레임 다시 로드</translation>
+        <translation>Geänderte Frames neu laden</translation>
     </message>
     <message>
         <source>Relocate Movie or Image Sequence...</source>
-        <translation>동영상 또는 이미지 시퀀스 재배치...</translation>
+        <translation>Film- oder Bildsequenz verschieben...</translation>
     </message>
     <message>
         <source>Remap Source Image Channels...</source>
-        <translation>소스 이미지 채널 다시 매핑...</translation>
+        <translation>Quellbildkanäle neu zuordnen...</translation>
     </message>
     <message>
         <source>Remote Sync Pointers</source>
-        <translation>원격 동기화 포인터</translation>
+        <translation>Remote-Synchronisierungszeiger</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>제거</translation>
+        <translation>Entfernen</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation>패키지 제거</translation>
+        <translation>Paket entfernen</translation>
     </message>
     <message>
         <source>Remove Packages ?\n\nThe following packages will be removed:\n</source>
-        <translation>패키지 제거?\n\n다음 패키지가 제거됩니다.\n</translation>
+        <translation>Pakete entfernen ?\n\nDie folgenden Pakete werden entfernt:\n</translation>
     </message>
     <message>
         <source>Renderer</source>
-        <translation>렌더러</translation>
+        <translation>Renderer</translation>
     </message>
     <message>
         <source>Rendering</source>
-        <translation>렌더링</translation>
+        <translation>Rendering</translation>
     </message>
     <message>
         <source>Replace</source>
-        <translation>바꾸기</translation>
+        <translation>Ersetzen</translation>
     </message>
     <message>
         <source>Replace Source Media...</source>
-        <translation>소스 미디어 교체...</translation>
+        <translation>Quellmedium ersetzen...</translation>
     </message>
     <message>
         <source>Report Issue on GitHub...</source>
-        <translation>GitHub에서 문제 신고...</translation>
+        <translation>Problem auf GitHub melden...</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>재설정</translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Color</source>
-        <translation>모든 색상 재설정</translation>
+        <translation>Alle Farben zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Manips</source>
-        <translation>모든 마닙 재설정</translation>
+        <translation>Alle Manips zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Offsets</source>
-        <translation>모든 오프셋 재설정</translation>
+        <translation>Alle Offsets zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Stereo Offsets</source>
-        <translation>모든 스테레오 오프셋 재설정</translation>
+        <translation>Alle Stereo-Offsets zurücksetzen</translation>
     </message>
     <message>
         <source>Reset All Wipes</source>
-        <translation>모든 물티슈 재설정</translation>
+        <translation>Alle Löschvorgänge zurücksetzen</translation>
     </message>
     <message>
         <source>Reset Automatically</source>
-        <translation>자동으로 재설정</translation>
+        <translation>Automatisch zurücksetzen</translation>
     </message>
     <message>
         <source>Reset MBPS</source>
-        <translation>MBPS 재설정</translation>
+        <translation>MBPS zurücksetzen</translation>
     </message>
     <message>
         <source>Reset Range</source>
-        <translation>범위 재설정</translation>
+        <translation>Bereich zurücksetzen</translation>
     </message>
     <message>
         <source>Reset Timing</source>
-        <translation>타이밍 재설정</translation>
+        <translation>Timing zurücksetzen</translation>
     </message>
     <message>
         <source>Reset to Defaults...</source>
-        <translation>기본값으로 재설정...</translation>
+        <translation>Auf Standardwerte zurücksetzen...</translation>
     </message>
     <message>
         <source>Restore Checkpoint</source>
-        <translation>체크포인트 복원</translation>
+        <translation>Prüfpunkt wiederherstellen</translation>
     </message>
     <message>
         <source>Retime</source>
-        <translation>재시간</translation>
+        <translation>Retime</translation>
     </message>
     <message>
         <source>Retime Inputs to Output FPS</source>
-        <translation>FPS 출력을 위한 입력 시간 재조정</translation>
+        <translation>Retime von Eingaben zu Ausgabe-FPS</translation>
     </message>
     <message>
         <source>Reverse</source>
-        <translation>역방향</translation>
+        <translation>Rückwärts</translation>
     </message>
     <message>
         <source>Revert</source>
-        <translation>되돌리기</translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Right Eye Only</source>
-        <translation>오른쪽 눈만</translation>
+        <translation>Nur rechtes Auge</translation>
     </message>
     <message>
         <source>Right Eye Only Offset (%)</source>
-        <translation>오른쪽 눈 전용 오프셋(%)</translation>
+        <translation>Offset nur für das rechte Auge (%)</translation>
     </message>
     <message>
         <source>Right Only</source>
-        <translation>오른쪽만</translation>
+        <translation>Nur richtig</translation>
     </message>
     <message>
         <source>Rotation</source>
-        <translation>회전</translation>
+        <translation>Rotation</translation>
     </message>
     <message>
         <source>Row</source>
-        <translation>행</translation>
+        <translation>Reihe</translation>
     </message>
     <message>
         <source>Run Render</source>
-        <translation>렌더링 실행</translation>
+        <translation>Run Render ausführen</translation>
     </message>
     <message>
         <source>SDK Version</source>
-        <translation>SDK 버전</translation>
+        <translation>SDK-Version</translation>
     </message>
     <message>
         <source>SMPTE 2084</source>
@@ -5271,839 +5271,839 @@ Screen</source>
     </message>
     <message>
         <source>Sample Color</source>
-        <translation>샘플 색상</translation>
+        <translation>Musterfarbe</translation>
     </message>
     <message>
         <source>Saturation</source>
-        <translation>포화</translation>
+        <translation>Sättigung</translation>
     </message>
     <message>
         <source>Save Current Settings as Defaults</source>
-        <translation>현재 설정을 기본값으로 저장</translation>
+        <translation>Aktuelle Einstellungen als Standardeinstellungen speichern</translation>
     </message>
     <message>
         <source>Save Session</source>
-        <translation>세션 저장</translation>
+        <translation>Sitzung speichern</translation>
     </message>
     <message>
         <source>Save Session As...</source>
-        <translation>다른 이름으로 세션 저장...</translation>
+        <translation>Sitzung speichern unter...</translation>
     </message>
     <message>
         <source>Save as Default Settings</source>
-        <translation>기본 설정으로 저장</translation>
+        <translation>Als Standardeinstellungen speichern</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation>규모</translation>
+        <translation>Skala</translation>
     </message>
     <message>
         <source>Scale with Resolution</source>
-        <translation>해상도에 따른 확장</translation>
+        <translation>Skalierung mit Auflösung</translation>
     </message>
     <message>
         <source>Scanline</source>
-        <translation>스캔라인</translation>
+        <translation>Scanline</translation>
     </message>
     <message>
         <source>Scrub Stops At In/Out</source>
-        <translation>스크럽이 인/아웃 시 중지됨</translation>
+        <translation>Schrubbstopps am Eingang/Ausgang</translation>
     </message>
     <message>
         <source>Scrubbing</source>
-        <translation>스크러빙</translation>
+        <translation>Schrubben</translation>
     </message>
     <message>
         <source>Scrubbing On By Default (Cache all Audio)</source>
-        <translation>기본적으로 스크러빙 켜짐(모든 오디오 캐시)</translation>
+        <translation>Scrubbing standardmäßig aktiviert (alle Audiodaten zwischenspeichern)</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>검색</translation>
+        <translation>Suchen</translation>
     </message>
     <message>
         <source>Select</source>
-        <translation>선택</translation>
+        <translation>Auswählen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>모두 선택</translation>
+        <translation>Alles auswählen</translation>
     </message>
     <message>
         <source>Select Background Pattern</source>
-        <translation>배경 패턴 선택</translation>
+        <translation>Wählen Sie ein Hintergrundmuster aus</translation>
     </message>
     <message>
         <source>Select Channel or Display Mode</source>
-        <translation>채널 또는 디스플레이 모드 선택</translation>
+        <translation>Wählen Sie Kanal oder Anzeigemodus</translation>
     </message>
     <message>
         <source>Select a View</source>
-        <translation>뷰 선택</translation>
+        <translation>Ansicht auswählen</translation>
     </message>
     <message>
         <source>Select and present to this device</source>
-        <translation>선택하여 이 장치에 표시</translation>
+        <translation>Auswählen und auf diesem Gerät präsentieren</translation>
     </message>
     <message>
         <source>Select background style</source>
-        <translation>배경 스타일 선택</translation>
+        <translation>Hintergrundstil auswählen</translation>
     </message>
     <message>
         <source>Select stereoscopic output style</source>
-        <translation>입체 출력 스타일 선택</translation>
+        <translation>Stereoskopischen Ausgabestil auswählen</translation>
     </message>
     <message>
         <source>Select the user interface language.</source>
-        <translation>사용자 인터페이스 언어를 선택합니다.</translation>
+        <translation>Wählen Sie die Sprache der Benutzeroberfläche aus.</translation>
     </message>
     <message>
         <source>Send</source>
-        <translation>보내기</translation>
+        <translation>Senden</translation>
     </message>
     <message>
         <source>Send Image</source>
-        <translation>이미지 전송</translation>
+        <translation>Bild senden</translation>
     </message>
     <message>
         <source>Sequence</source>
-        <translation>순서</translation>
+        <translation>Sequenz</translation>
     </message>
     <message>
         <source>Sequence/EDL</source>
-        <translation>시퀀스/EDL</translation>
+        <translation>Sequenz/EDL</translation>
     </message>
     <message>
         <source>Session</source>
-        <translation>세션</translation>
+        <translation>Sitzung</translation>
     </message>
     <message>
         <source>Session Manager</source>
-        <translation>세션 관리자</translation>
+        <translation>Sitzungsmanager</translation>
     </message>
     <message>
         <source>Session Manager Font Size</source>
-        <translation>세션 관리자 글꼴 크기</translation>
+        <translation>Schriftgröße des Sitzungsmanagers</translation>
     </message>
     <message>
         <source>Set Display LUT</source>
-        <translation>디스플레이 LUT 설정</translation>
+        <translation>Stellen Sie die Anzeige-LUT ein</translation>
     </message>
     <message>
         <source>Set File CDL</source>
-        <translation>파일 CDL 설정</translation>
+        <translation>Datei-CDL festlegen</translation>
     </message>
     <message>
         <source>Set In Frame to %s</source>
-        <translation>프레임 내를 %s로 설정</translation>
+        <translation>In Frame auf %s setzen</translation>
     </message>
     <message>
         <source>Set In Frame to Current</source>
-        <translation>프레임 내를 현재로 설정</translation>
+        <translation>Setzen Sie „In Frame“ auf „Aktuell“.</translation>
     </message>
     <message>
         <source>Set Out Frame to %s</source>
-        <translation>프레임을 %s로 설정</translation>
+        <translation>Out-Frame auf %s setzen</translation>
     </message>
     <message>
         <source>Set Out Frame to Current</source>
-        <translation>프레임을 현재로 설정</translation>
+        <translation>Stellen Sie Out Frame auf Current ein</translation>
     </message>
     <message>
         <source>Set Range From Marks/Boundaries</source>
-        <translation>마크/경계로부터 범위 설정</translation>
+        <translation>Bereich von Markierungen/Grenzen festlegen</translation>
     </message>
     <message>
         <source>Set Range In Point</source>
-        <translation>시작점 설정</translation>
+        <translation>Bereich-Startpunkt setzen</translation>
     </message>
     <message>
         <source>Set Range Offset</source>
-        <translation>범위 오프셋 설정</translation>
+        <translation>Bereichsoffset einstellen</translation>
     </message>
     <message>
         <source>Set Range Out Point</source>
-        <translation>끝점 설정</translation>
+        <translation>Bereich-Endpunkt setzen</translation>
     </message>
     <message>
         <source>Set Source Cut In ...</source>
-        <translation>소스 컷인 설정...</translation>
+        <translation>Quelleneinschnitt festlegen ...</translation>
     </message>
     <message>
         <source>Set Source Cut Out ...</source>
-        <translation>소스 컷아웃 설정...</translation>
+        <translation>Quellenausschnitt festlegen ...</translation>
     </message>
     <message>
         <source>Set Source FPS...</source>
-        <translation>소스 FPS 설정...</translation>
+        <translation>Quell-FPS festlegen...</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation>설정</translation>
+        <translation>Einstellungen</translation>
     </message>
     <message>
         <source>Show Brush</source>
-        <translation>쇼브러쉬</translation>
+        <translation>Pinsel anzeigen</translation>
     </message>
     <message>
         <source>Show Contacts Network Errors</source>
-        <translation>연락처 네트워크 오류 표시</translation>
+        <translation>Kontakte-Netzwerkfehler anzeigen</translation>
     </message>
     <message>
         <source>Show Contacts Pointers</source>
-        <translation>연락처 포인터 표시</translation>
+        <translation>Kontaktzeiger anzeigen</translation>
     </message>
     <message>
         <source>Show Controls</source>
-        <translation>컨트롤 표시</translation>
+        <translation>Steuerelemente anzeigen</translation>
     </message>
     <message>
         <source>Show Current Bindings</source>
-        <translation>현재 바인딩 표시</translation>
+        <translation>Aktuelle Bindungen anzeigen</translation>
     </message>
     <message>
         <source>Show Drawings</source>
-        <translation>그림 보기</translation>
+        <translation>Zeichnungen anzeigen</translation>
     </message>
     <message>
         <source>Show Environment</source>
-        <translation>쇼 환경</translation>
+        <translation>Umgebung anzeigen</translation>
     </message>
     <message>
         <source>Show Eval Timing</source>
-        <translation>평가 타이밍 표시</translation>
+        <translation>Bewertungszeitpunkt anzeigen</translation>
     </message>
     <message>
         <source>Show Filename</source>
-        <translation>파일 이름 표시</translation>
+        <translation>Dateinamen anzeigen</translation>
     </message>
     <message>
         <source>Show Frame Number</source>
-        <translation>프레임 번호 표시</translation>
+        <translation>Rahmennummer anzeigen</translation>
     </message>
     <message>
         <source>Show HUD</source>
-        <translation>HUD 표시</translation>
+        <translation>HUD anzeigen</translation>
     </message>
     <message>
         <source>Show Hidden Packages</source>
-        <translation>숨겨진 패키지 표시</translation>
+        <translation>Versteckte Pakete anzeigen</translation>
     </message>
     <message>
         <source>Show Ideal Frames</source>
-        <translation>이상적인 프레임 표시</translation>
+        <translation>Zeigen Sie ideale Rahmen</translation>
     </message>
     <message>
         <source>Show In/Out Frame Numbers</source>
-        <translation>인/아웃 프레임 번호 표시</translation>
+        <translation>Ein-/Ausgangsrahmennummern anzeigen</translation>
     </message>
     <message>
         <source>Show Out Of Range Colors</source>
-        <translation>범위를 벗어난 색상 표시</translation>
+        <translation>Farben außerhalb des Bereichs anzeigen</translation>
     </message>
     <message>
         <source>Show Play Controls</source>
-        <translation>재생 컨트롤 표시</translation>
+        <translation>Wiedergabesteuerung anzeigen</translation>
     </message>
     <message>
         <source>Show Play Direction Indicator</source>
-        <translation>재생 방향 표시 표시</translation>
+        <translation>Spielrichtungsanzeige anzeigen</translation>
     </message>
     <message>
         <source>Show Pointer Trails</source>
-        <translation>포인터 트레일 표시</translation>
+        <translation>Zeigerspuren anzeigen</translation>
     </message>
     <message>
         <source>Show Raw Profile Data...</source>
-        <translation>원시 프로필 데이터 표시...</translation>
+        <translation>Rohprofildaten anzeigen...</translation>
     </message>
     <message>
         <source>Show Source List</source>
-        <translation>소스 목록 표시</translation>
+        <translation>Quellenliste anzeigen</translation>
     </message>
     <message>
         <source>Show Source/Input at Frame</source>
-        <translation>프레임에 소스/입력 표시</translation>
+        <translation>Quelle/Eingabe im Frame anzeigen</translation>
     </message>
     <message>
         <source>Show Sync Messages</source>
-        <translation>동기화 메시지 표시</translation>
+        <translation>Synchronisierungsnachrichten anzeigen</translation>
     </message>
     <message>
         <source>Show Timeline</source>
-        <translation>타임라인 표시</translation>
+        <translation>Timeline anzeigen</translation>
     </message>
     <message>
         <source>Show UI Name</source>
-        <translation>UI 이름 표시</translation>
+        <translation>Benutzeroberflächennamen anzeigen</translation>
     </message>
     <message>
         <source>Show on</source>
-        <translation>쇼</translation>
+        <translation>Anzeigen am</translation>
     </message>
     <message>
         <source>Shutter Glasses</source>
-        <translation>셔터 안경</translation>
+        <translation>Shutter-Brille</translation>
     </message>
     <message>
         <source>Side-by-Side</source>
-        <translation>나란히</translation>
+        <translation>Seite an Seite</translation>
     </message>
     <message>
         <source>Side-by-Side Mirrored</source>
-        <translation>나란히 미러링됨</translation>
+        <translation>Nebeneinander gespiegelt</translation>
     </message>
     <message>
         <source>Simple EDL...</source>
-        <translation>간단한 EDL...</translation>
+        <translation>Einfache EDL...</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>크기</translation>
+        <translation>Größe</translation>
     </message>
     <message>
         <source>Size Determined from Input</source>
-        <translation>입력에서 결정된 크기</translation>
+        <translation>Größe aus Eingabe ermittelt</translation>
     </message>
     <message>
         <source>Size Determined from Inputs</source>
-        <translation>입력에 따라 결정되는 크기</translation>
+        <translation>Größe aus Eingaben ermittelt</translation>
     </message>
     <message>
         <source>Skip to end of sequence</source>
-        <translation>시퀀스 끝 위치로 이동</translation>
+        <translation>Zum Ende der Sequenz springen</translation>
     </message>
     <message>
         <source>Skip to start of sequence</source>
-        <translation>시퀀스 시작 위치로 이동</translation>
+        <translation>Zum Anfang der Sequenz springen</translation>
     </message>
     <message>
         <source>Slow Down by Factor...</source>
-        <translation>인자에 따라 속도를 늦추세요...</translation>
+        <translation>Faktor langsamer...</translation>
     </message>
     <message>
         <source>Small</source>
-        <translation>스몰</translation>
+        <translation>Klein</translation>
     </message>
     <message>
         <source>Smaller</source>
-        <translation>작게</translation>
+        <translation>Kleiner</translation>
     </message>
     <message>
         <source>Smaller Text</source>
-        <translation>작은 텍스트</translation>
+        <translation>Kleinerer Text</translation>
     </message>
     <message>
         <source>Smudge</source>
-        <translation>스머지</translation>
+        <translation>Verschmieren</translation>
     </message>
     <message>
         <source>Snapshot...</source>
-        <translation>스냅샷...</translation>
+        <translation>Schnappschuss...</translation>
     </message>
     <message>
         <source>Solid 18% Grey</source>
-        <translation>단색 18% 회색</translation>
+        <translation>Fest 18 % Grau</translation>
     </message>
     <message>
         <source>Solid 50% Grey</source>
-        <translation>단색 50% 회색</translation>
+        <translation>Fest 50 % Grau</translation>
     </message>
     <message>
         <source>Solid Black</source>
-        <translation>솔리드 블랙</translation>
+        <translation>Schwarz</translation>
     </message>
     <message>
         <source>Solid White</source>
-        <translation>솔리드 화이트</translation>
+        <translation>Festes Weiß</translation>
     </message>
     <message>
         <source>Some Files Cannot Be Removed</source>
-        <translation>일부 파일은 제거할 수 없습니다</translation>
+        <translation>Einige Dateien können nicht entfernt werden</translation>
     </message>
     <message>
         <source>Some Packages Depend on This One</source>
-        <translation>일부 패키지는 이 패키지에 의존합니다.</translation>
+        <translation>Einige Pakete hängen von diesem ab</translation>
     </message>
     <message>
         <source>Sort By:</source>
-        <translation>정렬 기준:</translation>
+        <translation>Sortieren nach:</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation>출처</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>Source Color</source>
-        <translation>소스 색상</translation>
+        <translation>Quellfarbe</translation>
     </message>
     <message>
         <source>Source Details</source>
-        <translation>소스 세부정보</translation>
+        <translation>Quellendetails</translation>
     </message>
     <message>
         <source>Source Frame Numbers</source>
-        <translation>소스 프레임 번호</translation>
+        <translation>Quellrahmennummern</translation>
     </message>
     <message>
         <source>Source Time Code Display</source>
-        <translation>소스 타임코드 표시</translation>
+        <translation>Quellzeitcode-Anzeige</translation>
     </message>
     <message>
         <source>Spacing</source>
-        <translation>간격</translation>
+        <translation>Abstand</translation>
     </message>
     <message>
         <source>Speed Up By Factor...</source>
-        <translation>요소별 속도 향상...</translation>
+        <translation>Beschleunigung um Faktor...</translation>
     </message>
     <message>
         <source>Square</source>
-        <translation>스퀘어</translation>
+        <translation>Quadrat</translation>
     </message>
     <message>
         <source>Stack</source>
-        <translation>스택</translation>
+        <translation>Stapel</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation>표준</translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>시작</translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Start Automatically During Sync</source>
-        <translation>동기화 중에 자동으로 시작</translation>
+        <translation>Automatisch während der Synchronisierung starten</translation>
     </message>
     <message>
         <source>Start Frame:</source>
-        <translation>시작 프레임:</translation>
+        <translation>Startrahmen:</translation>
     </message>
     <message>
         <source>Start Network</source>
-        <translation>네트워크 시작</translation>
+        <translation>Netzwerk starten</translation>
     </message>
     <message>
         <source>Start Time</source>
-        <translation>시작 시간</translation>
+        <translation>Startzeit</translation>
     </message>
     <message>
         <source>Start in Fullscreen Mode</source>
-        <translation>전체 화면으로 시작</translation>
+        <translation>Im Vollbildmodus starten</translation>
     </message>
     <message>
         <source>Startup Screen</source>
-        <translation>시작 화면</translation>
+        <translation>Startbildschirm</translation>
     </message>
     <message>
         <source>Static</source>
-        <translation>정적</translation>
+        <translation>Statisch</translation>
     </message>
     <message>
         <source>Statistics</source>
-        <translation>통계</translation>
+        <translation>Statistik</translation>
     </message>
     <message>
         <source>Status:</source>
-        <translation>상태:</translation>
+        <translation>Status:</translation>
     </message>
     <message>
         <source>Step Backward</source>
-        <translation>1프레임 뒤로</translation>
+        <translation>Einen Frame zurück</translation>
     </message>
     <message>
         <source>Step Forward</source>
-        <translation>1프레임 앞으로</translation>
+        <translation>Einen Frame vorwärts</translation>
     </message>
     <message>
         <source>Step Wraps At In/Out</source>
-        <translation>인/아웃 시 스텝 랩</translation>
+        <translation>Step Wraps beim Ein-/Aussteigen</translation>
     </message>
     <message>
         <source>Step back one frame</source>
-        <translation>1프레임 뒤로</translation>
+        <translation>Einen Frame zurück</translation>
     </message>
     <message>
         <source>Step forward one frame</source>
-        <translation>1프레임 앞으로</translation>
+        <translation>Einen Frame vorwärts</translation>
     </message>
     <message>
         <source>Stereo</source>
-        <translation>스테레오</translation>
+        <translation>Stereo</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>정지</translation>
+        <translation>Stopp</translation>
     </message>
     <message>
         <source>Swap Eyes</source>
-        <translation>눈 바꾸기</translation>
+        <translation>Augen tauschen</translation>
     </message>
     <message>
         <source>Swap Eyes for Stereo to this Device</source>
-        <translation>이 장치의 스테레오용 눈을 바꾸세요</translation>
+        <translation>Tauschen Sie die Augen gegen Stereo bei diesem Gerät</translation>
     </message>
     <message>
         <source>Swap Scanlines for Stereo</source>
-        <translation>스테레오용 스캔라인 교환</translation>
+        <translation>Tausch der Scanlines gegen Stereo</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation>스위치</translation>
+        <translation>Schalter</translation>
     </message>
     <message>
         <source>Switch to desktop display (disable presentation mode)</source>
-        <translation>데스크톱 디스플레이로 전환(프레젠테이션 모드 비활성화)</translation>
+        <translation>Zur Desktop-Anzeige wechseln (Präsentationsmodus deaktivieren)</translation>
     </message>
     <message>
         <source>Switch to next View</source>
-        <translation>다음 뷰로 전환</translation>
+        <translation>Zur nächsten Ansicht wechseln</translation>
     </message>
     <message>
         <source>Switch to previous View</source>
-        <translation>이전 뷰로 전환</translation>
+        <translation>Zur vorherigen Ansicht wechseln</translation>
     </message>
     <message>
         <source>Sync</source>
-        <translation>동기화</translation>
+        <translation>Sync</translation>
     </message>
     <message>
         <source>Sync GUI In/Out to Source</source>
-        <translation>소스에 대한 GUI 입/출력 동기화</translation>
+        <translation>GUI-Ein-/Ausgänge mit der Quelle synchronisieren</translation>
     </message>
     <message>
         <source>Sync GUI With Source Cut In/Out</source>
-        <translation>소스 컷인/아웃으로 GUI 동기화</translation>
+        <translation>GUI mit Ein-/Ausschneiden der Quelle synchronisieren</translation>
     </message>
     <message>
         <source>Sync Method</source>
-        <translation>동기화 방법</translation>
+        <translation>Sync-Methode</translation>
     </message>
     <message>
         <source>Sync Source</source>
-        <translation>동기화 소스</translation>
+        <translation>Quelle synchronisieren</translation>
     </message>
     <message>
         <source>Sync With Connected RVs</source>
-        <translation>연결된 RV와 동기화</translation>
+        <translation>Sync mit angeschlossenen Wohnmobilen</translation>
     </message>
     <message>
         <source>Sync with Contacts' Contacts</source>
-        <translation>연락처의 연락처와 동기화</translation>
+        <translation>Mit den Kontakten von Kontakten synchronisieren</translation>
     </message>
     <message>
         <source>System Default</source>
-        <translation>시스템 기본값</translation>
+        <translation>Systemstandard</translation>
     </message>
     <message>
         <source>TARGA (TGA)</source>
-        <translation>타르가(TGA)</translation>
+        <translation>TARGA (TGA)</translation>
     </message>
     <message>
         <source>TIFF</source>
-        <translation>티프</translation>
+        <translation>TIFF</translation>
     </message>
     <message>
         <source>Tab 1</source>
-        <translation>탭 1</translation>
+        <translation>Tab 1</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation>대상</translation>
+        <translation>Ziel</translation>
     </message>
     <message>
         <source>Template</source>
-        <translation>템플릿</translation>
+        <translation>Vorlage</translation>
     </message>
     <message>
         <source>Text</source>
-        <translation>텍스트</translation>
+        <translation>Text</translation>
     </message>
     <message>
         <source>The total latency can be used to offset audio output.</source>
-        <translation>총 대기 시간은 오디오 출력을 상쇄하는 데 사용될 수 있습니다.</translation>
+        <translation>Die Gesamtlatenz kann zum Versetzen der Audioausgabe genutzt werden.</translation>
     </message>
     <message>
         <source>The user interface language has been changed. Please restart OpenUTV for all changes to take full effect.</source>
-        <translation>사용자 인터페이스 언어가 변경되었습니다. 모든 변경 사항을 적용하려면 OpenUTV를 다시 시작하십시오.</translation>
+        <translation>Die Sprache der Benutzeroberfläche wurde geändert. Bitte starten Sie OpenUTV neu, damit alle Änderungen wirksam werden.</translation>
     </message>
     <message>
         <source>Tile</source>
-        <translation>타일</translation>
+        <translation>Kachel</translation>
     </message>
     <message>
         <source>Tile Selected Playblasts</source>
-        <translation>타일 선택 플레이블래스트</translation>
+        <translation>Kacheln Sie ausgewählte Playblasts</translation>
     </message>
     <message>
         <source>Tile Selected Views</source>
-        <translation>선택한 뷰 타일링</translation>
+        <translation>Ausgewählte Ansichten kacheln</translation>
     </message>
     <message>
         <source>Timeline</source>
-        <translation>타임라인</translation>
+        <translation>Zeitleiste</translation>
     </message>
     <message>
         <source>Timeline Magnifier</source>
-        <translation>타임라인 돋보기</translation>
+        <translation>Timeline-Lupe</translation>
     </message>
     <message>
         <source>Timeline Magnitifer</source>
-        <translation>타임라인 매그니티퍼</translation>
+        <translation>Timeline Magnitifer</translation>
     </message>
     <message>
         <source>Toggle Annotation tools</source>
-        <translation>주석 도구 전환</translation>
+        <translation>Anmerkungswerkzeuge umschalten</translation>
     </message>
     <message>
         <source>Toggle Fullscreen</source>
-        <translation>전체 화면 전환</translation>
+        <translation>Vollbild umschalten</translation>
     </message>
     <message>
         <source>Toggle Ghost Mode</source>
-        <translation>고스트 모드 전환</translation>
+        <translation>Ghost-Modus umschalten</translation>
     </message>
     <message>
         <source>Toggle Hold Mode</source>
-        <translation>홀드 모드 전환</translation>
+        <translation>Haltemodus umschalten</translation>
     </message>
     <message>
         <source>Toggle Image Info</source>
-        <translation>이미지 정보 전환</translation>
+        <translation>Bildinformationen umschalten</translation>
     </message>
     <message>
         <source>Toggle RV Networking Dialog</source>
-        <translation>RV 네트워킹 대화상자 전환</translation>
+        <translation>RV-Netzwerkdialog umschalten</translation>
     </message>
     <message>
         <source>Toggle Session Manager</source>
-        <translation>세션 관리자 전환</translation>
+        <translation>Sitzungsmanager umschalten</translation>
     </message>
     <message>
         <source>Toggle Timeline</source>
-        <translation>타임라인 전환</translation>
+        <translation>Timeline umschalten</translation>
     </message>
     <message>
         <source>Toggle Timeline Magnifier</source>
-        <translation>타임라인 돋보기 전환</translation>
+        <translation>Timeline-Lupe umschalten</translation>
     </message>
     <message>
         <source>Toggle full-screen mode</source>
-        <translation>전체 화면 모드 전환</translation>
+        <translation>Vollbildmodus umschalten</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation>도구</translation>
+        <translation>Werkzeuge</translation>
     </message>
     <message>
         <source>Top View Toolbar</source>
-        <translation>상위 보기 도구 모음</translation>
+        <translation>Symbolleiste der Draufsicht</translation>
     </message>
     <message>
         <source>Top of Buffer</source>
-        <translation>버퍼 상단</translation>
+        <translation>Oberseite des Puffers</translation>
     </message>
     <message>
         <source>Topmost</source>
-        <translation>최상위</translation>
+        <translation>Ganz oben</translation>
     </message>
     <message>
         <source>Total Latency</source>
-        <translation>총 지연 시간</translation>
+        <translation>Gesamtlatenz</translation>
     </message>
     <message>
         <source>Total Time:</source>
-        <translation>총 시간:</translation>
+        <translation>Gesamtzeit:</translation>
     </message>
     <message>
         <source>Transition</source>
-        <translation>전환</translation>
+        <translation>Übergang</translation>
     </message>
     <message>
         <source>Treat Stylus Events as Mouse Events</source>
-        <translation>스타일러스 이벤트를 마우스 이벤트로 처리</translation>
+        <translation>Behandeln Sie Stylus-Ereignisse als Mausereignisse</translation>
     </message>
     <message>
         <source>Turn Off Audio</source>
-        <translation>오디오 끄기</translation>
+        <translation>Audio ausschalten</translation>
     </message>
     <message>
         <source>Type Name</source>
-        <translation>유형 이름</translation>
+        <translation>Name eingeben</translation>
     </message>
     <message>
         <source>Unable to Add Packages</source>
-        <translation>패키지를 추가할 수 없습니다.</translation>
+        <translation>Pakete können nicht hinzugefügt werden</translation>
     </message>
     <message>
         <source>Unbuffered</source>
-        <translation>버퍼되지 않음</translation>
+        <translation>Ungepuffert</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation>실행 취소</translation>
+        <translation>Rückgängig</translation>
     </message>
     <message>
         <source>Union of Data and Display Windows</source>
-        <translation>데이터창과 디스플레이창의 결합</translation>
+        <translation>Vereinigung von Daten- und Anzeigefenstern</translation>
     </message>
     <message>
         <source>Unique Color For Each Tool</source>
-        <translation>각 도구의 고유한 색상</translation>
+        <translation>Einzigartige Farbe für jedes Werkzeug</translation>
     </message>
     <message>
         <source>Unloadable Package Dependencies</source>
-        <translation>언로드 가능한 패키지 종속성</translation>
+        <translation>Unladbare Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Unpremultiplied</source>
-        <translation>미리 곱셈되지 않음</translation>
+        <translation>Unvormultipliziert</translation>
     </message>
     <message>
         <source>Update View During Render</source>
-        <translation>렌더링 중 뷰 업데이트</translation>
+        <translation>Ansicht während des Renderns aktualisieren</translation>
     </message>
     <message>
         <source>Upgrade via Homebrew</source>
-        <translation>Homebrew를 통해 업그레이드</translation>
+        <translation>Upgrade über Homebrew</translation>
     </message>
     <message>
         <source>Use Alternate Representation For Pre-G80 Nvidia GPUs (-exrNoOneChannel)</source>
-        <translation>G80 이전 Nvidia GPU에 대체 표현 사용(-exrNoOneChannel)</translation>
+        <translation>Verwenden Sie eine alternative Darstellung für Nvidia-GPUs vor G80 (-exrNoOneChannel)</translation>
     </message>
     <message>
         <source>Use Crash Reporter</source>
-        <translation>크래시 리포터 사용</translation>
+        <translation>Verwenden Sie Crash Reporter</translation>
     </message>
     <message>
         <source>Use File Primaries</source>
-        <translation>파일 기본 사용</translation>
+        <translation>Verwenden Sie Dateiprimärdateien</translation>
     </message>
     <message>
         <source>Use Native File Dialog (Explorer / Finder)</source>
-        <translation>기본 파일 대화 상자 사용(탐색기/Finder)</translation>
+        <translation>Dialogfeld „Native Datei verwenden“ (Explorer/Finder)</translation>
     </message>
     <message>
         <source>Use Source Cut Info</source>
-        <translation>소스컷 정보 활용</translation>
+        <translation>Quellenschnittinformationen verwenden</translation>
     </message>
     <message>
         <source>Use Source Cut Information</source>
-        <translation>소스컷 정보 활용</translation>
+        <translation>Verwenden Sie Quellschnittinformationen</translation>
     </message>
     <message>
         <source>Use Strict Frame Ranges</source>
-        <translation>엄격한 프레임 범위 사용</translation>
+        <translation>Verwenden Sie strenge Rahmenbereiche</translation>
     </message>
     <message>
         <source>Use as Presentation Device</source>
-        <translation>프레젠테이션 장치로 사용</translation>
+        <translation>Verwendung als Präsentationsgerät</translation>
     </message>
     <message>
         <source>Use operating system native file dialogs (Finder on macOS, Explorer on Windows) instead of the Qt dialog.</source>
-        <translation>Qt 대화 상자 대신 운영 체제 기본 파일 대화 상자(macOS에서는 Finder, Windows에서는 Explorer)를 사용하십시오.</translation>
+        <translation>Verwenden Sie systemeigene Dateidialoge (Finder unter macOS, Explorer unter Windows) anstelle des Qt-Dialogs.</translation>
     </message>
     <message>
         <source>User Visible</source>
-        <translation>사용자 표시</translation>
+        <translation>Benutzer sichtbar</translation>
     </message>
     <message>
         <source>Utilities</source>
-        <translation>유틸리티</translation>
+        <translation>Dienstprogramme</translation>
     </message>
     <message>
         <source>Version</source>
-        <translation>버전</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation>동영상</translation>
+        <translation>Video</translation>
     </message>
     <message>
         <source>Video Format</source>
-        <translation>비디오 형식</translation>
+        <translation>Videoformat</translation>
     </message>
     <message>
         <source>Video Range</source>
-        <translation>비디오 범위</translation>
+        <translation>Videobereich</translation>
     </message>
     <message>
         <source>Video Sync</source>
-        <translation>비디오 동기화</translation>
+        <translation>Videosynchronisierung</translation>
     </message>
     <message>
         <source>Video device latency is the sum of the latency computed by the video device (the known latency), an external fixed latency in seconds, and an additional external latency in frames relative to the current video format frame rate.</source>
-        <translation>비디오 장치 대기 시간은 비디오 장치에서 계산한 대기 시간(알려진 대기 시간), 외부 고정 대기 시간(초), 현재 비디오 형식 프레임 속도에 따른 프레임 단위의 추가 외부 대기 시간의 합입니다.</translation>
+        <translation>Die Latenz des Videogeräts ist die Summe der vom Videogerät berechneten Latenz (die bekannte Latenz), einer externen festen Latenz in Sekunden und einer zusätzlichen externen Latenz in Bildern relativ zur aktuellen Bildrate des Videoformats.</translation>
     </message>
     <message>
         <source>View</source>
-        <translation>보기</translation>
+        <translation>Ansicht</translation>
     </message>
     <message>
         <source>View As</source>
-        <translation>다음으로 보기</translation>
+        <translation>Anzeigen als</translation>
     </message>
     <message>
         <source>View Latest Playblast</source>
-        <translation>최신 플레이블라스트 보기</translation>
+        <translation>Neueste Playblast anzeigen</translation>
     </message>
     <message>
         <source>Viper Log</source>
-        <translation>바이퍼 로그</translation>
+        <translation>Viper-Protokoll</translation>
     </message>
     <message>
         <source>Visual Offset...</source>
-        <translation>시각적 오프셋...</translation>
+        <translation>Visueller Offset...</translation>
     </message>
     <message>
         <source>Visual Scale...</source>
-        <translation>비주얼 스케일...</translation>
+        <translation>Visuelle Skala...</translation>
     </message>
     <message>
         <source>Volume</source>
-        <translation>볼륨</translation>
+        <translation>Volumen</translation>
     </message>
     <message>
         <source>White</source>
-        <translation>화이트</translation>
+        <translation>Weiß</translation>
     </message>
     <message>
         <source>Widen to Full Range</source>
-        <translation>전체 범위로 확대</translation>
+        <translation>Auf vollen Bereich erweitern</translation>
     </message>
     <message>
         <source>Window</source>
-        <translation>창</translation>
+        <translation>Fenster</translation>
     </message>
     <message>
         <source>Wipe Selected Playblasts</source>
-        <translation>선택한 플레이블래스트 삭제</translation>
+        <translation>Ausgewählte Playblasts löschen</translation>
     </message>
     <message>
         <source>Wipe Selected Views</source>
-        <translation>선택한 보기 지우기</translation>
+        <translation>Ausgewählte Ansichten löschen</translation>
     </message>
     <message>
         <source>Wipes</source>
-        <translation>물티슈</translation>
+        <translation>Tücher</translation>
     </message>
     <message>
         <source>Wrap Long Fields</source>
-        <translation>긴 필드 래핑</translation>
+        <translation>Lange Felder umbrechen</translation>
     </message>
     <message>
         <source>X Tiles</source>
-        <translation>X 타일</translation>
+        <translation>X Kacheln</translation>
     </message>
     <message>
         <source>Y Tiles</source>
-        <translation>Y 타일</translation>
+        <translation>Y Kacheln</translation>
     </message>
     <message>
         <source>Your Name</source>
-        <translation>이름</translation>
+        <translation>Dein Name</translation>
     </message>
     <message>
         <source>Z-A</source>
@@ -6111,63 +6111,63 @@ Screen</source>
     </message>
     <message>
         <source>and</source>
-        <translation>그리고</translation>
+        <translation>und</translation>
     </message>
     <message>
         <source>annotation</source>
-        <translation>주석</translation>
+        <translation>Anmerkung</translation>
     </message>
     <message>
         <source>boo</source>
-        <translation>부</translation>
+        <translation>buh</translation>
     </message>
     <message>
         <source>channel</source>
-        <translation>채널</translation>
+        <translation>Kanal</translation>
     </message>
     <message>
         <source>clap</source>
-        <translation>박수</translation>
+        <translation>klatschen</translation>
     </message>
     <message>
         <source>clap2</source>
-        <translation>박수2</translation>
+        <translation>klatschen2</translation>
     </message>
     <message>
         <source>foo</source>
-        <translation>푸</translation>
+        <translation>foo</translation>
     </message>
     <message>
         <source>frames</source>
-        <translation>프레임</translation>
+        <translation>Frames</translation>
     </message>
     <message>
         <source>hello</source>
-        <translation>안녕하세요</translation>
+        <translation>Hallo</translation>
     </message>
     <message>
         <source>interior</source>
-        <translation>인테리어</translation>
+        <translation>Innenraum</translation>
     </message>
     <message>
         <source>interior_menu</source>
-        <translation>인테리어_메뉴</translation>
+        <translation>interior_menu</translation>
     </message>
     <message>
         <source>layer</source>
-        <translation>레이어</translation>
+        <translation>Schicht</translation>
     </message>
     <message>
         <source>left</source>
-        <translation>왼쪽</translation>
+        <translation>links</translation>
     </message>
     <message>
         <source>left_menu</source>
-        <translation>왼쪽_메뉴</translation>
+        <translation>left_menu</translation>
     </message>
     <message>
         <source>margin-top: -3px; margin-left: -2px;</source>
-        <translation>margin-top: -3px; 여백 왼쪽: -2px;</translation>
+        <translation>margin-top: -3px; Rand links: -2px;</translation>
     </message>
     <message>
         <source>margin-top: 2px;</source>
@@ -6179,39 +6179,39 @@ Screen</source>
     </message>
     <message>
         <source>max</source>
-        <translation>최대</translation>
+        <translation>max</translation>
     </message>
     <message>
         <source>milliseconds</source>
-        <translation>밀리초</translation>
+        <translation>Millisekunden</translation>
     </message>
     <message>
         <source>one</source>
-        <translation>하나</translation>
+        <translation>eins</translation>
     </message>
     <message>
         <source>output LUT to shell</source>
-        <translation>쉘로 LUT 출력</translation>
+        <translation>Geben Sie die LUT an die Shell aus</translation>
     </message>
     <message>
         <source>palette</source>
-        <translation>팔레트</translation>
+        <translation>Palette</translation>
     </message>
     <message>
         <source>play()</source>
-        <translation>플레이()</translation>
+        <translation>play()</translation>
     </message>
     <message>
         <source>remote-eval</source>
-        <translation>원격 평가</translation>
+        <translation>remote-eval</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>맞다</translation>
+        <translation>richtig</translation>
     </message>
     <message>
         <source>rvload</source>
-        <translation>rv로드</translation>
+        <translation>rvload</translation>
     </message>
     <message>
         <source>sRGB</source>
@@ -6219,39 +6219,39 @@ Screen</source>
     </message>
     <message>
         <source>samples</source>
-        <translation>샘플</translation>
+        <translation>Proben</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation>초</translation>
+        <translation>Sekunden</translation>
     </message>
     <message>
         <source>sep1</source>
-        <translation>9월1</translation>
+        <translation>1. September</translation>
     </message>
     <message>
         <source>sep2</source>
-        <translation>9월2</translation>
+        <translation>Sep2</translation>
     </message>
     <message>
         <source>sit1</source>
-        <translation>앉아1</translation>
+        <translation>sit1</translation>
     </message>
     <message>
         <source>sit2</source>
-        <translation>앉아2</translation>
+        <translation>sit2</translation>
     </message>
     <message>
         <source>sit3</source>
-        <translation>앉아3</translation>
+        <translation>sit3</translation>
     </message>
     <message>
         <source>sit4</source>
-        <translation>앉아4</translation>
+        <translation>sit4</translation>
     </message>
     <message>
         <source>solo</source>
-        <translation>솔로</translation>
+        <translation>solo</translation>
     </message>
     <message>
         <source>solo_menu</source>
@@ -6259,326 +6259,326 @@ Screen</source>
     </message>
     <message>
         <source>stand</source>
-        <translation>스탠드</translation>
+        <translation>stand</translation>
     </message>
     <message>
         <source>standClap</source>
-        <translation>스탠드박수</translation>
+        <translation>standClap</translation>
     </message>
     <message>
         <source>true</source>
-        <translation>사실</translation>
+        <translation>wahr</translation>
     </message>
     <message>
         <source>undefined</source>
-        <translation>정의되지 않음</translation>
+        <translation>undefiniert</translation>
     </message>
     <message>
         <source>unknown</source>
-        <translation>알 수 없음</translation>
+        <translation>unbekannt</translation>
     </message>
     <message>
         <source>view</source>
-        <translation>보기</translation>
+        <translation>Ansicht</translation>
     </message>
     <message>
         <source>yo</source>
-        <translation>요</translation>
+        <translation>Jahre</translation>
     </message>
 </context>
 <context>
     <name>RvApplication</name>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Configure RV for this computer</source>
-        <translation>이 컴퓨터에 맞게 RV 구성</translation>
+        <translation>RV für diesen Computer konfigurieren</translation>
     </message>
     <message>
         <source>Disable Presentation Mode</source>
-        <translation>프레젠테이션 모드 비활성화</translation>
+        <translation>Präsentationsmodus deaktivieren</translation>
     </message>
     <message>
         <source>Network...</source>
-        <translation>네트워크...</translation>
+        <translation>Netzwerk...</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation>알겠습니다</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Preferences...</source>
-        <translation>환경설정...</translation>
+        <translation>Einstellungen...</translation>
     </message>
     <message>
         <source>sep1</source>
-        <translation>9월1</translation>
+        <translation>1. September</translation>
     </message>
     <message>
         <source>sep2</source>
-        <translation>9월2</translation>
+        <translation>Sep2</translation>
     </message>
 </context>
 <context>
     <name>RvBottomViewToolBar</name>
     <message>
         <source>Audio control</source>
-        <translation>오디오 제어</translation>
+        <translation>Audiosteuerung</translation>
     </message>
     <message>
         <source>Ghost</source>
-        <translation>고스트</translation>
+        <translation>Geisterbild</translation>
     </message>
     <message>
         <source>Hold</source>
-        <translation>고정</translation>
+        <translation>Halten</translation>
     </message>
     <message>
         <source>Next Mark</source>
-        <translation>다음 마크</translation>
+        <translation>Nächstes Mark</translation>
     </message>
     <message>
         <source>Play Backward</source>
-        <translation>뒤로 재생</translation>
+        <translation>Rückwärts abspielen</translation>
     </message>
     <message>
         <source>Play Forward</source>
-        <translation>앞으로 플레이</translation>
+        <translation>Vorwärts abspielen</translation>
     </message>
     <message>
         <source>Play backwards</source>
-        <translation>뒤로 재생</translation>
+        <translation>Rückwärts abspielen</translation>
     </message>
     <message>
         <source>Play forwards</source>
-        <translation>앞으로 재생</translation>
+        <translation>Vorwärts abspielen</translation>
     </message>
     <message>
         <source>Playback Mode</source>
-        <translation>재생 모드</translation>
+        <translation>Wiedergabemodus</translation>
     </message>
     <message>
         <source>Previous Mark</source>
-        <translation>이전 마크</translation>
+        <translation>Vorherige Marke</translation>
     </message>
     <message>
         <source>Skip to end of sequence</source>
-        <translation>시퀀스 끝 위치로 이동</translation>
+        <translation>Zum Ende der Sequenz springen</translation>
     </message>
     <message>
         <source>Skip to start of sequence</source>
-        <translation>시퀀스 시작 위치로 이동</translation>
+        <translation>Zum Anfang der Sequenz springen</translation>
     </message>
     <message>
         <source>Step Backward</source>
-        <translation>1프레임 뒤로</translation>
+        <translation>Einen Frame zurück</translation>
     </message>
     <message>
         <source>Step Forward</source>
-        <translation>1프레임 앞으로</translation>
+        <translation>Einen Frame vorwärts</translation>
     </message>
     <message>
         <source>Step back one frame</source>
-        <translation>1프레임 뒤로</translation>
+        <translation>Einen Frame zurück</translation>
     </message>
     <message>
         <source>Step forward one frame</source>
-        <translation>1프레임 앞으로</translation>
+        <translation>Einen Frame vorwärts</translation>
     </message>
     <message>
         <source>Toggle Annotation tools</source>
-        <translation>주석 도구 전환</translation>
+        <translation>Anmerkungswerkzeuge umschalten</translation>
     </message>
     <message>
         <source>Toggle Ghost Mode</source>
-        <translation>고스트 모드 전환</translation>
+        <translation>Ghost-Modus umschalten</translation>
     </message>
     <message>
         <source>Toggle Hold Mode</source>
-        <translation>홀드 모드 전환</translation>
+        <translation>Haltemodus umschalten</translation>
     </message>
     <message>
         <source>Toggle Image Info</source>
-        <translation>이미지 정보 전환</translation>
+        <translation>Bildinformationen umschalten</translation>
     </message>
     <message>
         <source>Toggle RV Networking Dialog</source>
-        <translation>RV 네트워킹 대화상자 전환</translation>
+        <translation>RV-Netzwerkdialog umschalten</translation>
     </message>
     <message>
         <source>Toggle Session Manager</source>
-        <translation>세션 관리자 전환</translation>
+        <translation>Sitzungsmanager umschalten</translation>
     </message>
     <message>
         <source>Toggle Timeline</source>
-        <translation>타임라인 전환</translation>
+        <translation>Timeline umschalten</translation>
     </message>
     <message>
         <source>Toggle Timeline Magnifier</source>
-        <translation>타임라인 돋보기 전환</translation>
+        <translation>Timeline-Lupe umschalten</translation>
     </message>
 </context>
 <context>
     <name>RvConsoleDialog</name>
     <message>
         <source>Any Output</source>
-        <translation>모든 출력</translation>
+        <translation>Beliebige Ausgabe</translation>
     </message>
     <message>
         <source>Bigger</source>
-        <translation>더 크다</translation>
+        <translation>Größer</translation>
     </message>
     <message>
         <source>Clear Display</source>
-        <translation>표시 지우기</translation>
+        <translation>Klare Anzeige</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation>닫기</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation>오류</translation>
+        <translation>Fehler</translation>
     </message>
     <message>
         <source>Error or Warning</source>
-        <translation>오류 또는 경고</translation>
+        <translation>Fehler oder Warnung</translation>
     </message>
     <message>
         <source>Error, Warning, or Info</source>
-        <translation>오류, 경고 또는 정보</translation>
+        <translation>Fehler, Warnung oder Info</translation>
     </message>
     <message>
         <source>Manually</source>
-        <translation>수동으로</translation>
+        <translation>Manuell</translation>
     </message>
     <message>
         <source>Show on</source>
-        <translation>쇼</translation>
+        <translation>Anzeigen am</translation>
     </message>
     <message>
         <source>Smaller</source>
-        <translation>작게</translation>
+        <translation>Kleiner</translation>
     </message>
 </context>
 <context>
     <name>RvDocument</name>
     <message>
         <source>Audio Device is Currently Unavailable</source>
-        <translation>오디오 장치를 현재 사용할 수 없습니다</translation>
+        <translation>Das Audiogerät ist derzeit nicht verfügbar</translation>
     </message>
     <message>
         <source>Audio Failure</source>
-        <translation>오디오 오류</translation>
+        <translation>Audiofehler</translation>
     </message>
     <message>
         <source>Change Preferences Manually</source>
-        <translation>수동으로 환경설정 변경</translation>
+        <translation>Einstellungen manuell ändern</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation>진단</translation>
+        <translation>Diagnose</translation>
     </message>
     <message>
         <source>Display Configuration is Invalid</source>
-        <translation>디스플레이 구성이 잘못되었습니다.</translation>
+        <translation>Anzeigekonfiguration ist ungültig</translation>
     </message>
     <message>
         <source>Keep Trying</source>
-        <translation>계속 노력하세요</translation>
+        <translation>Versuchen Sie es weiter</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation>알겠습니다</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>Reset Automatically</source>
-        <translation>자동으로 재설정</translation>
+        <translation>Automatisch zurücksetzen</translation>
     </message>
     <message>
         <source>Turn Off Audio</source>
-        <translation>오디오 끄기</translation>
+        <translation>Audio ausschalten</translation>
     </message>
 </context>
 <context>
     <name>RvFileDialog</name>
     <message>
         <source>Auto-Refresh</source>
-        <translation>자동 새로 고침</translation>
+        <translation>Automatische Aktualisierung</translation>
     </message>
     <message>
         <source>Column View</source>
-        <translation>컬럼뷰</translation>
+        <translation>Spaltenansicht</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Extension</source>
-        <translation>확장</translation>
+        <translation>Erweiterung</translation>
     </message>
     <message>
         <source>File Details View</source>
-        <translation>파일 세부정보 보기</translation>
+        <translation>Dateidetails-Ansicht</translation>
     </message>
     <message>
         <source>File Type:</source>
-        <translation>파일 유형:</translation>
+        <translation>Dateityp:</translation>
     </message>
     <message>
         <source>Media Details View</source>
-        <translation>미디어 세부정보 보기</translation>
+        <translation>Mediendetails anzeigen</translation>
     </message>
     <message>
         <source>Modification Time</source>
-        <translation>수정 시간</translation>
+        <translation>Änderungszeit</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation>이름</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>New Folder</source>
-        <translation>새 폴더</translation>
+        <translation>Neuer Ordner</translation>
     </message>
     <message>
         <source>Next</source>
-        <translation>다음</translation>
+        <translation>Weiter</translation>
     </message>
     <message>
         <source>Previous</source>
-        <translation>이전</translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation>새로고침</translation>
+        <translation>Aktualisieren</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation>검색</translation>
+        <translation>Suchen</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>크기</translation>
+        <translation>Größe</translation>
     </message>
     <message>
         <source>Sort By:</source>
-        <translation>정렬 기준:</translation>
+        <translation>Sortieren nach:</translation>
     </message>
     <message>
         <source>left</source>
-        <translation>왼쪽</translation>
+        <translation>links</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>맞다</translation>
+        <translation>richtig</translation>
     </message>
     <message>
         <source>solo_menu</source>
@@ -6589,26 +6589,26 @@ Screen</source>
     <name>RvGraph</name>
     <message>
         <source>Default Sequence</source>
-        <translation>기본 시퀀스</translation>
+        <translation>Standardsequenz</translation>
     </message>
 </context>
 <context>
     <name>RvNetworkConnect</name>
     <message>
         <source>Contact Name:</source>
-        <translation>연락처 이름:</translation>
+        <translation>Kontaktname:</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Hostname:</source>
-        <translation>호스트 이름:</translation>
+        <translation>Hostname:</translation>
     </message>
     <message>
         <source>Port:</source>
-        <translation>포트:</translation>
+        <translation>Hafen:</translation>
     </message>
 </context>
 <context>
@@ -6623,258 +6623,258 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Always Allow New Contacts</source>
-        <translation>항상 새 연락처 허용</translation>
+        <translation>Neue Kontakte immer zulassen</translation>
     </message>
     <message>
         <source>Ask Permission for New Contacts</source>
-        <translation>새 연락처에 대한 권한 요청</translation>
+        <translation>Bitten Sie um Erlaubnis für neue Kontakte</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation>구성</translation>
+        <translation>Konfiguration</translation>
     </message>
     <message>
         <source>Connect...</source>
-        <translation>연결...</translation>
+        <translation>Verbinden...</translation>
     </message>
     <message>
         <source>Connections</source>
-        <translation>연결</translation>
+        <translation>Verbindungen</translation>
     </message>
     <message>
         <source>Contacts</source>
-        <translation>연락처</translation>
+        <translation>Kontakte</translation>
     </message>
     <message>
         <source>Deny New Contacts</source>
-        <translation>새 연락처 거부</translation>
+        <translation>Neue Kontakte ablehnen</translation>
     </message>
     <message>
         <source>Port</source>
-        <translation>포트</translation>
+        <translation>Hafen</translation>
     </message>
     <message>
         <source>RV Networking</source>
-        <translation>RV 네트워킹</translation>
+        <translation>RV-Netzwerke</translation>
     </message>
     <message>
         <source>Reset to Defaults...</source>
-        <translation>기본값으로 재설정...</translation>
+        <translation>Auf Standardwerte zurücksetzen...</translation>
     </message>
     <message>
         <source>Start Network</source>
-        <translation>네트워크 시작</translation>
+        <translation>Netzwerk starten</translation>
     </message>
     <message>
         <source>Status:</source>
-        <translation>상태:</translation>
+        <translation>Status:</translation>
     </message>
     <message>
         <source>Your Name</source>
-        <translation>이름</translation>
+        <translation>Dein Name</translation>
     </message>
 </context>
 <context>
     <name>RvPreferences</name>
     <message>
         <source>(Requires Restart)</source>
-        <translation>(다시 시작해야 함)</translation>
+        <translation>(Neustart erforderlich)</translation>
     </message>
     <message>
         <source>10 Bit Display Bit Depth</source>
-        <translation>10비트 디스플레이 비트 깊이</translation>
+        <translation>10 Bit Anzeigebittiefe</translation>
     </message>
     <message>
         <source>10 Bits/Channel</source>
-        <translation>10 비트/채널</translation>
+        <translation>10 Bits/Kanal</translation>
     </message>
     <message>
         <source>10 Bits/Channel Reversed</source>
-        <translation>10 비트/채널 반전됨</translation>
+        <translation>10 Bits/Kanal umgekehrt</translation>
     </message>
     <message>
         <source>16 Bits/Channel</source>
-        <translation>16비트/채널</translation>
+        <translation>16 Bits/Kanal</translation>
     </message>
     <message>
         <source>16 Bits/Channel + Alpha</source>
-        <translation>16비트/채널 + 알파</translation>
+        <translation>16 Bits/Kanal + Alpha</translation>
     </message>
     <message>
         <source>16 Bits/Channel Planar</source>
-        <translation>16비트/채널 평면</translation>
+        <translation>16 Bits/Kanalplanar</translation>
     </message>
     <message>
         <source>32 Bits/Channel</source>
-        <translation>32 비트/채널</translation>
+        <translation>32 Bits/Kanal</translation>
     </message>
     <message>
         <source>4K/8K Transport</source>
-        <translation>4K/8K 전송</translation>
+        <translation>4K/8K-Transport</translation>
     </message>
     <message>
         <source>8 Bits/Channel</source>
-        <translation>8 비트/채널</translation>
+        <translation>8 Bits/Kanal</translation>
     </message>
     <message>
         <source>8 Bits/Channel + Alpha</source>
-        <translation>8 비트/채널 + 알파</translation>
+        <translation>8 Bits/Kanal + Alpha</translation>
     </message>
     <message>
         <source>8 Bits/Channel Planar</source>
-        <translation>8 비트/채널 평면</translation>
+        <translation>8 Bits/Kanalplanar</translation>
     </message>
     <message>
         <source>Abort</source>
-        <translation>중단</translation>
+        <translation>Abbruch</translation>
     </message>
     <message>
         <source>Abort Install</source>
-        <translation>설치 중단</translation>
+        <translation>Installation abbrechen</translation>
     </message>
     <message>
         <source>Activate Network on Startup</source>
-        <translation>시작 시 네트워크 활성화</translation>
+        <translation>Netzwerk beim Start aktivieren</translation>
     </message>
     <message>
         <source>Add Packages...</source>
-        <translation>패키지 추가...</translation>
+        <translation>Pakete hinzufügen...</translation>
     </message>
     <message>
         <source>Additional Options</source>
-        <translation>추가옵션</translation>
+        <translation>Zusätzliche Optionen</translation>
     </message>
     <message>
         <source>Allow Floating Point</source>
-        <translation>부동 소수점 허용</translation>
+        <translation>Gleitkomma zulassen</translation>
     </message>
     <message>
         <source>Always Read as RGBA</source>
-        <translation>항상 RGBA로 읽음</translation>
+        <translation>Immer als RGBA lesen</translation>
     </message>
     <message>
         <source>Always Read as RGBA (for non-multipart files only)</source>
-        <translation>항상 RGBA로 읽기(비멀티파트 파일에만 해당)</translation>
+        <translation>Immer als RGBA lesen (nur für nicht mehrteilige Dateien)</translation>
     </message>
     <message>
         <source>Anaglyph</source>
-        <translation>애너글리프</translation>
+        <translation>Anaglyphe</translation>
     </message>
     <message>
         <source>Apple Client Storage</source>
-        <translation>Apple 클라이언트 스토리지</translation>
+        <translation>Apple Client-Speicher</translation>
     </message>
     <message>
         <source>Area</source>
-        <translation>면적</translation>
+        <translation>Bereich</translation>
     </message>
     <message>
         <source>Asyn I/O Chunk Size in Bytes</source>
-        <translation>Asyn I/O 청크 크기(바이트)</translation>
+        <translation>Asyn-E/A-Chunk-Größe in Bytes</translation>
     </message>
     <message>
         <source>Async I/O Chunk Size in Bytes</source>
-        <translation>Async I/O 청크 크기(바이트)</translation>
+        <translation>Async-E/A-Chunk-Größe in Bytes</translation>
     </message>
     <message>
         <source>Asynchronous Buffered</source>
-        <translation>비동기 버퍼링</translation>
+        <translation>Asynchron gepuffert</translation>
     </message>
     <message>
         <source>Asynchronous Unbuffered</source>
-        <translation>비동기 버퍼링되지 않음</translation>
+        <translation>Asynchron ungepuffert</translation>
     </message>
     <message>
         <source>Audio</source>
-        <translation>오디오</translation>
+        <translation>Audio</translation>
     </message>
     <message>
         <source>Audio Format</source>
-        <translation>오디오 형식</translation>
+        <translation>Audioformat</translation>
     </message>
     <message>
         <source>Auto (All Supported Codecs)</source>
-        <translation>Auto(지원되는 모든 코덱)</translation>
+        <translation>Auto (Alle unterstützten Codecs)</translation>
     </message>
     <message>
         <source>Auto (Smart Media Detection)</source>
-        <translation>자동(스마트 미디어 감지)</translation>
+        <translation>Auto (Smart Media-Erkennung)</translation>
     </message>
     <message>
         <source>Auto-Retime Mismatched FPS Media</source>
-        <translation>일치하지 않는 FPS 미디어 자동 리타임</translation>
+        <translation>Medien mit abweichender FPS automatisch anpassen</translation>
     </message>
     <message>
         <source>Automatic Threads</source>
-        <translation>자동 스레드</translation>
+        <translation>Automatische Threads</translation>
     </message>
     <message>
         <source>Automatically Setup ACES (ACEScg → sRGB)</source>
-        <translation>ACES 자동 설정(ACEScg → sRGB)</translation>
+        <translation>Automatisches Einrichten von ACES (ACEScg → sRGB)</translation>
     </message>
     <message>
         <source>Bicubic</source>
-        <translation>바이큐빅</translation>
+        <translation>Bikubisch</translation>
     </message>
     <message>
         <source>Buffered</source>
-        <translation>버퍼링됨</translation>
+        <translation>Gepuffert</translation>
     </message>
     <message>
         <source>Cache Frames Outside In/Out Region</source>
-        <translation>In/Out 영역 외부의 캐시 프레임</translation>
+        <translation>Cache-Frames außerhalb der In/Out-Region</translation>
     </message>
     <message>
         <source>Cache Packet Size</source>
-        <translation>캐시 패킷 크기</translation>
+        <translation>Cache-Paketgröße</translation>
     </message>
     <message>
         <source>Caching</source>
-        <translation>캐싱</translation>
+        <translation>Caching</translation>
     </message>
     <message>
         <source>Checker</source>
-        <translation>체커</translation>
+        <translation>Checker</translation>
     </message>
     <message>
         <source>Cineon</source>
-        <translation>시네온</translation>
+        <translation>Cineon</translation>
     </message>
     <message>
         <source>Click in View to Play</source>
-        <translation>뷰를 클릭하여 재생</translation>
+        <translation>Zum Abspielen in Ansicht klicken</translation>
     </message>
     <message>
         <source>Configure Latency...</source>
-        <translation>대기 시간 구성...</translation>
+        <translation>Latenz konfigurieren...</translation>
     </message>
     <message>
         <source>Confirm Removal</source>
-        <translation>삭제 확인</translation>
+        <translation>Entfernung bestätigen</translation>
     </message>
     <message>
         <source>Context Dependant</source>
-        <translation>상황에 따라 다름</translation>
+        <translation>Kontextabhängig</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation>계속</translation>
+        <translation>Weiter</translation>
     </message>
     <message>
         <source>Could not copy package files.\n\nDetails:\n</source>
-        <translation>패키지 파일을 복사할 수 없습니다.\n\n세부 정보:\n</translation>
+        <translation>Paketdateien konnten nicht kopiert werden.\n\nDetails:\n</translation>
     </message>
     <message>
         <source>Could not remove some of the package files.\n\nDetails:\n</source>
-        <translation>일부 패키지 파일을 제거할 수 없습니다.\n\n세부정보:\n</translation>
+        <translation>Einige der Paketdateien konnten nicht entfernt werden.\n\nDetails:\n</translation>
     </message>
     <message>
         <source>Cross-Hatch</source>
-        <translation>크로스해치</translation>
+        <translation>Kreuzschraffur</translation>
     </message>
     <message>
         <source>DLP Stereo</source>
-        <translation>DLP 스테레오</translation>
+        <translation>DLP-Stereo</translation>
     </message>
     <message>
         <source>DPX</source>
@@ -6882,99 +6882,99 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Data Window</source>
-        <translation>데이터 창</translation>
+        <translation>Datenfenster</translation>
     </message>
     <message>
         <source>Data Window Inside of Display Window</source>
-        <translation>디스플레이 창 내부의 데이터 창</translation>
+        <translation>Datenfenster im Anzeigefenster</translation>
     </message>
     <message>
         <source>Default Background Pattern</source>
-        <translation>기본 배경 패턴</translation>
+        <translation>Standard-Hintergrundmuster</translation>
     </message>
     <message>
         <source>Default Cache Mode</source>
-        <translation>기본 캐시 모드</translation>
+        <translation>Standard-Cache-Modus</translation>
     </message>
     <message>
         <source>Default FPS</source>
-        <translation>기본 FPS</translation>
+        <translation>Standard-FPS</translation>
     </message>
     <message>
         <source>Default Hardware Texture Filter</source>
-        <translation>기본 하드웨어 텍스처 필터</translation>
+        <translation>Standard-Hardware-Texturfilter</translation>
     </message>
     <message>
         <source>Default Playback Mode</source>
-        <translation>기본 재생 모드</translation>
+        <translation>Standard-Wiedergabemodus</translation>
     </message>
     <message>
         <source>Default Software Resampling Method</source>
-        <translation>기본 소프트웨어 리샘플링 방법</translation>
+        <translation>Standard-Software-Resampling-Methode</translation>
     </message>
     <message>
         <source>Default Stereo Mode</source>
-        <translation>기본 스테레오 모드</translation>
+        <translation>Standard-Stereomodus</translation>
     </message>
     <message>
         <source>Desktop Aware</source>
-        <translation>데스크톱 인식</translation>
+        <translation>Desktop-orientiert</translation>
     </message>
     <message>
         <source>Device Latency</source>
-        <translation>장치 지연 시간</translation>
+        <translation>Gerätelatenz</translation>
     </message>
     <message>
         <source>Device Packet Size</source>
-        <translation>장치 패킷 크기</translation>
+        <translation>Gerätepaketgröße</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Disabled (Software CPU)</source>
-        <translation>비활성화됨(소프트웨어 CPU)</translation>
+        <translation>Deaktiviert (Software-CPU)</translation>
     </message>
     <message>
         <source>Display Output Format</source>
-        <translation>디스플레이 출력 형식</translation>
+        <translation>Ausgabeformat anzeigen</translation>
     </message>
     <message>
         <source>Display Window</source>
-        <translation>디스플레이 창</translation>
+        <translation>Anzeigefenster</translation>
     </message>
     <message>
         <source>English</source>
-        <translation>영어</translation>
+        <translation>Englisch</translation>
     </message>
     <message>
         <source>Existing Package Files</source>
-        <translation>기존 패키지 파일</translation>
+        <translation>Vorhandene Paketdateien</translation>
     </message>
     <message>
         <source>Fast Loopback+PreRoll Audio on Device Open (Platform Audio only)</source>
-        <translation>Fast 루프백+열린 장치의 프리롤 오디오(플랫폼 오디오만 해당)</translation>
+        <translation>Schnelles Loopback+PreRoll-Audio beim Öffnen des Geräts (nur Plattform-Audio)</translation>
     </message>
     <message>
         <source>File Write Failed</source>
-        <translation>파일 쓰기 실패</translation>
+        <translation>Schreiben der Datei fehlgeschlagen</translation>
     </message>
     <message>
         <source>File cannot be written:\n</source>
-        <translation>파일을 쓸 수 없습니다.\n</translation>
+        <translation>Datei kann nicht geschrieben werden:\n</translation>
     </message>
     <message>
         <source>Fit Window to First Media Loaded</source>
-        <translation>처음 로드된 미디어에 창 맞추기</translation>
+        <translation>Fenster an erstes geladenes Medium anpassen</translation>
     </message>
     <message>
         <source>Font Size</source>
-        <translation>글꼴 크기</translation>
+        <translation>Schriftgröße</translation>
     </message>
     <message>
         <source>Formats</source>
-        <translation>형식</translation>
+        <translation>Formate</translation>
     </message>
     <message>
         <source>GB</source>
@@ -6982,35 +6982,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>GLSL 3D LUT Interpolation</source>
-        <translation>GLSL 3D LUT 보간</translation>
+        <translation>GLSL 3D LUT-Interpolation</translation>
     </message>
     <message>
         <source>General</source>
-        <translation>일반</translation>
+        <translation>Allgemein</translation>
     </message>
     <message>
         <source>Global Audio Offset</source>
-        <translation>글로벌 오디오 오프셋</translation>
+        <translation>Globaler Audio-Offset</translation>
     </message>
     <message>
         <source>Guess Channel Inheritance</source>
-        <translation>Guess 채널 상속</translation>
+        <translation>Kanalvererbung erraten</translation>
     </message>
     <message>
         <source>Handle URLS in Current Session</source>
-        <translation>현재 세션에서 URL 처리</translation>
+        <translation>URLs in der aktuellen Sitzung verarbeiten</translation>
     </message>
     <message>
         <source>Hardware Audio and Video Synchronization</source>
-        <translation>하드웨어 오디오 및 비디오 동기화</translation>
+        <translation>Hardware-Audio- und Videosynchronisation</translation>
     </message>
     <message>
         <source>Hardware Video Decoding</source>
-        <translation>하드웨어 비디오 디코딩</translation>
+        <translation>Hardware-Videodekodierung</translation>
     </message>
     <message>
         <source>Hide Menu Bar by Default</source>
-        <translation>기본적으로 메뉴 바 숨기기</translation>
+        <translation>Menüleiste standardmäßig ausblenden</translation>
     </message>
     <message>
         <source>Hz</source>
@@ -7018,15 +7018,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>I/O Method</source>
-        <translation>I/O 방법</translation>
+        <translation>I/O-Methode</translation>
     </message>
     <message>
         <source>Incorporate Video Latency into Audio Offset</source>
-        <translation>비디오 지연 시간을 오디오 오프셋에 통합</translation>
+        <translation>Integrieren Sie die Videolatenz in den Audio-Offset</translation>
     </message>
     <message>
         <source>Initial Volume</source>
-        <translation>초기 볼륨</translation>
+        <translation>Anfangslautstärke</translation>
     </message>
     <message>
         <source>JPEG</source>
@@ -7034,383 +7034,383 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Keep Audio Device Open When Not Playing</source>
-        <translation>재생하지 않을 때 오디오 장치를 열어두세요</translation>
+        <translation>Halten Sie das Audiogerät geöffnet, wenn es nicht abgespielt wird</translation>
     </message>
     <message>
         <source>LCD Scanline</source>
-        <translation>LCD 스캔라인</translation>
+        <translation>LCD-Scanline</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation>언어</translation>
+        <translation>Sprache</translation>
     </message>
     <message>
         <source>Language Changed</source>
-        <translation>언어가 변경되었습니다</translation>
+        <translation>Sprache geändert</translation>
     </message>
     <message>
         <source>Left Only</source>
-        <translation>왼쪽만</translation>
+        <translation>Nur links</translation>
     </message>
     <message>
         <source>Linear</source>
-        <translation>선형</translation>
+        <translation>Linear</translation>
     </message>
     <message>
         <source>Loadable Package Dependencies</source>
-        <translation>로드 가능한 패키지 종속성</translation>
+        <translation>Ladbare Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Look-Ahead Cache</source>
-        <translation>예측 캐시</translation>
+        <translation>Look-Ahead-Cache</translation>
     </message>
     <message>
         <source>Look-Ahead Cache Size</source>
-        <translation>예측 캐시 크기</translation>
+        <translation>Look-Ahead-Cache-Größe</translation>
     </message>
     <message>
         <source>Max Asyn Requests</source>
-        <translation>Max Asyn 요청</translation>
+        <translation>Max Asyn-Anfragen</translation>
     </message>
     <message>
         <source>Max Async Requests</source>
-        <translation>최대 비동기 요청</translation>
+        <translation>Maximale asynchrone Anfragen</translation>
     </message>
     <message>
         <source>Max Look-Ahead Wait Time</source>
-        <translation>최대 예측 대기 시간</translation>
+        <translation>Maximale Look-Ahead-Wartezeit</translation>
     </message>
     <message>
         <source>Maximum Image Bit Depth</source>
-        <translation>최대 이미지 비트 깊이</translation>
+        <translation>Maximale Bildbittiefe</translation>
     </message>
     <message>
         <source>Memory Map</source>
-        <translation>메모리 맵</translation>
+        <translation>Speicherkarte</translation>
     </message>
     <message>
         <source>Min/Max Buffer Size in Seconds</source>
-        <translation>최소/최대 버퍼 크기(초)</translation>
+        <translation>Min./Max. Puffergröße in Sekunden</translation>
     </message>
     <message>
         <source>Missing Package Dependencies</source>
-        <translation>패키지 종속성 누락</translation>
+        <translation>Fehlende Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Mouse Scrub in View</source>
-        <translation>보기에서 마우스 스크럽</translation>
+        <translation>Maus-Scrub in der Ansicht</translation>
     </message>
     <message>
         <source>Multithread GPU Uploads</source>
-        <translation>멀티스레드 GPU 업로드</translation>
+        <translation>Multithread-GPU-Uploads</translation>
     </message>
     <message>
         <source>Nearest Neighbor</source>
-        <translation>가장 가까운 이웃</translation>
+        <translation>Nächster Nachbar</translation>
     </message>
     <message>
         <source>Network Hostname/Address</source>
-        <translation>네트워크 호스트 이름/주소</translation>
+        <translation>Netzwerk-Hostname/-Adresse</translation>
     </message>
     <message>
         <source>No Caching</source>
-        <translation>캐싱 없음</translation>
+        <translation>Kein Caching</translation>
     </message>
     <message>
         <source>No Stereo</source>
-        <translation>스테레오 없음</translation>
+        <translation>Keine Stereoanlage</translation>
     </message>
     <message>
         <source>No package installation locations were found.</source>
-        <translation>패키지 설치 위치를 찾을 수 없습니다.</translation>
+        <translation>Es wurden keine Paketinstallationsorte gefunden.</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation>알겠습니다</translation>
+        <translation>Ok</translation>
     </message>
     <message>
         <source>OpenEXR</source>
-        <translation>오픈EXR</translation>
+        <translation>OpenEXR</translation>
     </message>
     <message>
         <source>OpenGL 32 RGB+A 10+2 bits/ch</source>
-        <translation>OpenGL 32 RGB+A 10+2비트/채널</translation>
+        <translation>OpenGL 32 RGB+A 10+2 Bit/Kanal</translation>
     </message>
     <message>
         <source>OpenGL 32 RGBA 8 bits/ch</source>
-        <translation>OpenGL 32 RGBA 8비트/채널</translation>
+        <translation>OpenGL 32 RGBA 8 Bit/Kanal</translation>
     </message>
     <message>
         <source>OpenGL Default Format</source>
-        <translation>OpenGL 기본 형식</translation>
+        <translation>OpenGL-Standardformat</translation>
     </message>
     <message>
         <source>OpenGL Hardware</source>
-        <translation>OpenGL 하드웨어</translation>
+        <translation>OpenGL-Hardware</translation>
     </message>
     <message>
         <source>Output Audio to this Device</source>
-        <translation>이 장치로 오디오 출력</translation>
+        <translation>Audio auf dieses Gerät ausgeben</translation>
     </message>
     <message>
         <source>Output Data Format</source>
-        <translation>출력 데이터 형식</translation>
+        <translation>Ausgabedatenformat</translation>
     </message>
     <message>
         <source>Output Device</source>
-        <translation>출력 장치</translation>
+        <translation>Ausgabegerät</translation>
     </message>
     <message>
         <source>Output Format and Rate</source>
-        <translation>출력 형식 및 속도</translation>
+        <translation>Ausgabeformat und -rate</translation>
     </message>
     <message>
         <source>Output Module</source>
-        <translation>출력 모듈</translation>
+        <translation>Ausgabemodul</translation>
     </message>
     <message>
         <source>Output Video Format</source>
-        <translation>출력 비디오 형식</translation>
+        <translation>Ausgabevideoformat</translation>
     </message>
     <message>
         <source>Overwrite</source>
-        <translation>덮어쓰기</translation>
+        <translation>Überschreiben</translation>
     </message>
     <message>
         <source>Package Failed to Copy</source>
-        <translation>패키지를 복사하지 못했습니다.</translation>
+        <translation>Paket konnte nicht kopiert werden</translation>
     </message>
     <message>
         <source>Package is currently installed</source>
-        <translation>패키지가 현재 설치되어 있습니다.</translation>
+        <translation>Paket ist derzeit installiert</translation>
     </message>
     <message>
         <source>Packages</source>
-        <translation>패키지</translation>
+        <translation>Pakete</translation>
     </message>
     <message>
         <source>Play All Frames</source>
-        <translation>모든 프레임 재생</translation>
+        <translation>Alle Frames abspielen</translation>
     </message>
     <message>
         <source>Play on Start Up</source>
-        <translation>시작 시 재생</translation>
+        <translation>Beim Start abspielen</translation>
     </message>
     <message>
         <source>Portion Of Look-Ahead Cache Behind Playhead</source>
-        <translation>플레이헤드 뒤의 미리보기 캐시 부분</translation>
+        <translation>Teil des Look-Ahead-Cache hinter dem Abspielkopf</translation>
     </message>
     <message>
         <source>Prefetch Images</source>
-        <translation>이미지 프리페치</translation>
+        <translation>Bilder vorab abrufen</translation>
     </message>
     <message>
         <source>ProRes Only</source>
-        <translation>ProRes 전용</translation>
+        <translation>Nur ProRes</translation>
     </message>
     <message>
         <source>Read 3-Channel Images into Planar (Single-Channel) Textures</source>
-        <translation>3채널 이미지를 평면(단일 채널) 텍스처로 읽어옵니다.</translation>
+        <translation>Lesen Sie 3-Kanal-Bilder in planare (Einkanal-)Texturen</translation>
     </message>
     <message>
         <source>Read Window</source>
-        <translation>읽기 창</translation>
+        <translation>Lesefenster</translation>
     </message>
     <message>
         <source>Read Window is Display Window</source>
-        <translation>읽기 창은 표시 창입니다.</translation>
+        <translation>Lesefenster ist Anzeigefenster</translation>
     </message>
     <message>
         <source>Reader Threads</source>
-        <translation>리더 스레드</translation>
+        <translation>Leserthreads</translation>
     </message>
     <message>
         <source>Reader/Decoder Threads</source>
-        <translation>리더/디코더 스레드</translation>
+        <translation>Reader/Decoder-Threads</translation>
     </message>
     <message>
         <source>Realtime</source>
-        <translation>실시간</translation>
+        <translation>Echtzeit</translation>
     </message>
     <message>
         <source>Region Cache</source>
-        <translation>지역 캐시</translation>
+        <translation>Region-Cache</translation>
     </message>
     <message>
         <source>Region Cache Max Size</source>
-        <translation>지역 캐시 최대 크기</translation>
+        <translation>Maximale Größe des Regionscache</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation>제거</translation>
+        <translation>Entfernen</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation>패키지 제거</translation>
+        <translation>Paket entfernen</translation>
     </message>
     <message>
         <source>Remove Packages ?\n\nThe following packages will be removed:\n</source>
-        <translation>패키지 제거?\n\n다음 패키지가 제거됩니다.\n</translation>
+        <translation>Pakete entfernen ?\n\nDie folgenden Pakete werden entfernt:\n</translation>
     </message>
     <message>
         <source>Rendering</source>
-        <translation>렌더링</translation>
+        <translation>Rendering</translation>
     </message>
     <message>
         <source>Right Only</source>
-        <translation>오른쪽만</translation>
+        <translation>Nur richtig</translation>
     </message>
     <message>
         <source>SDK Version</source>
-        <translation>SDK 버전</translation>
+        <translation>SDK-Version</translation>
     </message>
     <message>
         <source>Scrubbing On By Default (Cache all Audio)</source>
-        <translation>기본적으로 스크러빙 켜짐(모든 오디오 캐시)</translation>
+        <translation>Scrubbing standardmäßig aktiviert (alle Audiodaten zwischenspeichern)</translation>
     </message>
     <message>
         <source>Select the user interface language.</source>
-        <translation>사용자 인터페이스 언어를 선택합니다.</translation>
+        <translation>Wählen Sie die Sprache der Benutzeroberfläche aus.</translation>
     </message>
     <message>
         <source>Session Manager Font Size</source>
-        <translation>세션 관리자 글꼴 크기</translation>
+        <translation>Schriftgröße des Sitzungsmanagers</translation>
     </message>
     <message>
         <source>Show Hidden Packages</source>
-        <translation>숨겨진 패키지 표시</translation>
+        <translation>Versteckte Pakete anzeigen</translation>
     </message>
     <message>
         <source>Side-by-Side</source>
-        <translation>나란히</translation>
+        <translation>Seite an Seite</translation>
     </message>
     <message>
         <source>Side-by-Side Mirrored</source>
-        <translation>나란히 미러링됨</translation>
+        <translation>Nebeneinander gespiegelt</translation>
     </message>
     <message>
         <source>Solid 18% Grey</source>
-        <translation>단색 18% 회색</translation>
+        <translation>Fest 18 % Grau</translation>
     </message>
     <message>
         <source>Solid 50% Grey</source>
-        <translation>단색 50% 회색</translation>
+        <translation>Fest 50 % Grau</translation>
     </message>
     <message>
         <source>Solid Black</source>
-        <translation>솔리드 블랙</translation>
+        <translation>Schwarz</translation>
     </message>
     <message>
         <source>Solid White</source>
-        <translation>솔리드 화이트</translation>
+        <translation>Festes Weiß</translation>
     </message>
     <message>
         <source>Some Files Cannot Be Removed</source>
-        <translation>일부 파일은 제거할 수 없습니다</translation>
+        <translation>Einige Dateien können nicht entfernt werden</translation>
     </message>
     <message>
         <source>Some Packages Depend on This One</source>
-        <translation>일부 패키지는 이 패키지에 의존합니다.</translation>
+        <translation>Einige Pakete hängen von diesem ab</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation>표준</translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Start in Fullscreen Mode</source>
-        <translation>전체 화면으로 시작</translation>
+        <translation>Im Vollbildmodus starten</translation>
     </message>
     <message>
         <source>Startup Screen</source>
-        <translation>시작 화면</translation>
+        <translation>Startbildschirm</translation>
     </message>
     <message>
         <source>Swap Eyes for Stereo to this Device</source>
-        <translation>이 장치의 스테레오용 눈을 바꾸세요</translation>
+        <translation>Tauschen Sie die Augen gegen Stereo bei diesem Gerät</translation>
     </message>
     <message>
         <source>Swap Scanlines for Stereo</source>
-        <translation>스테레오용 스캔라인 교환</translation>
+        <translation>Tausch der Scanlines gegen Stereo</translation>
     </message>
     <message>
         <source>Sync Method</source>
-        <translation>동기화 방법</translation>
+        <translation>Sync-Methode</translation>
     </message>
     <message>
         <source>Sync Source</source>
-        <translation>동기화 소스</translation>
+        <translation>Quelle synchronisieren</translation>
     </message>
     <message>
         <source>System Default</source>
-        <translation>시스템 기본값</translation>
+        <translation>Systemstandard</translation>
     </message>
     <message>
         <source>TARGA (TGA)</source>
-        <translation>타르가(TGA)</translation>
+        <translation>TARGA (TGA)</translation>
     </message>
     <message>
         <source>TIFF</source>
-        <translation>티프</translation>
+        <translation>TIFF</translation>
     </message>
     <message>
         <source>The user interface language has been changed. Please restart OpenUTV for all changes to take full effect.</source>
-        <translation>사용자 인터페이스 언어가 변경되었습니다. 모든 변경 사항을 적용하려면 OpenUTV를 다시 시작하십시오.</translation>
+        <translation>Die Sprache der Benutzeroberfläche wurde geändert. Bitte starten Sie OpenUTV neu, damit alle Änderungen wirksam werden.</translation>
     </message>
     <message>
         <source>Treat Stylus Events as Mouse Events</source>
-        <translation>스타일러스 이벤트를 마우스 이벤트로 처리</translation>
+        <translation>Behandeln Sie Stylus-Ereignisse als Mausereignisse</translation>
     </message>
     <message>
         <source>Unable to Add Packages</source>
-        <translation>패키지를 추가할 수 없습니다.</translation>
+        <translation>Pakete können nicht hinzugefügt werden</translation>
     </message>
     <message>
         <source>Unbuffered</source>
-        <translation>버퍼되지 않음</translation>
+        <translation>Ungepuffert</translation>
     </message>
     <message>
         <source>Union of Data and Display Windows</source>
-        <translation>데이터창과 디스플레이창의 결합</translation>
+        <translation>Vereinigung von Daten- und Anzeigefenstern</translation>
     </message>
     <message>
         <source>Unloadable Package Dependencies</source>
-        <translation>언로드 가능한 패키지 종속성</translation>
+        <translation>Unladbare Paketabhängigkeiten</translation>
     </message>
     <message>
         <source>Use Alternate Representation For Pre-G80 Nvidia GPUs (-exrNoOneChannel)</source>
-        <translation>G80 이전 Nvidia GPU에 대체 표현 사용(-exrNoOneChannel)</translation>
+        <translation>Verwenden Sie eine alternative Darstellung für Nvidia-GPUs vor G80 (-exrNoOneChannel)</translation>
     </message>
     <message>
         <source>Use Crash Reporter</source>
-        <translation>크래시 리포터 사용</translation>
+        <translation>Verwenden Sie Crash Reporter</translation>
     </message>
     <message>
         <source>Use File Primaries</source>
-        <translation>파일 기본 사용</translation>
+        <translation>Verwenden Sie Dateiprimärdateien</translation>
     </message>
     <message>
         <source>Use Native File Dialog (Explorer / Finder)</source>
-        <translation>기본 파일 대화 상자 사용(탐색기/Finder)</translation>
+        <translation>Dialogfeld „Native Datei verwenden“ (Explorer/Finder)</translation>
     </message>
     <message>
         <source>Use as Presentation Device</source>
-        <translation>프레젠테이션 장치로 사용</translation>
+        <translation>Verwendung als Präsentationsgerät</translation>
     </message>
     <message>
         <source>Use operating system native file dialogs (Finder on macOS, Explorer on Windows) instead of the Qt dialog.</source>
-        <translation>Qt 대화 상자 대신 운영 체제 기본 파일 대화 상자(macOS에서는 Finder, Windows에서는 Explorer)를 사용하십시오.</translation>
+        <translation>Verwenden Sie systemeigene Dateidialoge (Finder unter macOS, Explorer unter Windows) anstelle des Qt-Dialogs.</translation>
     </message>
     <message>
         <source>Video</source>
-        <translation>동영상</translation>
+        <translation>Video</translation>
     </message>
     <message>
         <source>Video Sync</source>
-        <translation>비디오 동기화</translation>
+        <translation>Videosynchronisierung</translation>
     </message>
     <message>
         <source>margin-top: -3px; margin-left: -2px;</source>
-        <translation>margin-top: -3px; 여백 왼쪽: -2px;</translation>
+        <translation>margin-top: -3px; Rand links: -2px;</translation>
     </message>
     <message>
         <source>margin-top: 2px;</source>
@@ -7418,58 +7418,58 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>max</source>
-        <translation>최대</translation>
+        <translation>max</translation>
     </message>
     <message>
         <source>milliseconds</source>
-        <translation>밀리초</translation>
+        <translation>Millisekunden</translation>
     </message>
     <message>
         <source>samples</source>
-        <translation>샘플</translation>
+        <translation>Proben</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation>초</translation>
+        <translation>Sekunden</translation>
     </message>
     <message>
         <source>true</source>
-        <translation>사실</translation>
+        <translation>wahr</translation>
     </message>
 </context>
 <context>
     <name>RvProfileManager</name>
     <message>
         <source>Apply</source>
-        <translation>신청</translation>
+        <translation>Bewerben</translation>
     </message>
     <message>
         <source>Are you sure you want to delete the profile?</source>
-        <translation>프로필을 삭제하시겠습니까?</translation>
+        <translation>Sind Sie sicher, dass Sie das Profil löschen möchten?</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>취소</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation>삭제</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>Delete Profile</source>
-        <translation>프로필 삭제</translation>
+        <translation>Profil löschen</translation>
     </message>
     <message>
         <source>Profile Manager</source>
-        <translation>프로필관리자</translation>
+        <translation>Profilmanager</translation>
     </message>
     <message>
         <source>left</source>
-        <translation>왼쪽</translation>
+        <translation>links</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>맞다</translation>
+        <translation>richtig</translation>
     </message>
 </context>
 <context>
@@ -7484,274 +7484,274 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Bigger Text</source>
-        <translation>큰 텍스트</translation>
+        <translation>Größerer Text</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation>색상</translation>
+        <translation>Farbe</translation>
     </message>
     <message>
         <source>Compile</source>
-        <translation>컴파일</translation>
+        <translation>Kompilieren</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation>복사</translation>
+        <translation>Kopieren</translation>
     </message>
     <message>
         <source>Ctrl+-</source>
-        <translation>Ctrl+-</translation>
+        <translation>Strg+-</translation>
     </message>
     <message>
         <source>Ctrl+=</source>
-        <translation>Ctrl+=</translation>
+        <translation>Strg+=</translation>
     </message>
     <message>
         <source>Ctrl+A</source>
-        <translation>Ctrl+A</translation>
+        <translation>Strg+A</translation>
     </message>
     <message>
         <source>Ctrl+B</source>
-        <translation>Ctrl+B</translation>
+        <translation>Strg+B</translation>
     </message>
     <message>
         <source>Ctrl+C</source>
-        <translation>Ctrl+C</translation>
+        <translation>Strg+C</translation>
     </message>
     <message>
         <source>Ctrl+F</source>
-        <translation>Ctrl+F</translation>
+        <translation>Strg+F</translation>
     </message>
     <message>
         <source>Ctrl+N</source>
-        <translation>Ctrl+N</translation>
+        <translation>Strg+N</translation>
     </message>
     <message>
         <source>Ctrl+O</source>
-        <translation>Ctrl+O</translation>
+        <translation>Strg+O</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation>Ctrl+P</translation>
+        <translation>Strg+P</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Ctrl+S</translation>
+        <translation>Strg+S</translation>
     </message>
     <message>
         <source>Ctrl+Shift+,</source>
-        <translation>Ctrl+Shift+,</translation>
+        <translation>Strg+Umschalt+,</translation>
     </message>
     <message>
         <source>Ctrl+Shift+.</source>
-        <translation>Ctrl+Shift+.</translation>
+        <translation>Strg+Umschalt+.</translation>
     </message>
     <message>
         <source>Ctrl+Shift+Z</source>
-        <translation>Ctrl+Shift+Z</translation>
+        <translation>Strg+Umschalt+Z</translation>
     </message>
     <message>
         <source>Ctrl+V</source>
-        <translation>Ctrl+V</translation>
+        <translation>Strg+V</translation>
     </message>
     <message>
         <source>Ctrl+X</source>
-        <translation>Ctrl+X</translation>
+        <translation>Strg+X</translation>
     </message>
     <message>
         <source>Ctrl+Z</source>
-        <translation>Ctrl+Z</translation>
+        <translation>Strg+Z</translation>
     </message>
     <message>
         <source>Cut</source>
-        <translation>잘라내기</translation>
+        <translation>Ausschneiden</translation>
     </message>
     <message>
         <source>Deselect All</source>
-        <translation>모두 선택 취소</translation>
+        <translation>Alle abwählen</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>편집</translation>
+        <translation>Bearbeiten</translation>
     </message>
     <message>
         <source>Emacs Keys</source>
-        <translation>Emacs 키</translation>
+        <translation>Emacs-Schlüssel</translation>
     </message>
     <message>
         <source>End of Buffer</source>
-        <translation>버퍼 끝</translation>
+        <translation>Ende des Puffers</translation>
     </message>
     <message>
         <source>Evaluation</source>
-        <translation>평가</translation>
+        <translation>Bewertung</translation>
     </message>
     <message>
         <source>Evaluation Type</source>
-        <translation>평가 유형</translation>
+        <translation>Bewertungstyp</translation>
     </message>
     <message>
         <source>Filter</source>
-        <translation>필터</translation>
+        <translation>Filter</translation>
     </message>
     <message>
         <source>Import File</source>
-        <translation>파일 가져오기</translation>
+        <translation>Datei importieren</translation>
     </message>
     <message>
         <source>MainWindow</source>
-        <translation>메인창</translation>
+        <translation>Hauptfenster</translation>
     </message>
     <message>
         <source>Merge</source>
-        <translation>병합</translation>
+        <translation>Zusammenführen</translation>
     </message>
     <message>
         <source>Next Line</source>
-        <translation>다음 줄</translation>
+        <translation>Nächste Zeile</translation>
     </message>
     <message>
         <source>Next Word</source>
-        <translation>다음 단어</translation>
+        <translation>Nächstes Wort</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation>붙여넣기</translation>
+        <translation>Einfügen</translation>
     </message>
     <message>
         <source>Previous Line</source>
-        <translation>이전라인</translation>
+        <translation>Vorherige Zeile</translation>
     </message>
     <message>
         <source>Previous Word</source>
-        <translation>이전 단어</translation>
+        <translation>Vorheriges Wort</translation>
     </message>
     <message>
         <source>Publish</source>
-        <translation>게시</translation>
+        <translation>Veröffentlichen</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>다시 실행</translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <source>Revert</source>
-        <translation>되돌리기</translation>
+        <translation>Zurücksetzen</translation>
     </message>
     <message>
         <source>Select All</source>
-        <translation>모두 선택</translation>
+        <translation>Alles auswählen</translation>
     </message>
     <message>
         <source>Smaller Text</source>
-        <translation>작은 텍스트</translation>
+        <translation>Kleinerer Text</translation>
     </message>
     <message>
         <source>Source</source>
-        <translation>출처</translation>
+        <translation>Quelle</translation>
     </message>
     <message>
         <source>Tab 1</source>
-        <translation>탭 1</translation>
+        <translation>Tab 1</translation>
     </message>
     <message>
         <source>Template</source>
-        <translation>템플릿</translation>
+        <translation>Vorlage</translation>
     </message>
     <message>
         <source>Top of Buffer</source>
-        <translation>버퍼 상단</translation>
+        <translation>Oberseite des Puffers</translation>
     </message>
     <message>
         <source>Transition</source>
-        <translation>전환</translation>
+        <translation>Übergang</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation>실행 취소</translation>
+        <translation>Rückgängig</translation>
     </message>
 </context>
 <context>
     <name>RvTopViewToolBar</name>
     <message>
         <source>Active desktop display</source>
-        <translation>액티브 데스크탑 디스플레이</translation>
+        <translation>Aktive Desktop-Anzeige</translation>
     </message>
     <message>
         <source>Active presentation device (click to disable presentation mode)</source>
-        <translation>활성 프레젠테이션 장치(프레젠테이션 모드를 비활성화하려면 클릭)</translation>
+        <translation>Aktives Präsentationsgerät (klicken, um den Präsentationsmodus zu deaktivieren)</translation>
     </message>
     <message>
         <source>Cannot start presentation mode when multiple sessions are active</source>
-        <translation>여러 세션이 활성화되어 있으면 프레젠테이션 모드를 시작할 수 없습니다.</translation>
+        <translation>Der Präsentationsmodus kann nicht gestartet werden, wenn mehrere Sitzungen aktiv sind</translation>
     </message>
     <message>
         <source>Color channel view control</source>
-        <translation>색상 채널 뷰 제어</translation>
+        <translation>Farbkanal-Ansichtssteuerung</translation>
     </message>
     <message>
         <source>Configure display device</source>
-        <translation>디스플레이 장치 구성</translation>
+        <translation>Anzeigegerät konfigurieren</translation>
     </message>
     <message>
         <source>Display Configuration</source>
-        <translation>디스플레이 구성</translation>
+        <translation>Anzeigekonfiguration</translation>
     </message>
     <message>
         <source>Frame image in view</source>
-        <translation>뷰에 이미지 맞추기</translation>
+        <translation>Bild in Ansicht einpassen</translation>
     </message>
     <message>
         <source>Frame/Fit View</source>
-        <translation>프레임/맞춤 보기</translation>
+        <translation>Frame/Fit-Ansicht</translation>
     </message>
     <message>
         <source>Presentation Mode</source>
-        <translation>프레젠테이션 모드</translation>
+        <translation>Präsentationsmodus</translation>
     </message>
     <message>
         <source>Select Background Pattern</source>
-        <translation>배경 패턴 선택</translation>
+        <translation>Wählen Sie ein Hintergrundmuster aus</translation>
     </message>
     <message>
         <source>Select Channel or Display Mode</source>
-        <translation>채널 또는 디스플레이 모드 선택</translation>
+        <translation>Wählen Sie Kanal oder Anzeigemodus</translation>
     </message>
     <message>
         <source>Select a View</source>
-        <translation>뷰 선택</translation>
+        <translation>Ansicht auswählen</translation>
     </message>
     <message>
         <source>Select and present to this device</source>
-        <translation>선택하여 이 장치에 표시</translation>
+        <translation>Auswählen und auf diesem Gerät präsentieren</translation>
     </message>
     <message>
         <source>Select background style</source>
-        <translation>배경 스타일 선택</translation>
+        <translation>Hintergrundstil auswählen</translation>
     </message>
     <message>
         <source>Select stereoscopic output style</source>
-        <translation>입체 출력 스타일 선택</translation>
+        <translation>Stereoskopischen Ausgabestil auswählen</translation>
     </message>
     <message>
         <source>Switch to desktop display (disable presentation mode)</source>
-        <translation>데스크톱 디스플레이로 전환(프레젠테이션 모드 비활성화)</translation>
+        <translation>Zur Desktop-Anzeige wechseln (Präsentationsmodus deaktivieren)</translation>
     </message>
     <message>
         <source>Switch to next View</source>
-        <translation>다음 뷰로 전환</translation>
+        <translation>Zur nächsten Ansicht wechseln</translation>
     </message>
     <message>
         <source>Switch to previous View</source>
-        <translation>이전 뷰로 전환</translation>
+        <translation>Zur vorherigen Ansicht wechseln</translation>
     </message>
     <message>
         <source>Toggle Fullscreen</source>
-        <translation>전체 화면 전환</translation>
+        <translation>Vollbild umschalten</translation>
     </message>
     <message>
         <source>Toggle full-screen mode</source>
-        <translation>전체 화면 모드 전환</translation>
+        <translation>Vollbildmodus umschalten</translation>
     </message>
 </context>
 <context>
@@ -7759,213 +7759,213 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Back
 Frame</source>
-        <translation>뒤로</translation>
+        <translation>Zurück</translation>
     </message>
     <message>
         <source>Cache</source>
-        <translation>캐시</translation>
+        <translation>Cache</translation>
     </message>
     <message>
         <source>Connected to %1</source>
-        <translation>%1에 연결됨</translation>
+        <translation>Verbunden mit %1</translation>
     </message>
     <message>
         <source>Event</source>
-        <translation>이벤트</translation>
+        <translation>Ereignis</translation>
     </message>
     <message>
         <source>Feedback</source>
-        <translation>피드백</translation>
+        <translation>Feedback</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>파일</translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <source>Forward
 Frame</source>
-        <translation>앞으로</translation>
+        <translation>Vorwärts</translation>
     </message>
     <message>
         <source>Full
 Screen</source>
-        <translation>전체</translation>
+        <translation>Voll</translation>
     </message>
     <message>
         <source>Load Image...</source>
-        <translation>이미지 로드...</translation>
+        <translation>Bild laden...</translation>
     </message>
     <message>
         <source>MainWindow</source>
-        <translation>메인창</translation>
+        <translation>Hauptfenster</translation>
     </message>
     <message>
         <source>Name:</source>
-        <translation>이름:</translation>
+        <translation>Name:</translation>
     </message>
     <message>
         <source>No longer connected to %1</source>
-        <translation>%1에 더 이상 연결되지 않습니다.</translation>
+        <translation>Keine Verbindung mehr zu %1</translation>
     </message>
     <message>
         <source>Open...</source>
-        <translation>열기...</translation>
+        <translation>Öffnen...</translation>
     </message>
     <message>
         <source>Pixels</source>
-        <translation>픽셀</translation>
+        <translation>Pixel</translation>
     </message>
     <message>
         <source>Play</source>
-        <translation>재생</translation>
+        <translation>Abspielen</translation>
     </message>
     <message>
         <source>Play Controls</source>
-        <translation>Play 제어</translation>
+        <translation>Spielsteuerung</translation>
     </message>
     <message>
         <source>Playback Control</source>
-        <translation>재생 제어</translation>
+        <translation>Wiedergabesteuerung</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>그만둬</translation>
+        <translation>Beenden</translation>
     </message>
     <message>
         <source>Raw Event</source>
-        <translation>원시 이벤트</translation>
+        <translation>Raw-Ereignis</translation>
     </message>
     <message>
         <source>Send</source>
-        <translation>보내기</translation>
+        <translation>Senden</translation>
     </message>
     <message>
         <source>Send Image</source>
-        <translation>이미지 전송</translation>
+        <translation>Bild senden</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation>정지</translation>
+        <translation>Stopp</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation>대상</translation>
+        <translation>Ziel</translation>
     </message>
     <message>
         <source>X Tiles</source>
-        <translation>X 타일</translation>
+        <translation>X Kacheln</translation>
     </message>
     <message>
         <source>Y Tiles</source>
-        <translation>Y 타일</translation>
+        <translation>Y Kacheln</translation>
     </message>
     <message>
         <source>play()</source>
-        <translation>플레이()</translation>
+        <translation>play()</translation>
     </message>
     <message>
         <source>remote-eval</source>
-        <translation>원격 평가</translation>
+        <translation>remote-eval</translation>
     </message>
 </context>
 <context>
     <name>VisMainWindow</name>
     <message>
         <source>Ctrl+F</source>
-        <translation>Ctrl+F</translation>
+        <translation>Strg+F</translation>
     </message>
     <message>
         <source>Ctrl+O</source>
-        <translation>Ctrl+O</translation>
+        <translation>Strg+O</translation>
     </message>
     <message>
         <source>Ctrl+Q</source>
-        <translation>Ctrl+Q</translation>
+        <translation>Strg+Q</translation>
     </message>
     <message>
         <source>File</source>
-        <translation>파일</translation>
+        <translation>Datei</translation>
     </message>
     <message>
         <source>Open...</source>
-        <translation>열기...</translation>
+        <translation>Öffnen...</translation>
     </message>
     <message>
         <source>Quit</source>
-        <translation>그만둬</translation>
+        <translation>Beenden</translation>
     </message>
     <message>
         <source>RV Profile Viewer</source>
-        <translation>RV 프로필 뷰어</translation>
+        <translation>RV-Profilbetrachter</translation>
     </message>
     <message>
         <source>Show Raw Profile Data...</source>
-        <translation>원시 프로필 데이터 표시...</translation>
+        <translation>Rohprofildaten anzeigen...</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation>도구</translation>
+        <translation>Werkzeuge</translation>
     </message>
 </context>
 <context>
     <name>annotationPaneBase</name>
     <message>
         <source>End</source>
-        <translation>끝</translation>
+        <translation>Ende</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>양식</translation>
+        <translation>Formular</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation>시작</translation>
+        <translation>Start</translation>
     </message>
 </context>
 <context>
     <name>annotationTool</name>
     <message>
         <source>Clear</source>
-        <translation>지우기</translation>
+        <translation>Löschen</translation>
     </message>
     <message>
         <source>Ctrl+S</source>
-        <translation>Ctrl+S</translation>
+        <translation>Strg+S</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>양식</translation>
+        <translation>Formular</translation>
     </message>
     <message>
         <source>Opacity</source>
-        <translation>불투명도</translation>
+        <translation>Deckkraft</translation>
     </message>
     <message>
         <source>Redo</source>
-        <translation>다시 실행</translation>
+        <translation>Wiederholen</translation>
     </message>
     <message>
         <source>Size</source>
-        <translation>크기</translation>
+        <translation>Größe</translation>
     </message>
     <message>
         <source>Undo</source>
-        <translation>실행 취소</translation>
+        <translation>Rückgängig</translation>
     </message>
     <message>
         <source>palette</source>
-        <translation>팔레트</translation>
+        <translation>Palette</translation>
     </message>
 </context>
 <context>
     <name>packageLocationDialog</name>
     <message>
         <source>Choose Package Installation Location</source>
-        <translation>패키지 설치 위치 선택</translation>
+        <translation>Wählen Sie den Installationsort des Pakets</translation>
     </message>
     <message>
         <source>Dialog</source>
-        <translation>대화</translation>
+        <translation>Dialog</translation>
     </message>
 </context>
 <context>
@@ -7976,15 +7976,15 @@ Screen</source>
     </message>
     <message>
         <source>Edit</source>
-        <translation>편집</translation>
+        <translation>Bearbeiten</translation>
     </message>
     <message>
         <source>Form</source>
-        <translation>양식</translation>
+        <translation>Formular</translation>
     </message>
     <message>
         <source>Inputs</source>
-        <translation>입력</translation>
+        <translation>Eingänge</translation>
     </message>
     <message>
         <source>Z-A</source>
@@ -7992,23 +7992,23 @@ Screen</source>
     </message>
     <message>
         <source>interior</source>
-        <translation>인테리어</translation>
+        <translation>Innenraum</translation>
     </message>
     <message>
         <source>interior_menu</source>
-        <translation>인테리어_메뉴</translation>
+        <translation>interior_menu</translation>
     </message>
     <message>
         <source>left_menu</source>
-        <translation>왼쪽_메뉴</translation>
+        <translation>left_menu</translation>
     </message>
     <message>
         <source>right</source>
-        <translation>맞다</translation>
+        <translation>richtig</translation>
     </message>
     <message>
         <source>solo</source>
-        <translation>솔로</translation>
+        <translation>solo</translation>
     </message>
     <message>
         <source>solo_menu</source>

@@ -578,11 +578,14 @@ int main(int argc, char* argv[])
     // remove handler
     qInstallMessageHandler(nullptr);
 
-    QTranslator* translator = new QTranslator();
-    QLocale locale = QLocale(getenv("ORIGINALLOCAL"));
-    if (translator->load(locale, QLatin1String("i18n"), "_", QLatin1String(":/translations")))
+    // Initialize language from user preference or system locale
     {
-        app->installTranslator(translator);
+        RV_QSETTINGS;
+        settings.beginGroup("General");
+        QString userLang = settings.value("language", "").toString();
+        settings.endGroup();
+
+        Rv::RvPreferences::applyLanguage(userLang);
     }
 
 #ifdef PLATFORM_DARWIN
