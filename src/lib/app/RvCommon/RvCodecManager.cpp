@@ -16,6 +16,8 @@
 #include <QtGui/QDesktopServices>
 #include <QtCore/QUrl>
 #include <QtCore/QDebug>
+#include <QtCore/QSettings>
+#include <QtCore/QDirIterator>
 
 #include <cstdlib>
 
@@ -98,57 +100,132 @@ namespace Rv
             currentPath = "/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:" + currentPath;
             env.insert("PATH", currentPath);
         }
-#endif
-
-        QString foundExec = QStandardPaths::findExecutable("ffmpeg", currentPath.split(QDir::listSeparator()));
-        if (!foundExec.isEmpty())
+#elif defined(PLATFORM_WINDOWS)
+        QString localAppData = qEnvironmentVariable("LOCALAPPDATA");
+        if (localAppData.isEmpty())
         {
-            activeBinaryPath = foundExec;
+            localAppData = QDir::homePath() + "/AppData/Local";
+        }
+        QString userProfile = qEnvironmentVariable("USERPROFILE");
+        if (userProfile.isEmpty())
+        {
+            userProfile = QDir::homePath();
         }
 
-        QString ffmpegOutput;
-        if (!activeBinaryPath.isEmpty())
+        QString winGetLinks = localAppData + "/Microsoft/WinGet/Links";
+        if (!currentPath.contains(winGetLinks, Qt::CaseInsensitive))
         {
-            QProcess process;
-            process.setProcessEnvironment(env);
-            process.start(activeBinaryPath, QStringList() << "-version");
-            if (process.waitForFinished(500))
+            currentPath = winGetLinks + ";" + currentPath;
+        }
+
+        QString scoopShims = userProfile + "/scoop/shims";
+        if (!currentPath.contains(scoopShims, Qt::CaseInsensitive))
+        {
+            currentPath = scoopShims + ";" + currentPath;
+        }
+
+        // Query registry to get freshly installed PATH entries (e.g. from winget or scoop while app is open)
+        QSettings regUser("HKEY_CURRENT_USER\\Environment", QSettings::NativeFormat);
+        QString userRegPath = regUser.value("Path").toString();
+        if (!userRegPath.isEmpty())
+        {
+            currentPath = userRegPath + ";" + currentPath;
+        }
+        QSettings regSys("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", QSettings::NativeFormat);
+        QString sysRegPath = regSys.value("Path").toString();
+        if (!sysRegPath.isEmpty())
+        {
+            currentPath = sysRegPath + ";" + currentPath;
+        }
+        env.insert("PATH", currentPath);
+#endif
+
+        QStringList candidateBins;
+
+#if defined(PLATFORM_WINDOWS)
+        // WinGet Links and Packages
+        candidateBins << (localAppData + "/Microsoft/WinGet/Links/ffmpeg.exe");
+
+        QDir winGetPackagesDir(localAppData + "/Microsoft/WinGet/Packages");
+        if (winGetPackagesDir.exists())
+        {
+            QDirIterator it(winGetPackagesDir.absolutePath(), QStringList() << "ffmpeg.exe", QDir::Files, QDirIterator::Subdirectories);
+            while (it.hasNext())
             {
-                ffmpegOutput = QString::fromUtf8(process.readAllStandardOutput());
+                candidateBins << it.next();
             }
         }
 
-        if (ffmpegOutput.isEmpty())
-        {
-            // Try homebrew bin or common locations if not in GUI PATH
-            QStringList candidateBins = {
-#if defined(PLATFORM_DARWIN)
-                "/opt/homebrew/bin/ffmpeg",
-                "/usr/local/bin/ffmpeg",
-#elif defined(PLATFORM_WINDOWS)
-                "C:/Program Files/OpenUTVDeps/bin/ffmpeg.exe",
-                "C:/Program Files/OpenUTVDeps/installed/x64-windows/bin/ffmpeg.exe",
-                "C:/Program Files/ffmpeg/bin/ffmpeg.exe",
+        // Scoop and Chocolatey
+        candidateBins << (userProfile + "/scoop/apps/ffmpeg-shared/current/bin/ffmpeg.exe");
+        candidateBins << (userProfile + "/scoop/shims/ffmpeg.exe");
+        candidateBins << "C:/ProgramData/chocolatey/bin/ffmpeg.exe";
+
+        // Standard locations
+        candidateBins << "C:/ffmpeg/bin/ffmpeg.exe";
+        candidateBins << "C:/Program Files/ffmpeg/bin/ffmpeg.exe";
+        candidateBins << "C:/Program Files/OpenUTVDeps/bin/ffmpeg.exe";
+        candidateBins << "C:/Program Files/OpenUTVDeps/installed/x64-windows/bin/ffmpeg.exe";
+#elif defined(PLATFORM_DARWIN)
+        candidateBins << "/opt/homebrew/bin/ffmpeg" << "/usr/local/bin/ffmpeg";
 #elif defined(__linux__)
-                "/home/linuxbrew/.linuxbrew/bin/ffmpeg",
-                "/usr/bin/ffmpeg",
-                "/usr/local/bin/ffmpeg",
+        candidateBins << "/home/linuxbrew/.linuxbrew/bin/ffmpeg" << "/usr/bin/ffmpeg" << "/usr/local/bin/ffmpeg";
 #endif
-            };
-            for (const auto& b : candidateBins)
+
+        // Also check findExecutable across refreshed PATH
+        QString foundExec = QStandardPaths::findExecutable("ffmpeg", currentPath.split(QDir::listSeparator()));
+        if (!foundExec.isEmpty() && !candidateBins.contains(foundExec))
+        {
+            candidateBins.prepend(foundExec);
+        }
+
+        auto checkFullBuild = [](const QString& binPath, const QString& output) -> bool
+        {
+            QString canonical = QFileInfo(binPath).canonicalFilePath();
+            if (canonical.contains("ffmpeg-full", Qt::CaseInsensitive) || canonical.contains("full_build", Qt::CaseInsensitive)
+                || canonical.contains("Gyan", Qt::CaseInsensitive) || canonical.contains("ffmpeg-shared", Qt::CaseInsensitive))
             {
-                if (QFile::exists(b))
+                return true;
+            }
+            if (output.contains("Cellar/ffmpeg-full") || output.contains("opt/ffmpeg-full")
+                || output.contains("full_build", Qt::CaseInsensitive) || output.contains("gyan.dev", Qt::CaseInsensitive)
+                || output.contains("enable-libplacebo") || output.contains("enable-libxvid") || output.contains("enable-libtheora")
+                || output.contains("enable-librav1e") || output.contains("enable-whisper") || output.contains("enable-libx265"))
+            {
+                return true;
+            }
+            return false;
+        };
+
+        QString ffmpegOutput;
+        bool isFullBuild = false;
+
+        // Iterate through candidates. If we find a full build, prefer it immediately!
+        for (const auto& b : candidateBins)
+        {
+            if (QFile::exists(b))
+            {
+                QProcess proc;
+                proc.setProcessEnvironment(env);
+                proc.start(b, QStringList() << "-version");
+                if (proc.waitForFinished(1000))
                 {
-                    QProcess p2;
-                    p2.setProcessEnvironment(env);
-                    p2.start(b, QStringList() << "-version");
-                    if (p2.waitForFinished(500))
+                    QString out = QString::fromUtf8(proc.readAllStandardOutput());
+                    if (!out.isEmpty())
                     {
-                        ffmpegOutput = QString::fromUtf8(p2.readAllStandardOutput());
-                        if (!ffmpegOutput.isEmpty())
+                        bool full = checkFullBuild(b, out);
+                        if (full)
                         {
                             activeBinaryPath = b;
-                            break;
+                            ffmpegOutput = out;
+                            isFullBuild = true;
+                            break; // Found preferred full build!
+                        }
+                        else if (activeBinaryPath.isEmpty())
+                        {
+                            // Remember basic build as fallback
+                            activeBinaryPath = b;
+                            ffmpegOutput = out;
                         }
                     }
                 }
@@ -168,36 +245,12 @@ namespace Rv
             }
         }
 
-        // 2. Determine if active build is FFmpeg-Full / Supercharged
-        bool isFullBuild = false;
-
-        // Check canonical path of the active binary (resolves symlinks)
-        if (!activeBinaryPath.isEmpty())
-        {
-            QString canonical = QFileInfo(activeBinaryPath).canonicalFilePath();
-            if (canonical.contains("ffmpeg-full"))
-            {
-                isFullBuild = true;
-            }
-        }
-
-        // Check configuration / version output for full build signatures
-        if (!isFullBuild)
-        {
-            if (ffmpegOutput.contains("Cellar/ffmpeg-full") || ffmpegOutput.contains("opt/ffmpeg-full")
-                || ffmpegOutput.contains("full_build") || ffmpegOutput.contains("gyan.dev") || ffmpegOutput.contains("enable-libplacebo")
-                || ffmpegOutput.contains("enable-libxvid") || ffmpegOutput.contains("enable-libtheora")
-                || ffmpegOutput.contains("enable-librav1e") || ffmpegOutput.contains("enable-whisper"))
-            {
-                isFullBuild = true;
-            }
-        }
-
         info.isSupercharged = isFullBuild;
 
-        // 3. Check if ffmpeg-full is installed on macOS or Linux
+        // 2. Check if ffmpeg-full / Gyan Shared is installed on macOS, Linux, or Windows
         bool fullInstalled = false;
         QString fullPath;
+#if defined(PLATFORM_DARWIN) || defined(__linux__)
         QStringList fullCandidates = {
             "/opt/homebrew/opt/ffmpeg-full", "/opt/homebrew/Cellar/ffmpeg-full",           "/usr/local/opt/ffmpeg-full",
             "/usr/local/Cellar/ffmpeg-full", "/home/linuxbrew/.linuxbrew/opt/ffmpeg-full", "/home/linuxbrew/.linuxbrew/Cellar/ffmpeg-full"};
@@ -211,8 +264,28 @@ namespace Rv
                 break;
             }
         }
+#elif defined(PLATFORM_WINDOWS)
+        if (!info.isSupercharged)
+        {
+            QDir winGetPackagesDir(localAppData + "/Microsoft/WinGet/Packages");
+            if (winGetPackagesDir.exists())
+            {
+                QDirIterator it(winGetPackagesDir.absolutePath(), QStringList() << "ffmpeg.exe", QDir::Files, QDirIterator::Subdirectories);
+                while (it.hasNext())
+                {
+                    QString candidate = it.next();
+                    if (candidate.contains("full_build", Qt::CaseInsensitive) || candidate.contains("Gyan", Qt::CaseInsensitive))
+                    {
+                        fullInstalled = true;
+                        fullPath = candidate;
+                        break;
+                    }
+                }
+            }
+        }
+#endif
 
-        // 4. Determine status badge and action
+        // 3. Determine status badge and action
         QString verDisplay = detectedVersion.isEmpty() ? "" : QString(" (v%1)").arg(detectedVersion);
 
 #if defined(PLATFORM_DARWIN) || defined(__linux__)
@@ -245,8 +318,16 @@ namespace Rv
         {
             info.statusBadge = tr("Supercharged (Full Codecs)");
             info.details =
-                tr("Active FFmpeg%1 build includes full codec support (H.265/HEVC, ProRes, AAC, extended filters).").arg(verDisplay);
+                tr("Active FFmpeg%1 build is Gyan.dev Full Shared with extended codecs (H.265/HEVC, ProRes, AAC, extended filters).")
+                    .arg(verDisplay);
             info.actionText = "";
+        }
+        else if (fullInstalled)
+        {
+            info.isShadowed = true;
+            info.statusBadge = tr("Shadowed by Standard FFmpeg");
+            info.details = tr("Active FFmpeg%1 is standard FFmpeg. FFmpeg Full Shared is installed at %2.").arg(verDisplay, fullPath);
+            info.actionText = tr("Use Supercharged FFmpeg");
         }
         else
         {
@@ -415,11 +496,22 @@ namespace Rv
 
         QStringList candidateFiles = {
 #if defined(PLATFORM_DARWIN)
-            "/Library/NDI SDK for Apple/lib/macOS/libndi.dylib", "/usr/local/lib/libndi.dylib", "/opt/homebrew/lib/libndi.dylib"
+            "/Library/NDI SDK for Apple/lib/macOS/libndi.dylib", "/Library/NDI Tools for Apple/lib/macOS/libndi.dylib",
+            "/usr/local/lib/libndi.dylib", "/opt/homebrew/lib/libndi.dylib"
 #elif defined(PLATFORM_WINDOWS)
+            "C:/Program Files/NDI/NDI 6 Tools/Runtime/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI 5 Tools/Runtime/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI Tools/Runtime/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI 6 Tools/Router/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI 5 Tools/Router/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI 6 Tools/Bridge/Processing.NDI.Lib.Advanced.x64.dll",
+            "C:/Program Files/NDI/NDI 6 Tools/Discovery/Processing.NDI.Lib.Advanced.x64.dll",
+            "C:/Program Files/NDI/NDI 6 Runtime/v6/Processing.NDI.Lib.x64.dll",
             "C:/Program Files/NDI/NDI 5 Runtime/v5/Processing.NDI.Lib.x64.dll",
-            "C:/Program Files/NDI 6 Runtime/v6/Processing.NDI.Lib.x64.dll", "C:/Program Files/NDI 5 SDK/Lib/x64/Processing.NDI.Lib.x64.dll",
-            "C:/Program Files/NDI 6 SDK/Lib/x64/Processing.NDI.Lib.x64.dll"
+            "C:/Program Files/NDI/NDI 6 SDK/Lib/x64/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files/NDI/NDI 5 SDK/Lib/x64/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files (x86)/NDI/NDI 6 Tools/Runtime/Processing.NDI.Lib.x64.dll",
+            "C:/Program Files (x86)/NDI/NDI 5 Tools/Runtime/Processing.NDI.Lib.x64.dll"
 #else
             "/usr/lib/libndi.so", "/usr/local/lib/libndi.so"
 #endif
@@ -450,6 +542,27 @@ namespace Rv
                 break;
             }
         }
+
+#if defined(PLATFORM_WINDOWS)
+        if (foundFile.isEmpty())
+        {
+            QStringList searchRoots = {"C:/Program Files/NDI", "C:/Program Files (x86)/NDI"};
+            for (const auto& root : searchRoots)
+            {
+                if (QDir(root).exists())
+                {
+                    QDirIterator it(root, QStringList() << "Processing.NDI.Lib.x64.dll" << "Processing.NDI.Lib.Advanced.x64.dll",
+                                    QDir::Files, QDirIterator::Subdirectories);
+                    if (it.hasNext())
+                    {
+                        foundFile = it.next();
+                        info.isAvailable = true;
+                        break;
+                    }
+                }
+            }
+        }
+#endif
 
         if (info.isAvailable)
         {

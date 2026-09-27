@@ -18,40 +18,77 @@ import webbrowser
 
 def get_ffmpeg_info():
     """Probe ffmpeg binary and detect configuration flags."""
+    candidate_bins = []
     ffmpeg_bin = shutil.which("ffmpeg")
-    is_installed = ffmpeg_bin is not None
+    if ffmpeg_bin:
+        candidate_bins.append(ffmpeg_bin)
+
+    if platform.system() == "Windows":
+        local_app_data = os.environ.get("LOCALAPPDATA", os.path.expanduser("~/AppData/Local"))
+        user_profile = os.environ.get("USERPROFILE", os.path.expanduser("~"))
+
+        candidate_bins.append(os.path.join(local_app_data, "Microsoft", "WinGet", "Links", "ffmpeg.exe"))
+
+        # Scan WinGet Packages
+        winget_packages = os.path.join(local_app_data, "Microsoft", "WinGet", "Packages")
+        if os.path.exists(winget_packages):
+            for root, dirs, files in os.walk(winget_packages):
+                if "ffmpeg.exe" in files:
+                    candidate_bins.append(os.path.join(root, "ffmpeg.exe"))
+
+        # Scoop and Chocolatey
+        candidate_bins.append(
+            os.path.join(user_profile, "scoop", "apps", "ffmpeg-shared", "current", "bin", "ffmpeg.exe")
+        )
+        candidate_bins.append(os.path.join(user_profile, "scoop", "shims", "ffmpeg.exe"))
+        candidate_bins.append("C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe")
+        candidate_bins.append("C:\\ffmpeg\\bin\\ffmpeg.exe")
+        candidate_bins.append("C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe")
+        candidate_bins.append("C:\\Program Files\\OpenUTVDeps\\bin\\ffmpeg.exe")
+
+    is_installed = False
     is_supercharged = False
     configuration = ""
     version_str = ""
+    active_bin = ""
 
-    if is_installed:
-        try:
-            res = subprocess.run(
-                [ffmpeg_bin, "-version"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False,
-            )
-            out = res.stdout or res.stderr or ""
-            for line in out.splitlines():
-                if "ffmpeg version" in line.lower() and not version_str:
-                    version_str = line.strip()
-                if "configuration:" in line.lower():
-                    configuration = line.strip()
-                    lower_cfg = configuration.lower()
-                    if (
-                        "--enable-libx265" in lower_cfg
-                        or "--enable-nonfree" in lower_cfg
-                        or "--enable-gpl" in lower_cfg
-                    ):
+    for b in candidate_bins:
+        if os.path.isfile(b) and os.access(b, os.X_OK):
+            try:
+                res = subprocess.run(
+                    [b, "-version"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                    timeout=2,
+                )
+                out = res.stdout or res.stderr or ""
+                lower_out = out.lower()
+                full_build = (
+                    "full_build" in lower_out
+                    or "gyan.dev" in lower_out
+                    or "--enable-libx265" in lower_out
+                    or "--enable-nonfree" in lower_out
+                    or "--enable-libplacebo" in lower_out
+                )
+                if not active_bin or full_build:
+                    active_bin = b
+                    is_installed = True
+                    for line in out.splitlines():
+                        if "ffmpeg version" in line.lower() and not version_str:
+                            version_str = line.strip()
+                        if "configuration:" in line.lower():
+                            configuration = line.strip()
+                    if full_build:
                         is_supercharged = True
-        except Exception:
-            pass
+                        break
+            except Exception:
+                pass
 
     return {
         "installed": is_installed,
-        "path": ffmpeg_bin or "",
+        "path": active_bin or "",
         "version": version_str,
         "configuration": configuration,
         "supercharged": is_supercharged,
@@ -212,10 +249,16 @@ def get_ndi_status():
                 break
     elif sys_name == "Windows":
         prog_files = os.environ.get("ProgramFiles", "C:\\Program Files")
-        ndi_dir = os.path.join(prog_files, "NDI")
-        if os.path.exists(ndi_dir):
-            installed = True
-            details = ndi_dir
+        prog_files_x86 = os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")
+        for base in (prog_files, prog_files_x86):
+            ndi_dir = os.path.join(base, "NDI")
+            if os.path.exists(ndi_dir):
+                for root, _, files in os.walk(ndi_dir):
+                    if "Processing.NDI.Lib.x64.dll" in files or "Processing.NDI.Lib.Advanced.x64.dll" in files:
+                        return {"installed": True, "details": os.path.join(root, "Processing.NDI.Lib.x64.dll")}
+                installed = True
+                details = ndi_dir
+                break
     else:
         paths = [
             "/usr/lib/libndi.so",
