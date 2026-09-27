@@ -10,6 +10,11 @@ on:
         required: true
         default: '2026.8'
         type: string
+      choco_version:
+        description: 'Chocolatey package version override (e.g. 2026.8.1 if 2026.8 requires fix)'
+        required: false
+        default: '2026.8.1'
+        type: string
 
 permissions:
   contents: read
@@ -173,6 +178,7 @@ jobs:
           }
 
           $Version = $env:TAG_NAME.TrimStart("v")
+          $ChocoVersion = if ("${{ inputs.choco_version }}") { "${{ inputs.choco_version }}" } else { $Version }
           $Url = "https://github.com/OpenUTV/utv/releases/download/$($env:TAG_NAME)/UTV-$Version-windows-x64.zip"
 
           $tempZip = Join-Path $env:TEMP "choco-dl.zip"
@@ -180,14 +186,14 @@ jobs:
           $sha256 = (Get-FileHash -Path $tempZip -Algorithm SHA256).Hash.ToLower()
 
           # Update nuspec version
-          (Get-Content chocolatey\openutv\openutv.nuspec) -replace '<version>.*?</version>', "<version>$Version</version>" | Set-Content chocolatey\openutv\openutv.nuspec
+          (Get-Content chocolatey\openutv\openutv.nuspec) -replace '<version>.*?</version>', "<version>$ChocoVersion</version>" | Set-Content chocolatey\openutv\openutv.nuspec
 
           # Update install script
           (Get-Content chocolatey\openutv\tools\chocolateyInstall.ps1) `
             -replace 'url64\s*=\s*''.*?''', "url64         = '$Url'" `
             -replace 'checksum64\s*=\s*''.*?''', "checksum64    = '$sha256'" | Set-Content chocolatey\openutv\tools\chocolateyInstall.ps1
 
-          # 1. Pack and push openutv-dependencies with speedup flags and copyright
+          # 1. Pack and push openutv-dependencies if updated
           Write-Host "Packing openutv-dependencies..."
           choco pack chocolatey\openutv-dependencies\openutv-dependencies.nuspec --outputdirectory chocolatey\openutv-dependencies
           $depsNupkg = (Get-ChildItem chocolatey\openutv-dependencies\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
@@ -200,7 +206,7 @@ jobs:
           }
 
           # 2. Pack and push openutv
-          Write-Host "Packing openutv..."
+          Write-Host "Packing openutv ($ChocoVersion)..."
           choco pack chocolatey\openutv\openutv.nuspec --outputdirectory chocolatey\openutv
           $nupkg = (Get-ChildItem chocolatey\openutv\*.nupkg | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
           Write-Host "Pushing $nupkg to Chocolatey..."
