@@ -391,6 +391,47 @@ namespace Rv
             setSession(m_session);
     }
 
+    void RvTopViewToolBar::retranslate()
+    {
+        if (m_viewBackAction)
+            m_viewBackAction->setToolTip(tr("Switch to previous View"));
+        if (m_viewForwardAction)
+            m_viewForwardAction->setToolTip(tr("Switch to next View"));
+        if (m_viewMenuAction)
+            m_viewMenuAction->setToolTip(tr("Select a View"));
+        if (m_fullScreenAction)
+            m_fullScreenAction->setToolTip(tr("Toggle Fullscreen"));
+        if (m_frameAction)
+            m_frameAction->setToolTip(tr("Frame/Fit View"));
+        if (m_bgMenuAction)
+            m_bgMenuAction->setToolTip(tr("Select Background Pattern"));
+        if (m_stereoMenuAction)
+            m_stereoMenuAction->setToolTip(tr("Select stereoscopic output style"));
+        if (m_channelMenuAction)
+            m_channelMenuAction->setToolTip(tr("Select Channel or Display Mode"));
+        if (m_monitorMenuAction)
+            m_monitorMenuAction->setToolTip(tr("Display Configuration"));
+
+        m_actionCategoryMappings = {{{m_viewBackAction, IPCore::EventCategories::viewNavigationCategory, m_viewBackAction->toolTip()},
+                                     {m_viewForwardAction, IPCore::EventCategories::viewNavigationCategory, m_viewForwardAction->toolTip()},
+                                     {m_viewMenuAction, IPCore::EventCategories::viewNavigationCategory, m_viewMenuAction->toolTip()},
+                                     {m_fullScreenAction, IPCore::EventCategories::fullscreenModeCategory, m_fullScreenAction->toolTip()},
+                                     {m_frameAction, IPCore::EventCategories::viewmodeCategory, m_frameAction->toolTip()},
+                                     {m_bgMenuAction, IPCore::EventCategories::backgroundStyleCategory, m_bgMenuAction->toolTip()},
+                                     {m_stereoMenuAction, IPCore::EventCategories::viewmodeCategory, m_stereoMenuAction->toolTip()},
+                                     {m_channelMenuAction, IPCore::EventCategories::viewmodeCategory, m_channelMenuAction->toolTip()},
+                                     {m_monitorMenuAction, IPCore::EventCategories::viewmodeCategory, m_monitorMenuAction->toolTip()}}};
+    }
+
+    void RvTopViewToolBar::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            retranslate();
+        }
+        QToolBar::changeEvent(event);
+    }
+
     RvTopViewToolBar::~RvTopViewToolBar() {}
 
     void RvTopViewToolBar::setSession(Session* s)

@@ -160,6 +160,19 @@ namespace Rv
         {
             trans = qApp->translate("QObject", core.toUtf8().constData());
         }
+        if ((trans.isEmpty() || trans == core) && core.endsWith("..."))
+        {
+            QString base = core.left(core.size() - 3);
+            QString baseTrans = qApp->translate("Menu", base.toUtf8().constData());
+            if (baseTrans.isEmpty() || baseTrans == base)
+            {
+                baseTrans = qApp->translate("QObject", base.toUtf8().constData());
+            }
+            if (!baseTrans.isEmpty() && baseTrans != base)
+            {
+                trans = baseTrans + "...";
+            }
+        }
 
         return prefix + (trans.isEmpty() ? core : trans);
     }
@@ -652,6 +665,19 @@ namespace Rv
         if (m_displayLink)
             m_displayLink->stop();
 #endif
+    }
+
+    void RvDocument::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            buildMenu();
+            if (m_topViewToolBar)
+                m_topViewToolBar->retranslate();
+            if (m_bottomViewToolBar)
+                m_bottomViewToolBar->retranslate();
+        }
+        QMainWindow::changeEvent(event);
     }
 
     bool RvDocument::receive(Notifier* originator, Notifier* sender, MessageId m, MessageData* data)

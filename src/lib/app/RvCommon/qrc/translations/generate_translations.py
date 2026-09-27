@@ -5,8 +5,14 @@ Supports: English (en), Spanish (es), French (fr), German (de), Italian (it),
 Japanese (ja), Korean (ko), Simplified Chinese (zh, zh_CN).
 """
 
+import json
 import os
+import re
 import subprocess
+import time
+import urllib.parse
+import urllib.request
+import xml.etree.ElementTree as ET
 import xml.sax.saxutils
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1072,29 +1078,122 @@ TRANSLATIONS = {
 }
 
 LANGUAGES = ["en", "es", "fr", "de", "it", "ja", "ko", "zh", "zh_CN"]
+CACHE_FILE = os.path.join(SCRIPT_DIR, "translations_cache.json")
 
 
-def generate_ts(lang):
-    """Generate .ts XML string for a specific language."""
-    # Group by context
-    contexts = {}
+def load_cache():
+    cache = {}
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except Exception as e:
+            print(f"Warning: Failed to load cache: {e}")
+
+    # Seed with curated TRANSLATIONS
     for (ctx, src), lang_map in TRANSLATIONS.items():
-        if ctx not in contexts:
-            contexts[ctx] = []
-        trans = lang_map.get(lang, src if lang == "en" else "")
-        contexts[ctx].append((src, trans))
+        if src not in cache:
+            cache[src] = {}
+        for lang_code, val in lang_map.items():
+            cache[src][lang_code] = val
+    return cache
 
+
+def scan_repo():
+    repo_root = os.path.abspath(os.path.join(SCRIPT_DIR, "..", "..", "..", "..", "..", ".."))
+    contexts = {}
+
+    def add_string(ctx, s):
+        if not s:
+            return
+        s = s.strip()
+        if not s or s == "_" or len(s) < 2:
+            return
+        if re.match(r"^[0-9\.\,\:\;\s\-\+\*\/\#\@\$\%\^\&\(\)\[\]\{\}\<\>\=\_\'\|\`\~\?\!]+$", s):
+            return
+        if s.startswith("key-") or s.startswith("event-") or s.startswith("http://") or s.startswith("https://"):
+            return
+        if s.startswith("internal_"):
+            return
+        if ctx not in contexts:
+            contexts[ctx] = set()
+        contexts[ctx].add(s)
+
+    # 1. UI files
+    for root, dirs, files in os.walk(os.path.join(repo_root, "src")):
+        for f in files:
+            if f.endswith(".ui"):
+                path = os.path.join(root, f)
+                try:
+                    tree = ET.parse(path)
+                    cls_elem = tree.find("class")
+                    ctx = cls_elem.text if cls_elem is not None and cls_elem.text else os.path.splitext(f)[0]
+                    for elem in tree.iter("string"):
+                        if elem.text:
+                            add_string(ctx, elem.text)
+                except Exception:
+                    pass
+
+    # 2. Mu and Python menus
+    patterns = [
+        re.compile(r"menuItem\s*\(\s*\"([^\"]+)\""),
+        re.compile(r"subMenu\s*\(\s*\"([^\"]+)\""),
+        re.compile(r"addMenu\s*\(\s*\"([^\"]+)\""),
+        re.compile(r"insertMenu\s*\(\s*\"([^\"]+)\""),
+        re.compile(r"defineMenu\s*\(\s*\"([^\"]+)\""),
+        re.compile(r"\{\s*\"([A-Za-z][A-Za-z0-9\s\.\_\-\/\:\?\!\(\)\'\,\+\%]*)\"\s*\,"),
+    ]
+
+    for root, dirs, files in os.walk(os.path.join(repo_root, "src")):
+        for f in files:
+            if f.endswith(".mu") or f.endswith(".py"):
+                path = os.path.join(root, f)
+                with open(path, "r", errors="ignore") as fp:
+                    for line in fp:
+                        for p in patterns:
+                            for m in p.finditer(line):
+                                add_string("Menu", m.group(1))
+
+    # 3. C++ tr()
+    tr_pattern = re.compile(r"\btr\s*\(\s*\"([^\"]+)\"\s*\)")
+    for root, dirs, files in os.walk(os.path.join(repo_root, "src")):
+        for f in files:
+            if f.endswith(".cpp") or f.endswith(".h"):
+                path = os.path.join(root, f)
+                ctx = os.path.splitext(f)[0]
+                with open(path, "r", errors="ignore") as fp:
+                    for line in fp:
+                        for m in tr_pattern.finditer(line):
+                            add_string(ctx, m.group(1))
+
+    # Add existing curated translations
+    for ctx, src in TRANSLATIONS:
+        add_string(ctx, src)
+
+    # Universal QObject fallback
+    contexts["QObject"] = set()
+    for c, s_set in contexts.items():
+        if c != "QObject":
+            contexts["QObject"].update(s_set)
+
+    return contexts
+
+
+def generate_ts(lang, contexts, cache):
     lines = [
         '<?xml version="1.0" encoding="utf-8"?>',
         "<!DOCTYPE TS>",
         f'<TS version="2.1" language="{lang}">',
     ]
 
-    for ctx, items in sorted(contexts.items()):
+    for ctx, s_set in sorted(contexts.items()):
         lines.append("<context>")
         lines.append(f"    <name>{xml.sax.saxutils.escape(ctx)}</name>")
-        for src, trans in items:
+        for src in sorted(s_set):
             esc_src = xml.sax.saxutils.escape(src)
+            trans = src if lang == "en" else ""
+            if lang in cache.get(src, {}):
+                trans = cache[src][lang]
             esc_trans = xml.sax.saxutils.escape(trans)
             lines.append("    <message>")
             lines.append(f"        <source>{esc_src}</source>")
@@ -1109,7 +1208,81 @@ def generate_ts(lang):
     return "\n".join(lines)
 
 
+def translate_batch(strings, target_lang):
+    if not strings:
+        return {}
+    api_lang = "zh-CN" if target_lang in ("zh", "zh_CN") else target_lang
+    numbered = [f"{i}@@@{s}" for i, s in enumerate(strings)]
+    combined = "\n".join(numbered)
+    url = (
+        "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl="
+        + api_lang
+        + "&dt=t&q="
+        + urllib.parse.quote(combined)
+    )
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                full_text = "".join([part[0] for part in data[0] if part[0]])
+                results = {}
+                for line in full_text.split("\n"):
+                    if "@@@" in line:
+                        parts = line.split("@@@", 1)
+                        try:
+                            idx = int(parts[0].strip())
+                            if idx < len(strings):
+                                results[strings[idx]] = parts[1].strip()
+                        except Exception:
+                            pass
+                return results
+        except Exception:
+            time.sleep(1 + attempt)
+    return {}
+
+
+def ensure_translations(contexts, cache):
+    all_strings = set()
+    for s_set in contexts.values():
+        all_strings.update(s_set)
+
+    target_langs = ["fr", "es", "de", "it", "ja", "ko", "zh"]
+    updated = False
+    for lang in target_langs:
+        missing = [s for s in sorted(all_strings) if s not in cache or lang not in cache[s] or not cache[s][lang]]
+        if missing:
+            print(f"[{lang}] Auto-translating {len(missing)} missing strings...")
+            batch_size = 25
+            for i in range(0, len(missing), batch_size):
+                chunk = missing[i : i + batch_size]
+                res = translate_batch(chunk, lang)
+                for s in chunk:
+                    if s not in cache:
+                        cache[s] = {}
+                    if s in res and res[s]:
+                        cache[s][lang] = res[s]
+                    else:
+                        cache[s][lang] = s
+                time.sleep(0.1)
+            updated = True
+
+    for s in all_strings:
+        if s in cache and "zh" in cache[s]:
+            cache[s]["zh_CN"] = cache[s]["zh"]
+
+    if updated:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+        print("Updated cache saved.")
+
+
 def main():
+    cache = load_cache()
+    contexts = scan_repo()
+    ensure_translations(contexts, cache)
+
     lrelease_bin = "/opt/homebrew/bin/lrelease"
     if not os.path.exists(lrelease_bin):
         import shutil
@@ -1120,12 +1293,11 @@ def main():
         ts_path = os.path.join(SCRIPT_DIR, f"i18n_{lang}.ts")
         qm_path = os.path.join(SCRIPT_DIR, f"i18n_{lang}.qm")
 
-        content = generate_ts(lang)
+        content = generate_ts(lang, contexts, cache)
         with open(ts_path, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"Wrote {ts_path}")
 
-        # Compile to .qm
         try:
             res = subprocess.run([lrelease_bin, ts_path, "-qm", qm_path], check=True, capture_output=True, text=True)
             print(f"Compiled {qm_path}: {res.stdout.strip()}")

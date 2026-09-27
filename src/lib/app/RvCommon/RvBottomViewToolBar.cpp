@@ -366,6 +366,70 @@ namespace Rv
             setSession(m_session);
     }
 
+    void RvBottomViewToolBar::retranslate()
+    {
+        if (m_smAction)
+            m_smAction->setToolTip(tr("Toggle Session Manager"));
+        if (m_paintAction)
+            m_paintAction->setToolTip(tr("Toggle Annotation tools"));
+        if (m_infoAction)
+            m_infoAction->setToolTip(tr("Toggle Image Info"));
+        if (m_networkAction)
+            m_networkAction->setToolTip(tr("Toggle RV Networking Dialog"));
+        if (m_timelineMagAction)
+            m_timelineMagAction->setToolTip(tr("Toggle Timeline Magnifier"));
+        if (m_timelineAction)
+            m_timelineAction->setToolTip(tr("Toggle Timeline"));
+        if (m_ghostAction)
+            m_ghostAction->setToolTip(tr("Toggle Ghost Mode"));
+        if (m_holdAction)
+            m_holdAction->setToolTip(tr("Toggle Hold Mode"));
+        if (m_backStepAction)
+            m_backStepAction->setToolTip(tr("Step Backward"));
+        if (m_forwardStepAction)
+            m_forwardStepAction->setToolTip(tr("Step Forward"));
+        if (m_backwardPlayAction)
+            m_backwardPlayAction->setToolTip(tr("Play Backward"));
+        if (m_forwardPlayAction)
+            m_forwardPlayAction->setToolTip(tr("Play Forward"));
+        if (m_playModeAction)
+            m_playModeAction->setToolTip(tr("Playback Mode"));
+        if (m_backMarkAction)
+            m_backMarkAction->setToolTip(tr("Previous Mark"));
+        if (m_forwardMarkAction)
+            m_forwardMarkAction->setToolTip(tr("Next Mark"));
+
+        m_actionCategoryMappings = {{
+            {m_smAction, IPCore::EventCategories::sessionManagerCategory, m_smAction->toolTip()},
+            {m_paintAction, IPCore::EventCategories::annotationToolsCategory, m_paintAction->toolTip()},
+            {m_infoAction, IPCore::EventCategories::imageInfoCategory, m_infoAction->toolTip()},
+            {m_networkAction, IPCore::EventCategories::networkingCategory, m_networkAction->toolTip()},
+            {m_timelineMagAction, IPCore::EventCategories::timelineCategory, m_timelineMagAction->toolTip()},
+            {m_timelineAction, IPCore::EventCategories::timelineCategory, m_timelineAction->toolTip()},
+
+            {m_ghostAction, IPCore::EventCategories::playcontrolCategory, m_ghostAction->toolTip()},
+            {m_holdAction, IPCore::EventCategories::playcontrolCategory, m_holdAction->toolTip()},
+
+            {m_backStepAction, IPCore::EventCategories::playcontrolCategory, m_backStepAction->toolTip()},
+            {m_forwardStepAction, IPCore::EventCategories::playcontrolCategory, m_forwardStepAction->toolTip()},
+            {m_backwardPlayAction, IPCore::EventCategories::backwardplayCategory, m_backwardPlayAction->toolTip()},
+            {m_forwardPlayAction, IPCore::EventCategories::playcontrolCategory, m_forwardPlayAction->toolTip()},
+            {m_playModeAction, IPCore::EventCategories::playcontrolCategory, m_playModeAction->toolTip()},
+
+            {m_backMarkAction, IPCore::EventCategories::playcontrolCategory, m_backMarkAction->toolTip()},
+            {m_forwardMarkAction, IPCore::EventCategories::playcontrolCategory, m_forwardMarkAction->toolTip()},
+        }};
+    }
+
+    void RvBottomViewToolBar::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            retranslate();
+        }
+        QToolBar::changeEvent(event);
+    }
+
     RvBottomViewToolBar::~RvBottomViewToolBar() {}
 
     void RvBottomViewToolBar::setSession(Session* s)

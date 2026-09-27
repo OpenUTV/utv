@@ -328,7 +328,7 @@
              <item>
               <widget class="QComboBox" name="languageCombo">
                <property name="toolTip">
-                <string>Select the user interface language. Restart OpenUTV for all changes to take full effect.</string>
+                <string>Select the user interface language.</string>
                </property>
               </widget>
              </item>

@@ -33,6 +33,7 @@
 #include <IPCore/Profile.h>
 #include <IPCore/FBCache.h>
 #include <ImfThreading.h>
+#include <QtCore/QTranslator>
 #include <QtGui/QtGui>
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QMessageBox>
@@ -457,6 +458,8 @@ namespace Rv
             m_ui.languageCombo->setCurrentIndex(langIdx);
         else
             m_ui.languageCombo->setCurrentIndex(0);
+
+        connect(m_ui.languageCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(languageIndexChanged(int)));
 
         n = 0;
         if (opts.stereoMode)
@@ -1273,15 +1276,8 @@ namespace Rv
         settings.setValue("useNativeFileDialog", m_ui.useNativeFileDialogToggle->checkState() == Qt::Checked);
         settings.setValue("startupScreenPolicy", m_ui.startupScreenCombo->currentIndex() - 1);
 
-        QString oldLang = settings.value("language", "").toString();
         QString newLang = m_ui.languageCombo->currentData().toString();
         settings.setValue("language", newLang);
-        if (oldLang != newLang)
-        {
-            QMessageBox::information(
-                this, tr("Language Changed"),
-                tr("The user interface language has been changed. Please restart OpenUTV for all changes to take full effect."));
-        }
 
         settings.setValue("fps", m_ui.fpsEdit->text().toDouble());
         settings.setValue("networkHost", m_ui.networkHostEdit->text());
@@ -1745,6 +1741,86 @@ namespace Rv
     void RvPreferences::startupResizeChanged(int state) { Options::sharedOptions().startupResize = (state == 0) ? 0 : 1; }
 
     void RvPreferences::useNativeFileDialogChanged(int state) { Options::sharedOptions().useNativeFileDialog = (state == 0) ? 0 : 1; }
+
+    static QTranslator* s_activeTranslator = nullptr;
+
+    void RvPreferences::applyLanguage(const QString& langCode)
+    {
+        if (s_activeTranslator)
+        {
+            qApp->removeTranslator(s_activeTranslator);
+            delete s_activeTranslator;
+            s_activeTranslator = nullptr;
+        }
+
+        QString code = langCode;
+        if (code.isEmpty() || code == "system")
+        {
+            const char* origLocale = getenv("ORIGINALLOCAL");
+            if (origLocale && strlen(origLocale) > 0)
+            {
+                code = QString::fromUtf8(origLocale);
+            }
+            else
+            {
+                code = QLocale::system().name();
+            }
+        }
+
+        if (!code.isEmpty() && code != "en" && !code.startsWith("en_"))
+        {
+            s_activeTranslator = new QTranslator(qApp);
+            bool loaded = s_activeTranslator->load(QString(":/translations/i18n_%1.qm").arg(code));
+            if (!loaded)
+            {
+                QString base = code.split('_').first();
+                loaded = s_activeTranslator->load(QString(":/translations/i18n_%1.qm").arg(base));
+            }
+            if (loaded)
+            {
+                qApp->installTranslator(s_activeTranslator);
+            }
+            else
+            {
+                delete s_activeTranslator;
+                s_activeTranslator = nullptr;
+            }
+        }
+
+        // Refresh all open documents so that menus and toolbars reflect the new language immediately
+        for (TwkApp::Document* doc : TwkApp::Document::documents())
+        {
+            if (RvDocument* rvDoc = reinterpret_cast<RvDocument*>(doc->opaquePointer()))
+            {
+                rvDoc->buildMenu();
+                if (rvDoc->topViewToolBar())
+                    rvDoc->topViewToolBar()->retranslate();
+                if (rvDoc->bottomViewToolBar())
+                    rvDoc->bottomViewToolBar()->retranslate();
+            }
+        }
+    }
+
+    void RvPreferences::languageIndexChanged(int index)
+    {
+        if (index < 0)
+            return;
+        QString langCode = m_ui.languageCombo->itemData(index).toString();
+        applyLanguage(langCode);
+    }
+
+    void RvPreferences::changeEvent(QEvent* event)
+    {
+        if (event && event->type() == QEvent::LanguageChange)
+        {
+            m_ui.retranslateUi(this);
+            m_ui.languageCombo->blockSignals(true);
+            m_ui.languageCombo->setItemText(0, tr("System Default"));
+            m_ui.languageCombo->setItemText(1, tr("English"));
+            m_ui.languageCombo->blockSignals(false);
+        }
+        QMainWindow::changeEvent(event);
+    }
 
     //----------------------------------------------------------------------
     //
