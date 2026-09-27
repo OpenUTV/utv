@@ -11,9 +11,9 @@ on:
         default: '2026.8'
         type: string
       choco_version:
-        description: 'Chocolatey package version override (e.g. 2026.8.1 if 2026.8 requires fix)'
+        description: 'Chocolatey package version override (leave empty to use tag version e.g. 2026.8)'
         required: false
-        default: '2026.8.1'
+        default: ''
         type: string
 
 permissions:
