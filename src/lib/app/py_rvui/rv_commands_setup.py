@@ -287,6 +287,8 @@ all_mu_commands = [
     "isConsoleVisible",
     "undo",
     "openUrl",
+    "showCodecDialog",
+    "isFFmpegShadowed",
     "openMediaFileDialog",
     "insertHalfProperty",
     "newImageSourcePixels",

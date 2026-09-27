@@ -283,6 +283,11 @@ class: UTVHelpMenuMinorMode : MinorMode
         catch (...) { ; }
     }
 
+    \: showCodecs (void; Event ev)
+    {
+        commands.showCodecDialog();
+    }
+
     \: checkUpdates (void; Event ev)
     {
         try
@@ -335,6 +340,7 @@ class: UTVHelpMenuMinorMode : MinorMode
                 menuItem("   OpenUTV on GitHub", "", "help_category", opUrl(,"https://github.com/OpenUTV/utv"), enabledItem),
                 menuItem("   Report Issue on GitHub...", "", "help_category", reportIssue, enabledItem),
                 menuItem("   Check for Updates...", "", "help_category", checkUpdates, enabledItem),
+                menuItem(if commands.isFFmpegShadowed() then "⚠️ Supercharge FFmpeg & Codecs (Relink Needed)..." else "   Supercharge FFmpeg & Codecs...", "", "help_category", showCodecs, enabledItem),
                 menuSeparator(),
                 menuText("Other Resource"),
                 menuItem("   Mu Command API Browser...", "", "help_category", docbrowser, enabledItem),
@@ -449,6 +455,15 @@ class: UTVHelpMenuMinorMode : MinorMode
                   menu,
                   "z",
                   9999);  // always last
+
+        try
+        {
+            if (commands.isFFmpegShadowed())
+            {
+                print("WARNING: ffmpeg-full is installed but shadowed by standard ffmpeg. Open Help -> Supercharge FFmpeg & Codecs to relink.\n");
+            }
+        }
+        catch (...) { ; }
 
         checkUpdatesOnStartup();
     } 

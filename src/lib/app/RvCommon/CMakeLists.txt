@@ -59,6 +59,8 @@ SET(_sources
     RvProfileManager.cpp
     StreamConnection.cpp
     RvJavaScriptObject.cpp
+    RvCodecManager.cpp
+    RvCodecDialog.cpp
     RvKeybindingsManager.cpp
     RvShortcutsDialog.cpp
 )

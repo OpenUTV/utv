@@ -70,6 +70,7 @@
 #ifdef PLATFORM_DARWIN
 #include <RvCommon/MacNativeFileDialog.h>
 #endif
+#include <RvCommon/RvCodecManager.h>
 #include <assert.h>
 #include <RvCommon/GLView.h> // WINDOWS NEEDS THIS LAST
 // #include <RvCommon/SequenceFileEngine.h>
@@ -217,6 +218,9 @@ namespace Rv
             new Function(c, "showConsole", showConsole, None, Return, "void", End),
 
             new Function(c, "isConsoleVisible", isConsoleVisible, None, Return, "bool", End),
+
+            new Function(c, "showCodecDialog", showCodecDialog, None, Return, "void", End),
+            new Function(c, "isFFmpegShadowed", isFFmpegShadowed, None, Return, "bool", End),
 
             new Function(c, "showShortcutsDialog", showShortcutsDialog, None, Return, "void", End),
 
@@ -1614,6 +1618,10 @@ namespace Rv
     }
 
     NODE_IMPLEMENTATION(isConsoleVisible, bool) { NODE_RETURN(RvApp()->console()->isVisible()); }
+
+    NODE_IMPLEMENTATION(showCodecDialog, void) { RvApp()->showCodecDialog(); }
+
+    NODE_IMPLEMENTATION(isFFmpegShadowed, bool) { NODE_RETURN(RvCodecManager::instance()->isFFmpegShadowed()); }
 
     NODE_IMPLEMENTATION(showShortcutsDialog, void) { RvApp()->showShortcutsDialog(); }
 

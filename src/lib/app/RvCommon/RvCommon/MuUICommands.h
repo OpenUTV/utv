@@ -37,6 +37,8 @@ namespace Rv
     NODE_DECLARATION(showNetworkDialog, void);
     NODE_DECLARATION(showConsole, void);
     NODE_DECLARATION(isConsoleVisible, bool);
+    NODE_DECLARATION(showCodecDialog, void);
+    NODE_DECLARATION(isFFmpegShadowed, bool);
     NODE_DECLARATION(showShortcutsDialog, void);
     NODE_DECLARATION(toggleShortcutsDialog, void);
     NODE_DECLARATION(isShortcutsDialogVisible, bool);
