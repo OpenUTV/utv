@@ -36,6 +36,7 @@ namespace Rv
         void paintEvent(QPaintEvent* event) override;
         void showEvent(QShowEvent* event) override;
         void resizeEvent(QResizeEvent* event) override;
+        bool eventFilter(QObject* obj, QEvent* event) override;
 
     private Q_SLOTS:
         void onSearchTextChanged(const QString& text);
