@@ -11,6 +11,7 @@
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 #include <QtCore/QProcess>
+#include <QtCore/QProcessEnvironment>
 #include <QtCore/QStandardPaths>
 #include <QtGui/QDesktopServices>
 #include <QtCore/QUrl>
@@ -84,9 +85,26 @@ namespace Rv
 
         // 1. Run 'ffmpeg -version' to inspect active configuration flags
         QString ffmpegOutput;
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        QString currentPath = env.value("PATH");
+#if defined(PLATFORM_DARWIN)
+        if (!currentPath.contains("/opt/homebrew/bin"))
+        {
+            currentPath = "/opt/homebrew/bin:/usr/local/bin:" + currentPath;
+            env.insert("PATH", currentPath);
+        }
+#elif defined(__linux__)
+        if (!currentPath.contains("/home/linuxbrew/.linuxbrew/bin"))
+        {
+            currentPath = "/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:" + currentPath;
+            env.insert("PATH", currentPath);
+        }
+#endif
+
         QProcess process;
+        process.setProcessEnvironment(env);
         process.start("ffmpeg", QStringList() << "-version");
-        if (process.waitForFinished(1500))
+        if (process.waitForFinished(500))
         {
             ffmpegOutput = QString::fromUtf8(process.readAllStandardOutput());
         }
@@ -101,8 +119,9 @@ namespace Rv
                 if (QFile::exists(b))
                 {
                     QProcess p2;
+                    p2.setProcessEnvironment(env);
                     p2.start(b, QStringList() << "-version");
-                    if (p2.waitForFinished(1500))
+                    if (p2.waitForFinished(500))
                     {
                         ffmpegOutput = QString::fromUtf8(p2.readAllStandardOutput());
                         if (!ffmpegOutput.isEmpty())
@@ -397,6 +416,16 @@ namespace Rv
 #if defined(PLATFORM_DARWIN) || defined(__linux__)
         QString cmd = "brew unlink ffmpeg-full && brew unlink ffmpeg && brew link --overwrite ffmpeg-full";
         QProcess proc;
+        QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+        QString currentPath = env.value("PATH");
+#if defined(PLATFORM_DARWIN)
+        currentPath = "/opt/homebrew/bin:/usr/local/bin:" + currentPath;
+#elif defined(__linux__)
+        currentPath = "/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:" + currentPath;
+#endif
+        env.insert("PATH", currentPath);
+        proc.setProcessEnvironment(env);
+
         proc.start("sh", QStringList() << "-c" << cmd);
         if (!proc.waitForFinished(10000))
         {

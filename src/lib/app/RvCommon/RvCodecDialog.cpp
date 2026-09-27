@@ -31,9 +31,8 @@ namespace Rv
         setMinimumSize(640, 480);
 
         setupUI();
-        refreshUI();
-
         connect(RvCodecManager::instance(), &RvCodecManager::statusUpdated, this, &RvCodecDialog::refreshUI);
+        refreshUI();
     }
 
     void RvCodecDialog::setupUI()
@@ -190,10 +189,17 @@ namespace Rv
 
     void RvCodecDialog::refreshUI()
     {
-        // Clear existing cards
-        qDeleteAll(m_cardsLayout->parentWidget()->findChildren<QWidget*>(QString(), Qt::FindDirectChildrenOnly));
+        // Clear existing cards cleanly from layout
+        QLayoutItem* item = nullptr;
+        while ((item = m_cardsLayout->takeAt(0)) != nullptr)
+        {
+            if (item->widget())
+            {
+                delete item->widget();
+            }
+            delete item;
+        }
 
-        RvCodecManager::instance()->probeAll();
         const auto& codecs = RvCodecManager::instance()->codecs();
 
         bool isShadowed = RvCodecManager::instance()->isFFmpegShadowed();
@@ -336,6 +342,6 @@ namespace Rv
 
     void RvCodecDialog::onGetNdiClicked() { QDesktopServices::openUrl(QUrl("https://ndi.video/tools/")); }
 
-    void RvCodecDialog::onRefreshClicked() { refreshUI(); }
+    void RvCodecDialog::onRefreshClicked() { RvCodecManager::instance()->probeAll(); }
 
 } // namespace Rv

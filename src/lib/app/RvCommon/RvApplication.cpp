@@ -1205,7 +1205,7 @@ namespace Rv
 
     void RvApplication::showCodecDialog()
     {
-        codecDialog()->refreshUI();
+        RvCodecManager::instance()->probeAll();
         codecDialog()->show();
         codecDialog()->raise();
         codecDialog()->activateWindow();
