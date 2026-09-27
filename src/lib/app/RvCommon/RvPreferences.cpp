@@ -37,6 +37,11 @@
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
 #include <TwkQtCoreUtil/QtConvert.h>
 #include <RvApp/Options.h>
 #include <RvApp/RvSession.h>
@@ -232,6 +237,40 @@ namespace Rv
         connect(m_ui.exrNoOneChannelToggle, SIGNAL(stateChanged(int)), this, SLOT(exrNoOneChannelChanged(int)));
 
         connect(m_ui.exrReadWindowIsDisplayWindowToggle, SIGNAL(stateChanged(int)), this, SLOT(exrReadWindowIsDisplayWindowChanged(int)));
+
+        //
+        //  Supercharged Codecs & Formats Button / Section at top of Formats tab
+        //
+        if (m_ui.scrollAreaWidgetContents && m_ui.scrollAreaWidgetContents->layout())
+        {
+            QVBoxLayout* formatsLayout = qobject_cast<QVBoxLayout*>(m_ui.scrollAreaWidgetContents->layout());
+            if (formatsLayout)
+            {
+                QGroupBox* codecBox = new QGroupBox("Video Codecs & Professional Formats", m_ui.scrollAreaWidgetContents);
+                QVBoxLayout* codecLayout = new QVBoxLayout(codecBox);
+
+                QLabel* codecLabel = new QLabel("Manage video decoders including supercharged FFmpeg (H.265/HEVC, AAC, ProRes), "
+                                                "Blackmagic RAW, RED Digital Cinema, and NDI Network Video.",
+                                                codecBox);
+                codecLabel->setWordWrap(true);
+                codecLayout->addWidget(codecLabel);
+
+                QHBoxLayout* btnLayout = new QHBoxLayout();
+                QPushButton* openCodecBtn = new QPushButton("Configure Video Codecs & Third-Party SDKs...", codecBox);
+                connect(openCodecBtn, &QPushButton::clicked,
+                        []()
+                        {
+                            RvApplication* app = RvApp();
+                            if (app)
+                                app->showCodecDialog();
+                        });
+                btnLayout->addWidget(openCodecBtn);
+                btnLayout->addStretch();
+                codecLayout->addLayout(btnLayout);
+
+                formatsLayout->insertWidget(0, codecBox);
+            }
+        }
 
         connect(m_ui.exrNumThreadsEdit, SIGNAL(editingFinished()), this, SLOT(exrNumThreadsFinished()));
 

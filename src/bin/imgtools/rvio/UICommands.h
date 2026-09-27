@@ -35,6 +35,8 @@ namespace RVIO
     NODE_DECLARATION(watchFile, void);
     NODE_DECLARATION(showConsole, void);
     NODE_DECLARATION(isConsoleVisible, bool);
+    NODE_DECLARATION(showCodecDialog, void);
+    NODE_DECLARATION(isFFmpegShadowed, bool);
     NODE_DECLARATION(remoteSendMessage, void);
     NODE_DECLARATION(remoteSendEvent, void);
     NODE_DECLARATION(remoteApplications, Mu::Pointer);

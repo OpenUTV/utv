@@ -37,6 +37,7 @@ namespace Rv
     class RvNetworkDialog;
     class RvWebManager;
     class RvSession;
+    class RvCodecDialog;
     class QTGLVideoDevice;
     class DesktopVideoModule;
 
@@ -98,6 +99,8 @@ namespace Rv
         RvWebManager* webManager();
         RvPreferences* prefDialog();
         RvProfileManager* profileManager();
+        RvCodecDialog* codecDialog();
+        void showCodecDialog();
 
         bool networkDialogRunning() const { return m_networkDialog ? true : false; }
 
@@ -151,6 +154,7 @@ namespace Rv
         Timer m_fireTimer;
         RvPreferences* m_prefDialog;
         RvProfileManager* m_profileDialog;
+        RvCodecDialog* m_codecDialog;
         QMenuBar* m_macMenuBar;
         QMenu* m_macRVMenu;
         QAction* m_aboutAct;

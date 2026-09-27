@@ -1778,6 +1778,8 @@ encodePassword "-"
 decodePassword "-"
 cacheDir "Location of http network object caching"
 openUrl "Open the given URL using the prefered desktop application (browser, etc)"
+showCodecDialog "Show the Codecs & Third-Party SDK Status dialog"
+isFFmpegShadowed "Returns true if ffmpeg-full is installed on macOS/Linux but shadowed by regular ffmpeg"
 
 existingFilesInSequence 
 """

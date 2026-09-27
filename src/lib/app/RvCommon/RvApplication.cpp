@@ -18,6 +18,8 @@
 #include <RvCommon/GLView.h> // WINDOWS: include AFTER other stuff
 #include <RvCommon/QTGLVideoDevice.h>
 #include <RvCommon/DesktopVideoModule.h>
+#include <RvCommon/RvCodecDialog.h>
+#include <RvCommon/RvCodecManager.h>
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
@@ -372,6 +374,7 @@ namespace Rv
         , m_console(0)
         , m_prefDialog(0)
         , m_profileDialog(0)
+        , m_codecDialog(0)
         , m_aboutAct(0)
         , m_prefAct(0)
         , m_networkAct(0)
@@ -510,7 +513,9 @@ namespace Rv
         delete m_newTimer;
         delete m_console;
         delete m_networkDialog;
+        delete m_codecDialog;
         delete m_lazyBuildTimer;
+        m_codecDialog = 0;
         m_console = 0;
         m_timer = 0;
         m_lazyBuildTimer = 0;
@@ -1185,6 +1190,25 @@ namespace Rv
         }
 
         return m_prefDialog;
+    }
+
+    RvCodecDialog* RvApplication::codecDialog()
+    {
+        if (!m_codecDialog)
+        {
+            Rv::Session* session = Rv::Session::currentSession();
+            RvDocument* rvDoc = session ? (RvDocument*)session->opaquePointer() : nullptr;
+            m_codecDialog = new RvCodecDialog(rvDoc);
+        }
+        return m_codecDialog;
+    }
+
+    void RvApplication::showCodecDialog()
+    {
+        codecDialog()->refreshUI();
+        codecDialog()->show();
+        codecDialog()->raise();
+        codecDialog()->activateWindow();
     }
 
     void RvApplication::prefs()

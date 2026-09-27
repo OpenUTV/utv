@@ -155,10 +155,13 @@ IF(APPLE)
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-diagnostics.sh ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh COPYONLY)
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.py ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.py COPYONLY)
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-check-updates.sh ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh COPYONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-supercharge-ffmpeg.py ${RV_STAGE_RESOURCES_DIR}/openutv-supercharge-ffmpeg.py COPYONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/openutv-supercharge-ffmpeg.sh ${RV_STAGE_RESOURCES_DIR}/openutv-supercharge-ffmpeg.sh COPYONLY)
   FILE(
     CHMOD
     ${RV_STAGE_RESOURCES_DIR}/openutv-diagnostics.sh
     ${RV_STAGE_RESOURCES_DIR}/openutv-check-updates.sh
+    ${RV_STAGE_RESOURCES_DIR}/openutv-supercharge-ffmpeg.sh
     PERMISSIONS
     OWNER_READ
     OWNER_WRITE

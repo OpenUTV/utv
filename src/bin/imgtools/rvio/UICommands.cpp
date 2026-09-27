@@ -154,6 +154,10 @@ namespace RVIO
 
             new Function(c, "openUrl", openUrl, None, Return, "void", Parameters, new Param(c, "url", "string"), End),
 
+            new Function(c, "showCodecDialog", showCodecDialog, None, Return, "void", End),
+
+            new Function(c, "isFFmpegShadowed", isFFmpegShadowed, None, Return, "bool", End),
+
             new Function(c, "devicePixelRatio", devicePixelRatio, None, Return, "float", End),
 
             EndArguments);
@@ -238,6 +242,10 @@ namespace RVIO
     NODE_DECLARATION(cacheDir, Mu::Pointer) { NODE_RETURN(0); }
 
     NODE_IMPLEMENTATION(openUrl, void) {}
+
+    NODE_IMPLEMENTATION(showCodecDialog, void) {}
+
+    NODE_IMPLEMENTATION(isFFmpegShadowed, bool) { NODE_RETURN(false); }
 
     NODE_DECLARATION(mainWindowWidget, Mu::Pointer) { NODE_RETURN(0); }
 
