@@ -1482,6 +1482,12 @@ showConsole "Show the console window"
 
 isConsoleVisible "Returns true if the console window is visible."
 
+showShortcutsDialog "Show the keyboard shortcuts overlay dialog"
+
+toggleShortcutsDialog "Toggle the keyboard shortcuts overlay dialog"
+
+isShortcutsDialogVisible "Returns true if the keyboard shortcuts dialog is visible"
+
 showTopViewToolbar "Show/Hide top view toolbar"
 showBottomViewToolbar "Show/Hide bottom view toolbar"
 isTopViewToolbarVisible "Returns true if the toolbar is visible"

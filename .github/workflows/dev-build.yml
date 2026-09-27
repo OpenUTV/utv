@@ -488,35 +488,22 @@ jobs:
           EOF
         shell: bash
 
-      - name: Publish In-Place to dev-build Tag
+      - name: Publish Development Release to dev-build Tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="dev-build"
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Deleting stale assets from existing $tag release..."
-            gh release view "$tag" --json assets --jq '.assets[].name' |
-            while read -r asset; do
-              gh release delete-asset "$tag" "$asset" --yes || true
-            done
-
-            echo "Updating dev-build release in-place (no watcher email spam)..."
-            gh release edit "$tag" \
-              --target "$GITHUB_SHA" \
-              --prerelease \
-              --latest=false \
-              --title "OpenUTV Development Build" \
-              --notes-file dev_notes.md
-            
-            gh release upload "$tag" _dist/* --clobber
-          else
-            echo "Creating initial dev-build release..."
-            gh release create "$tag" \
-              --target "$GITHUB_SHA" \
-              --prerelease \
-              --latest=false \
-              --title "OpenUTV Development Build" \
-              --notes-file dev_notes.md \
-              _dist/*
+            echo "Recreating $tag release so published_at reflects the latest build time..."
+            gh release delete "$tag" --yes --cleanup-tag=false || true
           fi
+
+          echo "Publishing development release..."
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --latest=false \
+            --title "OpenUTV Development Build" \
+            --notes-file dev_notes.md \
+            _dist/*
         shell: bash

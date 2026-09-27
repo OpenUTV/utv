@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>openutv-dependencies</id>
-    <version>26.5.0</version>
+    <version>26.5.1</version>
     <title>OpenUTV Dependencies</title>
     <authors>OpenUTV Contributors</authors>
     <owners>OpenUTV</owners>

@@ -126,8 +126,13 @@
     <file>images/zoomi_32x32.png</file>
     <file>images/zoomo_32x32.png</file>
     <file>translations/i18n_en.qm</file>
+    <file>translations/i18n_es.qm</file>
+    <file>translations/i18n_fr.qm</file>
+    <file>translations/i18n_de.qm</file>
+    <file>translations/i18n_it.qm</file>
     <file>translations/i18n_ja.qm</file>
     <file>translations/i18n_ko.qm</file>
     <file>translations/i18n_zh.qm</file>
+    <file>translations/i18n_zh_CN.qm</file>
   </qresource>
 </RCC>

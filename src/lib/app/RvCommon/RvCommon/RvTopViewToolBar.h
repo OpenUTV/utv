@@ -50,6 +50,7 @@ namespace Rv
         virtual ~RvTopViewToolBar();
 
         void build();
+        void retranslate();
         void makeActive(bool);
         void makeActiveFromSettings();
 
@@ -69,6 +70,7 @@ namespace Rv
         void setFullscreen(bool);
 
         virtual bool event(QEvent*);
+        virtual void changeEvent(QEvent* event) override;
         void bgMenuUpdate2();
 
     private slots:

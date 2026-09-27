@@ -221,6 +221,12 @@ namespace Rv
 
             new Function(c, "showCodecDialog", showCodecDialog, None, Return, "void", End),
             new Function(c, "isFFmpegShadowed", isFFmpegShadowed, None, Return, "bool", End),
+
+            new Function(c, "showShortcutsDialog", showShortcutsDialog, None, Return, "void", End),
+
+            new Function(c, "toggleShortcutsDialog", toggleShortcutsDialog, None, Return, "void", End),
+
+            new Function(c, "isShortcutsDialogVisible", isShortcutsDialogVisible, None, Return, "bool", End),
             // network
 
             new Function(c, "remoteSendMessage", remoteSendMessage, None, Return, "void", Parameters, new Param(c, "message", "string"),
@@ -1616,6 +1622,12 @@ namespace Rv
     NODE_IMPLEMENTATION(showCodecDialog, void) { RvApp()->showCodecDialog(); }
 
     NODE_IMPLEMENTATION(isFFmpegShadowed, bool) { NODE_RETURN(RvCodecManager::instance()->isFFmpegShadowed()); }
+
+    NODE_IMPLEMENTATION(showShortcutsDialog, void) { RvApp()->showShortcutsDialog(); }
+
+    NODE_IMPLEMENTATION(toggleShortcutsDialog, void) { RvApp()->toggleShortcutsDialog(); }
+
+    NODE_IMPLEMENTATION(isShortcutsDialogVisible, bool) { NODE_RETURN(RvApp()->isShortcutsDialogVisible()); }
 
     NODE_IMPLEMENTATION(remoteSendMessage, void)
     {

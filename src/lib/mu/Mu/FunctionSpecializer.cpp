@@ -204,7 +204,7 @@ namespace Mu
                 continue;
             }
 
-            sprintf(temp, "v%d", i);
+            snprintf(temp, sizeof(temp), "v%d", i);
 
             _as.clearInitializerList();
             const Type* t = translate(v->storageClass());

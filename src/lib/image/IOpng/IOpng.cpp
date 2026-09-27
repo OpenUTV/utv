@@ -35,10 +35,10 @@ namespace TwkFB
     {
         char temp[128];
 #ifdef HAVE_LIBSPNG
-        sprintf(temp, "PNG (libspng %d.%d.%d, fallback libpng %s)", SPNG_VERSION_MAJOR, SPNG_VERSION_MINOR, SPNG_VERSION_PATCH,
-                PNG_LIBPNG_VER_STRING);
+        snprintf(temp, sizeof(temp), "PNG (libspng %d.%d.%d, fallback libpng %s)", SPNG_VERSION_MAJOR, SPNG_VERSION_MINOR,
+                 SPNG_VERSION_PATCH, PNG_LIBPNG_VER_STRING);
 #else
-        sprintf(temp, "PNG (libpng %s)", PNG_LIBPNG_VER_STRING);
+        snprintf(temp, sizeof(temp), "PNG (libpng %s)", PNG_LIBPNG_VER_STRING);
 #endif
         return temp;
     }

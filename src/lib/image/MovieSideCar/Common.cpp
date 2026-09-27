@@ -104,7 +104,8 @@ namespace TwkMovie
                 outstr.erase(Message::SizeInBytes() - 1, outstr.size());
             }
 
-            strcpy(outBuffer, outstr.c_str());
+            strncpy(outBuffer, outstr.c_str(), Message::SizeInBytes());
+            outBuffer[Message::SizeInBytes() - 1] = '\0';
 
             return outstr.size() + 1;
         }

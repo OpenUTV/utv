@@ -46,6 +46,11 @@ class: UTVHelpMenuMinorMode : MinorMode
         }
     }
 
+    \: showShortcutsOverlay (void; Event ev)
+    {
+        toggleShortcutsDialog();
+    }
+
     \: describeHelp (void; Event ev)
     {
         displayFeedback("Describe Options (Hit 'k' for Keys, 'e' for Events)", 10e6);
@@ -305,6 +310,21 @@ class: UTVHelpMenuMinorMode : MinorMode
         }
     }
 
+    \: checkUpdatesOnStartup (void;)
+    {
+        try
+        {
+            let script = findHelperScript("openutv-check-updates");
+            if (script != "")
+            {
+                let v = commands.getVersion();
+                string curVer = "%d.%d.%d" % (v[0], v[1], v[2]);
+                runHelperScript(script, string[] { "--startup", "--current-version", curVer });
+            }
+        }
+        catch (...) { ; }
+    }
+
     \: inactiveState (int;) { DisabledMenuState; }
 
     method: UTVHelpMenuMinorMode (UTVHelpMenuMinorMode;)
@@ -327,7 +347,8 @@ class: UTVHelpMenuMinorMode : MinorMode
                 menuSeparator(),
                 menuText("Utilities"),
                 menuItem("   Collect Diagnostics Package...", "", "help_category", collectDiagnostics, enabledItem),
-                menuItem("   Describe...", "key-down--?", "help_category", describeHelp, enabledItem),
+                menuItem("   Keyboard Shortcuts...", "?", "help_category", showShortcutsOverlay, enabledItem),
+                menuItem("   Describe...", "key-down--control--meta--?", "help_category", describeHelp, enabledItem),
                 menuItem("   Describe Key Binding...", "", "help_category", describeKeyBinding, enabledItem),
                 menuItem("   Show Current Bindings", "", "help_category", dumpBindings, enabledItem),
                 menuItem("   Show Environment", "", "help_category", ~showEnv, enabledItem)
@@ -427,7 +448,9 @@ class: UTVHelpMenuMinorMode : MinorMode
         });
         
         this.init("help",
-                  [("key-down--?", describeHelp, "Show Help Options")],
+                  [("key-down--?", showShortcutsOverlay, "Show Keyboard Shortcuts Overlay"),
+                   ("key-down--control--meta--?", describeHelp, "Show Help Options"),
+                   ("key-down--control--alt--?", describeHelp, "Show Help Options")],
                   nil,
                   menu,
                   "z",
@@ -441,6 +464,8 @@ class: UTVHelpMenuMinorMode : MinorMode
             }
         }
         catch (...) { ; }
+
+        checkUpdatesOnStartup();
     } 
 }
 

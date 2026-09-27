@@ -79,6 +79,9 @@ from pymu import MuSymbol  # noqa: E402
 all_mu_commands = [
     "insertByteProperty",
     "showConsole",
+    "showShortcutsDialog",
+    "toggleShortcutsDialog",
+    "isShortcutsDialogVisible",
     "newImageSource",
     "getCurrentImageChannelNames",
     "fullScreenMode",

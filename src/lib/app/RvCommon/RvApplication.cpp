@@ -20,6 +20,8 @@
 #include <RvCommon/DesktopVideoModule.h>
 #include <RvCommon/RvCodecDialog.h>
 #include <RvCommon/RvCodecManager.h>
+#include <RvCommon/RvShortcutsDialog.h>
+#include <RvCommon/RvKeybindingsManager.h>
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
@@ -375,6 +377,7 @@ namespace Rv
         , m_prefDialog(0)
         , m_profileDialog(0)
         , m_codecDialog(0)
+        , m_shortcutsDialog(0)
         , m_aboutAct(0)
         , m_prefAct(0)
         , m_networkAct(0)
@@ -514,8 +517,10 @@ namespace Rv
         delete m_console;
         delete m_networkDialog;
         delete m_codecDialog;
+        delete m_shortcutsDialog;
         delete m_lazyBuildTimer;
         m_codecDialog = 0;
+        m_shortcutsDialog = 0;
         m_console = 0;
         m_timer = 0;
         m_lazyBuildTimer = 0;
@@ -615,18 +620,18 @@ namespace Rv
         ostringstream date;
         TWK_DEPLOY_SHOW_PROGRAM_BANNER(date);
 
-        vector<char> temp;
-        temp.reserve(2048);
+        QString aboutText;
         if (TWK_DEPLOY_PATCH_LEVEL() == 0)
         {
-            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
-                    TWK_DEPLOY_MINOR_VERSION(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
+            aboutText =
+                QString::asprintf("<h1>%s</h1><h2>%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
+                                  TWK_DEPLOY_MINOR_VERSION(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
         }
         else
         {
-            sprintf(temp.data(), "<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME, TWK_DEPLOY_MAJOR_VERSION(),
-                    TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD, headerComment.str().c_str(), UI_APPLICATION_NAME,
-                    COPYRIGHT_TEXT);
+            aboutText = QString::asprintf("<h1>%s</h1><h2>%d.%d.%d (%s)</h2> %s <p>%s %s </p>", UI_APPLICATION_NAME,
+                                          TWK_DEPLOY_MAJOR_VERSION(), TWK_DEPLOY_MINOR_VERSION(), TWK_DEPLOY_PATCH_LEVEL(), GIT_HEAD,
+                                          headerComment.str().c_str(), UI_APPLICATION_NAME, COPYRIGHT_TEXT);
         }
 
         const TwkApp::Document* doc = TwkApp::Document::activeDocument();
@@ -634,8 +639,8 @@ namespace Rv
         if (doc)
             parent = (RvDocument*)doc->opaquePointer();
 
-        QMessageBox* msgBox = new QMessageBox(QMessageBox::Information, "About " UI_APPLICATION_NAME, QString(temp.data()),
-                                              QMessageBox::NoButton, parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
+        QMessageBox* msgBox = new QMessageBox(QMessageBox::Information, "About " UI_APPLICATION_NAME, aboutText, QMessageBox::NoButton,
+                                              parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint);
         msgBox->setAttribute(Qt::WA_DeleteOnClose);
         QIcon icon = msgBox->windowIcon();
         QSize size = icon.actualSize(QSize(64, 64));
@@ -1211,6 +1216,38 @@ namespace Rv
         codecDialog()->activateWindow();
     }
 
+    RvShortcutsDialog* RvApplication::shortcutsDialog()
+    {
+        if (!m_shortcutsDialog)
+        {
+            Rv::Session* session = Rv::Session::currentSession();
+            RvDocument* rvDoc = session ? (RvDocument*)session->opaquePointer() : nullptr;
+            m_shortcutsDialog = new RvShortcutsDialog(rvDoc);
+        }
+        return m_shortcutsDialog;
+    }
+
+    void RvApplication::showShortcutsDialog()
+    {
+        shortcutsDialog()->show();
+        shortcutsDialog()->raise();
+        shortcutsDialog()->activateWindow();
+    }
+
+    void RvApplication::toggleShortcutsDialog()
+    {
+        if (m_shortcutsDialog && m_shortcutsDialog->isVisible())
+        {
+            m_shortcutsDialog->hide();
+        }
+        else
+        {
+            showShortcutsDialog();
+        }
+    }
+
+    bool RvApplication::isShortcutsDialogVisible() const { return m_shortcutsDialog && m_shortcutsDialog->isVisible(); }
+
     void RvApplication::prefs()
     {
         if (isInPresentationMode())
@@ -1414,29 +1451,22 @@ namespace Rv
         //  URL is baked, so un-bake
         //
         {
-            char* buf = new char[bakedUrl.size()];
-            strcpy(buf, rawPrefix);
+            string bufs = rawPrefix;
+            const char* bakedP = bakedUrl.c_str() + strlen(bakedPrefix);
+            const char* lim = bakedUrl.c_str() + bakedUrl.size();
 
-            char* bakedP = ((char*)(bakedUrl.c_str())) + strlen(bakedPrefix);
-            char* rawP = buf + strlen(rawPrefix);
-            char* lim = ((char*)(bakedUrl.c_str())) + bakedUrl.size() - -1;
-
-            while (bakedP < lim)
+            while (bakedP + 1 < lim)
             {
-                if (isxdigit(*bakedP) && isxdigit(*(bakedP + 1)))
+                if (isxdigit(bakedP[0]) && isxdigit(bakedP[1]))
                 {
-                    unsigned int c;
+                    unsigned int c = 0;
                     sscanf(bakedP, "%02x", &c);
-                    *(rawP++) = (char)c;
+                    bufs.push_back((char)c);
                     bakedP += 2;
                 }
                 else
                     ++bakedP;
             }
-            *rawP = '\0';
-
-            string bufs(buf);
-            delete[] buf;
             return bufs;
         }
         else
@@ -1618,12 +1648,12 @@ namespace Rv
         {
             if (encodeEverything)
             {
-                sprintf(hexBuf, "%02x", int(url[i]));
+                snprintf(hexBuf, sizeof(hexBuf), "%02x", static_cast<unsigned char>(url[i]));
                 newURL += string(hexBuf);
             }
-            else if (disallowed[url[i]])
+            else if (disallowed[static_cast<unsigned char>(url[i])])
             {
-                sprintf(hexBuf, "%%%02x", int(url[i]));
+                snprintf(hexBuf, sizeof(hexBuf), "%%%02x", static_cast<unsigned char>(url[i]));
                 newURL += string(hexBuf);
             }
             else

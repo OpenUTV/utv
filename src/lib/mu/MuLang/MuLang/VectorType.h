@@ -246,9 +246,9 @@ namespace Mu
         const MachineRep* rep = machineRep();
         char rn[80], ern[80];
         const char* tn = name().c_str();
-        sprintf(rn, "%s&", tn);
+        snprintf(rn, sizeof(rn), "%s&", tn);
         const char* en = elementType()->name().c_str();
-        sprintf(ern, "%s&", en);
+        snprintf(ern, sizeof(ern), "%s&", en);
 
         const char* memberNames = "xyzw";
 

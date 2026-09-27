@@ -269,13 +269,15 @@ BOM                     \xef\xbb\xbf
 "++" |
 "--"			{
 			    as->addChar(yyleng);
-			    strcpy(LVAL->_op,yytext);
+			    strncpy(LVAL->_op,yytext,3);
+			    LVAL->_op[3] = '\0';
 			    return MU_OP_INC;
 			}
 
 ":="			{
 			    as->addChar(yyleng);
-			    strcpy(LVAL->_op,yytext);
+			    strncpy(LVAL->_op,yytext,3);
+			    LVAL->_op[3] = '\0';
 			    return MU_OP_SYMASSIGN;
 			}
 
@@ -290,12 +292,13 @@ BOM                     \xef\xbb\xbf
 "<<=" |
 ">>="			{
 			    as->addChar(yyleng);
-			    strcpy(LVAL->_op,yytext);
+			    strncpy(LVAL->_op,yytext,3);
+			    LVAL->_op[3] = '\0';
 			    return MU_OP_ASSIGN;
 			}
 
-"eq"			{ as->addChar(yyleng); strcpy(LVAL->_op,yytext); return MU_EQ; }
-"neq"			{ as->addChar(yyleng); strcpy(LVAL->_op,yytext); return MU_NEQ; }
+"eq"			{ as->addChar(yyleng); strncpy(LVAL->_op,yytext,3); LVAL->_op[3] = '\0'; return MU_EQ; }
+"neq"			{ as->addChar(yyleng); strncpy(LVAL->_op,yytext,3); LVAL->_op[3] = '\0'; return MU_NEQ; }
 
 "=>"			{ as->addChar(yyleng); return MU_DOUBLEARROW; }
 "->"			{ as->addChar(yyleng); return MU_ARROW; }

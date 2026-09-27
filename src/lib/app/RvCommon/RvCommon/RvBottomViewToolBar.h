@@ -39,6 +39,8 @@ namespace Rv
         virtual Result receiveEvent(const TwkApp::Event&) override;
 
         void build();
+        void retranslate();
+        virtual void changeEvent(QEvent* event) override;
         void makeActive(bool);
         void makeActiveFromSettings();
 

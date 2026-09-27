@@ -65,7 +65,7 @@ namespace TwkFB
     string IOjpeg::about() const
     {
         char temp[80];
-        sprintf(temp, "JPEG (IJG %d)", JPEG_LIB_VERSION);
+        snprintf(temp, sizeof(temp), "JPEG (IJG %d)", JPEG_LIB_VERSION);
         return temp;
     }
 

@@ -61,6 +61,8 @@ SET(_sources
     RvJavaScriptObject.cpp
     RvCodecManager.cpp
     RvCodecDialog.cpp
+    RvKeybindingsManager.cpp
+    RvShortcutsDialog.cpp
 )
 
 # IF(RV_TARGET_DARWIN) LIST(APPEND _sources CGDesktopVideoDevice.cpp CGDesktopVideoDeviceArm.cpp DisplayLink.cpp) ENDIF()

@@ -313,6 +313,40 @@
              </item>
             </layout>
            </item>
+           <item row="7" column="0">
+            <widget class="QLabel" name="label_language">
+             <property name="text">
+              <string>Language</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_language">
+             <item>
+              <widget class="QComboBox" name="languageCombo">
+               <property name="toolTip">
+                <string>Select the user interface language.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_language">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
           </layout>
          </item>
          <item>

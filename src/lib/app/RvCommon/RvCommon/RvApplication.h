@@ -38,6 +38,7 @@ namespace Rv
     class RvWebManager;
     class RvSession;
     class RvCodecDialog;
+    class RvShortcutsDialog;
     class QTGLVideoDevice;
     class DesktopVideoModule;
 
@@ -101,6 +102,10 @@ namespace Rv
         RvProfileManager* profileManager();
         RvCodecDialog* codecDialog();
         void showCodecDialog();
+        RvShortcutsDialog* shortcutsDialog();
+        void showShortcutsDialog();
+        void toggleShortcutsDialog();
+        bool isShortcutsDialogVisible() const;
 
         bool networkDialogRunning() const { return m_networkDialog ? true : false; }
 
@@ -155,6 +160,7 @@ namespace Rv
         RvPreferences* m_prefDialog;
         RvProfileManager* m_profileDialog;
         RvCodecDialog* m_codecDialog;
+        RvShortcutsDialog* m_shortcutsDialog;
         QMenuBar* m_macMenuBar;
         QMenu* m_macRVMenu;
         QAction* m_aboutAct;
