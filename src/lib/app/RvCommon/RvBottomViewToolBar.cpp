@@ -400,16 +400,10 @@ namespace Rv
             m_forwardMarkAction->setToolTip(tr("Next Mark"));
 
         m_actionCategoryMappings = {{
-            {m_smAction, IPCore::EventCategories::sessionManagerCategory, m_smAction->toolTip()},
-            {m_paintAction, IPCore::EventCategories::annotationToolsCategory, m_paintAction->toolTip()},
-            {m_infoAction, IPCore::EventCategories::imageInfoCategory, m_infoAction->toolTip()},
-            {m_networkAction, IPCore::EventCategories::networkingCategory, m_networkAction->toolTip()},
-            {m_timelineMagAction, IPCore::EventCategories::timelineCategory, m_timelineMagAction->toolTip()},
-            {m_timelineAction, IPCore::EventCategories::timelineCategory, m_timelineAction->toolTip()},
-
-            {m_ghostAction, IPCore::EventCategories::playcontrolCategory, m_ghostAction->toolTip()},
-            {m_holdAction, IPCore::EventCategories::playcontrolCategory, m_holdAction->toolTip()},
-
+            {m_smAction, IPCore::EventCategories::sessionmanagerCategory, m_smAction->toolTip()},
+            {m_paintAction, IPCore::EventCategories::annotateCategory, m_paintAction->toolTip()},
+            {m_holdAction, IPCore::EventCategories::holdAndGhostCategory, m_holdAction->toolTip()},
+            {m_ghostAction, IPCore::EventCategories::holdAndGhostCategory, m_ghostAction->toolTip()},
             {m_backStepAction, IPCore::EventCategories::playcontrolCategory, m_backStepAction->toolTip()},
             {m_forwardStepAction, IPCore::EventCategories::playcontrolCategory, m_forwardStepAction->toolTip()},
             {m_backwardPlayAction, IPCore::EventCategories::backwardplayCategory, m_backwardPlayAction->toolTip()},
