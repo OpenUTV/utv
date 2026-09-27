@@ -80,6 +80,12 @@ namespace RVIO
             new Function(c, "showConsole", showConsole, None, Return, "void", End),
 
             new Function(c, "isConsoleVisible", isConsoleVisible, None, Return, "bool", End),
+
+            new Function(c, "showShortcutsDialog", showShortcutsDialog, None, Return, "void", End),
+
+            new Function(c, "toggleShortcutsDialog", toggleShortcutsDialog, None, Return, "void", End),
+
+            new Function(c, "isShortcutsDialogVisible", isShortcutsDialogVisible, None, Return, "bool", End),
             // network
 
             new Function(c, "remoteSendMessage", remoteSendMessage, None, Return, "void", Parameters, new Param(c, "message", "string"),
@@ -194,6 +200,12 @@ namespace RVIO
     NODE_IMPLEMENTATION(showConsole, void) {}
 
     NODE_IMPLEMENTATION(isConsoleVisible, bool) { NODE_RETURN(false); }
+
+    NODE_IMPLEMENTATION(showShortcutsDialog, void) {}
+
+    NODE_IMPLEMENTATION(toggleShortcutsDialog, void) {}
+
+    NODE_IMPLEMENTATION(isShortcutsDialogVisible, bool) { NODE_RETURN(false); }
 
     NODE_IMPLEMENTATION(remoteSendMessage, void) {}
 

@@ -18,6 +18,8 @@
 #include <RvCommon/GLView.h> // WINDOWS: include AFTER other stuff
 #include <RvCommon/QTGLVideoDevice.h>
 #include <RvCommon/DesktopVideoModule.h>
+#include <RvCommon/RvShortcutsDialog.h>
+#include <RvCommon/RvKeybindingsManager.h>
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
@@ -372,6 +374,7 @@ namespace Rv
         , m_console(0)
         , m_prefDialog(0)
         , m_profileDialog(0)
+        , m_shortcutsDialog(0)
         , m_aboutAct(0)
         , m_prefAct(0)
         , m_networkAct(0)
@@ -510,7 +513,9 @@ namespace Rv
         delete m_newTimer;
         delete m_console;
         delete m_networkDialog;
+        delete m_shortcutsDialog;
         delete m_lazyBuildTimer;
+        m_shortcutsDialog = 0;
         m_console = 0;
         m_timer = 0;
         m_lazyBuildTimer = 0;
@@ -1186,6 +1191,38 @@ namespace Rv
 
         return m_prefDialog;
     }
+
+    RvShortcutsDialog* RvApplication::shortcutsDialog()
+    {
+        if (!m_shortcutsDialog)
+        {
+            Rv::Session* session = Rv::Session::currentSession();
+            RvDocument* rvDoc = session ? (RvDocument*)session->opaquePointer() : nullptr;
+            m_shortcutsDialog = new RvShortcutsDialog(rvDoc);
+        }
+        return m_shortcutsDialog;
+    }
+
+    void RvApplication::showShortcutsDialog()
+    {
+        shortcutsDialog()->show();
+        shortcutsDialog()->raise();
+        shortcutsDialog()->activateWindow();
+    }
+
+    void RvApplication::toggleShortcutsDialog()
+    {
+        if (m_shortcutsDialog && m_shortcutsDialog->isVisible())
+        {
+            m_shortcutsDialog->hide();
+        }
+        else
+        {
+            showShortcutsDialog();
+        }
+    }
+
+    bool RvApplication::isShortcutsDialogVisible() const { return m_shortcutsDialog && m_shortcutsDialog->isVisible(); }
 
     void RvApplication::prefs()
     {
