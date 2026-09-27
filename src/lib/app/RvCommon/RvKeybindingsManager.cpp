@@ -273,8 +273,31 @@ namespace Rv
             }
         }
 
-        // Apply to active session if available
-        if (Rv::Session* session = Rv::Session::currentSession())
+        // Apply to open documents / sessions if available
+        const auto& docs = TwkApp::Document::documents();
+        if (!docs.empty())
+        {
+            for (TwkApp::Document* doc : docs)
+            {
+                int applied = 0;
+                for (const auto& rule : m_activeRebinds)
+                {
+                    if (TwkApp::Mode* mode = doc->findModeByName(rule.mode.toUtf8().constData()))
+                    {
+                        if (TwkApp::EventTable* table = mode->findTableByName(rule.table.toUtf8().constData()))
+                        {
+                            table->rebind(rule.oldEvent.toUtf8().constData(), rule.newEvent.toUtf8().constData());
+                            applied++;
+                        }
+                    }
+                }
+                if (applied > 0)
+                {
+                    doc->invalidateEventTables();
+                }
+            }
+        }
+        else if (RvSession* session = RvSession::currentRvSession())
         {
             int applied = 0;
             for (const auto& rule : m_activeRebinds)
