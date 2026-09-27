@@ -1,35 +1,49 @@
-# OpenUTV 2026.8
+# OpenUTV 2026.9
 
-OpenUTV 2026.8 introduces out-of-the-box hardware GPU debayering for RED (R3D) media across macOS, Windows, and Linux, streamlined image settings, modern Linux toolchains with the mold linker and x86-64-v3 optimizations, session file loading fixes, and improved distribution packaging.
-
----
-
-### RED (R3D) Hardware GPU Debayering & Search Paths
-
-- **Automatic GPU Acceleration Out-of-the-Box**: OpenUTV now probes GPU acceleration capabilities across macOS (Metal/OpenCL), Windows (`OpenCL.dll`), and Linux (`libOpenCL.so.1`) on initial startup. If supported, GPU acceleration is automatically enabled by default, delivering immediate real-time playback.
-- **Cross-Platform OpenCL Hardware Debayering**: Introduced a native dynamic runtime OpenCL dispatch backend (`MovieREDOpenCL.cpp` and `MovieREDGpu.cpp`) for Windows and Linux that binds directly to system OpenCL drivers without hard build-time SDK dependencies.
-- **Streamlined UI**: Grouped all RED controls under **Image > RED**, featuring a top-level GPU Acceleration toggle alongside wavelet debayering resolution selections (Full, Half, Quarter, Eighth).
-- **User Library Search Paths**: Added automatic lookup for RED redistributable libraries in standard user configuration directories:
-  - macOS: `~/Library/Application Support/OpenUTV/RED`
-  - Linux: `~/.local/share/openutv/red`
-  - Windows: `%APPDATA%\OpenUTV\RED`
-- **Diagnostic & Version Handshake Probing**: Probes RED library version headers and provides clear user notifications on version mismatches (such as R3D SDK 9.2.1 vs. an external 9.3.0 RED PLAYER installation).
+OpenUTV 2026.9 brings major feature additions: the **Supercharge FFmpeg & Third-Party Codecs Assistant**, **Portable Custom Keybindings with an interactive cheat-sheet overlay**, **Multilingual Interface Localization**, **Automatic Launch-Time Update Checking**, and comprehensive security hardening across core string handling.
 
 ---
 
-### Core Stability & Session Loading
+### Supercharge FFmpeg & Professional Codecs Assistant (#35, #56)
 
-- **Session File Loading**: Fixed a crash regression when loading saved `.rv` session files (#39, #42).
-- **Shader Linking**: Resolved GLSL shader linking regressions.
-- **UI Reentrancy Guards**: Wrapped session manager checkbox states to eliminate Qt 6 reentrancy crashes and menu flashing.
+- **FFmpeg Engine Diagnostics**: Accurately inspects the active FFmpeg configuration and distinguishes between standard GPL builds and supercharged builds (with H.265/HEVC, ProRes, AAC, libx265, and nonfree components).
+- **Homebrew Shadowing Detection & 1-Click Relink**: Detects when `ffmpeg-full` is installed via Homebrew but shadowed by standard `ffmpeg` (due to `brew upgrade` overwriting symlinks) and offers a 1-click automatic relink or copyable terminal command.
+- **Windows Package Managers Integration**: Detects WinGet FFmpeg Shared, Scoop, and Chocolatey installations dynamically across user profile and system paths.
+- **Blackmagic RAW (BRAW) & RED (R3D) Probing**: Seamless dynamic detection for Blackmagic RAW SDK / Player across 64-bit and `Program Files (x86)` installations, and RED SDK dylibs/DLLs.
+- **NewTek NDI Network Video Streaming**: Runtime detection for NDI 5 / NDI 6 Tools and runtime libraries.
+- **Interactive UI & Preferences**: Accessible via **Help > Supercharge FFmpeg & Codecs...** and **Preferences > Formats**.
+- **CLI / Automation Utility**: Bundled cross-platform tool (`openutv-supercharge-ffmpeg.py` with shell/batch wrappers).
 
 ---
 
-### Linux & Windows Platform Modernization
+### Custom Keybindings & Shortcuts Overlay UI (#55)
 
-- **Linux Build & Runtime Modernization**: Linux builds now utilize Homebrew dependencies, the ultra-fast `mold` linker, and `x86-64-v3` compiler optimizations for higher playback throughput (#43).
-- **Windows Build & Caching**: Streamlined Windows compilation with cached MSVC environments and >99% ccache hit rates (#45).
-- **Archive Structure**: Fixed package compression to prevent redundant root folder nesting when extracting macOS (`ditto`), Windows, and Linux standalone archives (#49).
+- **Portable JSON Keybindings**: Fully customizable keybindings via `~/.openutv/keybindings.json` (or platform equivalent).
+- **Keyboard Shortcuts Cheat Sheet**: Interactive searchable overlay UI (**Help > Keyboard Shortcuts...** or `F1` / `?`) showing all hotkeys categorized with immediate search filtering.
+- **Conflict Resolution & Validation**: Clean error handling and fallback defaults for unrecognized or ambiguous bindings.
+
+---
+
+### Multilingual Localization & Language Preferences (#54)
+
+- **Multi-Language Support**: Framework for internationalization across core dialogs, menus, and preferences.
+- **Language Selector**: Added Language dropdown under **Preferences > General** allowing on-the-fly UI switching with automatic locale persistence.
+
+---
+
+### Launch-Time Update Checker (#53)
+
+- **Automatic Version Checks**: Background, non-blocking check against GitHub Releases on startup.
+- **Update Dialog**: Notifies when a newer stable version is available, with direct links to download archives or copy Homebrew/Scoop/Chocolatey upgrade commands.
+- **Snooze & Dependency Awareness**: Options to skip a version or remind later, with bundled dependency status detection.
+
+---
+
+### Security Hardening & Platform Fixes (#52, #57)
+
+- **Memory & String Safety**: Replaced unsafe legacy C string functions with bounded variants across image format decoders and core libraries.
+- **CI / Compiler Infrastructure**: Resolved MSVC CMake environment detection and eliminated redundant Homebrew upgrade annotations across workflow runners.
+- **Package Automation**: Enhanced Chocolatey package rules and multi-platform archive packaging.
 
 ---
 
@@ -58,13 +72,13 @@ brew upgrade --cask utv
 
 #### macOS (Standalone Archive)
 
-Download `UTV-2026.8-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
+Download `UTV-2026.9-macOS-arm64.zip` below, extract `UTV.app`, and move it to `/Applications`.
 
 #### Windows (Standalone Archive)
 
-1. Download `UTV-2026.8-windows-x64.zip` below and extract the archive (e.g. to `C:\Program Files\OpenUTV` or `C:\Users\<User>\Downloads\utv-windows-x64`).
+1. Download `UTV-2026.9-windows-x64.zip` below and extract the archive (e.g. to `C:\Program Files\OpenUTV` or `C:\Users\<User>\Downloads\utv-windows-x64`).
 2. Launch `bin\utv.exe`.
 
 #### Linux (Standalone Archive)
 
-Download `UTV-2026.8-linux-x64.tar.gz` below and extract to your desired path.
+Download `UTV-2026.9-linux-x64.tar.gz` below and extract to your desired path.
