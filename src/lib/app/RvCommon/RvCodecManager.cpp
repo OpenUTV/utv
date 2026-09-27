@@ -77,14 +77,13 @@ namespace Rv
     {
         ThirdPartyCodecInfo info;
         info.id = "ffmpeg";
-        info.name = tr("FFmpeg Multimedia Engine - v6.x/v7.x (Full)");
+        info.name = tr("FFmpeg Multimedia Engine - v7.x–v9.x+ (Full)");
         info.isAvailable = true;
         info.isSupercharged = false;
         info.isShadowed = false;
         info.helpUrl = "https://www.gyan.dev/ffmpeg/builds/";
 
-        // 1. Run 'ffmpeg -version' to inspect active configuration flags
-        QString ffmpegOutput;
+        QString activeBinaryPath;
         QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
         QString currentPath = env.value("PATH");
 #if defined(PLATFORM_DARWIN)
@@ -101,19 +100,41 @@ namespace Rv
         }
 #endif
 
-        QProcess process;
-        process.setProcessEnvironment(env);
-        process.start("ffmpeg", QStringList() << "-version");
-        if (process.waitForFinished(500))
+        QString foundExec = QStandardPaths::findExecutable("ffmpeg", currentPath.split(QDir::listSeparator()));
+        if (!foundExec.isEmpty())
         {
-            ffmpegOutput = QString::fromUtf8(process.readAllStandardOutput());
+            activeBinaryPath = foundExec;
+        }
+
+        QString ffmpegOutput;
+        if (!activeBinaryPath.isEmpty())
+        {
+            QProcess process;
+            process.setProcessEnvironment(env);
+            process.start(activeBinaryPath, QStringList() << "-version");
+            if (process.waitForFinished(500))
+            {
+                ffmpegOutput = QString::fromUtf8(process.readAllStandardOutput());
+            }
         }
 
         if (ffmpegOutput.isEmpty())
         {
             // Try homebrew bin or common locations if not in GUI PATH
-            QStringList candidateBins = {"/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "C:/Program Files/OpenUTVDeps/bin/ffmpeg.exe",
-                                         "C:/Program Files/OpenUTVDeps/installed/x64-windows/bin/ffmpeg.exe"};
+            QStringList candidateBins = {
+#if defined(PLATFORM_DARWIN)
+                "/opt/homebrew/bin/ffmpeg",
+                "/usr/local/bin/ffmpeg",
+#elif defined(PLATFORM_WINDOWS)
+                "C:/Program Files/OpenUTVDeps/bin/ffmpeg.exe",
+                "C:/Program Files/OpenUTVDeps/installed/x64-windows/bin/ffmpeg.exe",
+                "C:/Program Files/ffmpeg/bin/ffmpeg.exe",
+#elif defined(__linux__)
+                "/home/linuxbrew/.linuxbrew/bin/ffmpeg",
+                "/usr/bin/ffmpeg",
+                "/usr/local/bin/ffmpeg",
+#endif
+            };
             for (const auto& b : candidateBins)
             {
                 if (QFile::exists(b))
@@ -126,6 +147,7 @@ namespace Rv
                         ffmpegOutput = QString::fromUtf8(p2.readAllStandardOutput());
                         if (!ffmpegOutput.isEmpty())
                         {
+                            activeBinaryPath = b;
                             break;
                         }
                     }
@@ -133,17 +155,52 @@ namespace Rv
             }
         }
 
-        // Check if configuration has libx265 / nonfree
-        if (ffmpegOutput.contains("enable-libx265") || ffmpegOutput.contains("libx265") || ffmpegOutput.contains("enable-nonfree"))
+        // 1. Extract detected version string (e.g. "9.0.2")
+        QString detectedVersion;
+        int verIdx = ffmpegOutput.indexOf("ffmpeg version ");
+        if (verIdx != -1)
         {
-            info.isSupercharged = true;
+            int start = verIdx + 15;
+            int end = ffmpegOutput.indexOf(' ', start);
+            if (end != -1)
+            {
+                detectedVersion = ffmpegOutput.mid(start, end - start).trimmed();
+            }
         }
 
-        // 2. Check if ffmpeg-full is installed on macOS or Linux
+        // 2. Determine if active build is FFmpeg-Full / Supercharged
+        bool isFullBuild = false;
+
+        // Check canonical path of the active binary (resolves symlinks)
+        if (!activeBinaryPath.isEmpty())
+        {
+            QString canonical = QFileInfo(activeBinaryPath).canonicalFilePath();
+            if (canonical.contains("ffmpeg-full"))
+            {
+                isFullBuild = true;
+            }
+        }
+
+        // Check configuration / version output for full build signatures
+        if (!isFullBuild)
+        {
+            if (ffmpegOutput.contains("Cellar/ffmpeg-full") || ffmpegOutput.contains("opt/ffmpeg-full")
+                || ffmpegOutput.contains("full_build") || ffmpegOutput.contains("gyan.dev") || ffmpegOutput.contains("enable-libplacebo")
+                || ffmpegOutput.contains("enable-libxvid") || ffmpegOutput.contains("enable-libtheora")
+                || ffmpegOutput.contains("enable-librav1e") || ffmpegOutput.contains("enable-whisper"))
+            {
+                isFullBuild = true;
+            }
+        }
+
+        info.isSupercharged = isFullBuild;
+
+        // 3. Check if ffmpeg-full is installed on macOS or Linux
         bool fullInstalled = false;
         QString fullPath;
-        QStringList fullCandidates = {"/opt/homebrew/opt/ffmpeg-full", "/usr/local/opt/ffmpeg-full",
-                                      "/home/linuxbrew/.linuxbrew/opt/ffmpeg-full"};
+        QStringList fullCandidates = {
+            "/opt/homebrew/opt/ffmpeg-full", "/opt/homebrew/Cellar/ffmpeg-full",           "/usr/local/opt/ffmpeg-full",
+            "/usr/local/Cellar/ffmpeg-full", "/home/linuxbrew/.linuxbrew/opt/ffmpeg-full", "/home/linuxbrew/.linuxbrew/Cellar/ffmpeg-full"};
 
         for (const auto& p : fullCandidates)
         {
@@ -155,12 +212,15 @@ namespace Rv
             }
         }
 
-        // 3. Determine status badge and action
+        // 4. Determine status badge and action
+        QString verDisplay = detectedVersion.isEmpty() ? "" : QString(" (v%1)").arg(detectedVersion);
+
 #if defined(PLATFORM_DARWIN) || defined(__linux__)
         if (info.isSupercharged)
         {
             info.statusBadge = tr("Supercharged (Full Codecs)");
-            info.details = tr("Active FFmpeg build includes H.265/HEVC, ProRes, AAC, and extended codecs.");
+            info.details = tr("Active FFmpeg%1 build is FFmpeg-Full with extended codecs (H.265/HEVC, ProRes, AV1, extended filters).")
+                               .arg(verDisplay);
             info.actionText = "";
         }
         else if (fullInstalled)
@@ -168,13 +228,15 @@ namespace Rv
             // Installed but shadowed by regular ffmpeg!
             info.isShadowed = true;
             info.statusBadge = tr("Shadowed by Standard FFmpeg");
-            info.details = tr("FFmpeg-Full is installed in %1, but regular FFmpeg is linked in PATH.").arg(fullPath);
+            info.details =
+                tr("Active FFmpeg%1 is standard FFmpeg. FFmpeg-Full is installed in %2 but shadowed in PATH.").arg(verDisplay, fullPath);
             info.actionText = tr("Relink FFmpeg-Full");
         }
         else
         {
             info.statusBadge = tr("Standard (Basic Codecs)");
-            info.details = tr("Standard FFmpeg active. Patent-encumbered decoders (H.265/HEVC, AAC, ProRes) require FFmpeg-Full.");
+            info.details = tr("Active FFmpeg%1 is standard FFmpeg. Full codec support (extended decoders & filters) requires FFmpeg-Full.")
+                               .arg(verDisplay);
             info.actionText = tr("Install FFmpeg-Full (Homebrew)");
         }
 #else
@@ -182,13 +244,16 @@ namespace Rv
         if (info.isSupercharged)
         {
             info.statusBadge = tr("Supercharged (Full Codecs)");
-            info.details = tr("Active FFmpeg build includes H.265/HEVC, ProRes, AAC, and extended codecs.");
+            info.details =
+                tr("Active FFmpeg%1 build includes full codec support (H.265/HEVC, ProRes, AAC, extended filters).").arg(verDisplay);
             info.actionText = "";
         }
         else
         {
             info.statusBadge = tr("Standard (Basic Codecs)");
-            info.details = tr("Standard OpenUTVDeps FFmpeg active. Unlock H.265/HEVC and extended codecs via Gyan.dev / Winget.");
+            info.details =
+                tr("Active FFmpeg%1 is standard OpenUTVDeps FFmpeg. Upgrade to FFmpeg Shared Full (v7.x–v9.x) via Gyan.dev or Winget.")
+                    .arg(verDisplay);
             info.actionText = tr("Supercharge FFmpeg (Windows)...");
         }
 #endif
