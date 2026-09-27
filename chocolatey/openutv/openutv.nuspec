@@ -18,9 +18,6 @@
     <tags>openutv media-player sequence-viewer vfx rv video framecycler</tags>
     <summary>High-performance sequence viewer and media player for VFX, animation, and digital media</summary>
     <description>OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.</description>
-    <dependencies>
-      <dependency id="openutv-dependencies" version="26.5.0" />
-    </dependencies>
   </metadata>
   <files>
     <file src="tools\**" target="tools" />
