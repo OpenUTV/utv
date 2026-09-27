@@ -77,7 +77,7 @@ namespace Rv
     {
         ThirdPartyCodecInfo info;
         info.id = "ffmpeg";
-        info.name = tr("FFmpeg Multimedia Engine");
+        info.name = tr("FFmpeg Multimedia Engine - v6.x/v7.x (Full)");
         info.isAvailable = true;
         info.isSupercharged = false;
         info.isShadowed = false;
@@ -200,7 +200,7 @@ namespace Rv
     {
         ThirdPartyCodecInfo info;
         info.id = "braw";
-        info.name = tr("Blackmagic RAW (BRAW)");
+        info.name = tr("Blackmagic RAW (BRAW) - SDK v4.2+");
         info.isAvailable = false;
         info.isSupercharged = false;
         info.isShadowed = false;
@@ -231,13 +231,14 @@ namespace Rv
         if (info.isAvailable)
         {
             info.statusBadge = tr("Available (Ready for .braw playback)");
-            info.details = tr("Detected runtime at: %1").arg(foundPath);
+            info.details = tr("Detected Blackmagic RAW runtime at: %1 (SDK v4.2+ / Resolve 19+ compatible)").arg(foundPath);
             info.actionText = "";
         }
         else
         {
             info.statusBadge = tr("Not Installed");
-            info.details = tr("Install DaVinci Resolve or the free Blackmagic RAW Player & SDK to enable .braw playback.");
+            info.details = tr("Requires Blackmagic RAW SDK v4.2+ (or DaVinci Resolve 19+). Install DaVinci Resolve or the free Blackmagic "
+                              "RAW Player & SDK.");
             info.actionText = tr("Get Blackmagic RAW (Free)");
         }
 
@@ -248,7 +249,7 @@ namespace Rv
     {
         ThirdPartyCodecInfo info;
         info.id = "red";
-        info.name = tr("RED Digital Cinema (R3D)");
+        info.name = tr("RED Digital Cinema (R3D) - SDK v9.2+");
         info.isAvailable = false;
         info.isSupercharged = false;
         info.isShadowed = false;
@@ -257,27 +258,57 @@ namespace Rv
 
         QStringList candidateFiles = {
 #if defined(PLATFORM_DARWIN)
-            info.localFolderPath + "/libR3DSDK.dylib", info.localFolderPath + "/R3DSDK.framework", "/usr/local/lib/libR3DSDK.dylib"
+            info.localFolderPath + "/REDR3D.dylib",
+            info.localFolderPath + "/REDDecoder.dylib",
+            info.localFolderPath + "/libR3DSDK.dylib",
+            info.localFolderPath + "/R3DSDK.framework",
+            "/Applications/REDCINE-X Professional/REDCINE-X PRO.app/Contents/MacOS/REDR3D.dylib",
+            "/Applications/REDCINE-X Professional/RED PLAYER.app/Contents/MacOS/REDR3D.dylib",
+            "/usr/local/lib/REDR3D.dylib",
+            "/usr/local/lib/libR3DSDK.dylib",
+            "/opt/homebrew/lib/REDR3D.dylib"
 #elif defined(PLATFORM_WINDOWS)
-            info.localFolderPath + "/R3DSDK.dll", "C:/Program Files/OpenUTV/RED/R3DSDK.dll"
+            info.localFolderPath + "/REDR3D-x64.dll",
+            info.localFolderPath + "/REDR3D.dll",
+            info.localFolderPath + "/REDDecoder-x64.dll",
+            info.localFolderPath + "/R3DSDK.dll",
+            "C:/Program Files/OpenUTV/RED/REDR3D-x64.dll",
+            "C:/Program Files/OpenUTV/RED/R3DSDK.dll",
+            "C:/Program Files/REDCINE-X PRO/REDR3D-x64.dll",
+            "C:/Program Files/REDCINE-X Professional/REDR3D-x64.dll",
+            "C:/Program Files/RED/REDR3D-x64.dll"
 #else
-            info.localFolderPath + "/libR3DSDK.so", "/usr/local/lib/libR3DSDK.so"
+            info.localFolderPath + "/REDR3D-x64.so",
+            info.localFolderPath + "/REDDecoder-x64.so",
+            info.localFolderPath + "/libREDR3D-x64.so",
+            info.localFolderPath + "/libR3DSDK.so",
+            "/usr/lib/REDR3D-x64.so",
+            "/usr/local/lib/REDR3D-x64.so",
+            "/usr/lib64/REDR3D-x64.so"
 #endif
         };
 
-        const char* env1 = getenv("RED_SDK_PATH");
-        const char* env2 = getenv("R3DSDK_DIR");
-        if (env1 && strlen(env1) > 0)
+        const char* envNames[] = {"RED_SDK_PATH", "R3DSDK_DIR", "RV_DEPS_RED_SDK_DIR"};
+        for (const char* envName : envNames)
         {
-            candidateFiles.prepend(QString(env1) + "/libR3DSDK.dylib");
-            candidateFiles.prepend(QString(env1) + "/R3DSDK.dll");
-            candidateFiles.prepend(QString(env1) + "/libR3DSDK.so");
-        }
-        if (env2 && strlen(env2) > 0)
-        {
-            candidateFiles.prepend(QString(env2) + "/libR3DSDK.dylib");
-            candidateFiles.prepend(QString(env2) + "/R3DSDK.dll");
-            candidateFiles.prepend(QString(env2) + "/libR3DSDK.so");
+            const char* envVal = getenv(envName);
+            if (envVal && strlen(envVal) > 0)
+            {
+                QString base(envVal);
+#if defined(PLATFORM_DARWIN)
+                candidateFiles.prepend(base + "/Redistributable/mac/REDR3D.dylib");
+                candidateFiles.prepend(base + "/REDR3D.dylib");
+                candidateFiles.prepend(base + "/libR3DSDK.dylib");
+#elif defined(PLATFORM_WINDOWS)
+                candidateFiles.prepend(base + "/Redistributable/win/REDR3D-x64.dll");
+                candidateFiles.prepend(base + "/REDR3D-x64.dll");
+                candidateFiles.prepend(base + "/R3DSDK.dll");
+#else
+                candidateFiles.prepend(base + "/Redistributable/linux/REDR3D-x64.so");
+                candidateFiles.prepend(base + "/REDR3D-x64.so");
+                candidateFiles.prepend(base + "/libR3DSDK.so");
+#endif
+            }
         }
 
         QString foundFile;
@@ -294,13 +325,13 @@ namespace Rv
         if (info.isAvailable)
         {
             info.statusBadge = tr("Available (Ready for .r3d playback)");
-            info.details = tr("Detected R3D SDK runtime at: %1").arg(foundFile);
+            info.details = tr("Detected RED R3D runtime at: %1 (SDK v9.2.1 compatible)").arg(foundFile);
             info.actionText = tr("Open RED Folder");
         }
         else
         {
             info.statusBadge = tr("Not Installed");
-            info.details = tr("Download the free RED R3D SDK from RED.com and place libraries in OpenUTV's RED directory.");
+            info.details = tr("Requires RED R3D SDK v9.2.1+ (or REDCINE-X Professional). Place REDR3D.dylib into OpenUTV's RED folder.");
             info.actionText = tr("Download RED SDK (Free)");
         }
 
@@ -311,7 +342,7 @@ namespace Rv
     {
         ThirdPartyCodecInfo info;
         info.id = "ndi";
-        info.name = tr("NDI (Network Video Streamer)");
+        info.name = tr("NDI (Network Video Streamer) - SDK v5/v6");
         info.isAvailable = false;
         info.isSupercharged = false;
         info.isShadowed = false;
@@ -358,13 +389,13 @@ namespace Rv
         if (info.isAvailable)
         {
             info.statusBadge = tr("Available (IP Video Streaming Ready)");
-            info.details = tr("Detected NDI Runtime at: %1").arg(foundFile);
+            info.details = tr("Detected NDI Runtime at: %1 (NDI 5 / NDI 6 compatible)").arg(foundFile);
             info.actionText = "";
         }
         else
         {
             info.statusBadge = tr("Not Installed");
-            info.details = tr("Install free NDI Tools / NDI 5+ Runtime to stream and receive real-time video over IP networks.");
+            info.details = tr("Requires NDI SDK v5.x or v6.x runtime. Install free NDI Tools to enable real-time IP video streaming.");
             info.actionText = tr("Get NDI Tools (Free)");
         }
 
