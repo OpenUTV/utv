@@ -31,12 +31,7 @@ namespace TwkFB
 
     IOz::~IOz() {}
 
-    string IOz::about() const
-    {
-        char temp[80];
-        sprintf(temp, "Pixar Z (depth) file");
-        return temp;
-    }
+    string IOz::about() const { return "Pixar Z (depth) file"; }
 
     void IOz::getImageInfo(const std::string& filename, FBInfo& fbi) const
     {

@@ -72,8 +72,9 @@ namespace TwkFB
 
         char temp[80];
 
-        sprintf(temp, "%02d:%02d:%02d:%02d", ((u >> 28) & 0xF) * 10 + ((u >> 24) & 0xF), ((u >> 20) & 0xF) * 10 + ((u >> 16) & 0xF),
-                ((u >> 12) & 0xF) * 10 + ((u >> 8) & 0xF), ((u >> 4) & 0xF) * 10 + ((u >> 0) & 0xF));
+        snprintf(temp, sizeof(temp), "%02d:%02d:%02d:%02d", ((u >> 28) & 0xF) * 10 + ((u >> 24) & 0xF),
+                 ((u >> 20) & 0xF) * 10 + ((u >> 16) & 0xF), ((u >> 12) & 0xF) * 10 + ((u >> 8) & 0xF),
+                 ((u >> 4) & 0xF) * 10 + ((u >> 0) & 0xF));
 
         return temp;
     }
@@ -140,7 +141,7 @@ namespace TwkFB
 
         char temp[80];
 
-        sprintf(temp, "%02d:%02d:%02d:%02d", hours, mins, secs, f);
+        snprintf(temp, sizeof(temp), "%02d:%02d:%02d:%02d", hours, mins, secs, f);
 
         return timeCodeStringToU32TC(temp);
     }
@@ -791,43 +792,44 @@ static const char* read(IOdpx::DPXHeader& h, const char* p)
 
         if (hasData(header.film.count))
         {
-            sprintf(temp, "%c%c%c%c", header.film.count[0], header.film.count[1], header.film.count[2], header.film.count[3]);
+            snprintf(temp, sizeof(temp), "%c%c%c%c", header.film.count[0], header.film.count[1], header.film.count[2],
+                     header.film.count[3]);
 
             fb.newAttribute("DPX-MP/Count", string(temp));
         }
 
         if (hasData(header.film.prefix))
         {
-            sprintf(temp, "%c%c%c%c%c%c", header.film.prefix[0], header.film.prefix[1], header.film.prefix[2], header.film.prefix[3],
-                    header.film.prefix[4], header.film.prefix[5]);
+            snprintf(temp, sizeof(temp), "%c%c%c%c%c%c", header.film.prefix[0], header.film.prefix[1], header.film.prefix[2],
+                     header.film.prefix[3], header.film.prefix[4], header.film.prefix[5]);
 
             fb.newAttribute("DPX-MP/Prefix", string(temp));
         }
 
         if (hasData(header.film.offset))
         {
-            sprintf(temp, "%c%c", header.film.offset[0], header.film.offset[1]);
+            snprintf(temp, sizeof(temp), "%c%c", header.film.offset[0], header.film.offset[1]);
 
             fb.newAttribute("DPX-MP/Offset", string(temp));
         }
 
         if (hasData(header.film.film_type))
         {
-            sprintf(temp, "%c%c", header.film.film_type[0], header.film.film_type[1]);
+            snprintf(temp, sizeof(temp), "%c%c", header.film.film_type[0], header.film.film_type[1]);
 
             fb.newAttribute("DPX-MP/FilmType", string(temp));
         }
 
         if (hasData(header.film.film_mfg_id))
         {
-            sprintf(temp, "%c%c", header.film.film_mfg_id[0], header.film.film_mfg_id[1]);
+            snprintf(temp, sizeof(temp), "%c%c", header.film.film_mfg_id[0], header.film.film_mfg_id[1]);
 
             fb.newAttribute("DPX-MP/ManufacturerId", string(temp));
         }
 
         for (int i = 0; i < header.image.element_number; i++)
         {
-            sprintf(temp, "DPX-%d/Packing", i);
+            snprintf(temp, sizeof(temp), "DPX-%d/Packing", i);
             fb.newAttribute(temp, string(nameForValue(packing, header.image.image_element[i].packing)));
 
             if (header.image.image_element[i].encoding)
@@ -835,29 +837,29 @@ static const char* read(IOdpx::DPXHeader& h, const char* p)
 
             fb.newAttribute("DPX/BitSize", int(header.image.image_element[i].bit_size));
 
-            sprintf(temp, "DPX-%d/Transfer", i);
+            snprintf(temp, sizeof(temp), "DPX-%d/Transfer", i);
             fb.newAttribute(temp, string(nameForValue(colorspace, header.image.image_element[i].transfer)));
-            sprintf(temp, "DPX-%d/Colorimetric", i);
+            snprintf(temp, sizeof(temp), "DPX-%d/Colorimetric", i);
             fb.newAttribute(temp, string(nameForValue(colorspace, header.image.image_element[i].colorimetric)));
 
             if (header.image.image_element[i].eol_padding > 0)
             {
-                sprintf(temp, "DPX-%d/EndOfLinePadding", i);
+                snprintf(temp, sizeof(temp), "DPX-%d/EndOfLinePadding", i);
                 fb.newAttribute(temp, int(header.image.image_element[i].eol_padding));
             }
 
             if (header.image.image_element[i].eo_image_padding > 0)
             {
-                sprintf(temp, "DPX-%d/EndOfImagePadding", i);
+                snprintf(temp, sizeof(temp), "DPX-%d/EndOfImagePadding", i);
                 fb.newAttribute(temp, int(header.image.image_element[i].eo_image_padding));
             }
 
-            sprintf(temp, "DPX-%d/Descriptor", i);
+            snprintf(temp, sizeof(temp), "DPX-%d/Descriptor", i);
             fb.newAttribute(temp, string(nameForValue(pixelFormat, header.image.image_element[i].descriptor)));
 
             if (hasData(header.image.image_element[i].description))
             {
-                sprintf(temp, "DPX-%d/Description", i);
+                snprintf(temp, sizeof(temp), "DPX-%d/Description", i);
                 fb.newAttribute(temp, string(header.image.image_element[i].description));
             }
         }

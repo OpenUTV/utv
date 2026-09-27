@@ -2038,8 +2038,8 @@ assignment_expression:
 
 assignment_operator:
 
-          '='               { strcpy($$,"="); }
-        | MU_OP_ASSIGN         { strcpy($$,$1);  }
+          '='               { $$[0] = '='; $$[1] = '\0'; }
+        | MU_OP_ASSIGN         { strncpy($$,$1,3); $$[3] = '\0';  }
 ;
 
 tuple_expression:
@@ -3478,7 +3478,7 @@ ParseError(void* state, const char *text, ...)
 
     va_list ap;
     va_start(ap,text);
-    vsprintf(temp,text,ap);
+    vsnprintf(temp,sizeof(temp),text,ap);
     va_end(ap);
 
     reinterpret_cast<yyFlexLexer*>(state)->assembler()->reportError(temp);
@@ -3538,7 +3538,7 @@ ParseWarning(void* state, const char *text, ...)
 
     va_list ap;
     va_start(ap,text);
-    vsprintf(temp,text,ap);
+    vsnprintf(temp,sizeof(temp),text,ap);
     va_end(ap);
 
     reinterpret_cast<yyFlexLexer*>(state)->assembler()->reportWarning(temp);

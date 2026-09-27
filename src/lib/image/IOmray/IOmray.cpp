@@ -29,12 +29,7 @@ namespace TwkFB
 
     IOmray::~IOmray() {}
 
-    string IOmray::about() const
-    {
-        char temp[80];
-        sprintf(temp, "Mental Ray Stub File");
-        return temp;
-    }
+    string IOmray::about() const { return "Mental Ray Stub File"; }
 
     void IOmray::getImageInfo(const std::string& filename, FBInfo& fbi) const
     {

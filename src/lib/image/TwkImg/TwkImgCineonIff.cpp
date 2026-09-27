@@ -984,7 +984,8 @@ namespace TwkImg
 #else
         genericHeader.user_data_size = 0;
 #endif
-        strcpy(genericHeader.vers, "V4.5");
+        strncpy(genericHeader.vers, "V4.5", sizeof(genericHeader.vers) - 1);
+        genericHeader.vers[sizeof(genericHeader.vers) - 1] = '\0';
         strncpy(genericHeader.file_name, fileName, 99);
         strncpy(genericHeader.create_date, dateStr, 10);
         strncpy(genericHeader.create_time, dateStr + 11, 8);
@@ -1041,8 +1042,10 @@ namespace TwkImg
         strncpy(originHeader.filename, fileName, 99);
         strncpy(originHeader.creation_date, dateStr, 10);
         strncpy(originHeader.creation_time, dateStr + 11, 8);
-        strcpy(originHeader.input_device, "Tweak Software");
-        strcpy(originHeader.input_device_model, "FB");
+        strncpy(originHeader.input_device, "Tweak Software", sizeof(originHeader.input_device) - 1);
+        originHeader.input_device[sizeof(originHeader.input_device) - 1] = '\0';
+        strncpy(originHeader.input_device_model, "FB", sizeof(originHeader.input_device_model) - 1);
+        originHeader.input_device_model[sizeof(originHeader.input_device_model) - 1] = '\0';
         originHeader.input_gamma = 1.0;
         // originHeader.input_device_X_pitch = -1.0;
         // originHeader.input_device_Y_pitch = -1.0;

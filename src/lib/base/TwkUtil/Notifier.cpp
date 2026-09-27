@@ -118,7 +118,7 @@ namespace TwkUtil
     std::string Notifier::name() const
     {
         char temp[256];
-        sprintf(temp, "Notifier@%p", this);
+        snprintf(temp, sizeof(temp), "Notifier@%p", this);
         return temp;
     }
 
