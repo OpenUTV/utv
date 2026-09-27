@@ -66,8 +66,17 @@ namespace TwkMovie
             }
         }
 #elif defined(_WIN32)
-        static const wchar_t* searchPaths[] = {L"C:\\Program Files\\Blackmagic Design\\Blackmagic RAW",
-                                               L"C:\\Program Files\\Blackmagic Design\\DaVinci Resolve"};
+        static const wchar_t* searchPaths[] = {
+            L"C:\\Program Files\\Blackmagic Design\\Blackmagic RAW",
+            L"C:\\Program Files\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW SDK\\Win\\Libraries",
+            L"C:\\Program Files\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW Player\\BlackmagicRawAPI",
+            L"C:\\Program Files\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW Speed Test\\BlackmagicRawAPI",
+            L"C:\\Program Files (x86)\\Blackmagic Design\\Blackmagic RAW",
+            L"C:\\Program Files (x86)\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW SDK\\Win\\Libraries",
+            L"C:\\Program Files (x86)\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW Player\\BlackmagicRawAPI",
+            L"C:\\Program Files (x86)\\Blackmagic Design\\Blackmagic RAW\\Blackmagic RAW Speed Test\\BlackmagicRawAPI",
+            L"C:\\Program Files\\Blackmagic Design\\DaVinci Resolve",
+            L"C:\\Program Files (x86)\\Blackmagic Design\\DaVinci Resolve"};
         for (const wchar_t* p : searchPaths)
         {
             BSTR bstrPath = SysAllocString(p);

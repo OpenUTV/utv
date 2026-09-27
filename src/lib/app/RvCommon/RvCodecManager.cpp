@@ -357,7 +357,14 @@ namespace Rv
             "/Applications/Blackmagic RAW/Blackmagic RAW Player.app", "/Applications/DaVinci Resolve/DaVinci Resolve.app",
             "/Applications/Blackmagic RAW/Blackmagic RAW SDK/Mac/Libraries", "/Library/Application Support/Blackmagic Design/Blackmagic RAW"
 #elif defined(PLATFORM_WINDOWS)
-            "C:/Program Files/Blackmagic Design/Blackmagic RAW", "C:/Program Files/Blackmagic Design/DaVinci Resolve"
+            "C:/Program Files/Blackmagic Design/Blackmagic RAW",
+            "C:/Program Files (x86)/Blackmagic Design/Blackmagic RAW",
+            "C:/Program Files/Blackmagic Design/DaVinci Resolve",
+            "C:/Program Files (x86)/Blackmagic Design/DaVinci Resolve",
+            "C:/Program Files/Blackmagic Design/Blackmagic RAW/Blackmagic RAW SDK/Win/Libraries/BlackmagicRawAPI.dll",
+            "C:/Program Files (x86)/Blackmagic Design/Blackmagic RAW/Blackmagic RAW SDK/Win/Libraries/BlackmagicRawAPI.dll",
+            "C:/Program Files/Blackmagic Design/Blackmagic RAW/Blackmagic RAW Player/BlackmagicRawAPI/BlackmagicRawAPI.dll",
+            "C:/Program Files (x86)/Blackmagic Design/Blackmagic RAW/Blackmagic RAW Player/BlackmagicRawAPI/BlackmagicRawAPI.dll"
 #else
             "/usr/lib/libBlackmagicRawAPI.so", "/usr/local/lib/libBlackmagicRawAPI.so", "/opt/resolve/libs"
 #endif
