@@ -31,6 +31,7 @@ namespace Rv
 
     private Q_SLOTS:
         void onRelinkFFmpegClicked();
+        void onInstallFFmpegHomebrewClicked();
         void onSuperchargeWindowsClicked();
         void onOpenRedFolderClicked();
         void onDownloadRedSdkClicked();

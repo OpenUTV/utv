@@ -15,6 +15,7 @@
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
 #include <QtCore/QUrl>
+#include <QtCore/QProcess>
 
 namespace Rv
 {
@@ -241,7 +242,7 @@ namespace Rv
                 else if (!c.isSupercharged)
                 {
 #if defined(PLATFORM_DARWIN) || defined(__linux__)
-                    slot = SLOT(onRelinkFFmpegClicked());
+                    slot = SLOT(onInstallFFmpegHomebrewClicked());
 #else
                     slot = SLOT(onSuperchargeWindowsClicked());
 #endif
@@ -294,9 +295,51 @@ namespace Rv
         else
         {
             // Provide copyable command
-            QString cmd = "brew unlink ffmpeg-full && brew unlink ffmpeg && brew link --overwrite ffmpeg-full";
+            QString cmd = "brew update && brew install ffmpeg-full && brew link --overwrite ffmpeg-full";
             QGuiApplication::clipboard()->setText(cmd);
             QMessageBox::warning(this, tr("FFmpeg Relink"), tr("%1\n\nThe command has been copied to your clipboard:\n%2").arg(msg, cmd));
+        }
+    }
+
+    void RvCodecDialog::onInstallFFmpegHomebrewClicked()
+    {
+        QString cmd = "brew update && brew install ffmpeg-full && brew link --overwrite ffmpeg-full";
+
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle(tr("Install FFmpeg-Full (Homebrew)"));
+        msgBox.setText(tr("To enable full codec support (H.265/HEVC, ProRes, AV1, extended filters), install FFmpeg-Full via Homebrew:\n\n"
+                          "  %1\n\n"
+                          "Click 'Run in Terminal' to launch Terminal and install automatically, or 'Copy Command' to run it manually.")
+                           .arg(cmd));
+
+#if defined(PLATFORM_DARWIN)
+        QPushButton* runBtn = msgBox.addButton(tr("Run in Terminal"), QMessageBox::ActionRole);
+#endif
+        QPushButton* copyBtn = msgBox.addButton(tr("Copy Command"), QMessageBox::ActionRole);
+        msgBox.addButton(QMessageBox::Close);
+#if defined(PLATFORM_DARWIN)
+        msgBox.setDefaultButton(runBtn);
+#else
+        msgBox.setDefaultButton(copyBtn);
+#endif
+
+        msgBox.exec();
+
+#if defined(PLATFORM_DARWIN)
+        if (msgBox.clickedButton() == runBtn)
+        {
+            QGuiApplication::clipboard()->setText(cmd);
+            QString script = QString("tell application \"Terminal\" to activate\n"
+                                     "tell application \"Terminal\" to do script \"%1\"")
+                                 .arg(cmd);
+            QProcess::startDetached("osascript", QStringList() << "-e" << script);
+        }
+        else
+#endif
+            if (msgBox.clickedButton() == copyBtn)
+        {
+            QGuiApplication::clipboard()->setText(cmd);
+            QMessageBox::information(this, tr("Copied"), tr("Install command copied to clipboard:\n%1").arg(cmd));
         }
     }
 
