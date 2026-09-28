@@ -168,64 +168,64 @@ jobs:
           MANIFEST_DIR="manifests/o/OpenUTV/UTV/${VERSION}"
           mkdir -p "$MANIFEST_DIR"
 
-          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.yaml"
-# yaml-language-server: \$schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
+          sed 's/^          //' <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.yaml"
+          # yaml-language-server: \$schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
 
-PackageIdentifier: OpenUTV.UTV
-PackageVersion: "${VERSION}"
-DefaultLocale: en-US
-ManifestType: version
-ManifestVersion: 1.12.0
-EOF
+          PackageIdentifier: OpenUTV.UTV
+          PackageVersion: "${VERSION}"
+          DefaultLocale: en-US
+          ManifestType: version
+          ManifestVersion: 1.12.0
+          EOF
 
-          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.locale.en-US.yaml"
-# yaml-language-server: \$schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+          sed 's/^          //' <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.locale.en-US.yaml"
+          # yaml-language-server: \$schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
 
-PackageIdentifier: OpenUTV.UTV
-PackageVersion: "${VERSION}"
-PackageLocale: en-US
-Publisher: OpenUTV
-PublisherUrl: https://github.com/OpenUTV
-PublisherSupportUrl: https://github.com/OpenUTV/utv/issues
-PackageName: OpenUTV
-PackageUrl: https://github.com/OpenUTV/utv
-License: Apache-2.0
-LicenseUrl: https://github.com/OpenUTV/utv/blob/main/LICENSE
-ShortDescription: High-performance framecycler and sequence viewer for VFX, animation, and digital media
-Description: OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
-Tags:
-- media-player
-- sequence-viewer
-- vfx
-- rv
-- video
-- framecycler
-ManifestType: defaultLocale
-ManifestVersion: 1.12.0
-EOF
+          PackageIdentifier: OpenUTV.UTV
+          PackageVersion: "${VERSION}"
+          PackageLocale: en-US
+          Publisher: OpenUTV
+          PublisherUrl: https://github.com/OpenUTV
+          PublisherSupportUrl: https://github.com/OpenUTV/utv/issues
+          PackageName: OpenUTV
+          PackageUrl: https://github.com/OpenUTV/utv
+          License: Apache-2.0
+          LicenseUrl: https://github.com/OpenUTV/utv/blob/main/LICENSE
+          ShortDescription: High-performance framecycler and sequence viewer for VFX, animation, and digital media
+          Description: OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
+          Tags:
+          - media-player
+          - sequence-viewer
+          - vfx
+          - rv
+          - video
+          - framecycler
+          ManifestType: defaultLocale
+          ManifestVersion: 1.12.0
+          EOF
 
-          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.installer.yaml"
-# yaml-language-server: \$schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+          sed 's/^          //' <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.installer.yaml"
+          # yaml-language-server: \$schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
 
-PackageIdentifier: OpenUTV.UTV
-PackageVersion: "${VERSION}"
-InstallerLocale: en-US
-InstallerType: zip
-NestedInstallerType: portable
-Installers:
-- Architecture: x64
-  InstallerUrl: ${ASSET_URL}
-  InstallerSha256: ${SHA256_UPPER}
-  NestedInstallerFiles:
-  - RelativeFilePath: utv-windows-x64\\\\bin\\\\utv.exe
-    PortableCommandAlias: utv
-Dependencies:
-  PackageDependencies:
-  - PackageIdentifier: OpenUTV.OpenUTVDeps
-    MinimumVersion: "26.5"
-ManifestType: installer
-ManifestVersion: 1.12.0
-EOF
+          PackageIdentifier: OpenUTV.UTV
+          PackageVersion: "${VERSION}"
+          InstallerLocale: en-US
+          InstallerType: zip
+          NestedInstallerType: portable
+          Installers:
+          - Architecture: x64
+            InstallerUrl: ${ASSET_URL}
+            InstallerSha256: ${SHA256_UPPER}
+            NestedInstallerFiles:
+            - RelativeFilePath: utv-windows-x64\\bin\\utv.exe
+              PortableCommandAlias: utv
+          Dependencies:
+            PackageDependencies:
+            - PackageIdentifier: OpenUTV.OpenUTVDeps
+              MinimumVersion: "26.5"
+          ManifestType: installer
+          ManifestVersion: 1.12.0
+          EOF
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -236,24 +236,24 @@ EOF
           echo "Submitting PR to microsoft/winget-pkgs..."
           export GH_TOKEN="${WINGET_PAT}"
           
-          EXISTING_PR=$(gh pr list --repo microsoft/winget-pkgs --head "OpenUTV:${BRANCH}" --state open --json number -q '.[0].number')
-          if [ -n "$EXISTING_PR" ]; then
-            echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}."
+          EXISTING_PR=\$(gh pr list --repo microsoft/winget-pkgs --head "OpenUTV:\${BRANCH}" --state open --json number -q '.[0].number')
+          if [ -n "\$EXISTING_PR" ]; then
+            echo "PR #\${EXISTING_PR} already exists for branch \${BRANCH}."
           else
-            gh pr create --repo microsoft/winget-pkgs \
-              --head "OpenUTV:${BRANCH}" \
-              --base master \
-              --title "New package: OpenUTV.UTV version ${VERSION}" \
+            gh pr create --repo microsoft/winget-pkgs \\
+              --head "OpenUTV:\${BRANCH}" \\
+              --base master \\
+              --title "New package: OpenUTV.UTV version \${VERSION}" \\
               --body "## 📖 Description
 
-New package submission for OpenUTV.UTV version ${VERSION}.
+          New package submission for OpenUTV.UTV version \${VERSION}.
 
-OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
+          OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
 
-## ✅ Checklist
-- [x] Signed the Contributor License Agreement
-- [x] Checked that there aren't other open pull requests for this package version
-- [x] Manifest conforms to the 1.12 schema"
+          ## ✅ Checklist
+          - [x] Signed the Contributor License Agreement
+          - [x] Checked that there aren't other open pull requests for this package version
+          - [x] Manifest conforms to the 1.12 schema"
           fi
           echo "Winget package submission completed!"
 
