@@ -49,11 +49,11 @@ jobs:
     steps:
       - name: Update Homebrew Cask Formula
         env:
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.BREW_SCOOP_WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN }}
           TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
           if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
-            echo "::warning::HOMEBREW_TAP_TOKEN secret is not set. Skipping Homebrew tap update."
+            echo "::warning::HOMEBREW_TAP_TOKEN / BREW_SCOOP_WINGET_TOKEN secret is not set. Skipping Homebrew tap update."
             exit 0
           fi
 
@@ -95,11 +95,11 @@ jobs:
     steps:
       - name: Update Scoop Manifest
         env:
-          SCOOP_BUCKET_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN }}
+          SCOOP_BUCKET_TOKEN: ${{ secrets.BREW_SCOOP_WINGET_TOKEN || secrets.SCOOP_BUCKET_TOKEN }}
           TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
           if [ -z "$SCOOP_BUCKET_TOKEN" ]; then
-            echo "::warning::SCOOP_BUCKET_TOKEN secret is not set. Skipping Scoop bucket update."
+            echo "::warning::SCOOP_BUCKET_TOKEN / BREW_SCOOP_WINGET_TOKEN secret is not set. Skipping Scoop bucket update."
             exit 0
           fi
 
@@ -132,31 +132,130 @@ jobs:
   publish-winget:
     name: Submit winget-pkgs PR
     needs: [verify-release]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Update winget package via wingetcreate
-        shell: powershell
+      - name: Create branch in OpenUTV/winget-pkgs and submit PR to microsoft/winget-pkgs
         env:
-          WINGET_PAT: ${{ secrets.WINGET_PAT }}
+          WINGET_PAT: ${{ secrets.BREW_SCOOP_WINGET_TOKEN || secrets.WINGET_PAT }}
           TAG_NAME: ${{ github.event.release.tag_name || inputs.tag_name }}
         run: |
-          if (-not $env:WINGET_PAT) {
-            Write-Warning "WINGET_PAT secret is not set. Skipping winget release."
+          if [ -z "$WINGET_PAT" ]; then
+            echo "::warning::WINGET_PAT / BREW_SCOOP_WINGET_TOKEN secret is not set. Skipping winget release."
             exit 0
-          }
+          fi
 
-          $Version = $env:TAG_NAME.TrimStart("v")
-          $Url = "https://github.com/OpenUTV/utv/releases/download/$($env:TAG_NAME)/UTV-$Version-windows-x64.zip"
+          VERSION=$(echo "$TAG_NAME" | sed 's/^v//')
+          ASSET_NAME="UTV-${VERSION}-windows-x64.zip"
+          ASSET_URL="https://github.com/OpenUTV/utv/releases/download/${TAG_NAME}/${ASSET_NAME}"
 
-          Write-Host "Installing wingetcreate..."
-          winget install Microsoft.WingetCreate --accept-source-agreements --accept-package-agreements
+          echo "Downloading $ASSET_URL to compute SHA256..."
+          curl -f -L -o "$ASSET_NAME" "$ASSET_URL"
+          SHA256_LOWER=$(sha256sum "$ASSET_NAME" | awk '{print $1}')
+          SHA256_UPPER=$(echo "$SHA256_LOWER" | tr '[:lower:]' '[:upper:]')
+          echo "SHA256 for $ASSET_NAME: $SHA256_UPPER"
 
-          Write-Host "Submitting update PR to microsoft/winget-pkgs..."
-          wingetcreate update OpenUTV.UTV `
-            --version $Version `
-            --urls $Url `
-            --submit `
-            --token $env:WINGET_PAT
+          echo "Cloning OpenUTV/winget-pkgs fork..."
+          git clone "https://x-access-token:${WINGET_PAT}@github.com/OpenUTV/winget-pkgs.git" winget_repo
+          cd winget_repo
+
+          git remote add upstream https://github.com/microsoft/winget-pkgs.git
+          git fetch upstream master
+
+          BRANCH="openutv-app-${VERSION}"
+          echo "Checking out branch $BRANCH from upstream master..."
+          git checkout -B "$BRANCH" upstream/master
+
+          MANIFEST_DIR="manifests/o/OpenUTV/UTV/${VERSION}"
+          mkdir -p "$MANIFEST_DIR"
+
+          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.yaml"
+# yaml-language-server: \$schema=https://aka.ms/winget-manifest.version.1.12.0.schema.json
+
+PackageIdentifier: OpenUTV.UTV
+PackageVersion: "${VERSION}"
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.12.0
+EOF
+
+          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.locale.en-US.yaml"
+# yaml-language-server: \$schema=https://aka.ms/winget-manifest.defaultLocale.1.12.0.schema.json
+
+PackageIdentifier: OpenUTV.UTV
+PackageVersion: "${VERSION}"
+PackageLocale: en-US
+Publisher: OpenUTV
+PublisherUrl: https://github.com/OpenUTV
+PublisherSupportUrl: https://github.com/OpenUTV/utv/issues
+PackageName: OpenUTV
+PackageUrl: https://github.com/OpenUTV/utv
+License: Apache-2.0
+LicenseUrl: https://github.com/OpenUTV/utv/blob/main/LICENSE
+ShortDescription: High-performance framecycler and sequence viewer for VFX, animation, and digital media
+Description: OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
+Tags:
+- media-player
+- sequence-viewer
+- vfx
+- rv
+- video
+- framecycler
+ManifestType: defaultLocale
+ManifestVersion: 1.12.0
+EOF
+
+          cat <<EOF > "$MANIFEST_DIR/OpenUTV.UTV.installer.yaml"
+# yaml-language-server: \$schema=https://aka.ms/winget-manifest.installer.1.12.0.schema.json
+
+PackageIdentifier: OpenUTV.UTV
+PackageVersion: "${VERSION}"
+InstallerLocale: en-US
+InstallerType: zip
+NestedInstallerType: portable
+Installers:
+- Architecture: x64
+  InstallerUrl: ${ASSET_URL}
+  InstallerSha256: ${SHA256_UPPER}
+  NestedInstallerFiles:
+  - RelativeFilePath: utv-windows-x64\\\\bin\\\\utv.exe
+    PortableCommandAlias: utv
+Dependencies:
+  PackageDependencies:
+  - PackageIdentifier: OpenUTV.OpenUTVDeps
+    MinimumVersion: "26.5"
+ManifestType: installer
+ManifestVersion: 1.12.0
+EOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$MANIFEST_DIR"
+          git commit -m "New package: OpenUTV.UTV version ${VERSION}" || echo "No changes to commit"
+          git push -u origin "$BRANCH" --force
+
+          echo "Submitting PR to microsoft/winget-pkgs..."
+          export GH_TOKEN="${WINGET_PAT}"
+          
+          EXISTING_PR=$(gh pr list --repo microsoft/winget-pkgs --head "OpenUTV:${BRANCH}" --state open --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}."
+          else
+            gh pr create --repo microsoft/winget-pkgs \
+              --head "OpenUTV:${BRANCH}" \
+              --base master \
+              --title "New package: OpenUTV.UTV version ${VERSION}" \
+              --body "## 📖 Description
+
+New package submission for OpenUTV.UTV version ${VERSION}.
+
+OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
+
+## ✅ Checklist
+- [x] Signed the Contributor License Agreement
+- [x] Checked that there aren't other open pull requests for this package version
+- [x] Manifest conforms to the 1.12 schema"
+          fi
+          echo "Winget package submission completed!"
 
   publish-chocolatey:
     name: Push to Chocolatey
