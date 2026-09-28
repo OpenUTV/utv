@@ -660,3 +660,37 @@ jobs:
             _dist/* \
             --clobber
         shell: bash
+
+      - name: Update Homebrew Cask in Repository
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          CASK_FILE="Casks/utv.rb"
+          ASSET_NAME="UTV-${VERSION}-macOS-arm64.zip"
+
+          if [ -f "_dist/${ASSET_NAME}" ] && [ -f "$CASK_FILE" ]; then
+            SHA256=$(sha256sum "_dist/${ASSET_NAME}" | awk '{print $1}')
+            echo "Updating $CASK_FILE to version $VERSION with sha256 $SHA256"
+            sed -i "s/version \".*\"/version \"${VERSION}\"/" "$CASK_FILE"
+            sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" "$CASK_FILE"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "$CASK_FILE"
+            git commit -m "chore(release): update homebrew cask for ${VERSION} [skip ci]" || echo "No changes to commit"
+            git pull --rebase origin main || true
+            git push origin main || echo "Failed to push updated cask to main"
+          else
+            echo "Skipping cask update: _dist/${ASSET_NAME} or $CASK_FILE not found."
+          fi
+        shell: bash
+
+      - name: Trigger Package Managers Publishing Workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          echo "Triggering publish-packages.yml for tag ${VERSION}..."
+          gh workflow run publish-packages.yml \
+            -f tag_name="${VERSION}" || echo "publish-packages.yml trigger skipped or failed"
+        shell: bash
