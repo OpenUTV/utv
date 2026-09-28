@@ -236,24 +236,17 @@ jobs:
           echo "Submitting PR to microsoft/winget-pkgs..."
           export GH_TOKEN="${WINGET_PAT}"
           
-          EXISTING_PR=\$(gh pr list --repo microsoft/winget-pkgs --head "OpenUTV:\${BRANCH}" --state open --json number -q '.[0].number')
-          if [ -n "\$EXISTING_PR" ]; then
-            echo "PR #\${EXISTING_PR} already exists for branch \${BRANCH}."
+          EXISTING_PR=$(gh pr list --repo microsoft/winget-pkgs --head "OpenUTV:${BRANCH}" --state open --json number -q '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}."
           else
-            gh pr create --repo microsoft/winget-pkgs \\
-              --head "OpenUTV:\${BRANCH}" \\
-              --base master \\
-              --title "New package: OpenUTV.UTV version \${VERSION}" \\
-              --body "## 📖 Description
+            PR_BODY=$(printf "## Description\n\nNew package submission for OpenUTV.UTV version %s.\n\nOpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.\n\n## Checklist\n- [x] Signed the Contributor License Agreement\n- [x] Checked that there aren't other open pull requests for this package version\n- [x] Manifest conforms to the 1.12 schema\n" "${VERSION}")
 
-          New package submission for OpenUTV.UTV version \${VERSION}.
-
-          OpenUTV is a high-performance, open-source framecycler and sequence viewer designed for VFX, animation, editorial, and digital media review workflows.
-
-          ## ✅ Checklist
-          - [x] Signed the Contributor License Agreement
-          - [x] Checked that there aren't other open pull requests for this package version
-          - [x] Manifest conforms to the 1.12 schema"
+            gh pr create --repo microsoft/winget-pkgs \
+              --head "OpenUTV:${BRANCH}" \
+              --base master \
+              --title "New package: OpenUTV.UTV version ${VERSION}" \
+              --body "$PR_BODY"
           fi
           echo "Winget package submission completed!"
 
