@@ -473,6 +473,19 @@ namespace TwkFB
     {
         const FrameBuffer* outfb = &img;
 
+        // Ensure temporary FrameBuffer is cleanly deleted upon return/exception
+        struct FBAutoCleanup
+        {
+            const FrameBuffer*& current;
+            const FrameBuffer& original;
+
+            ~FBAutoCleanup()
+            {
+                if (current != &original)
+                    delete current;
+            }
+        } autoCleanup{outfb, img};
+
         //
         //  Merge planar frames if needed
         //
@@ -551,19 +564,6 @@ namespace TwkFB
             flip(const_cast<FrameBuffer*>(outfb));
         }
 
-        // Ensure temporary FrameBuffer is cleanly deleted upon return/exception
-        struct FBAutoCleanup
-        {
-            const FrameBuffer*& current;
-            const FrameBuffer& original;
-
-            ~FBAutoCleanup()
-            {
-                if (current != &original)
-                    delete current;
-            }
-        } autoCleanup{outfb, img};
-
         std::unique_ptr<ImageOutput> out = ImageOutput::create(filename);
         if (!out)
         {
@@ -596,15 +596,46 @@ namespace TwkFB
             break;
         }
 
-        ImageSpec spec(outfb->width(), outfb->height(), outfb->numChannels(), format);
+        //
+        //  Drop a trailing alpha channel for writers that cannot store one
+        //  (e.g. PNM). The pixel stride still spans all source channels, so
+        //  OIIO simply skips the alpha values.
+        //
+        const int numChannels = outfb->numChannels();
+        const bool hasChannelNames = outfb->channelNames().size() == static_cast<size_t>(numChannels);
+        const bool lastIsAlpha = !hasChannelNames || outfb->channelNames().back() == "A";
+        int nchannels = numChannels;
 
-        if (outfb->channelNames().size() == static_cast<size_t>(outfb->numChannels()))
+        if ((numChannels == 2 || numChannels == 4) && lastIsAlpha && !out->supports("alpha"))
         {
-            spec.channelnames.clear();
-            for (size_t i = 0; i < outfb->channelNames().size(); ++i)
-            {
-                spec.channelnames.push_back(outfb->channelNames()[i]);
-            }
+            nchannels = numChannels - 1;
+        }
+
+        //
+        //  Work around OIIO writers that mishandle some sample types. OIIO
+        //  converts from the in-memory format to the file format.
+        //
+        //  pnm:  emits PFM (bottom-to-top float) for any floating point spec
+        //        regardless of extension, so store integer samples for
+        //        .ppm/.pgm/.pbm/.pnm.
+        //  fits: writes BITPIX=-32 for HALF but still writes 16-bit samples,
+        //        producing a truncated file, so promote HALF to FLOAT.
+        //
+        TypeDesc fileFormat = format;
+        if (Strutil::iequals(out->format_name(), "pnm") && format.is_floating_point())
+        {
+            fileFormat = TypeDesc::UINT16;
+        }
+        else if (Strutil::iequals(out->format_name(), "fits") && format == TypeDesc::HALF)
+        {
+            fileFormat = TypeDesc::FLOAT;
+        }
+
+        ImageSpec spec(outfb->width(), outfb->height(), nchannels, fileFormat);
+
+        if (hasChannelNames)
+        {
+            spec.channelnames.assign(outfb->channelNames().begin(), outfb->channelNames().begin() + nchannels);
         }
 
         if (request.pixelAspect != 1.0f && request.pixelAspect != 0.0f)
@@ -644,7 +675,10 @@ namespace TwkFB
             TWK_THROW_STREAM(IOException, "OIIO: Error writing \"" << filename << "\": " << out->geterror());
         }
 
-        out->close();
+        if (!out->close())
+        {
+            TWK_THROW_STREAM(IOException, "OIIO: Error closing \"" << filename << "\": " << out->geterror());
+        }
     }
 
 } //  End namespace TwkFB
