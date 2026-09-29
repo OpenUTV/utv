@@ -791,6 +791,26 @@ int RunLauncher()
         }
     }
 
+    // Configure QT_QPA_PLATFORM_PLUGIN_PATH if not explicitly specified
+    if (GetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", NULL, 0) == 0)
+    {
+        if (!depsPySide.empty())
+        {
+            std::wstring platformsDir = depsPySide + L"\\plugins\\platforms";
+            if (DirExists(platformsDir))
+            {
+                SetEnvironmentVariableW(L"QT_QPA_PLATFORM_PLUGIN_PATH", platformsDir.c_str());
+            }
+        }
+    }
+
+    // Remove legacy orphaned qt.conf if plugins/Qt does not exist (prevents blocking PySide6 Qt plugin loading)
+    std::wstring legacyQtConf = appDir + L"\\qt.conf";
+    if (FileExists(legacyQtConf) && !DirExists(appDir + L"\\plugins\\Qt"))
+    {
+        DeleteFileW(legacyQtConf.c_str());
+    }
+
     // Configure QtWebEngine and QML paths if PySide6 Qt is used
     if (!depsPySide.empty())
     {

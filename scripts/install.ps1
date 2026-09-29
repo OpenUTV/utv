@@ -112,51 +112,52 @@ Write-Host "Target Directory: $InstallDir" -ForegroundColor White
 Write-Host "Administrative Privileges: $isAdmin`n" -ForegroundColor White
 
 # Step 1: Check and Install OpenUTVDeps
-if (-not $SkipDeps) {
-    Write-Host "--- Checking OpenUTV Dependencies (v$DepsVersion) ---" -ForegroundColor Cyan
-    $depsFound = $false
-    $detectedDepsPath = ""
+Write-Host "--- Checking OpenUTV Dependencies (v$DepsVersion) ---" -ForegroundColor Cyan
+$depsFound = $false
+$detectedDepsPath = ""
 
-    if ($env:OPENUTV_DEPS_ROOT -and (Test-Path "$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
+if (Test-Path "C:\Program Files\OpenUTVDeps $DepsVersion\bin\OpenImageIO.dll") {
+    $depsFound = $true
+    $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
+} elseif ($env:OPENUTV_DEPS_ROOT -and (Test-Path "$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
+    $depsFound = $true
+    $detectedDepsPath = $env:OPENUTV_DEPS_ROOT
+} elseif (Test-Path "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll") {
+    $found = Get-Item "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll" | Select-Object -First 1
+    $depsFound = $true
+    $detectedDepsPath = $found.Directory.Parent.FullName
+} else {
+    $uninst = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+        Where-Object { $_.DisplayName -like "OpenUTVDeps $DepsVersion*" -or $_.DisplayName -like "OpenUTV Dependencies $DepsVersion*" } |
+        Select-Object -First 1
+    if ($uninst -and $uninst.InstallLocation -and (Test-Path "$($uninst.InstallLocation)\bin\OpenImageIO.dll")) {
         $depsFound = $true
-        $detectedDepsPath = $env:OPENUTV_DEPS_ROOT
-    } elseif (Test-Path "C:\Program Files\OpenUTVDeps $DepsVersion\bin\OpenImageIO.dll") {
-        $depsFound = $true
-        $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
-    } elseif (Test-Path "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll") {
-        $found = Get-Item "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll" | Select-Object -First 1
-        $depsFound = $true
-        $detectedDepsPath = $found.Directory.Parent.FullName
-    } else {
-        $uninst = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -like "OpenUTVDeps $DepsVersion*" -or $_.DisplayName -like "OpenUTV Dependencies $DepsVersion*" } |
-            Select-Object -First 1
-        if ($uninst -and $uninst.InstallLocation -and (Test-Path "$($uninst.InstallLocation)\bin\OpenImageIO.dll")) {
-            $depsFound = $true
-            $detectedDepsPath = $uninst.InstallLocation.TrimEnd('\')
-        }
+        $detectedDepsPath = $uninst.InstallLocation.TrimEnd('\')
     }
+}
 
-    if ($depsFound) {
-        Write-Host "OpenUTV dependencies detected at: $detectedDepsPath" -ForegroundColor Green
-    } else {
-        Write-Host "OpenUTV dependencies not found. Downloading OpenUTVDeps MSI installer..." -ForegroundColor Yellow
-        $msiUrl = "https://github.com/$RepoOwner/$DepsRepoName/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
-        $tempMsi = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
+if ($depsFound) {
+    Write-Host "OpenUTV dependencies detected at: $detectedDepsPath" -ForegroundColor Green
+} elseif (-not $SkipDeps) {
+    Write-Host "OpenUTV dependencies not found. Downloading OpenUTVDeps MSI installer..." -ForegroundColor Yellow
+    $msiUrl = "https://github.com/$RepoOwner/$DepsRepoName/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
+    $tempMsi = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
 
-        Write-Host "Downloading $msiUrl..." -ForegroundColor White
-        Invoke-WebRequest -Uri $msiUrl -OutFile $tempMsi -UseBasicParsing
+    Write-Host "Downloading $msiUrl..." -ForegroundColor White
+    Invoke-WebRequest -Uri $msiUrl -OutFile $tempMsi -UseBasicParsing
 
-        Write-Host "Installing OpenUTVDeps (silent MSI install)..." -ForegroundColor Yellow
-        $msiProc = Start-Process msiexec.exe -ArgumentList "/i `"$tempMsi`" /qn /norestart MSIFASTINSTALL=7" -Wait -PassThru
-        Remove-Item -Force $tempMsi -ErrorAction SilentlyContinue
+    Write-Host "Installing OpenUTVDeps (silent MSI install)..." -ForegroundColor Yellow
+    $msiProc = Start-Process msiexec.exe -ArgumentList "/i `"$tempMsi`" /qn /norestart MSIFASTINSTALL=7" -Wait -PassThru
+    Remove-Item -Force $tempMsi -ErrorAction SilentlyContinue
 
-        if ($msiProc.ExitCode -ne 0 -and $msiProc.ExitCode -ne 3010) {
-            Write-Error "Failed to install OpenUTVDeps MSI. Exit code: $($msiProc.ExitCode)"
-            return
-        }
-        Write-Host "OpenUTVDeps installed successfully!" -ForegroundColor Green
+    if ($msiProc.ExitCode -ne 0 -and $msiProc.ExitCode -ne 3010) {
+        Write-Error "Failed to install OpenUTVDeps MSI. Exit code: $($msiProc.ExitCode)"
+        return
     }
+    Write-Host "OpenUTVDeps installed successfully!" -ForegroundColor Green
+    $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
+} else {
+    Write-Host "Skipping OpenUTVDeps download/install (-SkipDeps)." -ForegroundColor Gray
 }
 
 # Step 2: Resolve UTV Release Asset
@@ -208,18 +209,70 @@ if (-not (Test-Path $utvExe)) {
     return
 }
 
-# Step 4: Configure PATH
+# Step 4: Configure PATH and Environment
 Write-Host "`n--- Configuring Environment ---" -ForegroundColor Cyan
 $binDir = Join-Path $InstallDir "bin"
 $pathScope = if ($isAdmin) { "Machine" } else { "User" }
+
+# Remove orphaned legacy qt.conf if present without plugins\Qt (prevents blocking PySide6 Qt plugin loading)
+$legacyQtConf = Join-Path $binDir "qt.conf"
+$qtPluginDir = Join-Path $InstallDir "plugins\Qt"
+if ((Test-Path $legacyQtConf) -and -not (Test-Path $qtPluginDir)) {
+    Remove-Item -Force $legacyQtConf -ErrorAction SilentlyContinue
+    Write-Host "Removed legacy qt.conf." -ForegroundColor Gray
+}
+
+# Collect paths to add to PATH
+$pathsToAdd = @($binDir)
+
+if ($detectedDepsPath -and (Test-Path $detectedDepsPath)) {
+    $depsBin = Join-Path $detectedDepsPath "bin"
+    $depsPython = Join-Path $detectedDepsPath "tools\python3"
+    $depsPySide = Join-Path $detectedDepsPath "tools\python3\Lib\site-packages\PySide6"
+    $depsPlugins = Join-Path $depsPySide "plugins"
+    $depsPlatforms = Join-Path $depsPlugins "platforms"
+
+    if (Test-Path $depsBin) { $pathsToAdd += $depsBin }
+    if (Test-Path $depsPython) { $pathsToAdd += $depsPython }
+    if (Test-Path $depsPySide) { $pathsToAdd += $depsPySide }
+
+    # Set persistent OpenUTVDeps environment variables
+    [Environment]::SetEnvironmentVariable("OPENUTV_DEPS_ROOT", $detectedDepsPath, $pathScope)
+    $env:OPENUTV_DEPS_ROOT = $detectedDepsPath
+
+    if (Test-Path $depsPython) {
+        [Environment]::SetEnvironmentVariable("PYTHONHOME", $depsPython, $pathScope)
+        $env:PYTHONHOME = $depsPython
+    }
+    if (Test-Path $depsPlugins) {
+        [Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $depsPlugins, $pathScope)
+        $env:QT_PLUGIN_PATH = $depsPlugins
+    }
+    if (Test-Path $depsPlatforms) {
+        [Environment]::SetEnvironmentVariable("QT_QPA_PLATFORM_PLUGIN_PATH", $depsPlatforms, $pathScope)
+        $env:QT_QPA_PLATFORM_PLUGIN_PATH = $depsPlatforms
+    }
+}
+
 $currentEnvPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
-if ($currentEnvPath -notlike "*$binDir*") {
-    $newEnvPath = "$binDir;$currentEnvPath"
+$currentList = ($currentEnvPath -split ";") | Where-Object { $_ -ne "" }
+$newEntries = @()
+foreach ($p in $pathsToAdd) {
+    if ($currentList -notcontains $p) {
+        $newEntries += $p
+    }
+}
+
+if ($newEntries.Count -gt 0) {
+    $newEnvPath = ($newEntries + $currentList) -join ";"
     [Environment]::SetEnvironmentVariable("Path", $newEnvPath, $pathScope)
-    $env:Path = "$binDir;$env:Path"
-    Write-Host "Added $binDir to $pathScope PATH." -ForegroundColor Green
+    $env:Path = ($newEntries + ($env:Path -split ";")) -join ";"
+    Write-Host "Added $($newEntries.Count) OpenUTV path(s) to $pathScope PATH." -ForegroundColor Green
+    foreach ($entry in $newEntries) {
+        Write-Host "  + $entry" -ForegroundColor Gray
+    }
 } else {
-    Write-Host "$binDir is already present in $pathScope PATH." -ForegroundColor Gray
+    Write-Host "OpenUTV binaries and dependencies already present in $pathScope PATH." -ForegroundColor Gray
 }
 
 # Step 5: Create Start Menu and Desktop Shortcuts

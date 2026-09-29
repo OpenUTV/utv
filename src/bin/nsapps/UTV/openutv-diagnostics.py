@@ -425,7 +425,18 @@ def notify_user(zip_path):
 
 
 def main():
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: openutv-diagnostics [OPTIONS]")
+        print("Collects system info, logs, crash reports, and configs into a zip archive.")
+        print()
+        print("Options:")
+        print("  --no-browser   Do not open the GitHub bug report page in a browser")
+        print("  --silent       Do not show GUI dialogs or open file manager (for headless/scripts)")
+        print("  --help, -h     Show this help message")
+        sys.exit(0)
+
     no_browser = "--no-browser" in sys.argv
+    silent = "--silent" in sys.argv or "--quiet" in sys.argv
 
     # 1. Setup temp collection directory
     temp_base = tempfile.mkdtemp(prefix="openutv_diag_")
@@ -465,14 +476,18 @@ def main():
         pass
 
     # 4. Reveal zip file in Finder / Explorer / Nautilus
-    reveal_file(zip_path)
+    if not silent:
+        reveal_file(zip_path)
 
     # 5. Open browser if requested
-    if not no_browser:
+    if not no_browser and not silent:
         webbrowser.open(GITHUB_BUG_URL)
 
     # 6. Show confirmation dialog
-    notify_user(zip_path)
+    if not silent:
+        notify_user(zip_path)
+    else:
+        print(f"Diagnostics package created successfully: {zip_path}")
 
     sys.exit(0)
 
