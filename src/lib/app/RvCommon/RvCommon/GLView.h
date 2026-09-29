@@ -35,6 +35,10 @@ namespace Rv
                bool doubleBuffer = true, int red = 0, int green = 0, int blue = 0, int alpha = 0, bool noResize = true);
         ~GLView();
 
+        //  UTV_PRESENTATION_BACKEND=gl forces the QOpenGLWidget presentation
+        //  path even when a Metal/Vulkan presentation backend would be chosen.
+        static bool presentationBackendForcedToGL();
+
         static QSurfaceFormat rvGLFormat(bool stereo = false, bool vsync = true, bool doubleBuffer = true, int red = 8, int green = 8,
                                          int blue = 8, int alpha = 8);
 
@@ -73,8 +77,10 @@ namespace Rv
         void paintGL();
         bool validateReadPixels(int x, int y, int w, int h);
         void debugSaveFramebuffer();
+        void logPresentationFormat();
 
     private:
+        bool m_loggedPresentationFormat = false;
         RvDocument* m_doc;
         boost::thread m_swapThread;
         QTGLVideoDevice* m_videoDevice;

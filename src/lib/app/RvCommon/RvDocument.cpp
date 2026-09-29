@@ -251,14 +251,16 @@ namespace Rv
 
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
         // --- Metal presentation path ---
-        if (!getenv("RV_DISABLE_METAL_VIEW"))
+        if (!getenv("RV_DISABLE_METAL_VIEW") && !GLView::presentationBackendForcedToGL())
         {
+            cout << "INFO: presentation backend: Metal" << endl;
             m_metalView = new MetalView(this, this, true);
             m_viewWidget = m_metalView;
         }
         else
         {
-            // --- OpenGL (8-bit) fallback ---
+            // --- OpenGL fallback ---
+            cout << "INFO: presentation backend: OpenGL (QOpenGLWidget)" << endl;
             createGLView();
         }
 #elif defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
@@ -266,7 +268,7 @@ namespace Rv
         const bool want10bit = (opts.dispRedBits == 10 && opts.dispGreenBits == 10 && opts.dispBlueBits == 10 && opts.dispAlphaBits == 2);
 
         bool useVulkan = false;
-        if (want10bit)
+        if (want10bit && !GLView::presentationBackendForcedToGL())
         {
             useVulkan = VulkanView::supports10BitPresentation();
         }
@@ -274,12 +276,14 @@ namespace Rv
         if (useVulkan)
         {
             // --- Vulkan path ---
+            cout << "INFO: presentation backend: Vulkan" << endl;
             m_vulkanView = new VulkanView(this, this, true);
             m_viewWidget = m_vulkanView;
         }
         else
         {
             // --- OpenGL path ---
+            cout << "INFO: presentation backend: OpenGL (QOpenGLWidget)" << endl;
             createGLView();
         }
 #else

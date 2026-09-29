@@ -695,6 +695,27 @@ int utf8Main(int argc, char* argv[])
     argv = &arguments[0];
 
     //
+    //  Deep color output through the QOpenGLWidget path. GLView renders into
+    //  a >8 bit widget texture, which Qt composites into the top-level
+    //  window's surface. That surface takes QSurfaceFormat::defaultFormat(),
+    //  so it must be deep too or the composite truncates to 8 bits. On macOS
+    //  this only applies when the Metal presentation backend is bypassed.
+    //
+    bool deepGLWindow = opts.dispRedBits > 8 && opts.dispGreenBits > 8 && opts.dispBlueBits > 8;
+#if defined(PLATFORM_DARWIN) && defined(USE_METAL)
+    deepGLWindow = deepGLWindow && (getenv("RV_DISABLE_METAL_VIEW") || Rv::GLView::presentationBackendForcedToGL());
+#endif
+    if (deepGLWindow)
+    {
+        QSurfaceFormat fmt = QSurfaceFormat::defaultFormat();
+        fmt.setRedBufferSize(opts.dispRedBits);
+        fmt.setGreenBufferSize(opts.dispGreenBits);
+        fmt.setBlueBufferSize(opts.dispBlueBits);
+        fmt.setAlphaBufferSize(opts.dispAlphaBits);
+        QSurfaceFormat::setDefaultFormat(fmt);
+    }
+
+    //
     //  Application
     //
 

@@ -25,6 +25,7 @@
 #include <boost/thread/condition_variable.hpp>
 
 #include <QtWidgets/QMenu>
+#include <QtGui/QWindow>
 
 namespace Rv
 {
@@ -99,6 +100,54 @@ namespace Rv
             const VideoDevice* m_device;
         };
 
+        //
+        //  QOpenGLWidget renders into its own FBO, which Qt then composites into
+        //  the top-level window. Qt creates that FBO as GL_RGBA8 unless told
+        //  otherwise, which truncates the image to 8 bits before it reaches the
+        //  window no matter what surface format was requested. Ask for a >8 bit
+        //  texture when a deep display format is requested.
+        //
+        //  UTV_GL_TEXTURE_FORMAT=rgba8|rgb10a2|rgba16f overrides the choice.
+        //
+
+        constexpr GLenum kGLRGBA8 = 0x8058;
+        constexpr GLenum kGLRGB10A2 = 0x8059;
+        constexpr GLenum kGLRGBA16F = 0x881A;
+
+        GLenum widgetTextureFormat(int red)
+        {
+            if (const char* env = getenv("UTV_GL_TEXTURE_FORMAT"))
+            {
+                const string value(env);
+                if (value == "rgba8")
+                    return kGLRGBA8;
+                if (value == "rgb10a2")
+                    return kGLRGB10A2;
+                if (value == "rgba16f")
+                    return kGLRGBA16F;
+                cout << "WARNING: ignoring unknown UTV_GL_TEXTURE_FORMAT=" << value << " (expected rgba8, rgb10a2 or rgba16f)" << endl;
+            }
+
+            return red > 8 ? kGLRGB10A2 : 0; // 0: keep Qt's default
+        }
+
+        const char* textureFormatName(GLenum format)
+        {
+            switch (format)
+            {
+            case 0:
+                return "Qt default (GL_RGBA8)";
+            case kGLRGBA8:
+                return "GL_RGBA8";
+            case kGLRGB10A2:
+                return "GL_RGB10_A2";
+            case kGLRGBA16F:
+                return "GL_RGBA16F";
+            default:
+                return "other";
+            }
+        }
+
         class ThreadTrampoline
         {
         public:
@@ -140,6 +189,11 @@ namespace Rv
         , m_syncThreadData(0)
     {
         setFormat(rvGLFormat(stereo, vsync, doubleBuffer, red, green, blue, alpha));
+
+        if (GLenum textureFormat = widgetTextureFormat(red))
+        {
+            setTextureFormat(textureFormat);
+        }
 
         ostringstream str;
         str << UI_APPLICATION_NAME " Main Window" << "/" << m_doc;
@@ -187,6 +241,12 @@ namespace Rv
 
         x = gp.x();
         y = gp.y();
+    }
+
+    bool GLView::presentationBackendForcedToGL()
+    {
+        const char* env = getenv("UTV_PRESENTATION_BACKEND");
+        return env && string(env) == "gl";
     }
 
     QSurfaceFormat GLView::rvGLFormat(bool stereo, bool vsync, bool doubleBuffer, int red, int green, int blue, int alpha)
@@ -354,9 +414,37 @@ namespace Rv
         // image.save("/home/<username>>/<orv_folder>/fbo.png");
     }
 
+    void GLView::logPresentationFormat()
+    {
+        //
+        //  Report the bit depth at each stage of the QOpenGLWidget presentation
+        //  path. Output depth is limited by the smallest of these.
+        //
+        m_loggedPresentationFormat = true;
+
+        GLint fboBits[4] = {0, 0, 0, 0};
+        glGetIntegerv(GL_RED_BITS, &fboBits[0]);
+        glGetIntegerv(GL_GREEN_BITS, &fboBits[1]);
+        glGetIntegerv(GL_BLUE_BITS, &fboBits[2]);
+        glGetIntegerv(GL_ALPHA_BITS, &fboBits[3]);
+
+        const QSurfaceFormat ctx = context()->format();
+        const QWindow* topLevel = window() ? window()->windowHandle() : nullptr;
+        const QSurfaceFormat win = topLevel ? topLevel->format() : QSurfaceFormat();
+
+        cout << "INFO: GL presentation: requested display " << m_red << "/" << m_green << "/" << m_blue << "/" << m_alpha
+             << ", widget texture " << textureFormatName(textureFormat()) << ", widget FBO " << fboBits[0] << "/" << fboBits[1] << "/"
+             << fboBits[2] << "/" << fboBits[3] << ", context " << ctx.redBufferSize() << "/" << ctx.greenBufferSize() << "/"
+             << ctx.blueBufferSize() << "/" << ctx.alphaBufferSize() << ", window surface " << win.redBufferSize() << "/"
+             << win.greenBufferSize() << "/" << win.blueBufferSize() << "/" << win.alphaBufferSize() << endl;
+    }
+
     void GLView::paintGL()
     {
         TWK_GLDEBUG;
+
+        if (!m_loggedPresentationFormat)
+            logPresentationFormat();
 
         IPCore::Session* session = m_doc->session();
         bool debug = IPCore::debugProfile && session;
