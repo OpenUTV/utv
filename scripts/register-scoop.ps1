@@ -57,7 +57,7 @@ New-Item -ItemType Directory -Force -Path "bucket" | Out-Null
 
 # 4. Manifest for openutv-dependencies
 Write-Host "Generating bucket\openutv-dependencies.json..." -ForegroundColor Yellow
-$depsMsiUrl = "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
+$depsMsiUrl = "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi#/dl.msi_dl"
 $depsSha = "2939e02f50d9c9877ed4615d9be35679491f37dfbd483fc7e793d71a0d365737"
 
 $depsManifest = @"
@@ -75,9 +75,34 @@ $depsManifest = @"
     },
     "installer": {
         "script": [
-            "lessmsi x \"`$dir\\OpenUTVDeps-$DepsVersion-win64.msi\" \"`$dir\\unpacked\"",
-            "Get-ChildItem \"`$dir\\unpacked\\SourceDir\\OpenUTVDeps*\" | Copy-Item -Destination \"`$dir\" -Recurse -Force",
-            "Remove-Item -Recurse -Force \"`$dir\\unpacked\", \"`$dir\\OpenUTVDeps-$DepsVersion-win64.msi\""
+            "`$existingDeps = `$null",
+            "if (`$env:OPENUTV_DEPS_ROOT -and (Test-Path "`$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {",
+            "    `$existingDeps = `$env:OPENUTV_DEPS_ROOT",
+            "} elseif (Test-Path 'C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll') {",
+            "    `$found = Get-Item 'C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll' | Select-Object -First 1",
+            "    `$existingDeps = `$found.Directory.Parent.FullName",
+            "} else {",
+            "    `$uninst = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue | Where-Object DisplayName -like 'OpenUTVDeps*' | Select-Object -First 1",
+            "    if (`$uninst -and `$uninst.InstallLocation -and (Test-Path "`$(`$uninst.InstallLocation)\bin\OpenImageIO.dll")) {",
+            "        `$existingDeps = `$uninst.InstallLocation.TrimEnd('\')",
+            "    }",
+            "}",
+            "if (`$existingDeps) {",
+            "    Write-Host ""Detected existing OpenUTV dependencies at '`$existingDeps'. Linking into Scoop app directory..."" -ForegroundColor Green",
+            "    Get-ChildItem `$existingDeps | ForEach-Object {",
+            "        if (`$_.PSIsContainer) {",
+            "            New-Item -ItemType Junction -Path "`$dir\`$(`$_.Name)" -Target `$_.FullName | Out-Null",
+            "        } else {",
+            "            Copy-Item `$_.FullName -Destination "`$dir" -Force",
+            "        }",
+            "    }",
+            "    Remove-Item -Force "`$dir\dl.msi_dl" -ErrorAction SilentlyContinue",
+            "} else {",
+            "    Write-Host 'Extracting OpenUTVDeps with lessmsi...' -ForegroundColor Cyan",
+            "    lessmsi x "`$dir\dl.msi_dl" "`$dir\unpacked\"",
+            "    Get-ChildItem "`$dir\unpacked\SourceDir\OpenUTVDeps*" | Copy-Item -Destination "`$dir" -Recurse -Force",
+            "    Remove-Item -Recurse -Force "`$dir\unpacked", "`$dir\dl.msi_dl"",
+            "}"
         ]
     },
     "env_add_path": "bin",
@@ -91,7 +116,7 @@ $depsManifest = @"
     "autoupdate": {
         "architecture": {
             "64bit": {
-                "url": "https://github.com/OpenUTV/utv-dependencies/releases/download/v`$version/OpenUTVDeps-`$version-win64.msi"
+                "url": "https://github.com/OpenUTV/utv-dependencies/releases/download/v`$version/OpenUTVDeps-`$version-win64.msi#/dl.msi_dl"
             }
         }
     }
@@ -113,14 +138,16 @@ try {
     $sha256 = "SHA256_HASH_PLACEHOLDER"
 }
 
-# 6. Generate UTV manifest JSON with dependency
+# 6. Generate UTV manifest JSON with intelligent dependency detection
 $manifest = @"
 {
     "version": "$Version",
     "description": "Lightweight and distributable framecycler and sequence viewer for VFX, animation, and digital media",
     "homepage": "https://github.com/OpenUTV/utv",
     "license": "Apache-2.0",
-    "depends": "openutv-dependencies",
+    "suggest": {
+        "openutv-dependencies": "openutv/openutv-dependencies"
+    },
     "architecture": {
         "64bit": {
             "url": "https://github.com/OpenUTV/utv/releases/download/$Version/UTV-$Version-windows-x64.zip",
@@ -128,6 +155,22 @@ $manifest = @"
         }
     },
     "extract_dir": "utv-windows-x64",
+    "pre_install": [
+        "`$hasDeps = `$false",
+        "if (`$env:OPENUTV_DEPS_ROOT -and (Test-Path "`$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) { `$hasDeps = `$true }",
+        "elseif (Test-Path 'C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll') { `$hasDeps = `$true }",
+        "elseif (Test-Path "`$env:USERPROFILE\scoop\apps\openutv-dependencies\current\bin\OpenImageIO.dll") { `$hasDeps = `$true }",
+        "else {",
+        "    `$uninst = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue | Where-Object DisplayName -like 'OpenUTVDeps*'",
+        "    if (`$uninst) { `$hasDeps = `$true }",
+        "}",
+        "if (`$hasDeps) {",
+        "    Write-Host 'Existing OpenUTV dependencies detected. Skipping dependency installation.' -ForegroundColor Green",
+        "} else {",
+        "    Write-Host 'OpenUTV dependencies not found. Installing openutv-dependencies via Scoop...' -ForegroundColor Yellow",
+        "    & scoop install openutv/openutv-dependencies",
+        "}"
+    ],
     "bin": "bin\\utv.exe",
     "shortcuts": [
         [

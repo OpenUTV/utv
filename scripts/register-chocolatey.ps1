@@ -81,6 +81,26 @@ $depsNuspec | Set-Content -Path (Join-Path $depsChocoDir "openutv-dependencies.n
 
 $depsInstallPs1 = @"
 `$ErrorActionPreference = 'Stop'
+
+# Detect existing OpenUTV dependencies to avoid redundant download and reinstall
+`$existingDeps = `$null
+if (`$env:OPENUTV_DEPS_ROOT -and (Test-Path "`$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
+  `$existingDeps = `$env:OPENUTV_DEPS_ROOT
+} elseif (Test-Path "C:\Program Files\OpenUTVDeps $DepsVersion\bin\OpenImageIO.dll") {
+  `$existingDeps = "C:\Program Files\OpenUTVDeps $DepsVersion"
+} else {
+  `$uninst = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+    Where-Object { `$_.DisplayName -like "OpenUTVDeps $DepsVersion*" -or `$_.DisplayName -like "OpenUTV Dependencies $DepsVersion*" }
+  if (`$uninst) {
+    `$existingDeps = `$uninst.InstallLocation
+  }
+}
+
+if (`$existingDeps) {
+  Write-Host "OpenUTV Dependencies ($DepsVersion) already detected at '`$existingDeps'. Skipping download and installation." -ForegroundColor Green
+  return
+}
+
 `$packageArgs = @{
   packageName   = 'openutv-dependencies'
   fileType      = 'msi'
