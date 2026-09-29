@@ -200,8 +200,9 @@ Install-ChocolateyZipPackage @packageArgs
 New-Item "`$toolsDir\utv-windows-x64\bin\utv.exe.ignore" -Type File -Force | Out-Null
 
 `$targetPath = Join-Path `$toolsDir "utv-windows-x64\bin\utv.exe"
-Install-ChocolateyShortcut -shortcutFilePath "`$env:PUBLIC\Desktop\OpenUTV.lnk" -targetPath `$targetPath
-Install-ChocolateyShortcut -shortcutFilePath "`$env:ProgramData\Microsoft\Windows\Start Menu\Programs\OpenUTV.lnk" -targetPath `$targetPath
+`$workingDir = Split-Path `$targetPath
+Install-ChocolateyShortcut -shortcutFilePath "`$env:PUBLIC\Desktop\OpenUTV.lnk" -targetPath `$targetPath -workingDirectory `$workingDir
+Install-ChocolateyShortcut -shortcutFilePath "`$env:ProgramData\Microsoft\Windows\Start Menu\Programs\OpenUTV.lnk" -targetPath `$targetPath -workingDirectory `$workingDir
 "@
 $appInstallPs1 | Set-Content -Path (Join-Path $appToolsDir "chocolateyInstall.ps1") -Encoding UTF8
 

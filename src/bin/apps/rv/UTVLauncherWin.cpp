@@ -937,7 +937,17 @@ int RunLauncher()
     si.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
-    BOOL created = CreateProcessW(targetExe.c_str(), cmdBuf.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+    // If the launcher was started with working directory System32 (e.g. from a Start Menu shortcut without StartIn),
+    // default child working directory to appDir so relative asset and plugin lookups succeed.
+    wchar_t cwdBuf[MAX_PATH];
+    GetCurrentDirectoryW(MAX_PATH, cwdBuf);
+    const wchar_t* pCwd = NULL;
+    if (_wcsicmp(cwdBuf, L"C:\\Windows\\System32") == 0 || _wcsicmp(cwdBuf, L"C:\\Windows\\SysWOW64") == 0)
+    {
+        pCwd = appDir.c_str();
+    }
+
+    BOOL created = CreateProcessW(targetExe.c_str(), cmdBuf.data(), NULL, NULL, TRUE, 0, NULL, pCwd, &si, &pi);
 
     if (!created)
     {
