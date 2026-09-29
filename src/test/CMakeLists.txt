@@ -6,6 +6,7 @@
 
 ADD_SUBDIRECTORY(FastMemcpyTest)
 ADD_SUBDIRECTORY(QFontTest)
+ADD_SUBDIRECTORY(CliSmokeTest)
 IF(RV_TARGET_LINUX)
   # These are simple tests replicating part of what the AudioRender is doing on Linux, uses `dlopen`
   ADD_SUBDIRECTORY(LoadingSharedLibrariesTest)

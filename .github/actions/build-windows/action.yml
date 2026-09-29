@@ -396,10 +396,7 @@ runs:
       shell: powershell
 
     - name: Tests
-      continue-on-error: true
-      run: |
-        ls -al _build/stage/app/bin
-        ctest --test-dir _build --extra-verbose --timeout 60
+      run: ctest --test-dir _build --output-on-failure --timeout 900
       shell: bash
 
     - name: Install UTV
