@@ -122,6 +122,28 @@ brew upgrade --cask utv
 
 This automatically installs `UTV.app` along with all required multimedia dependencies (`ffmpeg-full`, `qt`, `opencolorio`, `openimageio`, `openexr`, etc.).
 
+### Windows (PowerShell — Recommended)
+
+Install OpenUTV and its dependencies with a single command in PowerShell (Run as Administrator to install to `C:\Program Files\OpenUTV` for all users, or as a regular user for `~\AppData\Local\Programs\OpenUTV`):
+
+```powershell
+irm https://openutv.com/install.ps1 | iex
+```
+
+*Or directly from GitHub:*
+
+```powershell
+irm https://raw.githubusercontent.com/OpenUTV/utv/main/scripts/install.ps1 | iex
+```
+
+The installer:
+
+- Detects whether `OpenUTVDeps-*.msi` is installed and automatically downloads and installs missing multimedia dependencies silently.
+- Extracts and registers OpenUTV binaries.
+- Configures system or user `PATH`.
+- Creates Start Menu shortcuts with proper working directories.
+- Registers in Windows *Installed Apps* / *Add or Remove Programs* for clean uninstallation.
+
 ### Windows Package Managers
 
 #### Scoop
