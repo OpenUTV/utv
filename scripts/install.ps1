@@ -119,6 +119,9 @@ $detectedDepsPath = ""
 if (Test-Path "C:\Program Files\OpenUTVDeps $DepsVersion\bin\OpenImageIO.dll") {
     $depsFound = $true
     $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
+} elseif ($env:UTV_DEPS_ROOT -and (Test-Path "$env:UTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
+    $depsFound = $true
+    $detectedDepsPath = $env:UTV_DEPS_ROOT
 } elseif ($env:OPENUTV_DEPS_ROOT -and (Test-Path "$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
     $depsFound = $true
     $detectedDepsPath = $env:OPENUTV_DEPS_ROOT
@@ -209,8 +212,8 @@ if (-not (Test-Path $utvExe)) {
     return
 }
 
-# Step 4: Configure PATH and Environment
-Write-Host "`n--- Configuring Environment ---" -ForegroundColor Cyan
+# Step 4: Configure PATH, Isolated CLI Shims, and Environment
+Write-Host "`n--- Configuring Environment & Isolated CLI Tools ---" -ForegroundColor Cyan
 $binDir = Join-Path $InstallDir "bin"
 $pathScope = if ($isAdmin) { "Machine" } else { "User" }
 
@@ -222,58 +225,160 @@ if ((Test-Path $legacyQtConf) -and -not (Test-Path $qtPluginDir)) {
     Write-Host "Removed legacy qt.conf." -ForegroundColor Gray
 }
 
-# Collect paths to add to PATH
-$pathsToAdd = @($binDir)
+# Ensure dedicated CLI tools (utvio, utvpkg, py-interp, utvls) have -bin copies and launcher shims
+$utvExe = Join-Path $binDir "utv.exe"
+$cliTools = @("utvio", "utvpkg", "py-interp", "utvls")
+foreach ($tool in $cliTools) {
+    $toolExe = Join-Path $binDir "$tool.exe"
+    $toolBin = Join-Path $binDir "$tool-bin.exe"
+    if ((Test-Path $toolExe) -and -not (Test-Path $toolBin) -and (Test-Path $utvExe)) {
+        Move-Item -Force -Path $toolExe -Destination $toolBin
+        Copy-Item -Force -Path $utvExe -Destination $toolExe
+        Write-Host "Configured hermetic launcher for $tool.exe" -ForegroundColor Gray
+    }
+}
 
+# Deploy companion .cmd scripts for seamless CLI usage without PATH pollution
+$cmdShimTemplate = @'
+@echo off
+setlocal
+
+:: Discover OpenUTVDeps runtime root directory
+set "DEPS_ROOT="
+if defined UTV_DEPS_ROOT if exist "%UTV_DEPS_ROOT%\bin\OpenImageIO.dll" set "DEPS_ROOT=%UTV_DEPS_ROOT%"
+if not defined DEPS_ROOT if defined OPENUTV_DEPS_ROOT if exist "%OPENUTV_DEPS_ROOT%\bin\OpenImageIO.dll" set "DEPS_ROOT=%OPENUTV_DEPS_ROOT%"
+
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Software\OpenUTV" /v "DepsPath" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\Software\OpenUTV" /v "DepsPath" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
+)
+if not defined DEPS_ROOT (
+    for /d %%d in ("%ProgramFiles%\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "DEPS_ROOT=%%d"
+)
+if not defined DEPS_ROOT (
+    for /d %%d in ("%LOCALAPPDATA%\Programs\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "DEPS_ROOT=%%d"
+)
+
+if not defined DEPS_ROOT (
+    echo OpenUTV: Could not locate OpenUTVDeps runtime dependencies. >&2
+    exit /b 1
+)
+
+set "APP_DIR=%~dp0"
+if "%APP_DIR:~-1%"=="\" set "APP_DIR=%APP_DIR:~0,-1%"
+
+set "PATH=%APP_DIR%;%DEPS_ROOT%\bin;%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6;%DEPS_ROOT%\tools\python3;%DEPS_ROOT%\tools\python3\Scripts;%PATH%"
+set "PYTHONHOME=%DEPS_ROOT%\tools\python3"
+set "QT_PLUGIN_PATH=%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6\plugins"
+set "QT_QPA_PLATFORM_PLUGIN_PATH=%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6\plugins\platforms"
+set "UTV_DEPS_ROOT=%DEPS_ROOT%"
+set "OPENUTV_DEPS_ROOT=%DEPS_ROOT%"
+set "UTV_HOME=%APP_DIR%"
+set "OPENUTV_HOME=%APP_DIR%"
+'@
+
+# Write openutv-run.cmd
+$openutvRunContent = $cmdShimTemplate + "`r`n`r`n%*`r`nexit /b %ERRORLEVEL%`r`n"
+Set-Content -Path (Join-Path $binDir "openutv-run.cmd") -Value $openutvRunContent -Encoding ASCII
+
+# Write utvio.cmd, utvpkg.cmd, py-interp.cmd, utvls.cmd
+foreach ($tool in $cliTools) {
+    $dispatch = @"
+
+if exist "%APP_DIR%\$tool-bin.exe" (
+    "%APP_DIR%\$tool-bin.exe" %*
+) else if exist "%APP_DIR%\$tool.exe" (
+    "%APP_DIR%\$tool.exe" %*
+) else (
+    echo OpenUTV: Could not locate $tool executable. >&2
+    exit /b 1
+)
+exit /b %ERRORLEVEL%
+"@
+    Set-Content -Path (Join-Path $binDir "$tool.cmd") -Value ($cmdShimTemplate + $dispatch) -Encoding ASCII
+}
+
+# Write openutv-diagnostics.cmd and openutv-check-updates.cmd
+$diagDispatch = @"
+
+if exist "%APP_DIR%\py-interp-bin.exe" (
+    "%APP_DIR%\py-interp-bin.exe" "%APP_DIR%\openutv-diagnostics.py" %*
+) else if exist "%APP_DIR%\py-interp.exe" (
+    "%APP_DIR%\py-interp.exe" "%APP_DIR%\openutv-diagnostics.py" %*
+) else if exist "%DEPS_ROOT%\tools\python3\python.exe" (
+    "%DEPS_ROOT%\tools\python3\python.exe" "%APP_DIR%\openutv-diagnostics.py" %*
+) else (
+    python "%APP_DIR%\openutv-diagnostics.py" %*
+)
+exit /b %ERRORLEVEL%
+"@
+Set-Content -Path (Join-Path $binDir "openutv-diagnostics.cmd") -Value ($cmdShimTemplate + $diagDispatch) -Encoding ASCII
+
+$updateDispatch = @"
+
+if exist "%APP_DIR%\py-interp-bin.exe" (
+    "%APP_DIR%\py-interp-bin.exe" "%APP_DIR%\openutv-check-updates.py" %*
+) else if exist "%APP_DIR%\py-interp.exe" (
+    "%APP_DIR%\py-interp.exe" "%APP_DIR%\openutv-check-updates.py" %*
+) else if exist "%DEPS_ROOT%\tools\python3\python.exe" (
+    "%DEPS_ROOT%\tools\python3\python.exe" "%APP_DIR%\openutv-check-updates.py" %*
+) else (
+    python "%APP_DIR%\openutv-check-updates.py" %*
+)
+exit /b %ERRORLEVEL%
+"@
+Set-Content -Path (Join-Path $binDir "openutv-check-updates.cmd") -Value ($cmdShimTemplate + $updateDispatch) -Encoding ASCII
+
+# Configure persistent environment variables
 if ($detectedDepsPath -and (Test-Path $detectedDepsPath)) {
-    $depsBin = Join-Path $detectedDepsPath "bin"
-    $depsPython = Join-Path $detectedDepsPath "tools\python3"
-    $depsPySide = Join-Path $detectedDepsPath "tools\python3\Lib\site-packages\PySide6"
-    $depsPlugins = Join-Path $depsPySide "plugins"
-    $depsPlatforms = Join-Path $depsPlugins "platforms"
-
-    if (Test-Path $depsBin) { $pathsToAdd += $depsBin }
-    if (Test-Path $depsPython) { $pathsToAdd += $depsPython }
-    if (Test-Path $depsPySide) { $pathsToAdd += $depsPySide }
-
-    # Set persistent OpenUTVDeps environment variables
+    [Environment]::SetEnvironmentVariable("UTV_DEPS_ROOT", $detectedDepsPath, $pathScope)
     [Environment]::SetEnvironmentVariable("OPENUTV_DEPS_ROOT", $detectedDepsPath, $pathScope)
+    $env:UTV_DEPS_ROOT = $detectedDepsPath
     $env:OPENUTV_DEPS_ROOT = $detectedDepsPath
-
-    if (Test-Path $depsPython) {
-        [Environment]::SetEnvironmentVariable("PYTHONHOME", $depsPython, $pathScope)
-        $env:PYTHONHOME = $depsPython
-    }
-    if (Test-Path $depsPlugins) {
-        [Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $depsPlugins, $pathScope)
-        $env:QT_PLUGIN_PATH = $depsPlugins
-    }
-    if (Test-Path $depsPlatforms) {
-        [Environment]::SetEnvironmentVariable("QT_QPA_PLATFORM_PLUGIN_PATH", $depsPlatforms, $pathScope)
-        $env:QT_QPA_PLATFORM_PLUGIN_PATH = $depsPlatforms
-    }
 }
+[Environment]::SetEnvironmentVariable("UTV_HOME", $InstallDir, $pathScope)
+[Environment]::SetEnvironmentVariable("OPENUTV_HOME", $InstallDir, $pathScope)
+$env:UTV_HOME = $InstallDir
+$env:OPENUTV_HOME = $InstallDir
 
+# Clean global pollution: remove PYTHONHOME, QT_PLUGIN_PATH, QT_QPA_PLATFORM_PLUGIN_PATH
+[Environment]::SetEnvironmentVariable("PYTHONHOME", $null, $pathScope)
+[Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $null, $pathScope)
+[Environment]::SetEnvironmentVariable("QT_QPA_PLATFORM_PLUGIN_PATH", $null, $pathScope)
+$env:PYTHONHOME = $null
+$env:QT_PLUGIN_PATH = $null
+$env:QT_QPA_PLATFORM_PLUGIN_PATH = $null
+
+# Configure PATH: ONLY $binDir, zero pollution from OpenUTVDeps/Scoop/Choco
 $currentEnvPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
-$currentList = ($currentEnvPath -split ";") | Where-Object { $_ -ne "" }
-$newEntries = @()
-foreach ($p in $pathsToAdd) {
-    if ($currentList -notcontains $p) {
-        $newEntries += $p
-    }
+$cleanList = ($currentEnvPath -split ";") | Where-Object {
+    $_ -ne "" -and
+    $_ -notlike "*OpenUTVDeps*" -and
+    $_ -notlike "*openutv-dependencies*" -and
+    $_ -ne $binDir
 }
 
-if ($newEntries.Count -gt 0) {
-    $newEnvPath = ($newEntries + $currentList) -join ";"
-    [Environment]::SetEnvironmentVariable("Path", $newEnvPath, $pathScope)
-    $env:Path = ($newEntries + ($env:Path -split ";")) -join ";"
-    Write-Host "Added $($newEntries.Count) OpenUTV path(s) to $pathScope PATH." -ForegroundColor Green
-    foreach ($entry in $newEntries) {
-        Write-Host "  + $entry" -ForegroundColor Gray
-    }
-} else {
-    Write-Host "OpenUTV binaries and dependencies already present in $pathScope PATH." -ForegroundColor Gray
-}
+$newEnvPath = (@($binDir) + $cleanList) -join ";"
+[Environment]::SetEnvironmentVariable("Path", $newEnvPath, $pathScope)
+$env:Path = (@($binDir) + (($env:Path -split ";") | Where-Object { $_ -notlike "*OpenUTVDeps*" -and $_ -notlike "*openutv-dependencies*" -and $_ -ne $binDir })) -join ";"
+
+Write-Host "Environment configured hermetically (Zero `$PATH pollution)." -ForegroundColor Green
+Write-Host "  + Added to $pathScope PATH: $binDir" -ForegroundColor Gray
+Write-Host "  - Cleaned dependency folders and global PYTHONHOME/QT_PLUGIN_PATH from environment." -ForegroundColor Gray
 
 # Step 5: Create Start Menu and Desktop Shortcuts
 if (-not $NoShortcuts) {

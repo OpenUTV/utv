@@ -1074,9 +1074,9 @@ namespace TwkMovie
 
         HwDecodeMode getHardwareDecodeMode()
         {
-            const char* env = getenv("OPENUTV_HWACCEL");
+            const char* env = getenv("UTV_HWACCEL");
             if (!env)
-                env = getenv("UTV_HWACCEL");
+                env = getenv("OPENUTV_HWACCEL");
             if (!env)
                 env = getenv("RV_HWACCEL");
 
@@ -1120,9 +1120,9 @@ namespace TwkMovie
         {
             std::vector<AVHWDeviceType> candidates;
 
-            const char* env = getenv("OPENUTV_HWACCEL");
+            const char* env = getenv("UTV_HWACCEL");
             if (!env)
-                env = getenv("UTV_HWACCEL");
+                env = getenv("OPENUTV_HWACCEL");
             if (!env)
                 env = getenv("RV_HWACCEL");
 

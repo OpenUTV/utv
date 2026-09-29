@@ -79,7 +79,8 @@ namespace
     {
         // 1. Check if user explicitly requested software GL via environment variable
         wchar_t envBuf[32];
-        if (GetEnvironmentVariableW(L"OPENUTV_SOFTWARE_GL", envBuf, 32) > 0 || GetEnvironmentVariableW(L"QT_OPENGL", envBuf, 32) > 0)
+        if (GetEnvironmentVariableW(L"UTV_SOFTWARE_GL", envBuf, 32) > 0 || GetEnvironmentVariableW(L"OPENUTV_SOFTWARE_GL", envBuf, 32) > 0
+            || GetEnvironmentVariableW(L"QT_OPENGL", envBuf, 32) > 0)
         {
             if (_wcsicmp(envBuf, L"software") == 0 || wcscmp(envBuf, L"1") == 0)
             {
@@ -372,17 +373,21 @@ namespace
     bool FindDependencies(const std::wstring& appDir, std::wstring& outRootDir, std::wstring& outBinDir, std::wstring& outPySideDir,
                           std::wstring& outPythonDir)
     {
-        // 1. Environment variable OPENUTV_DEPS_ROOT
-        DWORD len = GetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", NULL, 0);
-        if (len > 0)
+        // 1. Environment variables: UTV_DEPS_ROOT (primary), OPENUTV_DEPS_ROOT (fallback)
+        const wchar_t* envVars[] = {L"UTV_DEPS_ROOT", L"OPENUTV_DEPS_ROOT"};
+        for (const wchar_t* ev : envVars)
         {
-            std::vector<wchar_t> buf(len);
-            GetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", buf.data(), len);
-            std::wstring envRoot(buf.data());
-            if (CheckDepsDir(envRoot, outBinDir, outPySideDir, outPythonDir))
+            DWORD len = GetEnvironmentVariableW(ev, NULL, 0);
+            if (len > 0)
             {
-                outRootDir = envRoot;
-                return true;
+                std::vector<wchar_t> buf(len);
+                GetEnvironmentVariableW(ev, buf.data(), len);
+                std::wstring envRoot(buf.data());
+                if (CheckDepsDir(envRoot, outBinDir, outPySideDir, outPythonDir))
+                {
+                    outRootDir = envRoot;
+                    return true;
+                }
             }
         }
 
@@ -391,17 +396,20 @@ namespace
         if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", 0, KEY_READ, &hKey)
             == ERROR_SUCCESS)
         {
-            wchar_t regVal[MAX_PATH];
-            DWORD valSize = sizeof(regVal);
-            DWORD valType = 0;
-            if (RegQueryValueExW(hKey, L"OPENUTV_DEPS_ROOT", NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
+            for (const wchar_t* ev : envVars)
             {
-                std::wstring regRoot(regVal);
-                if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                wchar_t regVal[MAX_PATH];
+                DWORD valSize = sizeof(regVal);
+                DWORD valType = 0;
+                if (RegQueryValueExW(hKey, ev, NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
                 {
-                    outRootDir = regRoot;
-                    RegCloseKey(hKey);
-                    return true;
+                    std::wstring regRoot(regVal);
+                    if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                    {
+                        outRootDir = regRoot;
+                        RegCloseKey(hKey);
+                        return true;
+                    }
                 }
             }
             RegCloseKey(hKey);
@@ -410,23 +418,50 @@ namespace
         // 3. User Environment in registry
         if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Environment", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
         {
-            wchar_t regVal[MAX_PATH];
-            DWORD valSize = sizeof(regVal);
-            DWORD valType = 0;
-            if (RegQueryValueExW(hKey, L"OPENUTV_DEPS_ROOT", NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
+            for (const wchar_t* ev : envVars)
             {
-                std::wstring regRoot(regVal);
-                if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                wchar_t regVal[MAX_PATH];
+                DWORD valSize = sizeof(regVal);
+                DWORD valType = 0;
+                if (RegQueryValueExW(hKey, ev, NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
                 {
-                    outRootDir = regRoot;
-                    RegCloseKey(hKey);
-                    return true;
+                    std::wstring regRoot(regVal);
+                    if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                    {
+                        outRootDir = regRoot;
+                        RegCloseKey(hKey);
+                        return true;
+                    }
                 }
             }
             RegCloseKey(hKey);
         }
 
-        // 4. Windows Uninstall registry keys (detects any installed OpenUTVDeps MSI package)
+        // 4. Software\OpenUTV registry keys (DepsPath)
+        const HKEY appRootKeys[] = {HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+        for (HKEY rk : appRootKeys)
+        {
+            HKEY hAppKey = NULL;
+            if (RegOpenKeyExW(rk, L"Software\\OpenUTV", 0, KEY_READ, &hAppKey) == ERROR_SUCCESS)
+            {
+                wchar_t regVal[MAX_PATH];
+                DWORD valSize = sizeof(regVal);
+                DWORD valType = 0;
+                if (RegQueryValueExW(hAppKey, L"DepsPath", NULL, &valType, reinterpret_cast<LPBYTE>(regVal), &valSize) == ERROR_SUCCESS)
+                {
+                    std::wstring regRoot(regVal);
+                    if (CheckDepsDir(regRoot, outBinDir, outPySideDir, outPythonDir))
+                    {
+                        outRootDir = regRoot;
+                        RegCloseKey(hAppKey);
+                        return true;
+                    }
+                }
+                RegCloseKey(hAppKey);
+            }
+        }
+
+        // 5. Windows Uninstall registry keys (detects any installed OpenUTVDeps MSI package)
         const HKEY rootKeys[] = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER};
         const wchar_t* subKeyPaths[] = {L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
                                         L"SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall"};
@@ -668,8 +703,18 @@ namespace
 
 int RunLauncher()
 {
-    // Try to attach to parent console if running from cmd.exe or PowerShell
-    AttachConsole(ATTACH_PARENT_PROCESS);
+    // Attach to parent console if running from cmd.exe or PowerShell
+    HANDLE hExistingStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hExistingStdOut == NULL || hExistingStdOut == INVALID_HANDLE_VALUE)
+    {
+        if (AttachConsole(ATTACH_PARENT_PROCESS))
+        {
+            FILE* fp = nullptr;
+            freopen_s(&fp, "CONOUT$", "w", stdout);
+            freopen_s(&fp, "CONOUT$", "w", stderr);
+            freopen_s(&fp, "CONIN$", "r", stdin);
+        }
+    }
 
     std::wstring appDir = GetAppDir();
     std::wstring depsRoot;
@@ -718,11 +763,17 @@ int RunLauncher()
         }
     }
 
-    // Export OPENUTV_DEPS_ROOT and OPENUTV_DEPS_ROOT_SLASH for runtime child processes
+    // Export UTV_DEPS_ROOT and OPENUTV_DEPS_ROOT for runtime child processes
+    SetEnvironmentVariableW(L"UTV_DEPS_ROOT", depsRoot.c_str());
     SetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT", depsRoot.c_str());
     std::wstring rootSlash = depsRoot;
     std::replace(rootSlash.begin(), rootSlash.end(), L'\\', L'/');
+    SetEnvironmentVariableW(L"UTV_DEPS_ROOT_SLASH", rootSlash.c_str());
     SetEnvironmentVariableW(L"OPENUTV_DEPS_ROOT_SLASH", rootSlash.c_str());
+
+    // Export UTV_HOME and OPENUTV_HOME
+    SetEnvironmentVariableW(L"UTV_HOME", appDir.c_str());
+    SetEnvironmentVariableW(L"OPENUTV_HOME", appDir.c_str());
 
     // Prepend dependency paths to process PATH
     std::wstring currentPath;
@@ -890,57 +941,175 @@ int RunLauncher()
         SetEnvironmentVariableW(L"QT_OPENGL", L"desktop");
     }
 
-    // Locate core application executable: utv-bin.exe (or rv-bin.exe)
-    std::wstring targetExe = appDir + L"\\utv-bin.exe";
-    if (!FileExists(targetExe))
-    {
-        targetExe = appDir + L"\\rv-bin.exe";
-        if (!FileExists(targetExe))
-        {
-            MessageBoxW(NULL, L"Unable to locate utv-bin.exe or rv-bin.exe in the application directory.", L"OpenUTV Launcher Error",
-                        MB_ICONERROR | MB_OK);
-            return 1;
-        }
-    }
+    // Parse command line arguments for target resolution
+    int argc = 0;
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    std::wstring targetExe;
+    std::wstring cmdLine;
 
-    // Build command line preserving all caller arguments
-    std::wstring cmdLine = L"\"" + targetExe + L"\"";
-    const wchar_t* rawCmd = GetCommandLineW();
-    if (rawCmd)
+    if (argv && argc >= 3 && _wcsicmp(argv[1], L"--run") == 0)
     {
-        const wchar_t* p = rawCmd;
-        while (*p == L' ' || *p == L'\t')
+        // Explicit tool execution mode: utv --run <command> [arguments...]
+        std::wstring cmd = argv[2];
+        if (FileExists(cmd))
         {
-            p++;
+            targetExe = cmd;
         }
-        if (*p == L'"')
+        else if (FileExists(cmd + L".exe"))
         {
-            p++;
-            while (*p && *p != L'"')
-            {
-                p++;
-            }
-            if (*p == L'"')
-            {
-                p++;
-            }
+            targetExe = cmd + L".exe";
+        }
+        else if (FileExists(appDir + L"\\" + cmd))
+        {
+            targetExe = appDir + L"\\" + cmd;
+        }
+        else if (FileExists(appDir + L"\\" + cmd + L".exe"))
+        {
+            targetExe = appDir + L"\\" + cmd + L".exe";
+        }
+        else if (FileExists(appDir + L"\\" + cmd + L"-bin.exe"))
+        {
+            targetExe = appDir + L"\\" + cmd + L"-bin.exe";
+        }
+        else if (!depsBin.empty() && FileExists(depsBin + L"\\" + cmd))
+        {
+            targetExe = depsBin + L"\\" + cmd;
+        }
+        else if (!depsBin.empty() && FileExists(depsBin + L"\\" + cmd + L".exe"))
+        {
+            targetExe = depsBin + L"\\" + cmd + L".exe";
+        }
+        else if (!depsPython.empty() && FileExists(depsPython + L"\\" + cmd))
+        {
+            targetExe = depsPython + L"\\" + cmd;
+        }
+        else if (!depsPython.empty() && FileExists(depsPython + L"\\" + cmd + L".exe"))
+        {
+            targetExe = depsPython + L"\\" + cmd + L".exe";
         }
         else
         {
-            while (*p && *p != L' ' && *p != L'\t')
+            wchar_t found[MAX_PATH];
+            LPWSTR fPart = NULL;
+            if (SearchPathW(NULL, cmd.c_str(), L".exe", MAX_PATH, found, &fPart) > 0)
             {
-                p++;
+                targetExe = found;
+            }
+            else
+            {
+                targetExe = cmd;
             }
         }
-        while (*p == L' ' || *p == L'\t')
-        {
-            p++;
-        }
-        if (*p)
+
+        cmdLine = L"\"" + targetExe + L"\"";
+        for (int i = 3; i < argc; ++i)
         {
             cmdLine += L" ";
-            cmdLine += p;
+            if (wcschr(argv[i], L' ') != nullptr || wcschr(argv[i], L'\t') != nullptr)
+            {
+                cmdLine += L"\"";
+                cmdLine += argv[i];
+                cmdLine += L"\"";
+            }
+            else
+            {
+                cmdLine += argv[i];
+            }
         }
+    }
+    else
+    {
+        // Detect launcher own executable name (e.g. utv.exe, utvio.exe, utvpkg.exe, py-interp.exe)
+        std::vector<wchar_t> modBuf(MAX_PATH);
+        DWORD mLen = GetModuleFileNameW(NULL, modBuf.data(), static_cast<DWORD>(modBuf.size()));
+        while (mLen >= modBuf.size())
+        {
+            modBuf.resize(modBuf.size() * 2);
+            mLen = GetModuleFileNameW(NULL, modBuf.data(), static_cast<DWORD>(modBuf.size()));
+        }
+        std::wstring fullMod(modBuf.data(), mLen);
+        size_t slash = fullMod.find_last_of(L"\\/");
+        std::wstring ownName = (slash != std::wstring::npos) ? fullMod.substr(slash + 1) : fullMod;
+        std::wstring baseName = ownName;
+        if (baseName.length() >= 4 && _wcsicmp(baseName.c_str() + baseName.length() - 4, L".exe") == 0)
+        {
+            baseName = baseName.substr(0, baseName.length() - 4);
+        }
+
+        if (_wcsicmp(baseName.c_str(), L"utv") != 0 && _wcsicmp(baseName.c_str(), L"rv") != 0)
+        {
+            // Dedicated tool launcher shim (e.g. utvio, utvpkg, py-interp, utvls)
+            std::wstring candBin = appDir + L"\\" + baseName + L"-bin.exe";
+            if (FileExists(candBin))
+            {
+                targetExe = candBin;
+            }
+            else if (_wcsicmp(baseName.c_str(), L"py-interp") == 0 && !depsPython.empty() && FileExists(depsPython + L"\\python.exe"))
+            {
+                targetExe = depsPython + L"\\python.exe";
+            }
+            else
+            {
+                std::wstring candExe = appDir + L"\\" + baseName + L".exe";
+                if (FileExists(candExe) && _wcsicmp(candExe.c_str(), fullMod.c_str()) != 0)
+                {
+                    targetExe = candExe;
+                }
+            }
+        }
+
+        if (targetExe.empty())
+        {
+            // Default OpenUTV / OpenRV viewer binary
+            targetExe = appDir + L"\\utv-bin.exe";
+            if (!FileExists(targetExe))
+            {
+                targetExe = appDir + L"\\rv-bin.exe";
+                if (!FileExists(targetExe))
+                {
+                    MessageBoxW(NULL, L"Unable to locate utv-bin.exe or rv-bin.exe in the application directory.",
+                                L"OpenUTV Launcher Error", MB_ICONERROR | MB_OK);
+                    if (argv)
+                        LocalFree(argv);
+                    return 1;
+                }
+            }
+        }
+
+        // Build command line preserving caller arguments
+        cmdLine = L"\"" + targetExe + L"\"";
+        const wchar_t* rawCmd = GetCommandLineW();
+        if (rawCmd)
+        {
+            const wchar_t* p = rawCmd;
+            while (*p == L' ' || *p == L'\t')
+                p++;
+            if (*p == L'"')
+            {
+                p++;
+                while (*p && *p != L'"')
+                    p++;
+                if (*p == L'"')
+                    p++;
+            }
+            else
+            {
+                while (*p && *p != L' ' && *p != L'\t')
+                    p++;
+            }
+            while (*p == L' ' || *p == L'\t')
+                p++;
+            if (*p)
+            {
+                cmdLine += L" ";
+                cmdLine += p;
+            }
+        }
+    }
+
+    if (argv)
+    {
+        LocalFree(argv);
     }
 
     std::vector<wchar_t> cmdBuf(cmdLine.begin(), cmdLine.end());
@@ -972,8 +1141,9 @@ int RunLauncher()
     if (!created)
     {
         DWORD err = GetLastError();
-        wchar_t errMsg[256];
-        swprintf_s(errMsg, 256, L"Failed to launch core application (utv-bin.exe).\nError code: %lu", err);
+        wchar_t errMsg[512];
+        swprintf_s(errMsg, 512, L"Failed to launch '%s'.\nError code: %lu", targetExe.c_str(), err);
+        fwprintf(stderr, L"OpenUTV Launcher Error: Failed to launch '%s' (error code: %lu)\n", targetExe.c_str(), err);
         MessageBoxW(NULL, errMsg, L"OpenUTV Launcher Error", MB_ICONERROR | MB_OK);
         return 1;
     }

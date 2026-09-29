@@ -89,7 +89,11 @@ namespace TwkApp
         m_pyhome.cd("python" PYTHON_VERSION);
         bool setPythonHome = !(getenv("PYTHONHOME") && getenv("RV_ALLOW_SITE_PYTHONHOME"));
         QString discoveredDepsRoot;
-        const char* depsRoot = getenv("OPENUTV_DEPS_ROOT");
+        const char* depsRoot = getenv("UTV_DEPS_ROOT");
+        if (!depsRoot)
+        {
+            depsRoot = getenv("OPENUTV_DEPS_ROOT");
+        }
 #ifdef PLATFORM_WINDOWS
         if (!depsRoot)
         {

@@ -3,24 +3,38 @@ setlocal enabledelayedexpansion
 set "DIR=%~dp0"
 
 :: 1. Discover OpenUTVDeps Root
-if not defined OPENUTV_DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKCU\Software\OpenUTV" /v "DepsPath" 2^>nul') do set "OPENUTV_DEPS_ROOT=%%b"
+if not defined UTV_DEPS_ROOT if defined OPENUTV_DEPS_ROOT set "UTV_DEPS_ROOT=%OPENUTV_DEPS_ROOT%"
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
 )
-if not defined OPENUTV_DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKLM\Software\OpenUTV" /v "DepsPath" 2^>nul') do set "OPENUTV_DEPS_ROOT=%%b"
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
 )
-if not defined OPENUTV_DEPS_ROOT (
-    for /d %%d in ("%ProgramFiles%\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "OPENUTV_DEPS_ROOT=%%d"
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
 )
-if not defined OPENUTV_DEPS_ROOT (
-    for /d %%d in ("%LOCALAPPDATA%\Programs\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "OPENUTV_DEPS_ROOT=%%d"
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
 )
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKCU\Software\OpenUTV" /v "DepsPath" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
+)
+if not defined UTV_DEPS_ROOT (
+    for /f "tokens=2*" %%a in ('reg query "HKLM\Software\OpenUTV" /v "DepsPath" 2^>nul') do set "UTV_DEPS_ROOT=%%b"
+)
+if not defined UTV_DEPS_ROOT (
+    for /d %%d in ("%ProgramFiles%\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "UTV_DEPS_ROOT=%%d"
+)
+if not defined UTV_DEPS_ROOT (
+    for /d %%d in ("%LOCALAPPDATA%\Programs\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "UTV_DEPS_ROOT=%%d"
+)
+if not defined OPENUTV_DEPS_ROOT set "OPENUTV_DEPS_ROOT=%UTV_DEPS_ROOT%"
 
 :: 2. Configure Environment if Dependencies Found
-if defined OPENUTV_DEPS_ROOT (
-    set "DEPS_BIN=%OPENUTV_DEPS_ROOT%\bin"
-    set "DEPS_PY=%OPENUTV_DEPS_ROOT%\tools\python3"
-    set "DEPS_PYSIDE=%OPENUTV_DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6"
+if defined UTV_DEPS_ROOT (
+    set "DEPS_BIN=%UTV_DEPS_ROOT%\bin"
+    set "DEPS_PY=%UTV_DEPS_ROOT%\tools\python3"
+    set "DEPS_PYSIDE=%UTV_DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6"
     set "PATH=!DEPS_BIN!;!DEPS_PY!;!DEPS_PYSIDE!;%DIR%;!PATH!"
     if not defined PYTHONHOME set "PYTHONHOME=!DEPS_PY!"
     if not defined QT_PLUGIN_PATH if exist "!DEPS_PYSIDE!\plugins" set "QT_PLUGIN_PATH=!DEPS_PYSIDE!\plugins"
