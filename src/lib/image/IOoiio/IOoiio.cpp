@@ -13,6 +13,7 @@
 #include <half.h>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <sstream>
 
@@ -32,10 +33,32 @@ namespace TwkFB
         StringPairVector codecs;
         unsigned int r = ImageRead;
         unsigned int w = ImageWrite;
-        unsigned int rw = r | w;
+
+        //
+        //  Only advertise Write for extensions whose OIIO format actually has an
+        //  output plugin in this OIIO build (e.g. Homebrew's OIIO has no QOI
+        //  writer). Otherwise GenericIO would route writes here and fail.
+        //
+        set<string> writableExts;
+        {
+            set<string> outputFormats;
+            for (const auto& name : Strutil::splits(get_string_attribute("output_format_list"), ","))
+                outputFormats.insert(name);
+
+            for (const auto& entry : get_extension_map())
+            {
+                if (outputFormats.count(entry.first))
+                {
+                    for (const auto& ext : entry.second)
+                        writableExts.insert(Strutil::lower(ext));
+                }
+            }
+        }
+
+        auto rw = [&](const char* ext) { return writableExts.count(ext) ? (r | w) : r; };
 
         // Dedicated native writer plugins handle the following formats with custom streaming pipelines:
-        // IOpng ("m9"), IOdpx ("m5"), IOcin ("m4"), IOjpeg ("m2"), IOtarga ("m6"), IOrla ("m7"), IOrgbe ("m8").
+        // IOpng ("m9"), IOdpx ("m5"), IOcin ("z_cin"), IOjpeg ("m2"), IOtarga ("z_targa"), IOrla ("z_rla"), IOrgbe ("z_rgbe").
         // These MUST be registered as Read-only in IOoiio so write requests route directly to their native writers.
         addType("png", "Portable Network Graphics Image", r, codecs);
         addType("dpx", "SMPTE DPX", r, codecs);
@@ -59,27 +82,27 @@ namespace TwkFB
         addType("z", "Pixar Z-Depth", r, codecs);
 
         // Formats written via OpenImageIO (no dedicated native writer plugin)
-        addType("webp", "Google WebP", rw, codecs);
-        addType("qoi", "Quite OK Image", rw, codecs);
-        addType("bmp", "Windows Bitmap", rw, codecs);
-        addType("sgi", "SGI image", rw, codecs);
-        addType("bw", "SGI image", rw, codecs);
-        addType("rgb", "SGI image", rw, codecs);
-        addType("rgba", "SGI image", rw, codecs);
-        addType("inta", "SGI image", rw, codecs);
-        addType("int", "SGI image", rw, codecs);
-        addType("pnm", "PNM", rw, codecs);
-        addType("pbm", "Portable Network Graphics", rw, codecs);
-        addType("pgm", "Portable Network Graphics", rw, codecs);
-        addType("ppm", "Portable Network Grapics", rw, codecs);
-        addType("fits", "FITS", rw, codecs);
-        addType("iff", "IFF", rw, codecs);
-        addType("dds", "Direct Draw Surface", rw, codecs);
-        addType("heic", "High Efficiency Image File", rw, codecs);
-        addType("heif", "High Efficiency Image File", rw, codecs);
-        addType("hif", "High Efficiency Image File", rw, codecs);
-        addType("avif", "AV1 Image File", rw, codecs);
-        addType("jxl", "JPEG XL Image", rw, codecs);
+        addType("webp", "Google WebP", rw("webp"), codecs);
+        addType("qoi", "Quite OK Image", rw("qoi"), codecs);
+        addType("bmp", "Windows Bitmap", rw("bmp"), codecs);
+        addType("sgi", "SGI image", rw("sgi"), codecs);
+        addType("bw", "SGI image", rw("bw"), codecs);
+        addType("rgb", "SGI image", rw("rgb"), codecs);
+        addType("rgba", "SGI image", rw("rgba"), codecs);
+        addType("inta", "SGI image", rw("inta"), codecs);
+        addType("int", "SGI image", rw("int"), codecs);
+        addType("pnm", "PNM", rw("pnm"), codecs);
+        addType("pbm", "Portable Network Graphics", rw("pbm"), codecs);
+        addType("pgm", "Portable Network Graphics", rw("pgm"), codecs);
+        addType("ppm", "Portable Network Grapics", rw("ppm"), codecs);
+        addType("fits", "FITS", rw("fits"), codecs);
+        addType("iff", "IFF", rw("iff"), codecs);
+        addType("dds", "Direct Draw Surface", rw("dds"), codecs);
+        addType("heic", "High Efficiency Image File", rw("heic"), codecs);
+        addType("heif", "High Efficiency Image File", rw("heif"), codecs);
+        addType("hif", "High Efficiency Image File", rw("hif"), codecs);
+        addType("avif", "AV1 Image File", rw("avif"), codecs);
+        addType("jxl", "JPEG XL Image", rw("jxl"), codecs);
 
         // These are handled by their dedicated optimized streaming plugins:
         // IOexr ("m0"), IOtiff ("m1"), IOjpeg ("m2"), IOhtj2k ("m7")
@@ -586,11 +609,11 @@ namespace TwkFB
 
         if (request.pixelAspect != 1.0f && request.pixelAspect != 0.0f)
         {
-            spec.pixelaspect = request.pixelAspect;
+            spec.attribute("PixelAspectRatio", request.pixelAspect);
         }
-        else if (outfb->pixelAspect() != 1.0f && outfb->pixelAspect() != 0.0f)
+        else if (outfb->pixelAspectRatio() != 1.0f && outfb->pixelAspectRatio() != 0.0f)
         {
-            spec.pixelaspect = outfb->pixelAspect();
+            spec.attribute("PixelAspectRatio", outfb->pixelAspectRatio());
         }
 
         if (!request.compression.empty())
@@ -616,7 +639,7 @@ namespace TwkFB
         stride_t xstride = outfb->pixelSize();
         stride_t ystride = outfb->scanlinePaddedSize();
 
-        if (!out->write_image(format, outfb->data<void>(), xstride, ystride))
+        if (!out->write_image(format, outfb->pixels<unsigned char>(), xstride, ystride))
         {
             TWK_THROW_STREAM(IOException, "OIIO: Error writing \"" << filename << "\": " << out->geterror());
         }
