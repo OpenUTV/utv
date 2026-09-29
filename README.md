@@ -144,21 +144,6 @@ The installer:
 - Creates Start Menu shortcuts with proper working directories.
 - Registers in Windows *Installed Apps* / *Add or Remove Programs* for clean uninstallation.
 
-### Windows Package Managers
-
-#### Scoop
-
-```powershell
-scoop bucket add openutv https://github.com/OpenUTV/scoop-utv
-scoop install openutv/utv
-```
-
-#### Chocolatey
-
-```powershell
-choco install openutv
-```
-
 ### Standalone Releases
 
 #### macOS (Standalone ZIP)
