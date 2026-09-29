@@ -274,8 +274,9 @@ try {
     Set-ItemProperty -Path $appRegKey -Name "DisplayIcon" -Value "$utvExe,0"
     Set-ItemProperty -Path $appRegKey -Name "HelpLink" -Value "https://github.com/OpenUTV/utv"
     Set-ItemProperty -Path $appRegKey -Name "URLInfoAbout" -Value "https://openutv.com"
-    $uninstCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command `"& '$InstallDir\scripts\install.ps1' -Uninstall`""
+    $uninstCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$InstallDir\scripts\install.ps1`" -Uninstall"
     Set-ItemProperty -Path $appRegKey -Name "UninstallString" -Value $uninstCmd
+    Set-ItemProperty -Path $appRegKey -Name "QuietUninstallString" -Value $uninstCmd
     
     # Save a copy of the installer inside the installation dir for uninstall/updates
     $scriptsDir = Join-Path $InstallDir "scripts"
