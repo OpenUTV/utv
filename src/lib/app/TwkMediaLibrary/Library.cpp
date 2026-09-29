@@ -359,7 +359,8 @@ namespace TwkMediaLibrary
             m_taskCond.notify_one();
         }
 
-        m_taskThread.join();
+        if (m_taskThread.joinable())
+            m_taskThread.join();
 
         //
         //  willDeleteSignal() should be sent by derived classes. Its sent
@@ -702,7 +703,6 @@ namespace TwkMediaLibrary
         TwkUtil::setThreadName("Library Task Thread");
 
         ScopedLock lock(m_taskMutex);
-        m_taskStop = false;
 
         while (!m_taskStop)
         {
