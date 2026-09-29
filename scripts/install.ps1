@@ -45,6 +45,15 @@ if (-not $InstallDir) {
 if ($Uninstall) {
     Write-Host "`n=== Uninstalling OpenUTV ===" -ForegroundColor Cyan
     
+    # If running from inside the directory being removed, relaunch from %TEMP%
+    if ($PSCommandPath -and $PSCommandPath.StartsWith($InstallDir, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $tempScript = Join-Path $env:TEMP "openutv-uninstall-$PID.ps1"
+        Copy-Item -Path $PSCommandPath -Destination $tempScript -Force
+        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tempScript`" -Uninstall -InstallDir `"$InstallDir`"" -Wait
+        Remove-Item -Force $tempScript -ErrorAction SilentlyContinue
+        return
+    }
+
     # Remove shortcuts
     $shortcutNames = @("OpenUTV.lnk")
     $shortcutLocations = @(
@@ -71,6 +80,16 @@ if ($Uninstall) {
             Remove-Item -Recurse -Force $appKey -ErrorAction SilentlyContinue
             Write-Host "Removed Windows Uninstall registry entry." -ForegroundColor Gray
         }
+    }
+
+    # Remove from PATH
+    $binDir = Join-Path $InstallDir "bin"
+    $pathScope = if ($isAdmin) { "Machine" } else { "User" }
+    $currentEnvPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
+    if ($currentEnvPath -like "*$binDir*") {
+        $paths = $currentEnvPath -split ';' | Where-Object { $_ -and $_.TrimEnd('\') -ne $binDir.TrimEnd('\') }
+        [Environment]::SetEnvironmentVariable("Path", ($paths -join ';'), $pathScope)
+        Write-Host "Removed $binDir from $pathScope PATH." -ForegroundColor Gray
     }
 
     # Remove files
@@ -261,7 +280,17 @@ try {
     # Save a copy of the installer inside the installation dir for uninstall/updates
     $scriptsDir = Join-Path $InstallDir "scripts"
     New-Item -ItemType Directory -Force -Path $scriptsDir | Out-Null
-    Copy-Item -Path $PSCommandPath -Destination (Join-Path $scriptsDir "install.ps1") -Force -ErrorAction SilentlyContinue
+    $localScript = Join-Path $scriptsDir "install.ps1"
+    if ($PSCommandPath -and (Test-Path $PSCommandPath)) {
+        Copy-Item -Path $PSCommandPath -Destination $localScript -Force -ErrorAction SilentlyContinue
+    } else {
+        $scriptUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/main/scripts/install.ps1"
+        try {
+            Invoke-WebRequest -Uri $scriptUrl -OutFile $localScript -UseBasicParsing
+        } catch {
+            # Non-critical fallback
+        }
+    }
 
     Write-Host "Registered OpenUTV in Windows Add/Remove Programs." -ForegroundColor Green
 } catch {
