@@ -107,7 +107,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ### macOS (Homebrew Cask — Recommended)
 
-Install the pre-compiled native macOS (Apple Silicon) binary directly from our Homebrew tap:
+Install the pre-compiled native macOS (Apple Silicon, macOS 15 Sequoia or later) binary directly from our Homebrew tap:
 
 ```bash
 brew tap OpenUTV/utv

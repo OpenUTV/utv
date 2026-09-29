@@ -20,6 +20,9 @@ SET(_configure_options
 
 LIST(APPEND _configure_options "-DCMAKE_INSTALL_PREFIX=${_install_dir}")
 LIST(APPEND _configure_options "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}")
+IF(CMAKE_OSX_DEPLOYMENT_TARGET)
+  LIST(APPEND _configure_options "-DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}")
+ENDIF()
 LIST(APPEND _configure_options "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 # Windows Release mode workaround - testing minimal working set

@@ -114,6 +114,9 @@ jobs:
           ./build.sh --release --clean
         shell: bash
 
+      - name: Verify macOS minimum version
+        run: python3 src/build/check_macos_min_version.py "_build/stage/app/UTV.app"
+
       - name: Save CCache
         if: always()
         uses: actions/cache/save@v6

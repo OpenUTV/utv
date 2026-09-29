@@ -164,6 +164,9 @@ jobs:
           ./build.sh --release --clean --version "${{ needs.version.outputs.clean_version }}"
         shell: bash
 
+      - name: Verify macOS minimum version
+        run: python3 src/build/check_macos_min_version.py "_build/stage/app/UTV.app"
+
       - name: Save CCache
         if: always()
         uses: actions/cache/save@v6
@@ -252,7 +255,6 @@ jobs:
 
             echo "--- Normalizing Info.plist metadata ---"
             /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.OpenUTV.UTV" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
-            /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 11.0.0" "$APP_PATH/Contents/Info.plist" 2>/dev/null || true
 
             echo "--- Stripping pre-existing linker signatures ---"
             codesign --remove-signature "$APP_PATH/Contents/MacOS/$MAIN_EXE" 2>/dev/null || true
