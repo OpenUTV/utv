@@ -187,9 +187,12 @@ namespace TwkGLF
         swa.colormap = XCreateColormap(m_imp->display, m_imp->root, m_imp->vis->visual, AllocNone);
 
         swa.event_mask = ExposureMask | KeyPressMask;
+        // The GLX visual's depth can differ from the root window's (e.g. a 32-bit ARGB visual on a 24-bit
+        // screen); X then requires an explicit border pixel, or XCreateWindow fails with BadMatch.
+        swa.border_pixel = 0;
 
         m_imp->tiny = XCreateWindow(m_imp->display, m_imp->root, 0, 0, 64, 64, 0, m_imp->vis->depth, InputOutput, m_imp->vis->visual,
-                                    CWColormap | CWEventMask, &swa);
+                                    CWColormap | CWEventMask | CWBorderPixel, &swa);
 
         m_imp->ctx = glXCreateContext(m_imp->display, m_imp->vis, 0, True);
         if (!m_imp->ctx || !glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx))
