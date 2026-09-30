@@ -61,6 +61,7 @@ Special thanks to all contributors who worked on this release:
 
 ```bash
 brew tap OpenUTV/utv https://github.com/OpenUTV/utv
+brew trust openutv/utv
 brew install --cask utv
 ```
 

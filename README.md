@@ -111,6 +111,7 @@ Install the pre-compiled native macOS (Apple Silicon, macOS 15 Sequoia or later)
 
 ```bash
 brew tap OpenUTV/utv
+brew trust openutv/utv
 brew install --cask utv
 ```
 
