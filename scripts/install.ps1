@@ -202,6 +202,17 @@ if (-not (Test-Path $sourceDir)) {
     $sourceDir = $tempExtract
 }
 
+# Dedicated CLI tools get launcher shims (a copy of utv.exe as <tool>.exe, the real binary as
+# <tool>-bin.exe). That needs a launcher that dispatches on its own file name, which only builds
+# with OpenUTV/utv#63 have; they are the ones that ship openutv-run.cmd. An older launcher always
+# starts the viewer, so shimming it made every CLI tool open a viewer, and the startup update check
+# (which runs py-interp.exe) relaunch the viewer endlessly (OpenUTV/utv#73). Check the package
+# itself, before it is moved into place, so files from a previous install can't fool the check.
+$cliTools = @("utvio", "utvpkg", "py-interp", "utvls")
+$sourceBin = Join-Path $sourceDir "bin"
+$launcherSupportsShims = Test-Path (Join-Path $sourceBin "openutv-run.cmd")
+$packagedTools = @($cliTools | Where-Object { Test-Path (Join-Path $sourceBin "$_.exe") })
+
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 & robocopy $sourceDir $InstallDir /E /MOVE /NDL /NFL /NJH /NJS /nc /ns /np | Out-Null
 Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue
@@ -225,16 +236,32 @@ if ((Test-Path $legacyQtConf) -and -not (Test-Path $qtPluginDir)) {
     Write-Host "Removed legacy qt.conf." -ForegroundColor Gray
 }
 
-# Ensure dedicated CLI tools (utvio, utvpkg, py-interp, utvls) have -bin copies and launcher shims
+# Give dedicated CLI tools (utvio, utvpkg, py-interp, utvls) -bin copies and launcher shims when the
+# packaged launcher supports them (see $launcherSupportsShims above).
 $utvExe = Join-Path $binDir "utv.exe"
-$cliTools = @("utvio", "utvpkg", "py-interp", "utvls")
 foreach ($tool in $cliTools) {
     $toolExe = Join-Path $binDir "$tool.exe"
     $toolBin = Join-Path $binDir "$tool-bin.exe"
-    if ((Test-Path $toolExe) -and -not (Test-Path $toolBin) -and (Test-Path $utvExe)) {
-        Move-Item -Force -Path $toolExe -Destination $toolBin
-        Copy-Item -Force -Path $utvExe -Destination $toolExe
-        Write-Host "Configured hermetic launcher for $tool.exe" -ForegroundColor Gray
+    $packaged = $packagedTools -contains $tool
+
+    if ($launcherSupportsShims) {
+        if ($packaged -and (Test-Path $utvExe)) {
+            # <tool>.exe is this package's real binary; it replaces any -bin copy from a previous install.
+            Move-Item -Force -Path $toolExe -Destination $toolBin
+            Copy-Item -Force -Path $utvExe -Destination $toolExe
+            Write-Host "Configured hermetic launcher for $tool.exe" -ForegroundColor Gray
+        }
+    }
+    elseif (Test-Path $toolBin) {
+        # Repair an install shimmed against a launcher that can't dispatch (OpenUTV/utv#73).
+        if ($packaged) {
+            # This package's real <tool>.exe is already in place; drop the stale -bin copy.
+            Remove-Item -Force -Path $toolBin
+        }
+        else {
+            Move-Item -Force -Path $toolBin -Destination $toolExe
+        }
+        Write-Host "Restored $tool.exe (launcher shims need a newer OpenUTV build)" -ForegroundColor Gray
     }
 }
 
