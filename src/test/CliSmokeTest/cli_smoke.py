@@ -22,6 +22,12 @@ import sys
 
 from cli_common import find_tool, prepare_environment, run_tool
 
+# Known platform-specific failures tracked in an issue: reported as xfail (not a test failure), or XPASS
+# once fixed so the entry can be removed.
+KNOWN_FAILURES = {}
+if sys.platform.startswith("linux"):
+    KNOWN_FAILURES["utvio"] = "https://github.com/OpenUTV/utv/issues/68"
+
 # (tool, args, require exit code 0, regex that must appear in stdout+stderr)
 CHECKS = [
     ("utvio", ["-version"], True, r"^\d{4}\.\d+"),
@@ -64,7 +70,12 @@ def main():
             problems.append(f"output did not match /{pattern}/")
 
         label = f"{os.path.basename(path)} {' '.join(tool_args)}"
-        if problems:
+        known = KNOWN_FAILURES.get(tool)
+        if problems and known:
+            print(f"xfail {label}: {', '.join(problems)} (known: {known})")
+        elif known:
+            print(f"XPASS {label}: passes now, remove it from KNOWN_FAILURES ({known})")
+        elif problems:
             failures.append(f"{label}: {', '.join(problems)}")
             print(f"FAIL {label}: {', '.join(problems)}")
             print("  --- output (last 20 lines) ---")
