@@ -32,17 +32,25 @@ UTV_HOME=${UTV_HOME:-${RV_HOME:-$(dirname "$bindir")}}
 RV_HOME=${RV_HOME:-$UTV_HOME}
 export UTV_HOME RV_HOME
 
+# Library path; see src/bin/linux_wrapper.sh. The GL driver stack always comes from the system.
 libpath="$UTV_HOME/lib"
 if [ -z "$RV_USE_SYSTEM_OPENSSL" ] && [ -d "$UTV_HOME/lib/OpenSSL" ]; then
     libpath="$libpath:$UTV_HOME/lib/OpenSSL"
 fi
 
 deps=${UTV_DEPS_ROOT:-${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}}
-if [ -d "$deps/lib" ]; then
-    libpath="$libpath:$deps/lib"
-    for keglib in "$deps"/opt/*/lib; do
-        [ -d "$keglib" ] && libpath="$libpath:$keglib"
+if [ -d "$deps/opt" ]; then
+    for keg in "$deps"/opt/*; do
+        case "$(basename "$keg")" in
+        mesa | libglvnd | libdrm | llvm | llvm@* | libpciaccess | libxshmfence) continue ;;
+        esac
+        for keglib in "$keg/lib" "$keg/lib64"; do
+            [ -d "$keglib" ] && libpath="$libpath:$keglib"
+        done
     done
+elif [ -d "$deps/lib" ]; then
+    # A plain prefix without Homebrew's opt/ layout.
+    libpath="$libpath:$deps/lib"
 fi
 
 LD_LIBRARY_PATH="$libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
