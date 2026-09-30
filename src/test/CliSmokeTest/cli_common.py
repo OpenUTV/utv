@@ -25,8 +25,10 @@ class ToolResult:
         if self.timed_out:
             return False
         if IS_WINDOWS:
-            # NTSTATUS failures such as 0xC0000135 (DLL not found) or 0xC0000005 (access violation)
-            return (self.returncode & 0xFFFFFFFF) >= 0xC0000000
+            # NTSTATUS failures such as 0xC0000135 (DLL not found) or 0xC0000005 (access violation).
+            # 0xFFFFFFFF is a plain exit(-1), not a crash.
+            code = self.returncode & 0xFFFFFFFF
+            return 0xC0000000 <= code < 0xFFFFFFFF
         # Negative: killed by a signal. 128+N: shell-reported signal death.
         return self.returncode < 0 or self.returncode in (134, 136, 137, 139)
 

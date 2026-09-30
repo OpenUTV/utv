@@ -400,7 +400,10 @@ jobs:
       - name: Run tests (Linux)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --test-dir _build --output-on-failure --timeout 900
+        run: |
+          # Staged Linux binaries are built without RPATHs; use the same library path build.sh sets up.
+          export LD_LIBRARY_PATH="${PWD}/_build/stage/app/lib:/home/linuxbrew/.linuxbrew/lib:${LD_LIBRARY_PATH:-}"
+          ctest --test-dir _build --output-on-failure --timeout 900
 
       - name: Save CCache
         if: always()
