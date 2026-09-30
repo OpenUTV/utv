@@ -7,11 +7,13 @@
 #include <OpenImageIO/imageio.h>
 #include <IOoiio/IOoiio.h>
 #include <TwkFB/Exception.h>
+#include <TwkFB/Operations.h>
 #include <TwkUtil/ByteSwap.h>
 #include <TwkUtil/File.h>
 #include <half.h>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <sstream>
 
@@ -31,46 +33,76 @@ namespace TwkFB
         StringPairVector codecs;
         unsigned int r = ImageRead;
         unsigned int w = ImageWrite;
-        unsigned int rw = r | w;
+
+        //
+        //  Only advertise Write for extensions whose OIIO format actually has an
+        //  output plugin in this OIIO build (e.g. Homebrew's OIIO has no QOI
+        //  writer). Otherwise GenericIO would route writes here and fail.
+        //
+        set<string> writableExts;
+        {
+            set<string> outputFormats;
+            for (const auto& name : Strutil::splits(get_string_attribute("output_format_list"), ","))
+                outputFormats.insert(name);
+
+            for (const auto& entry : get_extension_map())
+            {
+                if (outputFormats.count(entry.first))
+                {
+                    for (const auto& ext : entry.second)
+                        writableExts.insert(Strutil::lower(ext));
+                }
+            }
+        }
+
+        auto rw = [&](const char* ext) { return writableExts.count(ext) ? (r | w) : r; };
+
+        // Dedicated native writer plugins handle the following formats with custom streaming pipelines:
+        // IOpng ("m9"), IOdpx ("m5"), IOcin ("z_cin"), IOjpeg ("m2"), IOtarga ("z_targa"), IOrla ("z_rla"), IOrgbe ("z_rgbe").
+        // These MUST be registered as Read-only in IOoiio so write requests route directly to their native writers.
+        addType("png", "Portable Network Graphics Image", r, codecs);
+        addType("dpx", "SMPTE DPX", r, codecs);
+        addType("cin", "Kodak Cineon", r, codecs);
+        addType("cineon", "Kodak Cineon", r, codecs);
+        addType("jpg", "JPEG image", r, codecs);
+        addType("jpeg", "JPEG image", r, codecs);
+        addType("tga", "TARGA", r, codecs);
+        addType("targa", "TARGA", r, codecs);
+        addType("rla", "Wavefront RLA", r, codecs);
+        addType("hdr", "Radiance HDR", r, codecs);
+        addType("rgbe", "Radiance HDR", r, codecs);
+
+        // Read-only formats
         addType("psd", "Adobe Photoshop", r, codecs);
         addType("pic", "Softimage PIC", r, codecs);
-        addType("tga", "TARGA", rw, codecs);
-        addType("targa", "TARGA", rw, codecs);
-        addType("sgi", "SGI image", rw, codecs);
-        addType("jpg", "JPEG image", rw, codecs);
-        addType("jpeg", "JPEG image", rw, codecs);
-        addType("bw", "SGI image", rw, codecs);
-        addType("rgb", "SGI image", rw, codecs);
-        addType("rgba", "SGI image", rw, codecs);
-        addType("inta", "SGI image", rw, codecs);
-        addType("int", "SGI image", rw, codecs);
-        addType("pnm", "PNM", rw, codecs);
-        addType("fits", "FITS", rw, codecs);
-        addType("dpx", "SMPTE DPX", rw, codecs);
-        addType("cin", "Kodak Cineon", rw, codecs);
-        addType("cineon", "Kodak Cineon", w, codecs);
-        addType("webp", "Google WebP", rw, codecs);
         addType("ptex", "Disney PTex", r, codecs);
         addType("ptx", "Disney PTex", r, codecs);
-        addType("rla", "Wavefront RLA", rw, codecs);
-        addType("iff", "IFF", rw, codecs);
-        addType("bmp", "Windows Bitmap", rw, codecs);
-        addType("dds", "Direct Draw Surface", rw, codecs);
         addType("gif", "Graphics Interchange Format", r, codecs);
         addType("ico", "Palette", r, codecs);
-        addType("pbm", "Portable Network Graphics", rw, codecs);
-        addType("pgm", "Portable Network Graphics", rw, codecs);
-        addType("ppm", "Portable Network Grapics", rw, codecs);
-        addType("heic", "High Efficiency Image File", rw, codecs);
-        addType("heif", "High Efficiency Image File", rw, codecs);
-        addType("hif", "High Efficiency Image File", rw, codecs);
-        addType("avif", "AV1 Image File", rw, codecs);
-        addType("jxl", "JPEG XL Image", rw, codecs);
-        addType("hdr", "Radiance HDR", rw, codecs);
-        addType("rgbe", "Radiance HDR", rw, codecs);
         addType("z", "Pixar Z-Depth", r, codecs);
-        addType("png", "Portable Network Graphics Image", rw, codecs);
-        addType("qoi", "Quite OK Image", rw, codecs);
+
+        // Formats written via OpenImageIO (no dedicated native writer plugin)
+        addType("webp", "Google WebP", rw("webp"), codecs);
+        addType("qoi", "Quite OK Image", rw("qoi"), codecs);
+        addType("bmp", "Windows Bitmap", rw("bmp"), codecs);
+        addType("sgi", "SGI image", rw("sgi"), codecs);
+        addType("bw", "SGI image", rw("bw"), codecs);
+        addType("rgb", "SGI image", rw("rgb"), codecs);
+        addType("rgba", "SGI image", rw("rgba"), codecs);
+        addType("inta", "SGI image", rw("inta"), codecs);
+        addType("int", "SGI image", rw("int"), codecs);
+        addType("pnm", "PNM", rw("pnm"), codecs);
+        addType("pbm", "Portable Network Graphics", rw("pbm"), codecs);
+        addType("pgm", "Portable Network Graphics", rw("pgm"), codecs);
+        addType("ppm", "Portable Network Grapics", rw("ppm"), codecs);
+        addType("fits", "FITS", rw("fits"), codecs);
+        addType("iff", "IFF", rw("iff"), codecs);
+        addType("dds", "Direct Draw Surface", rw("dds"), codecs);
+        addType("heic", "High Efficiency Image File", rw("heic"), codecs);
+        addType("heif", "High Efficiency Image File", rw("heif"), codecs);
+        addType("hif", "High Efficiency Image File", rw("hif"), codecs);
+        addType("avif", "AV1 Image File", rw("avif"), codecs);
+        addType("jxl", "JPEG XL Image", rw("jxl"), codecs);
 
         // These are handled by their dedicated optimized streaming plugins:
         // IOexr ("m0"), IOtiff ("m1"), IOjpeg ("m2"), IOhtj2k ("m7")
@@ -439,7 +471,214 @@ namespace TwkFB
 
     void IOoiio::writeImage(const FrameBuffer& img, const std::string& filename, const WriteRequest& request) const
     {
-        FrameBufferIO::writeImage(img, filename, request);
+        const FrameBuffer* outfb = &img;
+
+        // Ensure temporary FrameBuffer is cleanly deleted upon return/exception
+        struct FBAutoCleanup
+        {
+            const FrameBuffer*& current;
+            const FrameBuffer& original;
+
+            ~FBAutoCleanup()
+            {
+                if (current != &original)
+                    delete current;
+            }
+        } autoCleanup{outfb, img};
+
+        //
+        //  Merge planar frames if needed
+        //
+        if (outfb->isPlanar())
+        {
+            const FrameBuffer* fb = outfb;
+            outfb = mergePlanes(outfb);
+            if (fb != &img)
+                delete fb;
+        }
+
+        //
+        //  Convert YUV / Primaries to Linear Rec. 709 if required
+        //
+        if (!request.keepColorSpace && (outfb->hasPrimaries() || outfb->isYUV() || outfb->isYRYBY()))
+        {
+            const FrameBuffer* fb = outfb;
+            outfb = convertToLinearRGB709(outfb);
+            if (fb != &img)
+                delete fb;
+        }
+
+        //
+        //  Convert packed or unsupported types to standard formats
+        //
+        switch (outfb->dataType())
+        {
+        case FrameBuffer::UCHAR:
+        case FrameBuffer::USHORT:
+        case FrameBuffer::UINT:
+        case FrameBuffer::HALF:
+        case FrameBuffer::FLOAT:
+        case FrameBuffer::DOUBLE:
+            break;
+        default:
+        {
+            const FrameBuffer* fb = outfb;
+            outfb = copyConvert(outfb, FrameBuffer::UCHAR);
+            if (fb != &img)
+                delete fb;
+            break;
+        }
+        }
+
+        //
+        //  Handle orientation: NATURAL (bottom-left origin) needs vertical flip;
+        //  TOPRIGHT / BOTTOMRIGHT needs horizontal flop.
+        //
+        bool needflip = false;
+        bool needflop = false;
+
+        switch (outfb->orientation())
+        {
+        case FrameBuffer::NATURAL:
+            needflip = true;
+            break;
+        case FrameBuffer::TOPRIGHT:
+        case FrameBuffer::BOTTOMRIGHT:
+            needflop = true;
+            break;
+        default:
+            break;
+        }
+
+        if (needflop)
+        {
+            if (outfb == &img)
+                outfb = img.copy();
+            flop(const_cast<FrameBuffer*>(outfb));
+        }
+
+        if (needflip)
+        {
+            if (outfb == &img)
+                outfb = img.copy();
+            flip(const_cast<FrameBuffer*>(outfb));
+        }
+
+        std::unique_ptr<ImageOutput> out = ImageOutput::create(filename);
+        if (!out)
+        {
+            TWK_THROW_STREAM(IOException, "OIIO: Unable to create output for \"" << filename << "\": " << OIIO::geterror());
+        }
+
+        TypeDesc format = TypeDesc::UINT8;
+        switch (outfb->dataType())
+        {
+        case FrameBuffer::UCHAR:
+            format = TypeDesc::UINT8;
+            break;
+        case FrameBuffer::USHORT:
+            format = TypeDesc::UINT16;
+            break;
+        case FrameBuffer::UINT:
+            format = TypeDesc::UINT32;
+            break;
+        case FrameBuffer::HALF:
+            format = TypeDesc::HALF;
+            break;
+        case FrameBuffer::FLOAT:
+            format = TypeDesc::FLOAT;
+            break;
+        case FrameBuffer::DOUBLE:
+            format = TypeDesc::DOUBLE;
+            break;
+        default:
+            format = TypeDesc::UINT8;
+            break;
+        }
+
+        //
+        //  Drop a trailing alpha channel for writers that cannot store one
+        //  (e.g. PNM). The pixel stride still spans all source channels, so
+        //  OIIO simply skips the alpha values.
+        //
+        const int numChannels = outfb->numChannels();
+        const bool hasChannelNames = outfb->channelNames().size() == static_cast<size_t>(numChannels);
+        const bool lastIsAlpha = !hasChannelNames || outfb->channelNames().back() == "A";
+        int nchannels = numChannels;
+
+        if ((numChannels == 2 || numChannels == 4) && lastIsAlpha && !out->supports("alpha"))
+        {
+            nchannels = numChannels - 1;
+        }
+
+        //
+        //  Work around OIIO writers that mishandle some sample types. OIIO
+        //  converts from the in-memory format to the file format.
+        //
+        //  pnm:  emits PFM (bottom-to-top float) for any floating point spec
+        //        regardless of extension, so store integer samples for
+        //        .ppm/.pgm/.pbm/.pnm.
+        //  fits: writes BITPIX=-32 for HALF but still writes 16-bit samples,
+        //        producing a truncated file, so promote HALF to FLOAT.
+        //
+        TypeDesc fileFormat = format;
+        if (Strutil::iequals(out->format_name(), "pnm") && format.is_floating_point())
+        {
+            fileFormat = TypeDesc::UINT16;
+        }
+        else if (Strutil::iequals(out->format_name(), "fits") && format == TypeDesc::HALF)
+        {
+            fileFormat = TypeDesc::FLOAT;
+        }
+
+        ImageSpec spec(outfb->width(), outfb->height(), nchannels, fileFormat);
+
+        if (hasChannelNames)
+        {
+            spec.channelnames.assign(outfb->channelNames().begin(), outfb->channelNames().begin() + nchannels);
+        }
+
+        if (request.pixelAspect != 1.0f && request.pixelAspect != 0.0f)
+        {
+            spec.attribute("PixelAspectRatio", request.pixelAspect);
+        }
+        else if (outfb->pixelAspectRatio() != 1.0f && outfb->pixelAspectRatio() != 0.0f)
+        {
+            spec.attribute("PixelAspectRatio", outfb->pixelAspectRatio());
+        }
+
+        if (!request.compression.empty())
+        {
+            spec.attribute("compression", request.compression);
+        }
+
+        if (request.quality >= 0.0f && request.quality <= 1.0f)
+        {
+            spec.attribute("CompressionQuality", static_cast<int>(request.quality * 100.0f));
+        }
+
+        for (const auto& p : request.parameters)
+        {
+            spec.attribute(p.first, p.second);
+        }
+
+        if (!out->open(filename, spec))
+        {
+            TWK_THROW_STREAM(IOException, "OIIO: Unable to open \"" << filename << "\" for writing: " << out->geterror());
+        }
+
+        stride_t xstride = outfb->pixelSize();
+        stride_t ystride = outfb->scanlinePaddedSize();
+
+        if (!out->write_image(format, outfb->pixels<unsigned char>(), xstride, ystride))
+        {
+            TWK_THROW_STREAM(IOException, "OIIO: Error writing \"" << filename << "\": " << out->geterror());
+        }
+
+        if (!out->close())
+        {
+            TWK_THROW_STREAM(IOException, "OIIO: Error closing \"" << filename << "\": " << out->geterror());
+        }
     }
 
 } //  End namespace TwkFB

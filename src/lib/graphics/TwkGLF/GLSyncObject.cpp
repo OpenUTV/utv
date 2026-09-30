@@ -14,6 +14,10 @@
 
 #include <TwkUtil/Macros.h>
 
+#if defined __linux
+#include <GL/glx.h>
+#endif
+
 //==============================================================================
 // CLASS GLSyncObject::Imp
 //==============================================================================
@@ -180,6 +184,41 @@ bool GLSyncObjectARBSync::testFence() const
 
 //------------------------------------------------------------------------------
 //
+//  GL_NV_fence entry points are looked up at runtime rather than linked
+//  directly: libGL implementations without the extension (e.g. Mesa, used by
+//  AMD/Intel drivers and software rendering) don't export these symbols, and a
+//  direct reference makes every binary linking TwkGLF fail to load with
+//  "undefined symbol: glGenFencesNV".
+//
+struct NVFenceFunctions
+{
+    PFNGLGENFENCESNVPROC genFences = nullptr;
+    PFNGLDELETEFENCESNVPROC deleteFences = nullptr;
+    PFNGLSETFENCENVPROC setFence = nullptr;
+    PFNGLFINISHFENCENVPROC finishFence = nullptr;
+    PFNGLTESTFENCENVPROC testFence = nullptr;
+
+    bool available() const { return genFences && deleteFences && setFence && finishFence && testFence; }
+};
+
+static const NVFenceFunctions& nvFence()
+{
+    static const NVFenceFunctions functions = []
+    {
+        NVFenceFunctions f;
+        auto lookup = [](const char* name) { return glXGetProcAddressARB(reinterpret_cast<const GLubyte*>(name)); };
+        f.genFences = reinterpret_cast<PFNGLGENFENCESNVPROC>(lookup("glGenFencesNV"));
+        f.deleteFences = reinterpret_cast<PFNGLDELETEFENCESNVPROC>(lookup("glDeleteFencesNV"));
+        f.setFence = reinterpret_cast<PFNGLSETFENCENVPROC>(lookup("glSetFenceNV"));
+        f.finishFence = reinterpret_cast<PFNGLFINISHFENCENVPROC>(lookup("glFinishFenceNV"));
+        f.testFence = reinterpret_cast<PFNGLTESTFENCENVPROC>(lookup("glTestFenceNV"));
+        return f;
+    }();
+    return functions;
+}
+
+//------------------------------------------------------------------------------
+//
 class SyncObjectFenceNV : public GLSyncObject::Imp
 {
 public:
@@ -208,7 +247,7 @@ SyncObjectFenceNV::SyncObjectFenceNV()
 SyncObjectFenceNV::~SyncObjectFenceNV()
 {
     if (_fence)
-        glDeleteFencesNV(1, &_fence);
+        nvFence().deleteFences(1, &_fence);
     TWK_GLDEBUG
 }
 
@@ -219,10 +258,10 @@ void SyncObjectFenceNV::setFence()
     RV_ASSERT_INTERNAL(!_fenceSet);
     if (!_fence)
     {
-        glGenFencesNV(1, &_fence);
+        nvFence().genFences(1, &_fence);
         TWK_GLDEBUG
     }
-    glSetFenceNV(_fence, GL_ALL_COMPLETED_NV);
+    nvFence().setFence(_fence, GL_ALL_COMPLETED_NV);
     TWK_GLDEBUG
     _fenceSet = true;
 }
@@ -232,7 +271,7 @@ void SyncObjectFenceNV::setFence()
 void SyncObjectFenceNV::unsetFence()
 {
     RV_ASSERT_INTERNAL(_fenceSet);
-    glDeleteFencesNV(1, &_fence);
+    nvFence().deleteFences(1, &_fence);
     _fence = 0;
     _fenceSet = false;
 }
@@ -242,7 +281,7 @@ void SyncObjectFenceNV::unsetFence()
 void SyncObjectFenceNV::waitFence() const
 {
     RV_ASSERT_INTERNAL(_fenceSet);
-    glFinishFenceNV(_fence);
+    nvFence().finishFence(_fence);
     TWK_GLDEBUG
     _fenceSet = false;
 }
@@ -252,7 +291,7 @@ void SyncObjectFenceNV::waitFence() const
 bool SyncObjectFenceNV::testFence() const
 {
     RV_ASSERT_INTERNAL(_fenceSet);
-    bool done = glTestFenceNV(_fence);
+    bool done = nvFence().testFence(_fence);
     TWK_GLDEBUG
     if (done)
         _fenceSet = false;
@@ -414,7 +453,11 @@ GLSyncObject::GLSyncObject()
     else
     {
 #if defined __linux
-        _imp = new SyncObjectFenceNV;
+        static bool supportNVFence = TWK_GL_SUPPORTS("GL_NV_fence") && nvFence().available();
+        if (supportNVFence)
+            _imp = new SyncObjectFenceNV;
+        else
+            _imp = new SyncObjectStub;
 #elif defined __APPLE__
         _imp = new SyncObjectFenceAPPLE;
 #else

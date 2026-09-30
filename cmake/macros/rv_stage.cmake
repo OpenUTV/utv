@@ -504,6 +504,12 @@ FUNCTION(rv_stage)
     ENDIF()
 
     ADD_DEPENDENCIES(image_formats ${arg_TARGET})
+    # Track the plugin file so the image formats .gto cache is regenerated when any plugin is relinked
+    SET_PROPERTY(
+      TARGET image_formats
+      APPEND
+      PROPERTY RV_FORMAT_PLUGIN_FILES "$<TARGET_FILE:${arg_TARGET}>"
+    )
 
     ADD_SHARED_LIBRARY_LIST(${arg_TARGET})
 
@@ -533,6 +539,12 @@ FUNCTION(rv_stage)
     ENDIF()
 
     ADD_DEPENDENCIES(movie_formats ${arg_TARGET})
+    # Track the plugin file so the movie formats .gto cache is regenerated when any plugin is relinked
+    SET_PROPERTY(
+      TARGET movie_formats
+      APPEND
+      PROPERTY RV_FORMAT_PLUGIN_FILES "$<TARGET_FILE:${arg_TARGET}>"
+    )
 
     ADD_SHARED_LIBRARY_LIST(${arg_TARGET})
 

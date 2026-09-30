@@ -466,9 +466,9 @@ namespace Rv
         s.setNum(opts.readerThreads);
         m_ui.rthreadEdit->setText(s);
 
-        QString hwEnv = QString::fromLocal8Bit(qgetenv("OPENUTV_HWACCEL"));
+        QString hwEnv = QString::fromLocal8Bit(qgetenv("UTV_HWACCEL"));
         if (hwEnv.isEmpty())
-            hwEnv = QString::fromLocal8Bit(qgetenv("UTV_HWACCEL"));
+            hwEnv = QString::fromLocal8Bit(qgetenv("OPENUTV_HWACCEL"));
         if (hwEnv.isEmpty())
             hwEnv = QString::fromLocal8Bit(qgetenv("RV_HWACCEL"));
         if (!hwEnv.isEmpty())
@@ -992,15 +992,12 @@ namespace Rv
         opts.networkHost = (char*)((opts.networkHostBuf.empty()) ? 0 : opts.networkHostBuf.c_str());
         opts.readerThreads = settings.value("readerThreads", opts.readerThreads).toInt();
         opts.hwDecodeMode = settings.value("hardwareDecodeMode", opts.hwDecodeMode).toInt();
-        if (qEnvironmentVariableIsEmpty("OPENUTV_HWACCEL") && qEnvironmentVariableIsEmpty("UTV_HWACCEL")
+        if (qEnvironmentVariableIsEmpty("UTV_HWACCEL") && qEnvironmentVariableIsEmpty("OPENUTV_HWACCEL")
             && qEnvironmentVariableIsEmpty("RV_HWACCEL"))
         {
-            if (opts.hwDecodeMode == 2)
-                qputenv("OPENUTV_HWACCEL", "none");
-            else if (opts.hwDecodeMode == 1)
-                qputenv("OPENUTV_HWACCEL", "prores");
-            else
-                qputenv("OPENUTV_HWACCEL", "all");
+            const char* val = (opts.hwDecodeMode == 2) ? "none" : ((opts.hwDecodeMode == 1) ? "prores" : "all");
+            qputenv("UTV_HWACCEL", val);
+            qputenv("OPENUTV_HWACCEL", val);
         }
         opts.autoRetime = int(settings.value("autoRetime", opts.autoRetime ? true : false).toBool());
         opts.autoSetupACES = int(settings.value("autoSetupACES", opts.autoSetupACES ? true : false).toBool());
@@ -1350,12 +1347,9 @@ namespace Rv
         settings.setValue("readerThreads", m_ui.rthreadEdit->text().toInt());
         int hwMode = m_ui.hardwareDecodeCombo->currentIndex();
         settings.setValue("hardwareDecodeMode", hwMode);
-        if (hwMode == 2)
-            qputenv("OPENUTV_HWACCEL", "none");
-        else if (hwMode == 1)
-            qputenv("OPENUTV_HWACCEL", "prores");
-        else
-            qputenv("OPENUTV_HWACCEL", "all");
+        const char* val = (hwMode == 2) ? "none" : ((hwMode == 1) ? "prores" : "all");
+        qputenv("UTV_HWACCEL", val);
+        qputenv("OPENUTV_HWACCEL", val);
         settings.setValue("autoRetime", m_ui.autoRetimeToggle->checkState() == Qt::Checked);
         settings.setValue("useCrashReporter", m_ui.useCrashReporterToggle->checkState() == Qt::Checked);
         settings.setValue("fontSize1", m_ui.fontSizeSpinBox->value());

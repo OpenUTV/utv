@@ -10,6 +10,7 @@
 #include <TwkGLF/GL.h>
 #include <TwkGLF/GLFBO.h>
 #include <TwkExc/Exception.h>
+#include <cstdlib>
 #include <iostream>
 
 #ifdef PLATFORM_LINUX
@@ -125,9 +126,22 @@ namespace TwkGLF
                                    1 * 32,
                                    0};
 
-        unsigned long* attrs = (m_swRendererOnMac) ? swAttrs : hwAttrs;
+        const bool forceSoftware = m_swRendererOnMac || getenv("UTV_SOFTWARE_GL");
+        unsigned long* attrs = forceSoftware ? swAttrs : hwAttrs;
+        CGLError err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)attrs, &m_imp->pfo, &m_imp->npfo);
 
-        if (CGLError err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)attrs, &m_imp->pfo, &m_imp->npfo))
+        //
+        //  No accelerated renderer (e.g. headless VMs, CI runners, render
+        //  nodes without a GPU): fall back to Apple's software renderer rather
+        //  than failing outright.
+        //
+        if ((err != kCGLNoError || !m_imp->pfo) && !forceSoftware)
+        {
+            cout << "WARNING: no accelerated OpenGL pixel format (" << CGLErrorString(err) << "), using the software renderer" << endl;
+            err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)swAttrs, &m_imp->pfo, &m_imp->npfo);
+        }
+
+        if (err != kCGLNoError || !m_imp->pfo)
         {
             cout << "ERROR: choosing pixel format: " << CGLErrorString(err) << endl;
             exit(-1);
@@ -154,8 +168,21 @@ namespace TwkGLF
         int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
 
         m_imp->display = XOpenDisplay(0);
+        if (!m_imp->display)
+        {
+            const char* display = getenv("DISPLAY");
+            cout << "ERROR: cannot open X display '" << (display ? display : "") << "' for the offscreen OpenGL context."
+                 << " On a headless machine run under a virtual X server, e.g. xvfb-run -a" << endl;
+            exit(-1);
+        }
+
         m_imp->root = DefaultRootWindow(m_imp->display);
         m_imp->vis = glXChooseVisual(m_imp->display, DefaultScreen(m_imp->display), attrs);
+        if (!m_imp->vis)
+        {
+            cout << "ERROR: no suitable GLX visual for the offscreen OpenGL context" << endl;
+            exit(-1);
+        }
 
         swa.colormap = XCreateColormap(m_imp->display, m_imp->root, m_imp->vis->visual, AllocNone);
 
@@ -165,8 +192,11 @@ namespace TwkGLF
                                     CWColormap | CWEventMask, &swa);
 
         m_imp->ctx = glXCreateContext(m_imp->display, m_imp->vis, 0, True);
-
-        glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx);
+        if (!m_imp->ctx || !glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx))
+        {
+            cout << "ERROR: cannot create or activate the offscreen GLX context" << endl;
+            exit(-1);
+        }
 #endif
 
 #if defined(PLATFORM_WINDOWS)

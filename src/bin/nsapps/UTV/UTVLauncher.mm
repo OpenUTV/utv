@@ -42,6 +42,16 @@ static const struct DepCheck kRequiredDependencies[] = {
 };
 
 static NSString *detectBrewPrefix(void) {
+    const char *customDeps = getenv("UTV_DEPS_ROOT");
+    if (!customDeps) customDeps = getenv("OPENUTV_DEPS_ROOT");
+    if (!customDeps) customDeps = getenv("HOMEBREW_PREFIX");
+    if (customDeps && strlen(customDeps) > 0) {
+        NSString *prefix = [NSString stringWithUTF8String:customDeps];
+        if ([[NSFileManager defaultManager] fileExistsAtPath:prefix]) {
+            return prefix;
+        }
+    }
+
     NSFileManager *fm = [NSFileManager defaultManager];
     if ([fm fileExistsAtPath:@"/opt/homebrew/bin/brew"]) {
         return @"/opt/homebrew";
@@ -328,6 +338,39 @@ int main(int argc, char *argv[]) {
 
         // All dependencies satisfied -> launch real binary immediately
         if ([missing count] == 0) {
+            // Set UTV environment variables for runtime child processes
+            if (getenv("UTV_DEPS_ROOT") == NULL) {
+                setenv("UTV_DEPS_ROOT", [brewPrefix UTF8String], 1);
+            }
+            if (getenv("OPENUTV_DEPS_ROOT") == NULL) {
+                setenv("OPENUTV_DEPS_ROOT", [brewPrefix UTF8String], 1);
+            }
+            if (getenv("UTV_HOME") == NULL) {
+                NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+                if (bundlePath) {
+                    setenv("UTV_HOME", [bundlePath UTF8String], 1);
+                    setenv("OPENUTV_HOME", [bundlePath UTF8String], 1);
+                }
+            }
+
+            // Check if --run <cmd> [args...] mode was requested
+            if (argc >= 3 && strcmp(argv[1], "--run") == 0) {
+                NSString *targetCmd = [NSString stringWithUTF8String:argv[2]];
+                NSString *binDir = [[[NSBundle mainBundle] executablePath] stringByDeletingLastPathComponent];
+                NSString *targetPath = [binDir stringByAppendingPathComponent:targetCmd];
+                if (![[NSFileManager defaultManager] fileExistsAtPath:targetPath]) {
+                    targetPath = [[brewPrefix stringByAppendingPathComponent:@"bin"] stringByAppendingPathComponent:targetCmd];
+                }
+                if ([[NSFileManager defaultManager] fileExistsAtPath:targetPath]) {
+                    execv([targetPath UTF8String], &argv[2]);
+                    perror("UTVLauncher: execv --run failed");
+                    return 1;
+                } else {
+                    fprintf(stderr, "UTVLauncher: Command '%s' not found.\n", argv[2]);
+                    return 1;
+                }
+            }
+
             NSString *realBin = findRealBinary();
             if (realBin) {
                 execv([realBin UTF8String], argv);

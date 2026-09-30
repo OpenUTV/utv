@@ -37,8 +37,11 @@ namespace Rv
 
     QString RvKeybindingsManager::defaultKeybindingsPath() const
     {
-        // 1. Environment variable override
-        const char* envPath = getenv("OPENUTV_KEYBINDINGS_FILE");
+        const char* envPath = getenv("UTV_KEYBINDINGS_FILE");
+        if (!envPath)
+        {
+            envPath = getenv("OPENUTV_KEYBINDINGS_FILE");
+        }
         if (!envPath)
         {
             envPath = getenv("RV_KEYBINDINGS_FILE");

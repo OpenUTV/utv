@@ -9,6 +9,8 @@ cask "utv" do
 
   app "UTV.app"
 
+  depends_on macos: ">= :sequoia"
+
   depends_on formula: "boost"
   depends_on formula: "ffmpeg-full"
   depends_on formula: "icu4c"

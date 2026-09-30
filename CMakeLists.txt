@@ -153,6 +153,15 @@ IF(WIN32
   ENDIF()
 ENDIF()
 
+# Minimum supported macOS. Must be set before PROJECT(). Without it, clang defaults to the SDK version of the build host, which silently makes the build
+# machine's macOS the minimum (e.g. 26.0 on macos-26 runners).
+IF(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  SET(CMAKE_OSX_DEPLOYMENT_TARGET
+      "15.0"
+      CACHE STRING "Minimum macOS version to target"
+  )
+ENDIF()
+
 PROJECT(
   open-rv
   VERSION "${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}"

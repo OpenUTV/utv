@@ -39,6 +39,11 @@ SET(__compiler_options__
 # Common options
 ADD_COMPILE_OPTIONS(${_verbose_invocation} ${__compiler_options__} -Wnonportable-include-path)
 
+IF(APPLE)
+  # Using an API newer than CMAKE_OSX_DEPLOYMENT_TARGET without an @available() guard crashes at runtime on older macOS.
+  ADD_COMPILE_OPTIONS(-Werror=unguarded-availability-new)
+ENDIF()
+
 IF(${CMAKE_BUILD_TYPE} STREQUAL "Release")
   # Release build specific options
   ADD_COMPILE_OPTIONS(-DNDEBUG -O3 # Maximum optimization
