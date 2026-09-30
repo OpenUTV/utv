@@ -12,6 +12,7 @@
 #include <QtCore/QEvent>
 #include <QtCore/QTimer>
 #include <TwkUtil/Timer.h>
+#include <RvCommon/MetalPresentationFormat.h>
 
 namespace Rv
 {
@@ -65,6 +66,14 @@ namespace Rv
         //
         static bool supports10BitPresentation();
 
+        //
+        //  Presentation format (SDR / EDR / PQ / HLG) for this process, chosen
+        //  once from UTV_MACOS_PRESENTATION or the Display/macosPresentation
+        //  preference ("sdr", "edr", "pq", "hlg"; default "sdr"). See
+        //  MetalPresentationFormat.h.
+        //
+        static const MetalPresentationFormat& presentationFormat();
+
         //  We own pixel delivery via the CALayer/IOSurface; tell Qt not to use a
         //  backing store for this widget (see WA_PaintOnScreen in the .mm).
         QPaintEngine* paintEngine() const override { return nullptr; }
@@ -93,9 +102,9 @@ namespace Rv
         //
         //  IOSurface presentation — called by QTMetalVideoDevice::syncBuffers().
         //
-        //  pixels: packed ARGB2101010LE row-major, y=0 is TOP row (IOSurface
-        //          convention; caller must y-flip from GL bottom-left origin).
-        //  Format: (3<<30)|(R<<20)|(G<<10)|B per pixel.
+        //  pixels: row-major in presentationFormat()'s pixel format (packed
+        //          ARGB2101010LE, or RGBA half float for EDR), y=0 is TOP row
+        //          (IOSurface convention; caller must y-flip from GL bottom-left).
         //  w,h: physical pixel dimensions (FBO size = view.size × DPR).
         //
         void presentPixelData(const void* pixels, int w, int h);

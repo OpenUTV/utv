@@ -68,9 +68,17 @@ SET(_sources
 # IF(RV_TARGET_DARWIN) LIST(APPEND _sources CGDesktopVideoDevice.cpp CGDesktopVideoDeviceArm.cpp DisplayLink.cpp) ENDIF()
 
 IF(RV_TARGET_DARWIN)
-  LIST(APPEND _sources DisplayLink.cpp MetalView.mm QTMetalVideoDevice.mm MacNativeFileDialog.mm)
+  LIST(
+    APPEND
+    _sources
+    DisplayLink.cpp
+    MetalView.mm
+    MetalPresentationFormat.mm
+    QTMetalVideoDevice.mm
+    MacNativeFileDialog.mm
+  )
   SET_SOURCE_FILES_PROPERTIES(
-    MetalView.mm MacNativeFileDialog.mm
+    MetalView.mm MetalPresentationFormat.mm MacNativeFileDialog.mm
     PROPERTIES COMPILE_FLAGS "-fobjc-arc"
   )
 ENDIF()

@@ -219,6 +219,7 @@ namespace Rv
 
     private:
         Ui::RvPreferences m_ui;
+        QComboBox* m_macPresentationCombo = nullptr; // macOS only: SDR / EDR / PQ / HLG
         Ui::packageLocationDialog m_packageLocationUI;
         Ui::PrefVideoLatencyDialog m_videoLatencyUI;
         QDialog* m_packageLocationDialog;

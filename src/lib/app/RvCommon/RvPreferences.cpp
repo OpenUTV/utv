@@ -340,6 +340,27 @@ namespace Rv
 
         m_ui.displayOutputCombo->installEventFilter(scrollEventEater);
 
+#ifdef PLATFORM_DARWIN
+        //
+        //  macOS presentation format (see MetalPresentationFormat.h). Added in
+        //  code next to the display output format so the shared .ui stays
+        //  platform neutral. Read once at startup, so changes need a restart.
+        //
+        m_macPresentationCombo = new QComboBox(this);
+        m_macPresentationCombo->addItem(tr("SDR"), QString("sdr"));
+        m_macPresentationCombo->addItem(tr("EDR (extended dynamic range)"), QString("edr"));
+        m_macPresentationCombo->addItem(tr("HDR PQ (Rec.2100)"), QString("pq"));
+        m_macPresentationCombo->addItem(tr("HDR HLG (Rec.2100)"), QString("hlg"));
+        m_macPresentationCombo->setToolTip(
+            tr("How frames are handed to macOS. SDR: 10-bit, clipped to SDR white. "
+               "EDR: 16-bit float; values above 1.0 use the display's extended dynamic range headroom. "
+               "HDR PQ / HLG: the display pipeline must output PQ or HLG encoded Rec.2020 "
+               "(display colorspace SMPTE 2084 / HLG, or an OCIO HDR view). Takes effect after restarting."));
+        m_macPresentationCombo->installEventFilter(scrollEventEater);
+        m_ui.horizontalLayout_30->insertWidget(1, new QLabel(tr("macOS Presentation"), this));
+        m_ui.horizontalLayout_30->insertWidget(2, m_macPresentationCombo);
+#endif
+
 #ifdef PLATFORM_WINDOWS
         m_ui.exrMaxInFlightEdit->setEnabled(false);
         m_ui.cinMaxInFlightEdit->setEnabled(false);
@@ -793,6 +814,12 @@ namespace Rv
         }
 
         m_ui.displayOutputCombo->setCurrentIndex(dindex);
+
+        if (m_macPresentationCombo)
+        {
+            const int index = m_macPresentationCombo->findData(settings.value("macosPresentation", "sdr").toString().toLower());
+            m_macPresentationCombo->setCurrentIndex(index >= 0 ? index : 0);
+        }
 
         settings.endGroup();
 
@@ -1599,6 +1626,8 @@ namespace Rv
         settings.setValue("dispGreenBits", gbits);
         settings.setValue("dispBlueBits", bbits);
         settings.setValue("dispAlphaBits", abits);
+        if (m_macPresentationCombo)
+            settings.setValue("macosPresentation", m_macPresentationCombo->currentData().toString());
         settings.endGroup();
 
         //----------------------------------------------------------------------
