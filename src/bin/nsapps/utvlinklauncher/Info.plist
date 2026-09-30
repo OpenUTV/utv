@@ -22,6 +22,8 @@
     <string>public.app-category.utilities</string>
     <key>CFBundleShortVersionString</key>
     <string>${RV_MAJOR_VERSION}.${RV_MINOR_VERSION}.${RV_REVISION_NUMBER}${RV_VERSION_SUFFIX}</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
     <key>CFBundleSupportedPlatforms</key>
     <array>
         <string>MacOSX</string>
