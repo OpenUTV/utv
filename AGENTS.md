@@ -62,7 +62,12 @@ OpenUTV **intentionally does not ship x265 (HEVC encoding)** in any binary we di
 - **Do not**:
   - add x265, HEVC encoder plugins, or `libheif`/OpenImageIO features that pull them in to `utv-dependencies`, the build, or the installers;
   - "fix" HEIC/HEIF write failures by enabling HEVC encoding.
-- **Acceptable fixes** for HEIC/HEIF write: have `IOoiio` stop advertising HEIC/HEIF as writable when no HEVC encoder is available, so users get a clear "not supported" instead of a failed write.
+- **The "supercharged" FFmpeg can't provide HEIC encoding**: users get x265 by upgrading to `ffmpeg-full`, but libheif (used by OpenImageIO) only encodes HEVC through its own encoder plugins (x265, kvazaar). Its FFmpeg integration (`WITH_FFMPEG_DECODER`) is decode-only, and `ffmpeg-full` builds link x265 inside `avcodec` rather than as a loadable library. Don't try to route OIIO's HEIC encoding through the user's FFmpeg.
+- **Acceptable approaches** (no x265 shipped by us):
+  - have `IOoiio` stop advertising HEIC/HEIF as writable when no HEVC encoder is available, so users get a clear "not supported" instead of a failed write;
+  - HEIC **decoding** through libheif's FFmpeg decoder plugin, using the user's FFmpeg;
+  - HEIC **encoding** through OS encoders the user has licensed: macOS ImageIO, Windows WIC with Microsoft's HEIF/HEVC Video Extensions.
+- **macOS and Linux** link Homebrew's OpenImageIO/libheif, which include x265. Those are installed on the user's machine from Homebrew, not redistributed by us.
 - Any change to this policy is a legal/licensing decision for the maintainers, not an engineering one.
 
 ---
