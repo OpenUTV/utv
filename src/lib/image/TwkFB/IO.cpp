@@ -121,7 +121,8 @@ namespace TwkFB
 
     void FrameBufferIO::readImage(FrameBuffer& fb, const string& filename, const ReadRequest& request) const
     {
-        throw UnsupportedException();
+        TWK_THROW_STREAM(UnsupportedException,
+                         "Image plugin '" << identifier() << "' does not support reading '" << extension(filename) << "'");
     }
 
     void FrameBufferIO::readImages(FrameBufferVector& fbs, const string& filename, const ReadRequest& request) const
@@ -133,7 +134,8 @@ namespace TwkFB
 
     void FrameBufferIO::writeImage(const FrameBuffer& img, const string& filename, const WriteRequest& request) const
     {
-        throw UnsupportedException();
+        TWK_THROW_STREAM(UnsupportedException,
+                         "Image plugin '" << identifier() << "' does not support writing '" << extension(filename) << "'");
     }
 
     void FrameBufferIO::writeImages(const ConstFrameBufferVector& fbs, const string& filename, const WriteRequest& request) const
@@ -144,7 +146,8 @@ namespace TwkFB
         }
         else
         {
-            throw UnsupportedException();
+            TWK_THROW_STREAM(UnsupportedException, "Image plugin '" << identifier() << "' does not support multi-image writing to '"
+                                                                    << extension(filename) << "'");
         }
     }
 
@@ -510,7 +513,7 @@ namespace TwkFB
         }
         else
         {
-            throw UnsupportedException();
+            TWK_THROW_STREAM(UnsupportedException, "No image plugin available to read format '" << format << "'");
         }
     }
 
@@ -525,7 +528,7 @@ namespace TwkFB
         }
         else
         {
-            throw UnsupportedException();
+            TWK_THROW_STREAM(UnsupportedException, "No image plugin available to write format '" << format << "'");
         }
     }
 
@@ -540,7 +543,7 @@ namespace TwkFB
         }
         else
         {
-            throw UnsupportedException();
+            TWK_THROW_STREAM(UnsupportedException, "No image plugin available to write format '" << format << "'");
         }
     }
 

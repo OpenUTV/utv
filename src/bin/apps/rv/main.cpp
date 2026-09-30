@@ -248,7 +248,8 @@ int utf8Main(int argc, char* argv[])
     // Verify OpenUTVDeps is installed or discoverable before initializing the runtime
     bool depsFound = false;
     char depsRootBuf[MAX_PATH] = {0};
-    if (GetEnvironmentVariableA("OPENUTV_DEPS_ROOT", depsRootBuf, MAX_PATH) > 0)
+    if (GetEnvironmentVariableA("UTV_DEPS_ROOT", depsRootBuf, MAX_PATH) > 0
+        || GetEnvironmentVariableA("OPENUTV_DEPS_ROOT", depsRootBuf, MAX_PATH) > 0)
     {
         std::string testPath = std::string(depsRootBuf) + "\\bin";
         DWORD attr = GetFileAttributesA(testPath.c_str());
@@ -291,6 +292,7 @@ int utf8Main(int argc, char* argv[])
                         if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
                         {
                             depsFound = true;
+                            SetEnvironmentVariableA("UTV_DEPS_ROOT", candidate.c_str());
                             SetEnvironmentVariableA("OPENUTV_DEPS_ROOT", candidate.c_str());
                             char currentPath[32767] = {0};
                             GetEnvironmentVariableA("PATH", currentPath, 32767);
