@@ -197,6 +197,14 @@ namespace TwkGLF
             cout << "ERROR: cannot create or activate the offscreen GLX context" << endl;
             exit(-1);
         }
+
+#ifdef TWK_USE_GLEW
+        if (GLenum err = TWK_GLEW_INIT(NULL))
+        {
+            cout << "ERROR: GLEW initialization failed: " << glewGetErrorString(err) << endl;
+            exit(-1);
+        }
+#endif
 #endif
 
 #if defined(PLATFORM_WINDOWS)

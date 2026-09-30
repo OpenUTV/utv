@@ -266,15 +266,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          # Staged Linux binaries are built without RPATHs and link unversioned sonames from linuxbrew kegs
-          # (see #66). Point the loader at the stage lib dir and every linuxbrew keg's lib dir.
-          BREW_LIBS=$(printf '%s:' /home/linuxbrew/.linuxbrew/opt/*/lib)
-          export LD_LIBRARY_PATH="${PWD}/_build/stage/app/lib:${BREW_LIBS}/home/linuxbrew/.linuxbrew/lib:${LD_LIBRARY_PATH:-}"
+          # Staged Linux executables are launch wrappers that set up the library path themselves (#66).
           # utvio renders through an offscreen GLX context, which needs an X display; use a virtual one.
           sudo apt-get install -y --no-install-recommends xvfb > /dev/null
-          # Tests that need a working OpenGL stack on Mesa are excluded until #68 is fixed.
-          xvfb-run -a -s "-screen 0 1920x1080x24" ctest --test-dir _build --output-on-failure --timeout 900 \
-            -E 'LoadingSharedLibrariesTest|ApplicationTest|AudioRendererTest|image-format-roundtrip'
+          xvfb-run -a -s "-screen 0 1920x1080x24" ctest --test-dir _build --output-on-failure --timeout 900
 
       - name: Save CCache
         if: always()

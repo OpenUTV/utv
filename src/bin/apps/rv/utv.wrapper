@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# Copyright (C) 2022  Autodesk, Inc. All Rights Reserved.
+# Copyright (C) 2026  Contributors to the OpenUTV Project
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Linux launcher for the main application (installed as bin/utv by rv_stage();
+# the real binary is bin/utv.bin). Same setup as src/bin/linux_wrapper.sh, plus:
+#
+#   -d / --debug                   run under gdb
+#   RV_USE_PULSEAUDIO_WORKAROUND   run through padsp when available
+#
+
+self=$(readlink -f "$0")
+name=$(basename "$self")
+bindir=$(dirname "$self")
+
+bin="$bindir/$name.bin"
+if [ ! -x "$bin" ]; then
+    echo "ERROR: $bin not found" >&2
+    exit 1
+fi
+
+if [ -n "$QT_PLUGIN_PATH" ]; then
+    echo "INFO: warning: QT_PLUGIN_PATH is set, which can cause UTV to load the wrong Qt libraries/plugins. Unsetting..."
+    unset QT_PLUGIN_PATH
+fi
+unset LANG
+
+UTV_HOME=${UTV_HOME:-${RV_HOME:-$(dirname "$bindir")}}
+RV_HOME=${RV_HOME:-$UTV_HOME}
+export UTV_HOME RV_HOME
+
+libpath="$UTV_HOME/lib"
+if [ -z "$RV_USE_SYSTEM_OPENSSL" ] && [ -d "$UTV_HOME/lib/OpenSSL" ]; then
+    libpath="$libpath:$UTV_HOME/lib/OpenSSL"
+fi
+
+deps=${UTV_DEPS_ROOT:-${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}}
+if [ -d "$deps/lib" ]; then
+    libpath="$libpath:$deps/lib"
+    for keglib in "$deps"/opt/*/lib; do
+        [ -d "$keglib" ] && libpath="$libpath:$keglib"
+    done
+fi
+
+LD_LIBRARY_PATH="$libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+PATH="$bindir:$PATH"
+export LD_LIBRARY_PATH PATH
+unset BUILD_ROOT
+
+padsp=""
+if [ -n "$RV_USE_PULSEAUDIO_WORKAROUND" ] && [ -x /usr/bin/padsp ]; then
+    padsp=/usr/bin/padsp
+fi
+
+if [ "$1" = "-d" ] || [ "$1" = "--debug" ]; then
+    shift
+    exec gdb --args $padsp "$bin" "$@"
+fi
+
+exec $padsp "$bin" "$@"

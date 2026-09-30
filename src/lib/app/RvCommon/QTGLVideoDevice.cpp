@@ -6,6 +6,9 @@
 //
 //
 
+#if defined(TWK_USE_GLEW) && !defined(PLATFORM_WINDOWS)
+#include <GL/glew.h>
+#endif
 #ifdef PLATFORM_WINDOWS
 #include <GL/glew.h>
 #include <GL/wglew.h>

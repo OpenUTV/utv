@@ -63,15 +63,29 @@ FUNCTION(rv_stage)
     MESSAGE(FATAL_ERROR "The 'TYPE' parameter was not specified.")
   ENDIF()
 
-  IF(RV_TARGET_LINUX)
-    IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${arg_TARGET}.wrapper)
+  # On Linux every executable is launched through a shell wrapper that sets up the library path (the build uses no RPATHs): the binary is renamed to <name>.bin
+  # and the wrapper takes its place. A target may provide its own <target>.wrapper next to its CMakeLists.txt; otherwise src/bin/linux_wrapper.sh is used.
+  IF(RV_TARGET_LINUX
+     AND TARGET ${arg_TARGET}
+  )
+    GET_TARGET_PROPERTY(_wrapper_target_type ${arg_TARGET} TYPE)
+    IF(_wrapper_target_type STREQUAL "EXECUTABLE")
+      IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${arg_TARGET}.wrapper)
+        SET(_wrapper_source
+            ${CMAKE_CURRENT_SOURCE_DIR}/${arg_TARGET}.wrapper
+        )
+      ELSE()
+        SET(_wrapper_source
+            ${PROJECT_SOURCE_DIR}/src/bin/linux_wrapper.sh
+        )
+      ENDIF()
 
       ADD_CUSTOM_COMMAND(
         TARGET ${arg_TARGET}
         POST_BUILD
-        COMMENT "Building ${RV_STAGE_BIN_DIR}/${arg_TARGET}.wrapper"
+        COMMENT "Installing Linux launcher wrapper for ${arg_TARGET}"
         COMMAND ${CMAKE_COMMAND} -E rename "$<TARGET_FILE:${arg_TARGET}>" "$<TARGET_FILE:${arg_TARGET}>.bin"
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/${arg_TARGET}.wrapper "$<TARGET_FILE:${arg_TARGET}>"
+        COMMAND ${CMAKE_COMMAND} -E copy ${_wrapper_source} "$<TARGET_FILE:${arg_TARGET}>"
         COMMAND chmod +x "$<TARGET_FILE:${arg_TARGET}>"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       )

@@ -56,6 +56,21 @@
 
 #ifdef TWK_USE_GLEW
 #define TWK_GL_SUPPORTS(X) glewIsSupported(X)
+
+//
+//  Load GL entry points through GLEW once a context is current.
+//
+//  Windows uses the bundled, Tweak-modified GLEW (src/pub/glew) whose
+//  glewInit() takes a proc-address lookup (0 = default). Linux uses the
+//  system GLEW 2.x (shared libGLEW, so one function table for every module):
+//  glewContextInit() loads the entry points without requiring a GLX display,
+//  so it also works with EGL contexts (e.g. Qt on Wayland).
+//
+#if defined(_WIN32)
+#define TWK_GLEW_INIT(PROC) glewInit(PROC)
+#else
+#define TWK_GLEW_INIT(PROC) (glewExperimental = GL_TRUE, glewContextInit())
+#endif
 #else
 #define TWK_GL_SUPPORTS(X) glSupportsExtension(X)
 #endif

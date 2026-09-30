@@ -299,7 +299,9 @@ namespace Rv
             // NDIModule.cpp, BlackMagicModule.cpp, AJAModule.cpp).
             GLenum err = glewInit(nullptr);
 #else
-            GLenum err = glewInit();
+            // System GLEW 2.x; glewContextInit() doesn't require a GLX display (see TWK_GLEW_INIT).
+            glewExperimental = GL_TRUE;
+            GLenum err = glewContextInit();
 #endif
             if (err != GLEW_OK)
             {
