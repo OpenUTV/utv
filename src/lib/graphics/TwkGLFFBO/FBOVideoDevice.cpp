@@ -125,9 +125,22 @@ namespace TwkGLF
                                    1 * 32,
                                    0};
 
-        unsigned long* attrs = (m_swRendererOnMac) ? swAttrs : hwAttrs;
+        const bool forceSoftware = m_swRendererOnMac || getenv("UTV_SOFTWARE_GL");
+        unsigned long* attrs = forceSoftware ? swAttrs : hwAttrs;
+        CGLError err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)attrs, &m_imp->pfo, &m_imp->npfo);
 
-        if (CGLError err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)attrs, &m_imp->pfo, &m_imp->npfo))
+        //
+        //  No accelerated renderer (e.g. headless VMs, CI runners, render
+        //  nodes without a GPU): fall back to Apple's software renderer rather
+        //  than failing outright.
+        //
+        if ((err != kCGLNoError || !m_imp->pfo) && !forceSoftware)
+        {
+            cout << "WARNING: no accelerated OpenGL pixel format (" << CGLErrorString(err) << "), using the software renderer" << endl;
+            err = CGLChoosePixelFormat((CGLPixelFormatAttribute*)swAttrs, &m_imp->pfo, &m_imp->npfo);
+        }
+
+        if (err != kCGLNoError || !m_imp->pfo)
         {
             cout << "ERROR: choosing pixel format: " << CGLErrorString(err) << endl;
             exit(-1);
