@@ -192,8 +192,11 @@ namespace TwkGLF
                                     CWColormap | CWEventMask, &swa);
 
         m_imp->ctx = glXCreateContext(m_imp->display, m_imp->vis, 0, True);
-
-        glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx);
+        if (!m_imp->ctx || !glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx))
+        {
+            cout << "ERROR: cannot create or activate the offscreen GLX context" << endl;
+            exit(-1);
+        }
 #endif
 
 #if defined(PLATFORM_WINDOWS)
