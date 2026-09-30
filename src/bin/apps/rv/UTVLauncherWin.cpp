@@ -1056,6 +1056,23 @@ int RunLauncher()
                     targetExe = candExe;
                 }
             }
+
+            if (targetExe.empty())
+            {
+                // Never fall back to the viewer from a tool shim: a tool invoked by a script (e.g. the
+                // startup update check running py-interp.exe) would open another viewer, which runs the
+                // script again, and so on (#73).
+                std::wstring message = L"Unable to locate the executable for '" + baseName + L"' (expected " + baseName
+                                       + L"-bin.exe in the application directory).\n\nPlease reinstall OpenUTV.";
+                fwprintf(stderr, L"OpenUTV Launcher: %ls\n", message.c_str());
+                if (GetConsoleWindow() == NULL)
+                {
+                    MessageBoxW(NULL, message.c_str(), L"OpenUTV Launcher Error", MB_ICONERROR | MB_OK);
+                }
+                if (argv)
+                    LocalFree(argv);
+                return 1;
+            }
         }
 
         if (targetExe.empty())
