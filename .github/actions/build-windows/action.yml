@@ -396,11 +396,18 @@ runs:
       shell: powershell
 
     - name: Tests
-      continue-on-error: true
       run: |
-        ls -al _build/stage/app/bin
-        ctest --test-dir _build --extra-verbose --timeout 60
-      shell: bash
+        # Match the installed layout: "Deploy Runtime Support" ships Mesa as opengl32.dll next to the executables.
+        # Without it the staged tools get the GDI OpenGL 1.1 stub on GPU-less runners and crash when rendering.
+        if ($env:OPENUTV_DEPS_ROOT) {
+            $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
+            if (Test-Path $SwGl) {
+                Copy-Item -Path $SwGl -Destination "_build\stage\app\bin\opengl32.dll" -Force
+            }
+        }
+        ctest --test-dir _build --output-on-failure --timeout 900
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      shell: powershell
 
     - name: Install UTV
       run: cmake --install _build --prefix $(pwd)/_install

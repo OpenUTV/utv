@@ -564,6 +564,17 @@ def query_latest_release(api_url, current_version):
 
 
 def main():
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: openutv-check-updates [OPTIONS]")
+        print("Checks GitHub for newer OpenUTV and OpenUTVDeps releases and offers to update.")
+        print()
+        print("Options:")
+        print("  --interactive            Report the result even when no update is available")
+        print("  --startup                Launched by the app on startup (honors snooze/disable settings)")
+        print("  --current-version <ver>  Override the detected current version")
+        print("  --help, -h               Show this help message")
+        sys.exit(0)
+
     interactive = "--interactive" in sys.argv
     startup = "--startup" in sys.argv
     current_version = get_current_version()

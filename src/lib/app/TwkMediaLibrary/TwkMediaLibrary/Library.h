@@ -856,11 +856,14 @@ namespace TwkMediaLibrary
 
         NodeSignal m_nodeShemeWillChangeSignal;
         NodeSignal m_nodeShemeChangedSignal;
-        Thread m_taskThread;
         mutable Condition m_taskCond;
         mutable Mutex m_taskMutex;
         mutable bool m_taskStop;
         mutable TaskDeque m_taskQueue;
+
+        // Must be declared last: members are constructed in declaration order and the worker thread starts
+        // immediately, locking m_taskMutex and waiting on m_taskCond.
+        Thread m_taskThread;
     };
 
     //

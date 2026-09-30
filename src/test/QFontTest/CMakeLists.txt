@@ -35,6 +35,7 @@ TARGET_LINK_LIBRARIES(
 )
 ADD_TEST(
   NAME ${_target_qt}
-  COMMAND ${CMAKE_COMMAND} -E env RV_FONT_PATH=${_font_path};LD_LIBRARY_PATH=${RV_STAGE_LIB_DIR};QT_QPA_PLATFORM=offscreen "$<TARGET_FILE:${_target_qt}>"
+  COMMAND ${CMAKE_COMMAND} -E env --modify LD_LIBRARY_PATH=path_list_prepend:${RV_STAGE_LIB_DIR} RV_FONT_PATH=${_font_path} QT_QPA_PLATFORM=offscreen
+          "$<TARGET_FILE:${_target_qt}>"
 )
 RV_STAGE(TYPE "EXECUTABLE" TARGET ${_target_qt})
