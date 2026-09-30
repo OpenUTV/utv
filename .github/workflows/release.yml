@@ -523,8 +523,10 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          # Staged Linux binaries are built without RPATHs; use the same library path build.sh sets up.
-          export LD_LIBRARY_PATH="${PWD}/_build/stage/app/lib:/home/linuxbrew/.linuxbrew/lib:${LD_LIBRARY_PATH:-}"
+          # Staged Linux binaries are built without RPATHs and link unversioned sonames from linuxbrew kegs
+          # (see #66). Point the loader at the stage lib dir and every linuxbrew keg's lib dir.
+          BREW_LIBS=$(printf '%s:' /home/linuxbrew/.linuxbrew/opt/*/lib)
+          export LD_LIBRARY_PATH="${PWD}/_build/stage/app/lib:${BREW_LIBS}/home/linuxbrew/.linuxbrew/lib:${LD_LIBRARY_PATH:-}"
           ctest --test-dir _build --output-on-failure --timeout 900
 
       - name: Save CCache

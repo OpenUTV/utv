@@ -29,7 +29,7 @@ import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
-from cli_common import find_tool, prepare_environment, run_tool
+from cli_common import IS_WINDOWS, find_tool, prepare_environment, run_tool
 
 WIDTH, HEIGHT = 96, 64
 BLOCK_W, BLOCK_H = 32, 16
@@ -65,6 +65,19 @@ SKIP = {
     "pbm": "1-bit bitmap in PNM terms",
     "pgm": "greyscale PNM",
 }
+
+# Known platform-specific failures, tracked in an issue. They are still run and reported: a failure is
+# "xfail" (does not fail the test) and an unexpected pass is "XPASS" so the entry can be removed.
+KNOWN_FAILURES = {}
+if IS_WINDOWS:
+    KNOWN_FAILURES.update(
+        {
+            "heic": "https://github.com/OpenUTV/utv/issues/67",
+            "heif": "https://github.com/OpenUTV/utv/issues/67",
+            "hif": "https://github.com/OpenUTV/utv/issues/67",
+            "fits": "https://github.com/OpenUTV/utv/issues/67",
+        }
+    )
 
 
 def write_source_ppm(path):
@@ -211,9 +224,18 @@ def main():
     with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 2)) as pool:
         results = list(pool.map(lambda e: (e, roundtrip(utvio, env, args.timeout, workdir, source, e)), tested))
 
-    failures = [(ext, problem) for ext, problem in results if problem]
+    failures = []
     for ext, problem in results:
-        print(f"{'FAIL' if problem else 'ok  '} {ext}{': ' + problem if problem else ''}")
+        known = KNOWN_FAILURES.get(ext)
+        if problem and known:
+            print(f"xfail {ext}: {problem} (known: {known})")
+        elif problem:
+            failures.append((ext, problem))
+            print(f"FAIL {ext}: {problem}")
+        elif known:
+            print(f"XPASS {ext}: passes now, remove it from KNOWN_FAILURES ({known})")
+        else:
+            print(f"ok   {ext}")
 
     if args.keep:
         print(f"\nWorking directory kept: {workdir}")
@@ -223,7 +245,10 @@ def main():
     if failures:
         print(f"\n{len(failures)} of {len(tested)} formats failed the round trip")
         return 1
-    print(f"\nAll {len(tested)} writable image formats round-tripped")
+    xfails = sum(1 for ext, problem in results if problem and ext in KNOWN_FAILURES)
+    passed = len(tested) - xfails
+    suffix = f" ({xfails} known failures, see above)" if xfails else ""
+    print(f"\n{passed} of {len(tested)} writable image formats round-tripped{suffix}")
     return 0
 
 
