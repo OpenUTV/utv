@@ -53,6 +53,18 @@ OpenUTV is a cross-platform desktop application targeting **macOS (Apple Silicon
 - **Matrix Validation**:
   - All Pull Requests must build cleanly across the GitHub Actions CI matrix (`macOS`, `Windows`, `Linux`).
 
+### 1.4 Patent-Encumbered Codecs: No x265 / HEVC Encoding in Distributed Binaries
+
+OpenUTV **intentionally does not ship x265 (HEVC encoding)** in any binary we distribute, to avoid redistributing patent-encumbered codec implementations. This is a deliberate policy decision, not a gap to fix.
+
+- **Where it's enforced**: in [`OpenUTV/utv-dependencies`](https://github.com/OpenUTV/utv-dependencies), `ports/openimageio/vcpkg.json` pulls in `libheif` with `"default-features": false`, so neither `libheif` nor OpenImageIO is built with x265 (commit `2845975`).
+- **Known consequence**: writing HEIC / HEIF (`.heic`, `.heif`, `.hif`) is unavailable in the Windows build (see #67). AVIF writing (AV1) is unaffected. The image format round-trip test marks these formats as expected failures on Windows.
+- **Do not**:
+  - add x265, HEVC encoder plugins, or `libheif`/OpenImageIO features that pull them in to `utv-dependencies`, the build, or the installers;
+  - "fix" HEIC/HEIF write failures by enabling HEVC encoding.
+- **Acceptable fixes** for HEIC/HEIF write: have `IOoiio` stop advertising HEIC/HEIF as writable when no HEVC encoder is available, so users get a clear "not supported" instead of a failed write.
+- Any change to this policy is a legal/licensing decision for the maintainers, not an engineering one.
+
 ---
 
 ## 2. Architecture: Launching & Runtime Initialization
