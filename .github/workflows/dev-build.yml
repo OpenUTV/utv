@@ -10,6 +10,7 @@ on:
       - 'CMakeLists.txt'
       - 'build.sh'
       - '.github/actions/build-windows/**'
+      - '.github/workflows/dev-build.yml'
       - 'requirements.txt'
 
 permissions:
@@ -514,6 +515,15 @@ jobs:
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "Recreating $tag release so published_at reflects the latest build time..."
             gh release delete "$tag" --yes --cleanup-tag=false || true
+          fi
+
+          # Point the rolling tag at this commit. `gh release create --target` only applies when it
+          # creates the tag, so an existing tag stayed on its original commit. GitHub orders releases by
+          # the tagged commit's date, which kept the pre-release below newer stable releases.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$GITHUB_SHA" >/dev/null
           fi
 
           echo "Publishing development release..."
