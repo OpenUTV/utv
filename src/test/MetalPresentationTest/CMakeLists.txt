@@ -36,3 +36,5 @@ ADD_TEST(
   NAME ${_target}
   COMMAND "$<TARGET_FILE:${_target}>"
 )
+
+RV_STAGE(TYPE "EXECUTABLE" TARGET ${_target})
