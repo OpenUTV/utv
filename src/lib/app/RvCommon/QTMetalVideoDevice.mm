@@ -13,6 +13,7 @@
 #import <OpenGL/CGLIOSurface.h> // CGLTexImageIOSurface2D
 
 #include <RvCommon/QTMetalVideoDevice.h>
+#include <RvCommon/MetalPresentationFormat.h>
 #include <RvCommon/MetalView.h>
 #include <RvCommon/DesktopVideoDevice.h>
 #include <TwkApp/Application.h>
@@ -496,17 +497,15 @@ namespace Rv
             return false;
         }
 
+        // The IOSurface pixel format and the GL (internal format, format, type)
+        // used to alias it come from the same presentation format: 10-bit
+        // ARGB2101010LE <-> GL_RGB10_A2 / GL_BGRA / 2_10_10_10_REV, or for EDR
+        // 64RGBAHalf <-> GL_RGBA16F / GL_RGBA / GL_HALF_FLOAT.
+        const MetalPresentationFormat& format = MetalView::presentationFormat();
+
         for (int i = 0; i < kRingSize; ++i)
         {
-            // IOSurface pixel format must match the GL (format,type) below.
-            // ARGB2101010LE matches GL_BGRA + GL_UNSIGNED_INT_2_10_10_10_REV.
-            NSDictionary* props = @{
-                (NSString*)kIOSurfaceWidth:           @(w),
-                (NSString*)kIOSurfaceHeight:          @(h),
-                (NSString*)kIOSurfaceBytesPerElement: @(4),
-                (NSString*)kIOSurfacePixelFormat:     @(kCVPixelFormatType_ARGB2101010LEPacked),
-            };
-            IOSurfaceRef surf = IOSurfaceCreate((__bridge CFDictionaryRef)props);
+            IOSurfaceRef surf = (IOSurfaceRef)createMetalPresentationSurface(w, h, format);
             if (!surf)
             {
                 std::cerr << "[QTMetalVideoDevice] IOSurfaceCreate failed "
@@ -515,10 +514,6 @@ namespace Rv
                 latchInteropFailure();
                 return false;
             }
-
-            CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-            IOSurfaceSetValue(surf, kCVImageBufferCGColorSpaceKey, cs);
-            CGColorSpaceRelease(cs);
 
             GLuint tex = 0;
             glGenTextures(1, &tex);
@@ -531,8 +526,8 @@ namespace Rv
             // Alias the IOSurface's memory as the texture's storage — GPU writes
             // to this texture land directly in the IOSurface the CALayer shows.
             CGLError cglErr = CGLTexImageIOSurface2D(
-                cgl, GL_TEXTURE_RECTANGLE_ARB, GL_RGB10_A2,
-                w, h, GL_BGRA, GL_UNSIGNED_INT_2_10_10_10_REV,
+                cgl, GL_TEXTURE_RECTANGLE_ARB, format.glInternalFormat,
+                w, h, format.glFormat, format.glType,
                 surf, 0);
             glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 
@@ -549,7 +544,7 @@ namespace Rv
 
             // Wrap the IOSurface-backed texture in a GLFBO so we can blit into it.
             // owner=false (attachColorTexture) — we delete the texture ourselves.
-            TwkGLF::GLFBO* iofbo = new TwkGLF::GLFBO(w, h, GL_RGB10_A2);
+            TwkGLF::GLFBO* iofbo = new TwkGLF::GLFBO(w, h, format.glInternalFormat);
             iofbo->attachColorTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
 
             GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
@@ -611,13 +606,15 @@ namespace Rv
 
         cleanupCpuFallbackTarget();
 
-        // GL_RGB10_A2 target: GPU Y-flip blit quantises RGBA16F → 10-bit.
-        // glReadPixels(GL_BGRA, GL_UNSIGNED_INT_2_10_10_10_REV) reads
-        // ARGB2101010LE directly — matching kCVPixelFormatType_ARGB2101010LEPacked.
+        // Target in the presentation format: the GPU Y-flip blit converts the
+        // RGBA16F render (to 10-bit, or keeps half float for EDR) and
+        // glReadPixels(format, type) then reads the IOSurface's pixel layout
+        // directly (ARGB2101010LE or 64RGBAHalf).
+        const MetalPresentationFormat& format = MetalView::presentationFormat();
         glGenTextures(1, &m_cpuFlipTex);
         glBindTexture(GL_TEXTURE_2D, m_cpuFlipTex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB10_A2, w, h, 0,
-                     GL_BGRA, GL_UNSIGNED_INT_2_10_10_10_REV, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, format.glInternalFormat, w, h, 0,
+                     format.glFormat, format.glType, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -687,7 +684,8 @@ namespace Rv
                 glDisable(GL_SCISSOR_TEST);
 
             // GPU blit from the RGBA16F render FBO into the IOSurface-backed
-            // RGB10_A2 texture.  The GPU does the float->10-bit conversion.
+            // texture (RGB10_A2, or RGBA16F for EDR).  The GPU does any
+            // float->10-bit conversion; EDR keeps values above 1.0.
             // Swapped destination Y (h -> 0) flips GL's bottom-left origin to the
             // IOSurface/CALayer top-left origin — no CPU y-flip needed.
             glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fbo->fboID());
@@ -771,8 +769,8 @@ namespace Rv
         if (cpuScissorWasEnabled)
             glDisable(GL_SCISSOR_TEST);
 
-        // Y-flip blit (GL bottom-left → IOSurface top-left) into the RGB10_A2
-        // target. The GPU does the RGBA16F → 10-bit quantisation in one pass.
+        // Y-flip blit (GL bottom-left → IOSurface top-left) into the target in
+        // the presentation format (10-bit quantisation, or half float for EDR).
         glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fbo->fboID());
         glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, m_cpuFlipFbo);
         glBlitFramebufferEXT(0, 0, w, h,  0, h, w, 0,  GL_COLOR_BUFFER_BIT, GL_NEAREST);
@@ -795,11 +793,12 @@ namespace Rv
         glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, m_cpuFlipFbo);
         glFinish();
 
-        // GL_BGRA + GL_UNSIGNED_INT_2_10_10_10_REV packs A(31:30)|R(29:20)|G(19:10)|B(9:0)
-        // = kCVPixelFormatType_ARGB2101010LEPacked. No per-pixel CPU work.
+        // Read straight into the IOSurface pixel layout (see ensureCpuFallbackTarget).
+        // No per-pixel CPU work. The scratch buffer is uint32 words.
+        const MetalPresentationFormat& format = MetalView::presentationFormat();
         try
         {
-            m_cpuPackedScratch.resize(static_cast<size_t>(w) * h);
+            m_cpuPackedScratch.resize(static_cast<size_t>(w) * h * (format.bytesPerPixel / 4));
         }
         catch (const std::bad_alloc&)
         {
@@ -808,7 +807,7 @@ namespace Rv
             glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fboID());
             return;
         }
-        glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_INT_2_10_10_10_REV,
+        glReadPixels(0, 0, w, h, format.glFormat, format.glType,
                      m_cpuPackedScratch.data());
 
         glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fbo->fboID());

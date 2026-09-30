@@ -69,7 +69,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 
 ## Key Features & Capabilities
 
-- **Modern 10-Bit Color Pipeline**: Native 10-bit Metal presentation on macOS (Extended Dynamic Range / EDR) and 10-bit Vulkan presentation on Linux & Windows, plus an integrated 10-bit diagnostic test pattern suite.
+- **Modern 10-Bit & HDR Color Pipeline**: Native Metal presentation on macOS with 10-bit SDR, EDR (extended dynamic range) and HDR PQ/HLG modes ([test guide](docs/testing/macos-edr.md)), 10-bit Vulkan presentation on Linux & Windows, plus an integrated 10-bit diagnostic test pattern suite.
 - **Hardware-Accelerated Video**: Native Apple Silicon VideoToolbox hardware decoding enabled by default for silky-smooth high-bitrate 4K/8K playback.
 - **Native Apple ProRes RAW**: Out-of-the-box 16-bit half-float ProRes RAW decoding via AVFoundation and FFmpeg.
 - **Multi-Page PDF Document Viewing**: Review storyboards, scripts, lookbooks, and contact sheets natively alongside video and sequence assets, complete with automatic margin auto-cropping.

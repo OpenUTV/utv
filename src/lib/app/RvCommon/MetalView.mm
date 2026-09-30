@@ -16,6 +16,7 @@
 #include <RvCommon/QTMetalVideoDevice.h>
 #include <RvCommon/RvDocument.h>
 #include <RvApp/Options.h>
+#include <RvPackage/PackageManager.h>
 #include <RvApp/RvSession.h>
 #include <IPCore/Session.h>
 #include <TwkApp/Event.h>
@@ -117,6 +118,42 @@ namespace Rv
     }
 
     //--------------------------------------------------------------------------
+
+    const MetalPresentationFormat& MetalView::presentationFormat()
+    {
+        static const MetalPresentationFormat& format = []() -> const MetalPresentationFormat&
+        {
+            MetalPresentationMode mode = MetalPresentationMode::SDR;
+            std::string requested;
+            const char* source = "default";
+
+            if (const char* env = getenv("UTV_MACOS_PRESENTATION"))
+            {
+                requested = env;
+                source = "UTV_MACOS_PRESENTATION";
+            }
+            else
+            {
+                RV_QSETTINGS;
+                settings.beginGroup("Display");
+                requested = settings.value("macosPresentation", "sdr").toString().toStdString();
+                settings.endGroup();
+                source = "preference Display/macosPresentation";
+            }
+
+            if (!requested.empty() && !parseMetalPresentationMode(requested, mode))
+            {
+                std::cerr << "WARNING: [MetalView] unknown presentation mode '" << requested << "' from " << source
+                          << " (expected sdr, edr, pq or hlg); using sdr.\n";
+                mode = MetalPresentationMode::SDR;
+            }
+
+            const MetalPresentationFormat& chosen = metalPresentationFormat(mode);
+            std::cerr << "INFO: [MetalView] presentation format: " << chosen.name << " (" << source << ")\n";
+            return chosen;
+        }();
+        return format;
+    }
 
     bool MetalView::supports10BitPresentation()
     {
@@ -264,23 +301,13 @@ namespace Rv
             || m_ioSurfaceWidth  != w
             || m_ioSurfaceHeight != h)
         {
-            NSDictionary* props = @{
-                (NSString*)kIOSurfaceWidth:           @(w),
-                (NSString*)kIOSurfaceHeight:          @(h),
-                (NSString*)kIOSurfaceBytesPerElement: @(4),
-                (NSString*)kIOSurfacePixelFormat:     @(kCVPixelFormatType_ARGB2101010LEPacked),
-            };
-            IOSurfaceRef newSurf = IOSurfaceCreate((__bridge CFDictionaryRef)props);
+            IOSurfaceRef newSurf = (IOSurfaceRef)createMetalPresentationSurface(w, h, presentationFormat());
             if (!newSurf)
             {
                 std::cerr << "[MetalView::presentPixelData] IOSurfaceCreate failed "
                           << w << "x" << h << "\n";
                 return;
             }
-
-            CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-            IOSurfaceSetValue(newSurf, kCVImageBufferCGColorSpaceKey, cs);
-            CGColorSpaceRelease(cs);
 
             if (m_ioSurface)
             {
@@ -305,7 +332,7 @@ namespace Rv
 
         void*  base   = IOSurfaceGetBaseAddress(surf);
         size_t bpr    = IOSurfaceGetBytesPerRow(surf);
-        size_t srcBpr = (size_t)w * 4;
+        size_t srcBpr = (size_t)w * presentationFormat().bytesPerPixel;
 
         if (!base)
         {
@@ -496,6 +523,15 @@ namespace Rv
             {
                 [window setColorSpace:[NSColorSpace extendedSRGBColorSpace]];
             }
+        }
+
+        const MetalPresentationFormat& format = presentationFormat();
+        if (format.mode != MetalPresentationMode::SDR)
+        {
+            double current = 1.0, potential = 1.0;
+            metalScreenEDRHeadroom((__bridge void*)nsView, current, potential);
+            std::cerr << "INFO: [MetalView] display EDR headroom: current " << current << "x, potential " << potential << "x"
+                      << (potential <= 1.0 ? " (this display has no EDR headroom; HDR highlights will clip)" : "") << "\n";
         }
 
         // Post an UpdateRequest so the first render fires from the event loop
