@@ -28,7 +28,7 @@ TARGET_LINK_LIBRARIES(
 
 ADD_TEST(
   NAME ${_target}
-  COMMAND ${CMAKE_COMMAND} -E env LD_LIBRARY_PATH=${RV_STAGE_LIB_DIR} "$<TARGET_FILE:${_target}>"
+  COMMAND ${CMAKE_COMMAND} -E env --modify LD_LIBRARY_PATH=path_list_prepend:${RV_STAGE_LIB_DIR} "$<TARGET_FILE:${_target}>"
 )
 
 RV_STAGE(TYPE "EXECUTABLE" TARGET ${_target})

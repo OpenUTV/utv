@@ -10,6 +10,7 @@
 #include <TwkGLF/GL.h>
 #include <TwkGLF/GLFBO.h>
 #include <TwkExc/Exception.h>
+#include <cstdlib>
 #include <iostream>
 
 #ifdef PLATFORM_LINUX
@@ -167,8 +168,21 @@ namespace TwkGLF
         int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
 
         m_imp->display = XOpenDisplay(0);
+        if (!m_imp->display)
+        {
+            const char* display = getenv("DISPLAY");
+            cout << "ERROR: cannot open X display '" << (display ? display : "") << "' for the offscreen OpenGL context."
+                 << " On a headless machine run under a virtual X server, e.g. xvfb-run -a" << endl;
+            exit(-1);
+        }
+
         m_imp->root = DefaultRootWindow(m_imp->display);
         m_imp->vis = glXChooseVisual(m_imp->display, DefaultScreen(m_imp->display), attrs);
+        if (!m_imp->vis)
+        {
+            cout << "ERROR: no suitable GLX visual for the offscreen OpenGL context" << endl;
+            exit(-1);
+        }
 
         swa.colormap = XCreateColormap(m_imp->display, m_imp->root, m_imp->vis->visual, AllocNone);
 
