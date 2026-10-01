@@ -12,7 +12,7 @@ SET(_target
 
 LIST(APPEND _sources UICommands.cpp main.cpp utf8Main.cpp)
 IF(RV_TARGET_LINUX)
-  LIST(APPEND _sources ../rvio_sw/glfix.c)
+  LIST(APPEND _sources glfix.c)
 ENDIF()
 
 ADD_EXECUTABLE(
@@ -107,5 +107,18 @@ IF(NOT RV_TARGET_WINDOWS)
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${_target} ${RV_STAGE_BIN_DIR}/rvio
     COMMENT "Creating rvio symlink in ${RV_STAGE_BIN_DIR}"
+  )
+ENDIF()
+
+IF(RV_TARGET_LINUX)
+  # utvio_sw / rvio_sw: utvio forced to software rendering through EGL with no X display. Replaces the OSMesa-based rvio_sw executable (OSMesa was removed from
+  # Mesa 25.1).
+  ADD_CUSTOM_COMMAND(
+    TARGET ${_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/utvio_sw.sh ${RV_STAGE_BIN_DIR}/utvio_sw
+    COMMAND chmod +x ${RV_STAGE_BIN_DIR}/utvio_sw
+    COMMAND ${CMAKE_COMMAND} -E create_symlink utvio_sw ${RV_STAGE_BIN_DIR}/rvio_sw
+    COMMENT "Installing utvio_sw and rvio_sw in ${RV_STAGE_BIN_DIR}"
   )
 ENDIF()

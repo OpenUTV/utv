@@ -73,6 +73,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 - **Hardware-Accelerated Video**: Native Apple Silicon VideoToolbox hardware decoding enabled by default for silky-smooth high-bitrate 4K/8K playback.
 - **Native Apple ProRes RAW**: Out-of-the-box 16-bit half-float ProRes RAW decoding via AVFoundation and FFmpeg.
 - **Multi-Page PDF Document Viewing**: Review storyboards, scripts, lookbooks, and contact sheets natively alongside video and sequence assets, complete with automatic margin auto-cropping.
+- **Headless Render-Farm Conversion (Linux)**: `utvio` / `rvio` needs no X server. Without a display it renders through EGL, on the GPU when there is one and with Mesa software rendering otherwise; `utvio_sw` / `rvio_sw` force software rendering ([guide](docs/headless-rendering.md)).
 - **Professional Video I/O**: Dynamic runtime support for NDI 6, Blackmagic Design DeckLink, and AJA Video Systems without licensing lock-in or bloated SDK dependencies.
 - **Comprehensive Format Support**: OpenEXR (multi-part & deep), DPX, Cineon, TIFF, PNG, JPEG, JPEG 2000 (HTJ2K), WebP, Targa, RAW camera files (CR2, NEF, ARW), and modern video containers.
 

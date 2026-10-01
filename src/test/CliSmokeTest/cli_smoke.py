@@ -39,6 +39,13 @@ CHECKS = [
     ("openutv-check-updates", ["--help"], True, r"Usage: openutv-check-updates"),
 ]
 
+if sys.platform.startswith("linux"):
+    # Software-rendering, display-less launcher (and its legacy rvio_sw name).
+    CHECKS += [
+        ("utvio_sw", ["-version"], True, r"^\d{4}\.\d+"),
+        ("rvio_sw", ["-version"], True, r"^\d{4}\.\d+"),
+    ]
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
