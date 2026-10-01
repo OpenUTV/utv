@@ -70,7 +70,7 @@
 //
 #if defined(_WIN32)
 #define TWK_GLEW_INIT(PROC) glewInit(PROC)
-#else
+#elif !defined(TWK_USE_MESA) // TWK_USE_MESA code (OSMesa) doesn't include glew.h
 inline GLenum twkGlewInit()
 {
     glewExperimental = GL_TRUE;
