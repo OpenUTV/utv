@@ -15,6 +15,11 @@
 
 #ifdef PLATFORM_LINUX
 #include <GL/glx.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <cstring>
+#include <string>
+#include <vector>
 #endif
 
 #ifdef PLATFORM_WINDOWS
@@ -84,15 +89,201 @@ namespace TwkGLF
     {
         FBOImp()
             : display(0)
+            , root(0)
+            , vis(0)
+            , tiny(0)
+            , ctx(0)
+            , useEGL(false)
+            , eglDisplay(EGL_NO_DISPLAY)
+            , eglContext(EGL_NO_CONTEXT)
+            , eglSurface(EGL_NO_SURFACE)
         {
         }
 
+        // GLX: used when an X display is available.
         Display* display;
         Window root;
         XVisualInfo* vis;
         Window tiny;
         GLXContext ctx;
+
+        // EGL: used without an X display (render nodes, containers).
+        bool useEGL;
+        EGLDisplay eglDisplay;
+        EGLContext eglContext;
+        EGLSurface eglSurface;
     };
+
+    static bool envIsSet(const char* name)
+    {
+        const char* value = getenv(name);
+        return value && *value && strcmp(value, "0") != 0;
+    }
+
+    static bool hasExtension(const char* extensions, const char* name)
+    {
+        if (!extensions)
+            return false;
+        const size_t len = strlen(name);
+        for (const char* p = strstr(extensions, name); p; p = strstr(p + len, name))
+        {
+            if ((p == extensions || p[-1] == ' ') && (p[len] == ' ' || p[len] == '\0'))
+                return true;
+        }
+        return false;
+    }
+
+    //
+    //  GLX context on a hidden window. Needs an X display. Returns an empty
+    //  string on success, otherwise the reason it failed.
+    //
+    static string initGLX(FBOImp* imp)
+    {
+        XSetWindowAttributes swa;
+        int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
+
+        XSetErrorHandler(fboXErrorHandler);
+        imp->display = XOpenDisplay(0);
+        if (!imp->display)
+        {
+            const char* display = getenv("DISPLAY");
+            return string("cannot open X display '") + (display ? display : "") + "'";
+        }
+
+        imp->root = DefaultRootWindow(imp->display);
+        imp->vis = glXChooseVisual(imp->display, DefaultScreen(imp->display), attrs);
+        if (!imp->vis)
+        {
+            XCloseDisplay(imp->display);
+            imp->display = 0;
+            return "no suitable GLX visual";
+        }
+
+        swa.colormap = XCreateColormap(imp->display, imp->root, imp->vis->visual, AllocNone);
+        swa.event_mask = ExposureMask | KeyPressMask;
+        // The GLX visual's depth can differ from the root window's (e.g. a 32-bit ARGB visual on a 24-bit
+        // screen); X then requires an explicit border pixel, or XCreateWindow fails with BadMatch.
+        swa.border_pixel = 0;
+
+        imp->tiny = XCreateWindow(imp->display, imp->root, 0, 0, 64, 64, 0, imp->vis->depth, InputOutput, imp->vis->visual,
+                                  CWColormap | CWEventMask | CWBorderPixel, &swa);
+
+        imp->ctx = glXCreateContext(imp->display, imp->vis, 0, True);
+        if (!imp->ctx || !glXMakeCurrent(imp->display, imp->tiny, imp->ctx))
+        {
+            if (imp->ctx)
+                glXDestroyContext(imp->display, imp->ctx);
+            XDestroyWindow(imp->display, imp->tiny);
+            XCloseDisplay(imp->display);
+            imp->ctx = 0;
+            imp->display = 0;
+            return "cannot create or activate a GLX context";
+        }
+
+        return "";
+    }
+
+    //
+    //  Bind the OpenGL API on an initialized EGL display and create a context
+    //  that is current without a window: surfaceless if supported, otherwise
+    //  on a tiny pbuffer.
+    //
+    static bool createEGLContext(FBOImp* imp, EGLDisplay display)
+    {
+        if (!eglBindAPI(EGL_OPENGL_API))
+            return false;
+
+        const EGLint configAttrs[] = {EGL_SURFACE_TYPE,
+                                      EGL_PBUFFER_BIT,
+                                      EGL_RENDERABLE_TYPE,
+                                      EGL_OPENGL_BIT,
+                                      EGL_RED_SIZE,
+                                      8,
+                                      EGL_GREEN_SIZE,
+                                      8,
+                                      EGL_BLUE_SIZE,
+                                      8,
+                                      EGL_ALPHA_SIZE,
+                                      8,
+                                      EGL_NONE};
+        EGLConfig config;
+        EGLint numConfigs = 0;
+        if (!eglChooseConfig(display, configAttrs, &config, 1, &numConfigs) || numConfigs < 1)
+            return false;
+
+        EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, NULL);
+        if (context == EGL_NO_CONTEXT)
+            return false;
+
+        EGLSurface surface = EGL_NO_SURFACE;
+        if (!hasExtension(eglQueryString(display, EGL_EXTENSIONS), "EGL_KHR_surfaceless_context"))
+        {
+            const EGLint pbufferAttrs[] = {EGL_WIDTH, 16, EGL_HEIGHT, 16, EGL_NONE};
+            surface = eglCreatePbufferSurface(display, config, pbufferAttrs);
+        }
+
+        if (!eglMakeCurrent(display, surface, surface, context))
+        {
+            if (surface != EGL_NO_SURFACE)
+                eglDestroySurface(display, surface);
+            eglDestroyContext(display, context);
+            return false;
+        }
+
+        imp->eglDisplay = display;
+        imp->eglContext = context;
+        imp->eglSurface = surface;
+        return true;
+    }
+
+    //
+    //  EGL context without a window system: no X server needed. Tries the GPU
+    //  first (EGL device platform, e.g. NVIDIA or Mesa DRM render nodes), then
+    //  Mesa's surfaceless platform (llvmpipe software rendering on machines
+    //  without a GPU). softwareOnly skips the device platform. Returns an
+    //  empty string on success, otherwise the reason it failed.
+    //
+    static string initEGL(FBOImp* imp, bool softwareOnly)
+    {
+        const char* clientExtensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+
+        if (!softwareOnly && hasExtension(clientExtensions, "EGL_EXT_platform_device")
+            && (hasExtension(clientExtensions, "EGL_EXT_device_enumeration") || hasExtension(clientExtensions, "EGL_EXT_device_base")))
+        {
+            typedef EGLBoolean (*QueryDevicesFunc)(EGLint, EGLDeviceEXT*, EGLint*);
+            QueryDevicesFunc queryDevices = (QueryDevicesFunc)eglGetProcAddress("eglQueryDevicesEXT");
+
+            EGLint numDevices = 0;
+            if (queryDevices && queryDevices(0, NULL, &numDevices) && numDevices > 0)
+            {
+                vector<EGLDeviceEXT> devices(numDevices);
+                queryDevices(numDevices, devices.data(), &numDevices);
+
+                for (EGLint i = 0; i < numDevices; ++i)
+                {
+                    EGLDisplay display = eglGetPlatformDisplay(EGL_PLATFORM_DEVICE_EXT, devices[i], NULL);
+                    if (display == EGL_NO_DISPLAY || !eglInitialize(display, NULL, NULL))
+                        continue;
+                    if (createEGLContext(imp, display))
+                        return "";
+                    eglTerminate(display);
+                }
+            }
+        }
+
+        if (hasExtension(clientExtensions, "EGL_MESA_platform_surfaceless"))
+        {
+            EGLDisplay display = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA, EGL_DEFAULT_DISPLAY, NULL);
+            if (display != EGL_NO_DISPLAY && eglInitialize(display, NULL, NULL))
+            {
+                if (createEGLContext(imp, display))
+                    return "";
+                eglTerminate(display);
+            }
+        }
+
+        return "no usable EGL device or surfaceless platform (is a GPU driver or Mesa installed?)";
+    }
 #endif
 
 #if defined(PLATFORM_WINDOWS)
@@ -180,41 +371,51 @@ namespace TwkGLF
 #endif
 
 #if defined(PLATFORM_LINUX)
-        XSetWindowAttributes swa;
-        int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
-
-        XSetErrorHandler(fboXErrorHandler);
-        m_imp->display = XOpenDisplay(0);
-        if (!m_imp->display)
+        //
+        //  Offscreen GL context. With an X display, GLX; without one (render
+        //  nodes, containers), EGL with no window system. UTV_GL_PLATFORM=glx|egl
+        //  forces one; UTV_SOFTWARE_GL or LIBGL_ALWAYS_SOFTWARE selects software
+        //  rendering.
+        //
+        const char* platformEnv = getenv("UTV_GL_PLATFORM");
+        const string platform = platformEnv ? platformEnv : "";
+        if (!platform.empty() && platform != "glx" && platform != "egl")
         {
-            const char* display = getenv("DISPLAY");
-            cout << "ERROR: cannot open X display '" << (display ? display : "") << "' for the offscreen OpenGL context."
-                 << " On a headless machine run under a virtual X server, e.g. xvfb-run -a" << endl;
-            exit(-1);
+            cout << "WARNING: ignoring unknown UTV_GL_PLATFORM=" << platform << " (expected glx or egl)" << endl;
         }
 
-        m_imp->root = DefaultRootWindow(m_imp->display);
-        m_imp->vis = glXChooseVisual(m_imp->display, DefaultScreen(m_imp->display), attrs);
-        if (!m_imp->vis)
+        if (envIsSet("UTV_SOFTWARE_GL"))
+            setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+        const bool softwareOnly = envIsSet("LIBGL_ALWAYS_SOFTWARE");
+
+        const char* displayEnv = getenv("DISPLAY");
+        const bool haveDisplay = displayEnv && *displayEnv;
+        const bool tryGLX = platform == "glx" || (platform != "egl" && haveDisplay);
+        const bool tryEGL = platform != "glx";
+
+        string glxError, eglError;
+        bool ready = false;
+
+        if (tryGLX)
         {
-            cout << "ERROR: no suitable GLX visual for the offscreen OpenGL context" << endl;
-            exit(-1);
+            glxError = initGLX(m_imp);
+            ready = glxError.empty();
         }
 
-        swa.colormap = XCreateColormap(m_imp->display, m_imp->root, m_imp->vis->visual, AllocNone);
-
-        swa.event_mask = ExposureMask | KeyPressMask;
-        // The GLX visual's depth can differ from the root window's (e.g. a 32-bit ARGB visual on a 24-bit
-        // screen); X then requires an explicit border pixel, or XCreateWindow fails with BadMatch.
-        swa.border_pixel = 0;
-
-        m_imp->tiny = XCreateWindow(m_imp->display, m_imp->root, 0, 0, 64, 64, 0, m_imp->vis->depth, InputOutput, m_imp->vis->visual,
-                                    CWColormap | CWEventMask | CWBorderPixel, &swa);
-
-        m_imp->ctx = glXCreateContext(m_imp->display, m_imp->vis, 0, True);
-        if (!m_imp->ctx || !glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx))
+        if (!ready && tryEGL)
         {
-            cout << "ERROR: cannot create or activate the offscreen GLX context" << endl;
+            eglError = initEGL(m_imp, softwareOnly);
+            ready = eglError.empty();
+            m_imp->useEGL = ready;
+        }
+
+        if (!ready)
+        {
+            cout << "ERROR: cannot create an offscreen OpenGL context." << endl;
+            if (!glxError.empty())
+                cout << "ERROR:   GLX: " << glxError << endl;
+            if (!eglError.empty())
+                cout << "ERROR:   EGL: " << eglError << endl;
             exit(-1);
         }
 
@@ -225,6 +426,13 @@ namespace TwkGLF
             exit(-1);
         }
 #endif
+
+        if (envIsSet("UTV_GL_DEBUG"))
+        {
+            const GLubyte* renderer = glGetString(GL_RENDERER);
+            cout << "INFO: offscreen OpenGL context: " << (m_imp->useEGL ? "EGL (no X display)" : "GLX") << ", renderer "
+                 << (renderer ? (const char*)renderer : "unknown") << endl;
+        }
 #endif
 
 #if defined(PLATFORM_WINDOWS)
@@ -336,10 +544,21 @@ namespace TwkGLF
 #endif
 
 #if defined(PLATFORM_LINUX)
-            glXMakeCurrent(m_imp->display, None, 0);
-            glXDestroyContext(m_imp->display, m_imp->ctx);
-            XDestroyWindow(m_imp->display, m_imp->tiny);
-            XCloseDisplay(m_imp->display);
+            if (m_imp->useEGL)
+            {
+                eglMakeCurrent(m_imp->eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+                if (m_imp->eglSurface != EGL_NO_SURFACE)
+                    eglDestroySurface(m_imp->eglDisplay, m_imp->eglSurface);
+                eglDestroyContext(m_imp->eglDisplay, m_imp->eglContext);
+                eglTerminate(m_imp->eglDisplay);
+            }
+            else
+            {
+                glXMakeCurrent(m_imp->display, None, 0);
+                glXDestroyContext(m_imp->display, m_imp->ctx);
+                XDestroyWindow(m_imp->display, m_imp->tiny);
+                XCloseDisplay(m_imp->display);
+            }
 #endif
         }
 
@@ -383,7 +602,10 @@ namespace TwkGLF
 #endif
 
 #ifdef PLATFORM_LINUX
-        glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx);
+        if (m_imp->useEGL)
+            eglMakeCurrent(m_imp->eglDisplay, m_imp->eglSurface, m_imp->eglSurface, m_imp->eglContext);
+        else
+            glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx);
 #endif
 
         if (defaultFBO())

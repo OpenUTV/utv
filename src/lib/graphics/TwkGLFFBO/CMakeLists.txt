@@ -50,7 +50,7 @@ ELSE()
   IF(RV_TARGET_LINUX)
     TARGET_LINK_LIBRARIES(
       ${_target}
-      PRIVATE OpenGL::GLX X11
+      PRIVATE OpenGL::GLX X11 EGL
     )
   ENDIF()
 ENDIF()
