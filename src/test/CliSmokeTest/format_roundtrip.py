@@ -69,6 +69,9 @@ SKIP = {
 # Known platform-specific failures, tracked in an issue. They are still run and reported: a failure is
 # "xfail" (does not fail the test) and an unexpected pass is "XPASS" so the entry can be removed.
 KNOWN_FAILURES = {}
+if sys.platform.startswith("linux"):
+    # FITS written by utvio crashes (SIGSEGV) when read back on Linux.
+    KNOWN_FAILURES["fits"] = "https://github.com/OpenUTV/utv/issues/67"
 if IS_WINDOWS:
     KNOWN_FAILURES.update(
         {
