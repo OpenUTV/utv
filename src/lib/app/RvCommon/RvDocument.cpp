@@ -21,7 +21,7 @@
 #include <RvCommon/RvKeybindingsManager.h>
 #include <RvCommon/TwkQTAction.h>
 #include <TwkApp/EventNode.h>
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS) || defined(TWK_USE_GLEW)
 #include <GL/glew.h>
 #endif
 #include <RvCommon/GLView.h> // WINDOWS: include AFTER other stuff

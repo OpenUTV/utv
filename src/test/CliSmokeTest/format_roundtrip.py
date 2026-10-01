@@ -69,6 +69,9 @@ SKIP = {
 # Known platform-specific failures, tracked in an issue. They are still run and reported: a failure is
 # "xfail" (does not fail the test) and an unexpected pass is "XPASS" so the entry can be removed.
 KNOWN_FAILURES = {}
+if sys.platform.startswith("linux"):
+    # FITS written by utvio crashes (SIGSEGV) when read back on Linux.
+    KNOWN_FAILURES["fits"] = "https://github.com/OpenUTV/utv/issues/67"
 if IS_WINDOWS:
     KNOWN_FAILURES.update(
         {
@@ -186,8 +189,13 @@ def roundtrip(utvio, env, timeout, workdir, source, ext):
 
 
 def last_error(output):
-    lines = [line for line in output.splitlines() if "ERROR" in line]
-    return lines[-1].strip() if lines else (output.strip().splitlines() or ["(no output)"])[-1]
+    lines = output.strip().splitlines()
+    # X11 protocol errors span several lines; the first one names the error and request.
+    x_errors = [line for line in lines if "X Error" in line]
+    if x_errors:
+        return x_errors[0].strip()
+    errors = [line for line in lines if "ERROR" in line]
+    return errors[-1].strip() if errors else (lines or ["(no output)"])[-1]
 
 
 def main():

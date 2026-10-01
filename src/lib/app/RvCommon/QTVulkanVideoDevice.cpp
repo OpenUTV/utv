@@ -299,7 +299,13 @@ namespace Rv
             // NDIModule.cpp, BlackMagicModule.cpp, AJAModule.cpp).
             GLenum err = glewInit(nullptr);
 #else
+            // System GLEW 2.x; see TWK_GLEW_INIT in TwkGLF/GL.h for GLEW_ERROR_NO_GLX_DISPLAY.
+            glewExperimental = GL_TRUE;
             GLenum err = glewInit();
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+            if (err == GLEW_ERROR_NO_GLX_DISPLAY)
+                err = GLEW_OK;
+#endif
 #endif
             if (err != GLEW_OK)
             {

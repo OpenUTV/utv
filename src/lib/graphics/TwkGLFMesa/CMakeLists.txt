@@ -22,6 +22,13 @@ TARGET_INCLUDE_DIRECTORIES(
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# OSMesa supplies its own GL entry points; keep GLEW (TwkGLF/GL.h) out of this library so osmesa.h sees Mesa's gl.h (glew.h undefines GLAPI, which osmesa.h
+# needs).
+TARGET_COMPILE_DEFINITIONS(
+  ${_target}
+  PRIVATE TWK_USE_MESA
+)
+
 FIND_PACKAGE(OSMesa REQUIRED)
 
 TARGET_LINK_LIBRARIES(

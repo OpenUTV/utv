@@ -43,6 +43,22 @@
 namespace TwkGLF
 {
     using namespace std;
+
+#if defined(PLATFORM_LINUX)
+    //
+    //  Xlib's default error handler prints the error and exits the process.
+    //  Log X protocol errors (with the failing request) and keep going, as Qt
+    //  does; GL calls report their own failures.
+    //
+    static int fboXErrorHandler(Display* display, XErrorEvent* event)
+    {
+        char text[256] = {0};
+        XGetErrorText(display, event->error_code, text, sizeof(text));
+        cerr << "WARNING: X error: " << text << " (request " << int(event->request_code) << "." << int(event->minor_code) << ", resource 0x"
+             << hex << event->resourceid << dec << ")" << endl;
+        return 0;
+    }
+#endif
     using namespace TwkApp;
 
     bool FBOVideoDevice::m_swRendererOnMac = false;
@@ -167,6 +183,7 @@ namespace TwkGLF
         XSetWindowAttributes swa;
         int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
 
+        XSetErrorHandler(fboXErrorHandler);
         m_imp->display = XOpenDisplay(0);
         if (!m_imp->display)
         {
@@ -187,9 +204,12 @@ namespace TwkGLF
         swa.colormap = XCreateColormap(m_imp->display, m_imp->root, m_imp->vis->visual, AllocNone);
 
         swa.event_mask = ExposureMask | KeyPressMask;
+        // The GLX visual's depth can differ from the root window's (e.g. a 32-bit ARGB visual on a 24-bit
+        // screen); X then requires an explicit border pixel, or XCreateWindow fails with BadMatch.
+        swa.border_pixel = 0;
 
         m_imp->tiny = XCreateWindow(m_imp->display, m_imp->root, 0, 0, 64, 64, 0, m_imp->vis->depth, InputOutput, m_imp->vis->visual,
-                                    CWColormap | CWEventMask, &swa);
+                                    CWColormap | CWEventMask | CWBorderPixel, &swa);
 
         m_imp->ctx = glXCreateContext(m_imp->display, m_imp->vis, 0, True);
         if (!m_imp->ctx || !glXMakeCurrent(m_imp->display, m_imp->tiny, m_imp->ctx))
@@ -197,6 +217,14 @@ namespace TwkGLF
             cout << "ERROR: cannot create or activate the offscreen GLX context" << endl;
             exit(-1);
         }
+
+#ifdef TWK_USE_GLEW
+        if (GLenum err = TWK_GLEW_INIT(NULL))
+        {
+            cout << "ERROR: GLEW initialization failed: " << glewGetErrorString(err) << endl;
+            exit(-1);
+        }
+#endif
 #endif
 
 #if defined(PLATFORM_WINDOWS)

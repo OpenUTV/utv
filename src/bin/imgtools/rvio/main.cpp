@@ -83,8 +83,12 @@
 
 #include <TwkMediaLibrary/Library.h>
 
-#ifdef PLATFORM_WINDOWS
+#if defined(PLATFORM_WINDOWS)
 #include <gl/glew.h>
+#elif defined(TWK_USE_GLEW)
+#include <GL/glew.h>
+#endif
+#ifdef PLATFORM_WINDOWS
 #include <QtGui/QtGui>
 #include <QtWidgets/QApplication>
 #endif

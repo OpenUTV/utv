@@ -28,7 +28,7 @@
 #ifdef PLATFORM_LINUX
 #include <sched.h>
 #endif
-#ifndef PLATFORM_LINUX
+#if !defined(PLATFORM_LINUX) || defined(TWK_USE_GLEW)
 #include <GL/glew.h>
 #endif
 #include <RvCommon/GLView.h>

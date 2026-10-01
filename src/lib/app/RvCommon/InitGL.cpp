@@ -14,7 +14,7 @@ namespace Rv
     void initializeGLExtensions()
     {
 #ifdef TWK_USE_GLEW
-        GLenum err = glewInit(NULL);
+        GLenum err = TWK_GLEW_INIT(NULL);
 
         if (GLEW_OK != err)
         {

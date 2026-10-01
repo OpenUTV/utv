@@ -56,6 +56,34 @@
 
 #ifdef TWK_USE_GLEW
 #define TWK_GL_SUPPORTS(X) glewIsSupported(X)
+
+//
+//  Load GL entry points through GLEW once a context is current.
+//
+//  Windows uses the bundled, Tweak-modified GLEW (src/pub/glew) whose
+//  glewInit() takes a proc-address lookup (0 = default). Linux uses the
+//  system GLEW 2.x (shared libGLEW, so one function table for every module).
+//  Its glewInit() loads the GL entry points first and then GLX extensions;
+//  with an EGL context (e.g. Qt on Wayland) the second step reports
+//  GLEW_ERROR_NO_GLX_DISPLAY, which is harmless for UTV and treated as success.
+//  (glewContextInit() would avoid that, but distro GLEW 2.2 doesn't export it.)
+//
+#if defined(_WIN32)
+#define TWK_GLEW_INIT(PROC) glewInit(PROC)
+#elif !defined(TWK_USE_MESA) // TWK_USE_MESA code (OSMesa) doesn't include glew.h
+inline GLenum twkGlewInit()
+{
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+#ifdef GLEW_ERROR_NO_GLX_DISPLAY
+    if (err == GLEW_ERROR_NO_GLX_DISPLAY)
+        err = GLEW_OK;
+#endif
+    return err;
+}
+
+#define TWK_GLEW_INIT(PROC) twkGlewInit()
+#endif
 #else
 #define TWK_GL_SUPPORTS(X) glSupportsExtension(X)
 #endif

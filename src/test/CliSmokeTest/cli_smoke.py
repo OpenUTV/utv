@@ -25,8 +25,6 @@ from cli_common import find_tool, prepare_environment, run_tool
 # Known platform-specific failures tracked in an issue: reported as xfail (not a test failure), or XPASS
 # once fixed so the entry can be removed.
 KNOWN_FAILURES = {}
-if sys.platform.startswith("linux"):
-    KNOWN_FAILURES["utvio"] = "https://github.com/OpenUTV/utv/issues/68"
 
 # (tool, args, require exit code 0, regex that must appear in stdout+stderr)
 CHECKS = [

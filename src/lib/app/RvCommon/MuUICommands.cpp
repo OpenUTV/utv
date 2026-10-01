@@ -5,8 +5,9 @@
 //
 //******************************************************************************
 
-#ifdef PLATFORM_WINDOWS
-#ifndef WIN32_LEAN_AND_MEAN
+// GL first: with GLEW (Windows, Linux) glew.h must precede any gl.h pulled in by Qt or Python headers.
+#if defined(PLATFORM_WINDOWS) || defined(TWK_USE_GLEW)
+#if defined(PLATFORM_WINDOWS) && !defined(WIN32_LEAN_AND_MEAN)
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <TwkGLF/GL.h>

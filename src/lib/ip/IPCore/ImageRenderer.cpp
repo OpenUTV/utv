@@ -795,7 +795,7 @@ namespace IPCore
         //  its normal path. Another round of DLL nightmare.
         //
 
-        GLenum err = glewInit(m_procFunc);
+        GLenum err = TWK_GLEW_INIT(m_procFunc);
 
         if (GLEW_OK != err)
         {
