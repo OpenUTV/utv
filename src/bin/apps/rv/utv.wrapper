@@ -53,6 +53,19 @@ elif [ -d "$deps/lib" ]; then
     libpath="$libpath:$deps/lib"
 fi
 
+# Preload the system's GL libraries. Homebrew libraries carry a RUNPATH to the Homebrew prefix, so
+# without this a reference to libGL.so.1 from e.g. libGLEW or Qt can still resolve to Homebrew's Mesa.
+# Shared libraries are reused by soname once loaded, so preloading pins every user to the system
+# driver. Set UTV_NO_SYSTEM_GL_PRELOAD=1 to disable.
+if [ -z "$UTV_NO_SYSTEM_GL_PRELOAD" ]; then
+    ldconfig_bin=$(command -v ldconfig || echo /sbin/ldconfig)
+    for gllib in libGL.so.1 libEGL.so.1; do
+        syslib=$("$ldconfig_bin" -p 2>/dev/null | awk -v lib="$gllib" '$1 == lib { print $NF; exit }')
+        [ -n "$syslib" ] && LD_PRELOAD="$syslib${LD_PRELOAD:+:$LD_PRELOAD}"
+    done
+    export LD_PRELOAD
+fi
+
 LD_LIBRARY_PATH="$libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 PATH="$bindir:$PATH"
 export LD_LIBRARY_PATH PATH
