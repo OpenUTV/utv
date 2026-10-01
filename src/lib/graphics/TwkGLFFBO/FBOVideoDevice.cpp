@@ -43,6 +43,22 @@
 namespace TwkGLF
 {
     using namespace std;
+
+#if defined(PLATFORM_LINUX)
+    //
+    //  Xlib's default error handler prints the error and exits the process.
+    //  Log X protocol errors (with the failing request) and keep going, as Qt
+    //  does; GL calls report their own failures.
+    //
+    static int fboXErrorHandler(Display* display, XErrorEvent* event)
+    {
+        char text[256] = {0};
+        XGetErrorText(display, event->error_code, text, sizeof(text));
+        cerr << "WARNING: X error: " << text << " (request " << int(event->request_code) << "." << int(event->minor_code) << ", resource 0x"
+             << hex << event->resourceid << dec << ")" << endl;
+        return 0;
+    }
+#endif
     using namespace TwkApp;
 
     bool FBOVideoDevice::m_swRendererOnMac = false;
@@ -167,6 +183,7 @@ namespace TwkGLF
         XSetWindowAttributes swa;
         int attrs[] = {GLX_BUFFER_SIZE, 32, GLX_RGBA, 0, GLX_STENCIL_SIZE, 1};
 
+        XSetErrorHandler(fboXErrorHandler);
         m_imp->display = XOpenDisplay(0);
         if (!m_imp->display)
         {

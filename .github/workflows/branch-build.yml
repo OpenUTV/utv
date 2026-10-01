@@ -271,6 +271,9 @@ jobs:
           sudo apt-get install -y --no-install-recommends xvfb > /dev/null
           # Show which GL libraries the launch wrapper ends up loading (system driver expected, not Homebrew's Mesa).
           LD_DEBUG=libs _build/stage/app/bin/utvio -version 2>&1 | grep -E 'calling init: .*lib(GL|GLX|EGL|GLdispatch)[.-]' || true
+          # Show one offscreen render end to end (GL renderer and any X errors) to aid debugging.
+          xvfb-run -a -s "-screen 0 1920x1080x24" _build/stage/app/bin/utvio -v \
+            "solid,red=1,green=0.5,blue=0,width=64,height=64,start=1,end=1.movieproc" -o /tmp/utvio-smoke.exr 2>&1 | tail -25 || true
           # ApplicationTest and AudioRendererTest crash in their test bodies; excluded until #78 is fixed.
           xvfb-run -a -s "-screen 0 1920x1080x24" ctest --test-dir _build --output-on-failure --timeout 900 \
             -E 'ApplicationTest|AudioRendererTest'
