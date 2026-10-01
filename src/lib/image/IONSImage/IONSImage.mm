@@ -82,10 +82,35 @@ void IONSImage::useLocalMemoryPool()
     manageMemory = true;
 }
 
+//
+//  HEIC/HEIF is written with Apple's HEVC encoder through ImageIO. OpenUTV
+//  ships no HEVC encoder of its own (AGENTS.md 1.4), so this is the HEIC
+//  writer on macOS; IOoiio keeps these extensions read-only here.
+//
+
+static bool isHEIC(const string& ext)
+{
+    return ext == "heic" || ext == "heif" || ext == "hif";
+}
+
+static bool imageIOCanWriteHEIC()
+{
+    bool found = false;
+    if (CFArrayRef types = CGImageDestinationCopyTypeIdentifiers())
+    {
+        found = CFArrayContainsValue(types, CFRangeMake(0, CFArrayGetCount(types)), CFSTR("public.heic"));
+        CFRelease(types);
+    }
+    return found;
+}
+
 IONSImage::IONSImage() : FrameBufferIO("NSImage", "o") // after OIIO (n)
 {
     NSAutoreleasePool *pool = manageMemory ? [[NSAutoreleasePool alloc] init] : nil;
     unsigned int cap = ImageRead;
+    const bool heicWrite = imageIOCanWriteHEIC();
+    bool heicListed[3] = {false, false, false};
+    const char* heicExts[3] = {"heic", "heif", "hif"};
 
     NSArray* array = [NSImage imageUnfilteredFileTypes];
     StringPairVector codecs;
@@ -103,7 +128,23 @@ IONSImage::IONSImage() : FrameBufferIO("NSImage", "o") // after OIIO (n)
             if (s == d->ext) { desc = d->desc; break; }
         }
 
-        addType(s, desc, cap, codecs);
+        unsigned int typeCap = cap;
+        if (isHEIC(s))
+        {
+            desc = "High Efficiency Image File";
+            if (heicWrite) typeCap |= ImageWrite;
+            for (int q = 0; q < 3; q++) if (s == heicExts[q]) heicListed[q] = true;
+        }
+
+        addType(s, desc, typeCap, codecs);
+    }
+
+    if (heicWrite)
+    {
+        for (int q = 0; q < 3; q++)
+        {
+            if (!heicListed[q]) addType(heicExts[q], "High Efficiency Image File", ImageWrite, codecs);
+        }
     }
 
     if (pool) [pool release];
@@ -639,7 +680,119 @@ IONSImage::writeImage(const FrameBuffer& img,
                       const std::string& filename,
                       const WriteRequest& request) const
 {
-    throw UnsupportedException();
+    string ext = filename.substr(filename.find_last_of('.') + 1);
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    if (!isHEIC(ext))
+    {
+        TWK_THROW_STREAM(UnsupportedException, "NSImage: writing ." << ext << " files is not supported");
+    }
+
+    NSAutoreleasePool *pool = manageMemory ? [[NSAutoreleasePool alloc] init] : nil;
+
+    //
+    //  Convert to packed RGB or RGBA, 8 bit for 8 bit sources and 16 bit for
+    //  anything deeper (ImageIO then encodes 10 bit HEVC).
+    //
+
+    const FrameBuffer* outfb = &img;
+
+    if (outfb->isPlanar())
+    {
+        const FrameBuffer* fb = outfb;
+        outfb = mergePlanes(outfb);
+        if (fb != &img) delete fb;
+    }
+
+    if (outfb->isYUV() || outfb->isYRYBY() || outfb->dataType() >= FrameBuffer::PACKED_R10_G10_B10_X2)
+    {
+        const FrameBuffer* fb = outfb;
+        outfb = convertToLinearRGB709(outfb);
+        if (fb != &img) delete fb;
+    }
+
+    const bool hasAlpha = outfb->hasChannel("A");
+    const int nchannels = hasAlpha ? 4 : 3;
+    bool mapped = outfb->numChannels() == nchannels;
+
+    for (int c = 0; mapped && c < nchannels; c++)
+    {
+        static const char* names[] = {"R", "G", "B", "A"};
+        mapped = outfb->channelName(c) == names[c];
+    }
+
+    if (!mapped)
+    {
+        const FrameBuffer* fb = outfb;
+        vector<string> mapping = {"R", "G", "B"};
+        if (hasAlpha) mapping.push_back("A");
+        outfb = channelMap(const_cast<FrameBuffer*>(outfb), mapping);
+        if (fb != &img) delete fb;
+    }
+
+    const FrameBuffer::DataType outType =
+        (outfb->dataType() == FrameBuffer::UCHAR || outfb->dataType() == FrameBuffer::BIT) ? FrameBuffer::UCHAR : FrameBuffer::USHORT;
+
+    if (outfb->dataType() != outType)
+    {
+        const FrameBuffer* fb = outfb;
+        outfb = copyConvert(outfb, outType);
+        if (fb != &img) delete fb;
+    }
+
+    //
+    //  FrameBuffer scanlines are bottom-up, CGImage rows are top-down.
+    //
+
+    const size_t w = outfb->width();
+    const size_t h = outfb->height();
+    const size_t bitsPerComponent = outType == FrameBuffer::UCHAR ? 8 : 16;
+    const size_t rowBytes = w * nchannels * (bitsPerComponent / 8);
+
+    NSMutableData* pixels = [NSMutableData dataWithLength: rowBytes * h];
+    unsigned char* dst = (unsigned char*)[pixels mutableBytes];
+
+    for (size_t row = 0; row < h; row++)
+    {
+        memcpy(dst + row * rowBytes, outfb->scanline<unsigned char>(h - row - 1), rowBytes);
+    }
+
+    if (outfb != &img) delete outfb;
+
+    bool ok = false;
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)pixels);
+    CGBitmapInfo bitmapInfo = (hasAlpha ? kCGImageAlphaPremultipliedLast : kCGImageAlphaNone)
+                              | (bitsPerComponent == 16 ? kCGBitmapByteOrder16Host : kCGBitmapByteOrderDefault);
+
+    CGImageRef image = CGImageCreate(w, h, bitsPerComponent, bitsPerComponent * nchannels, rowBytes, colorSpace, bitmapInfo,
+                                     provider, NULL, false, kCGRenderingIntentDefault);
+
+    CFURLRef url = CFURLCreateFromFileSystemRepresentation(kCFAllocatorDefault, (const UInt8*)filename.c_str(),
+                                                           filename.length(), false);
+
+    if (image && url)
+    {
+        if (CGImageDestinationRef dest = CGImageDestinationCreateWithURL(url, CFSTR("public.heic"), 1, NULL))
+        {
+            const float quality = std::min(1.0f, std::max(0.0f, request.quality));
+            NSDictionary* options = @{(id)kCGImageDestinationLossyCompressionQuality: @(quality)};
+            CGImageDestinationAddImage(dest, image, (CFDictionaryRef)options);
+            ok = CGImageDestinationFinalize(dest);
+            CFRelease(dest);
+        }
+    }
+
+    if (url) CFRelease(url);
+    if (image) CGImageRelease(image);
+    if (provider) CGDataProviderRelease(provider);
+    if (colorSpace) CGColorSpaceRelease(colorSpace);
+    if (pool) [pool release];
+
+    if (!ok)
+    {
+        TWK_THROW_STREAM(IOException, "NSImage: ImageIO failed to write HEIC file \"" << filename << "\"");
+    }
 }
 
 

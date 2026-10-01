@@ -431,7 +431,13 @@ namespace TwkFB
                                 cout << "INFO: " << extension << " requires plugin " << basename(pio->pathToPlugin()) << endl;
                             }
 
-                            if ((io = loadFromProxy(i)))
+                            //
+                            //  The proxy's capabilities come from the formats cache made at build time.
+                            //  A plugin can find at load time that it supports less on this machine
+                            //  (e.g. no encoder installed), so check the real plugin and otherwise keep
+                            //  looking: another plugin may handle the request.
+                            //
+                            if ((io = loadFromProxy(i)) && io->supportsExtension(extension, capabilities))
                             {
                                 return io;
                             }

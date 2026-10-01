@@ -58,15 +58,17 @@ OpenUTV is a cross-platform desktop application targeting **macOS (Apple Silicon
 OpenUTV **intentionally does not ship x265 (HEVC encoding)** in any binary we distribute, to avoid redistributing patent-encumbered codec implementations. This is a deliberate policy decision, not a gap to fix.
 
 - **Where it's enforced**: in [`OpenUTV/utv-dependencies`](https://github.com/OpenUTV/utv-dependencies), `ports/openimageio/vcpkg.json` pulls in `libheif` with `"default-features": false`, so neither `libheif` nor OpenImageIO is built with x265 (commit `2845975`).
-- **Known consequence**: writing HEIC / HEIF (`.heic`, `.heif`, `.hif`) is unavailable in the Windows build (see #67). AVIF writing (AV1) is unaffected. The image format round-trip test marks these formats as expected failures on Windows.
+- **Known consequence**: libheif in the Windows build has no HEVC encoder, so OpenImageIO cannot write HEIC / HEIF (`.heic`, `.heif`, `.hif`) there. HEIC **reading** works (the Windows dependencies include the `libde265` decoder), and AVIF writing (AV1) is unaffected.
 - **Do not**:
   - add x265, HEVC encoder plugins, or `libheif`/OpenImageIO features that pull them in to `utv-dependencies`, the build, or the installers;
   - "fix" HEIC/HEIF write failures by enabling HEVC encoding.
 - **The "supercharged" FFmpeg can't provide HEIC encoding**: users get x265 by upgrading to `ffmpeg-full`, but libheif (used by OpenImageIO) only encodes HEVC through its own encoder plugins (x265, kvazaar). Its FFmpeg integration (`WITH_FFMPEG_DECODER`) is decode-only, and `ffmpeg-full` builds link x265 inside `avcodec` rather than as a loadable library. Don't try to route OIIO's HEIC encoding through the user's FFmpeg.
-- **Acceptable approaches** (no x265 shipped by us):
-  - have `IOoiio` stop advertising HEIC/HEIF as writable when no HEVC encoder is available, so users get a clear "not supported" instead of a failed write;
-  - HEIC **decoding** through libheif's FFmpeg decoder plugin, using the user's FFmpeg;
-  - HEIC **encoding** through OS encoders the user has licensed: macOS ImageIO, Windows WIC with Microsoft's HEIF/HEVC Video Extensions.
+- **How HEIC export works instead** (no x265 shipped by us):
+  - `IOoiio` test-encodes HEIC and AVIF when it loads and registers them as read-only if the encoder is missing, so nothing is advertised that cannot be written;
+  - **macOS**: `IONSImage` writes HEIC through ImageIO with Apple's encoder (`IOoiio` keeps HEIC read-only on macOS);
+  - **Windows**: `IOwic` writes HEIC through WIC with the encoder from Microsoft's "HEIF Image Extensions" and "HEVC Video Extensions" (Microsoft Store). Without them the write fails with a message naming what to install. `IOwic` always advertises Write because the formats cache is made on the build machine;
+  - **Linux**: `IOoiio` writes HEIC when the user's libheif has an encoder.
+- **Still acceptable, not implemented**: HEIC decoding through libheif's FFmpeg decoder plugin, using the user's FFmpeg.
 - **macOS and Linux** link Homebrew's OpenImageIO/libheif, which include x265. Those are installed on the user's machine from Homebrew, not redistributed by us.
 - Any change to this policy is a legal/licensing decision for the maintainers, not an engineering one.
 

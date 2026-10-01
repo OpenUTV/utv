@@ -11,8 +11,11 @@
 #include <TwkUtil/ByteSwap.h>
 #include <TwkUtil/File.h>
 #include <half.h>
+#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <set>
 #include <string>
 #include <sstream>
@@ -26,6 +29,49 @@ namespace TwkFB
 #else
     using namespace OpenImageIO;
 #endif
+
+    //
+    //  OIIO lists heif as an output format whenever it was built with libheif,
+    //  but libheif encodes through codec plugins that may not be there: OpenUTV
+    //  ships no HEVC encoder (x265), see AGENTS.md 1.4. Encode a small image to
+    //  find out whether writing this extension really works on this machine.
+    //
+    static bool canEncode(const string& ext)
+    {
+        namespace fs = std::filesystem;
+
+        std::error_code ec;
+        const fs::path dir = fs::temp_directory_path(ec);
+        if (ec)
+            return false;
+
+        ostringstream name;
+        name << "utv_oiio_probe_" << std::random_device()() << "." << ext;
+        const string path = (dir / name.str()).string();
+
+        bool ok = false;
+        try
+        {
+            if (auto out = ImageOutput::create(path))
+            {
+                const int size = 64;
+                const vector<unsigned char> pixels(size * size * 3, 128);
+                const ImageSpec spec(size, size, 3, TypeDesc::UINT8);
+                ok = out->open(path, spec);
+                ok = ok && out->write_image(TypeDesc::UINT8, pixels.data());
+                ok = out->close() && ok;
+            }
+        }
+        catch (...)
+        {
+            ok = false;
+        }
+
+        // Clear OIIO's per-thread error so a failed probe is not reported by a later call.
+        (void)OIIO::geterror();
+        fs::remove(path, ec);
+        return ok;
+    }
 
     IOoiio::IOoiio()
         : FrameBufferIO("IOoiio", "m3") // Modern hardened OpenImageIO prioritized over legacy bespoke parsers
@@ -56,6 +102,18 @@ namespace TwkFB
         }
 
         auto rw = [&](const char* ext) { return writableExts.count(ext) ? (r | w) : r; };
+
+        //
+        //  HEIC/HEIF (HEVC) and AVIF (AV1) need an encoder that libheif may not have.
+        //  On macOS, HEIC is written by the ImageIO plugin (IONSImage) with Apple's
+        //  encoder, so it is read-only here.
+        //
+#if defined(PLATFORM_DARWIN)
+        const bool heicWritable = false;
+#else
+        const bool heicWritable = writableExts.count("heic") && canEncode("heic");
+#endif
+        const bool avifWritable = writableExts.count("avif") && canEncode("avif");
 
         // Dedicated native writer plugins handle the following formats with custom streaming pipelines:
         // IOpng ("m9"), IOdpx ("m5"), IOcin ("z_cin"), IOjpeg ("m2"), IOtarga ("z_targa"), IOrla ("z_rla"), IOrgbe ("z_rgbe").
@@ -98,10 +156,10 @@ namespace TwkFB
         addType("fits", "FITS", rw("fits"), codecs);
         addType("iff", "IFF", rw("iff"), codecs);
         addType("dds", "Direct Draw Surface", rw("dds"), codecs);
-        addType("heic", "High Efficiency Image File", rw("heic"), codecs);
-        addType("heif", "High Efficiency Image File", rw("heif"), codecs);
-        addType("hif", "High Efficiency Image File", rw("hif"), codecs);
-        addType("avif", "AV1 Image File", rw("avif"), codecs);
+        addType("heic", "High Efficiency Image File", heicWritable ? (r | w) : r, codecs);
+        addType("heif", "High Efficiency Image File", heicWritable ? (r | w) : r, codecs);
+        addType("hif", "High Efficiency Image File", heicWritable ? (r | w) : r, codecs);
+        addType("avif", "AV1 Image File", avifWritable ? (r | w) : r, codecs);
         addType("jxl", "JPEG XL Image", rw("jxl"), codecs);
 
         // These are handled by their dedicated optimized streaming plugins:
