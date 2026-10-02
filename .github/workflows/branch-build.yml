@@ -10,7 +10,7 @@ on:
       - 'CMakeLists.txt'
       - 'build.sh'
       - '.github/actions/build-windows/**'
-      - '.github/workflows/**'
+      - '.github/workflows/branch-build.yml'
       - 'requirements.txt'
 
 permissions:

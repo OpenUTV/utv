@@ -1,0 +1,62 @@
+name: Installer Test (Windows)
+
+# Runs scripts/install.ps1 for real on a clean Windows runner whenever the installer changes, so a
+# change cannot break the default install path unnoticed (see #73).
+
+on:
+  pull_request:
+    paths:
+      - "scripts/install.ps1"
+      - ".github/workflows/installer-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Install (${{ matrix.mode }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [default, dev-build, zip-path, nested-zip]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Run installer
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dir = Join-Path $env:RUNNER_TEMP "utv-install"
+          # -SkipDeps: the 390 MB dependency installer is not what is under test here.
+          $common = @{ InstallDir = $dir; SkipDeps = $true; NoShortcuts = $true }
+          $devUrl = "https://github.com/OpenUTV/utv/releases/download/dev-build/UTV-dev-windows-x64.zip"
+
+          switch ("${{ matrix.mode }}") {
+            "default"   { .\scripts\install.ps1 @common }
+            "dev-build" { .\scripts\install.ps1 @common -Version dev-build }
+            "zip-path" {
+              $zip = Join-Path $env:RUNNER_TEMP "utv.zip"
+              Invoke-WebRequest -Uri $devUrl -OutFile $zip -UseBasicParsing
+              .\scripts\install.ps1 @common -ZipPath $zip
+              if (-not (Test-Path $zip)) { throw "-ZipPath deleted the user's zip" }
+            }
+            "nested-zip" {
+              # What the GitHub web page gives for a CI artifact: a zip containing the UTV zip.
+              $inner = Join-Path $env:RUNNER_TEMP "inner\UTV-branch-windows-x64.zip"
+              New-Item -ItemType Directory -Force -Path (Split-Path $inner) | Out-Null
+              Invoke-WebRequest -Uri $devUrl -OutFile $inner -UseBasicParsing
+              $outer = Join-Path $env:RUNNER_TEMP "artifact.zip"
+              Compress-Archive -Path $inner -DestinationPath $outer -CompressionLevel NoCompression
+              .\scripts\install.ps1 @common -ZipPath $outer
+            }
+          }
+
+          foreach ($f in @("bin\utv.exe", "bin\utvio.exe")) {
+            if (-not (Test-Path (Join-Path $dir $f))) { throw "Installer did not produce $f" }
+          }
+          Write-Host "Installed files present in $dir"
+          # The installer copies with robocopy, whose success codes are non-zero and would fail the step.
+          exit 0
