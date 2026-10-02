@@ -476,6 +476,13 @@ static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
     if (isatty(STDIN_FILENO) || isatty(STDOUT_FILENO) || isatty(STDERR_FILENO)) {
         return NO;
     }
+    // Started through LaunchServices (Finder, Dock, Spotlight, or `open` from a shell): stderr is
+    // /dev/null, so a message printed there is never seen. `open` passes the shell's TERM along,
+    // so TERM alone does not tell the two apart.
+    struct stat errStat;
+    if (fstat(STDERR_FILENO, &errStat) == 0 && S_ISCHR(errStat.st_mode)) {
+        return YES;
+    }
     if (getenv("TERM") != NULL) {
         return NO;
     }
