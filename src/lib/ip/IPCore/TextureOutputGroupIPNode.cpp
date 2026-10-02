@@ -60,10 +60,7 @@ namespace IPCore
         setProperty(m_outFrame, f);
 
         if (pushItem)
-        {
-            graph()->cache().pushCachableOutputItem(name());
-            graph()->redispatchCachingThread();
-        }
+            graph()->requestTextureOutput(this);
     }
 
     void TextureOutputGroupIPNode::setActive(bool b)
@@ -73,10 +70,7 @@ namespace IPCore
         setProperty(m_active, b ? 1 : 0);
 
         if (pushItem)
-        {
-            graph()->cache().pushCachableOutputItem(name());
-            graph()->redispatchCachingThread();
-        }
+            graph()->requestTextureOutput(this);
     }
 
     void TextureOutputGroupIPNode::setGeometry(int w, int h, const string& dt)

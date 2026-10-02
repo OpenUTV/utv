@@ -2,6 +2,8 @@
 //  Copyright (c) 2012 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -18,6 +20,7 @@
 #include <IPCore/IPProperty.h>
 #include <IPCore/NodeManager.h>
 #include <IPCore/OutputGroupIPNode.h>
+#include <IPCore/PipelineGroupIPNode.h>
 #include <IPCore/RootIPNode.h>
 #include <IPCore/SessionIPNode.h>
 #include <IPCore/ShaderProgram.h>
@@ -272,6 +275,7 @@ namespace IPCore
         , m_profilingTimer(0)
         , m_newFrame(false)
         , m_defaultOutputGroup(0)
+        , m_hoverPreviewNode(0)
         , m_topologyChanged(false)
         , m_cacheTimingOutput(false)
         , m_evalSlowMedia(false)
@@ -513,6 +517,9 @@ namespace IPCore
         if (n == m_rootNode)
             m_rootNode = 0;
 
+        if (n == m_hoverPreviewNode)
+            m_hoverPreviewNode = 0;
+
         if (n == m_viewNode)
         {
             m_viewNode = 0;
@@ -615,6 +622,8 @@ namespace IPCore
             finishCachingThread();
         }
 
+        deleteHoverPreviewNode();
+
         //
         //  Unhook all inputs. This will prevent the need for recursive
         //  deletion -- at least at the top level.
@@ -664,6 +673,8 @@ namespace IPCore
 
         m_defaultOutputGroup->setInputs1(m_viewGroupNode);
         m_rootNode->appendInput(m_viewGroupNode->waveformNode());
+
+        createHoverPreviewNode();
     }
 
     void IPGraph::setPhysicalDevices(const VideoModules& modules)
@@ -742,6 +753,93 @@ namespace IPCore
         displayGroup->setInputs1(m_viewGroupNode);
 
         m_rootNode->appendInput(displayGroup);
+    }
+
+    void IPGraph::createHoverPreviewNode()
+    {
+        m_hoverPreviewNode = newTextureOutputGroup("hoverPreview");
+
+        if (!m_hoverPreviewNode)
+            return;
+
+        m_hoverPreviewNode->setGeometry(256, 144, "uint8");
+        m_hoverPreviewNode->setTag("hoverPreview");
+
+        //
+        //  Take the input from the view pipeline rather than the view
+        //  group, so the viewer's pan and zoom are not applied: the preview
+        //  always shows the whole frame.
+        //
+
+        m_hoverPreviewNode->setInputs1(m_viewGroupNode->viewPipelineNode());
+
+        //
+        //  As a root input, the node is drawn by the main renderer into a
+        //  texture tagged "hoverPreview", which the UI finds with
+        //  RenderQuery::taggedTextureImages(). The root renders texture
+        //  outputs before the display groups (see RootIPNode::evaluate()),
+        //  so the texture exists by the time the UI draws. It is appended,
+        //  like the waveform, because the root's first input answers its
+        //  range and size queries. While the node is inactive, or until the
+        //  cache threads have evaluated its frame, it returns no image and
+        //  the renderer skips it.
+        //
+
+        m_rootNode->appendInput(m_hoverPreviewNode);
+    }
+
+    void IPGraph::requestHoverPreviewFrame(int frame)
+    {
+        if (!m_hoverPreviewNode)
+            return;
+
+        m_hoverPreviewNode->setFrame(frame);
+        m_hoverPreviewNode->setActive(true);
+    }
+
+    void IPGraph::releaseHoverPreviewImage()
+    {
+        if (!m_hoverPreviewNode)
+            return;
+
+        TWK_CACHE_LOCK(m_fbcache, "releaseHoverPreviewImage");
+        m_fbcache.flushPerNodeCache(m_hoverPreviewNode);
+        TWK_CACHE_UNLOCK(m_fbcache, "releaseHoverPreviewImage");
+    }
+
+    string IPGraph::hoverPreviewImageIdentifier() const
+    {
+        string identifier;
+
+        if (m_hoverPreviewNode)
+        {
+            //
+            //  Read it under the lock, so a cache thread can't replace (and
+            //  free) the image meanwhile.
+            //
+
+            TWK_CACHE_LOCK(m_fbcache, "hoverPreviewImageIdentifier");
+            if (const TwkFB::FrameBuffer* fb = m_fbcache.perNodeCacheContents(m_hoverPreviewNode))
+                identifier = fb->identifier();
+            TWK_CACHE_UNLOCK(m_fbcache, "hoverPreviewImageIdentifier");
+        }
+
+        return identifier;
+    }
+
+    void IPGraph::deleteHoverPreviewNode()
+    {
+        //
+        //  The node's destructor calls removeNode(), which clears
+        //  m_hoverPreviewNode.
+        //
+
+        if (m_hoverPreviewNode)
+        {
+            m_hoverPreviewNode->willDelete();
+            m_hoverPreviewNode->disconnectInputs();
+            delete m_hoverPreviewNode;
+        }
     }
 
     void IPGraph::setPrimaryDisplayGroup(DisplayGroupIPNode* node)
@@ -2061,6 +2159,12 @@ IPGraph::findNodesByAbstractPath(int frame,
         dispatchCachingThreadsSafely();
     }
 
+    void IPGraph::requestTextureOutput(const TextureOutputGroupIPNode* node)
+    {
+        m_fbcache.pushCachableOutputItem(node->name());
+        redispatchCachingThread();
+    }
+
     void IPGraph::redispatchCachingThread()
     {
         if (m_cacheMode == NeverCache || m_editing || isMediaLoading())
@@ -2262,6 +2366,22 @@ IPGraph::findNodesByAbstractPath(int frame,
         }
     }
 
+    bool IPGraph::evaluateTextureOutput(const string& nodeName, size_t threadNum)
+    {
+        TextureOutputGroupIPNode* node = dynamic_cast<TextureOutputGroupIPNode*>(findNode(nodeName));
+        if (!node || !node->isActive())
+            return false;
+
+        IPNode::Context context(1, 1, m_fbcache.displayFPS(), 0, 0, IPNode::CacheEvalThread, threadNum, m_fbcache, false);
+        context.cacheNode = node;
+
+        IPImage* img = node->evaluate(context);
+        TWK_CACHE_LOCK(m_fbcache, "");
+        m_fbcache.checkInAndDelete(img);
+        TWK_CACHE_UNLOCK(m_fbcache, "");
+        return true;
+    }
+
     void IPGraph::evalThreadMain(EvalThreadData* threadData)
     {
         const size_t nthreads = m_threadData.size();
@@ -2336,48 +2456,16 @@ IPGraph::findNodesByAbstractPath(int frame,
                 string itemName;
                 if ((itemName = m_fbcache.popCachableOutputItem()) != "")
                 {
-                    IPNode* itemNode = findNode(itemName);
-                    TextureOutputGroupIPNode* textNode = 0;
-                    if ((textNode = dynamic_cast<TextureOutputGroupIPNode*>(itemNode)))
+                    try
                     {
-                        if (textNode->isActive())
-                        {
-                            /*
-                            ostringstream str;
-                            str << "thread " << id << ": output item to eval: "
-                            << itemName << " tag " << textNode->tag() << endl;
-                            cerr << str.str();
-                            */
-
-                            IPNode::Context context(1, 1, m_fbcache.displayFPS(), 0, 0, IPNode::CacheEvalThread, id, m_fbcache, false);
-
-                            context.cacheNode = textNode;
-
-                            try
-                            {
-                                IPImage* img = textNode->evaluate(context);
-                                TWK_CACHE_LOCK(m_fbcache, "");
-                                m_fbcache.checkInAndDelete(img);
-                                TWK_CACHE_UNLOCK(m_fbcache, "");
-                                ++texturesCached;
-                            }
-                            catch (...)
-                            {
-                                /*
-                                ostringstream str;
-                                str << "EXCEPTION: thread " << id << ": output
-                                item to eval: " << itemName << " tag " <<
-                                textNode->tag() << endl; cerr << str.str();
-                                //  Just try again ?
-                                m_fbcache.pushCachableOutputItem(itemName);
-                                */
-                            }
-                        }
+                        if (evaluateTextureOutput(itemName, id))
+                            ++texturesCached;
                     }
-                    //
-                    //  If we did find a texture item to cache, loop around
-                    //  again, otherwise begin caching "frames" as usual.
-                    //
+                    catch (...)
+                    {
+                        // Preserve the existing behavior: discard failed requests.
+                    }
+                    // Process queued textures before ordinary frame caching.
                     continue;
                 }
 
@@ -3774,6 +3862,11 @@ IPGraph::findNodesByAbstractPath(int frame,
         if (group)
             group->setPhysicalVideoDevice(device);
         return group;
+    }
+
+    TextureOutputGroupIPNode* IPGraph::newTextureOutputGroup(const std::string& nodeName)
+    {
+        return newNodeOfType<TextureOutputGroupIPNode>("TextureOutputGroup", nodeName);
     }
 
     IPNode* IPGraph::newNode(const string& typeName, const string& nodeName, GroupIPNode* group)

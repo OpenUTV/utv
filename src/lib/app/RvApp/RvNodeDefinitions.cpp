@@ -2,6 +2,8 @@
 //  Copyright (c) 2013 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -50,6 +52,7 @@
 #include <IPCore/NodeManager.h>
 #include <OCIONodes/OCIOIPNode.h>
 #include <IPCore/OutputGroupIPNode.h>
+#include <IPCore/TextureOutputGroupIPNode.h>
 #include <IPCore/PipelineGroupIPNode.h>
 #include <IPCore/SessionIPNode.h>
 #include <IPCore/SoundTrackIPNode.h>
@@ -257,6 +260,15 @@ namespace Rv
                 new NodeDefinition("RVOutputGroup", 1, true, "outputGroup", newIPNode<OutputGroupIPNode>, "", "", emptyIcon, false);
 
             def->declareProperty<StringProperty>("defaults.stereoType", "RVDisplayStereo");
+            def->declareProperty<StringProperty>("defaults.pipelineType", "RVDisplayPipelineGroup");
+            m->addDefinition(def);
+        }
+
+        {
+            NodeDefinition* def = new NodeDefinition("RVTextureOutputGroup", 1, true, "textureOutputGroup",
+                                                     newIPNode<TextureOutputGroupIPNode>, "", "", emptyIcon, false);
+
+            def->declareProperty<StringProperty>("defaults.stereoType", "");
             def->declareProperty<StringProperty>("defaults.pipelineType", "RVDisplayPipelineGroup");
             m->addDefinition(def);
         }

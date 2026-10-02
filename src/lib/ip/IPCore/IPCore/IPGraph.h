@@ -2,6 +2,8 @@
 // Copyright (c) 2007 Tweak Inc.
 // All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //******************************************************************************
@@ -47,6 +49,7 @@ namespace IPCore
     class SessionIPNode;
     class NodeManager;
     class NodeDefinition;
+    class TextureOutputGroupIPNode;
 
     //
     //  IPGraph
@@ -460,6 +463,34 @@ namespace IPCore
         OutputGroupIPNode* defaultOutputGroup() const { return m_defaultOutputGroup; }
 
         //
+        //  Hover preview: a small texture output, fed from the view
+        //  pipeline, that the cache threads evaluate for whichever frame
+        //  the UI asks for through requestHoverPreviewFrame(). The
+        //  main renderer then draws it into a texture tagged
+        //  "hoverPreview" (see RenderQuery::taggedTextureImages()). It is
+        //  created with the graph (see initializeIPTree()); while inactive
+        //  it produces no image.
+        //
+
+        TextureOutputGroupIPNode* hoverPreviewNode() const { return m_hoverPreviewNode; }
+
+        // Record the desired frame and activate the preview. Main thread only.
+        void requestHoverPreviewFrame(int frame);
+
+        //
+        //  The hover preview's image in the frame cache (its per-node
+        //  cache). releaseHoverPreviewImage() lets it go, so the preview
+        //  holds no cache memory while hidden and an old frame is not shown
+        //  when it next appears. hoverPreviewImageIdentifier() returns its
+        //  identifier, or "" if there is none, so the UI can tell when it
+        //  changes. Both take the cache lock, as the cache threads update
+        //  it. Main thread only.
+        //
+
+        void releaseHoverPreviewImage();
+        std::string hoverPreviewImageIdentifier() const;
+
+        //
         //  Turn caching on/off for the whole graph
         //
 
@@ -696,6 +727,7 @@ namespace IPCore
         virtual void removeNode(IPNode*);
         virtual DisplayGroupIPNode* newDisplayGroup(const std::string& nodeName, const TwkApp::VideoDevice* d = 0);
         virtual OutputGroupIPNode* newOutputGroup(const std::string& nodeName, const TwkApp::VideoDevice* d = 0);
+        virtual TextureOutputGroupIPNode* newTextureOutputGroup(const std::string& nodeName);
 
         // Undo/Redo support
         virtual void isolateNode(IPNode*);
@@ -719,6 +751,9 @@ namespace IPCore
 
         virtual void deleteNode(IPNode*);
 
+        // Submit a texture output to the cache-worker queue. Pending requests
+        // coalesce by node name; the worker reads the node's current frame.
+        void requestTextureOutput(const TextureOutputGroupIPNode*);
         void redispatchCachingThread();
 
         bool noPromotion() { return m_noPromotion; }
@@ -736,6 +771,9 @@ namespace IPCore
 
         IPImage* evaluate(int, IPNode::ThreadType thread, size_t n = 0);
         TestEvalResult testEvaluate(int, IPNode::ThreadType thread, size_t n = 0);
+        // Fulfill a queued texture request using the calling cache worker's
+        // reader. Returns false if the node is missing or inactive.
+        bool evaluateTextureOutput(const std::string& nodeName, size_t threadNum);
         size_t audioFillBufferInternal(const IPNode::AudioContext&);
 
         void finishCachingThreadASync();
@@ -763,6 +801,17 @@ namespace IPCore
         void promoteFBsInFrameRange(int beg, int mid, int end, TwkUtil::Timer t);
 
         void setPhysicalDevicesInternal(const VideoModules&);
+
+        //
+        //  Implementations of initializeIPTree() create the hover preview
+        //  node at the end, and delete it before tearing the graph down:
+        //  it is not user visible, so it is not in the view node map. Both
+        //  happen while the cache threads are stopped, as the node is a
+        //  root input.
+        //
+
+        void createHoverPreviewNode();
+        void deleteHoverPreviewNode();
 
         void dispatchCachingThreadsSafely();
 
@@ -812,6 +861,7 @@ namespace IPCore
         SessionIPNode* m_sessionNode;
         DisplayGroups m_displayGroups;
         OutputGroupIPNode* m_defaultOutputGroup;
+        TextureOutputGroupIPNode* m_hoverPreviewNode;
         bool m_cacheMissed;
         bool m_cacheStop;
         ThreadDataVector m_threadData;
