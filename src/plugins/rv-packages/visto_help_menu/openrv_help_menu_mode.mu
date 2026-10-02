@@ -228,9 +228,25 @@ class: UTVHelpMenuMinorMode : MinorMode
         if (isPy)
         {
             let py = findPythonInterpreter();
-            string[] args = string[] { scriptPath };
-            for_each (arg; extraArgs) args.push_back(arg);
-            qt.QProcess.startDetached(py, args);
+            if (runtime.build_os() == "DARWIN")
+            {
+                //
+                //  py-interp creates a QApplication and lives inside UTV.app, so macOS
+                //  shows it as a second UTV icon in the Dock while a helper runs (every
+                //  launch, for the startup update check). The helpers show their UI
+                //  through osascript, not Qt: run them on Qt's offscreen platform, which
+                //  never registers with the Dock.
+                //
+                string[] args = string[] { "QT_QPA_PLATFORM=offscreen", py, scriptPath };
+                for_each (arg; extraArgs) args.push_back(arg);
+                qt.QProcess.startDetached("/usr/bin/env", args);
+            }
+            else
+            {
+                string[] args = string[] { scriptPath };
+                for_each (arg; extraArgs) args.push_back(arg);
+                qt.QProcess.startDetached(py, args);
+            }
         }
         else if (runtime.build_os() == "WINDOWS")
         {
