@@ -1,0 +1,94 @@
+name: Homebrew Canary (macOS)
+
+# UTV.app links the user's Homebrew libraries instead of bundling them (AGENTS.md 1.5), so a
+# Homebrew upgrade can break the current release without any change on our side (#85). Once a day,
+# install the release the way a new user does, with today's Homebrew, and check that it starts.
+
+on:
+  schedule:
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/homebrew-canary.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    name: Install release from tap and start it
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+    steps:
+      - name: Install UTV from the Homebrew tap
+        run: |
+          brew update
+          brew tap OpenUTV/utv
+          brew trust openutv/utv
+          brew install --cask utv
+          # Runner images ship older versions of some formulae; a new user gets the current ones.
+          deps=$(brew deps --cask openutv/utv/utv)
+          outdated=$(brew outdated --formula --quiet | grep -Fx -f <(echo "$deps") || true)
+          if [ -n "$outdated" ]; then
+            brew upgrade --formula $outdated
+          fi
+          brew list --versions --cask utv
+          brew list --versions opencolorio openimageio openexr qt ffmpeg-full boost
+
+      - name: Start the application and tools
+        id: check
+        run: |
+          bin=/Applications/UTV.app/Contents/MacOS
+          status=0
+          : > canary.log
+          for cmd in "UTV-bin -version" "utvio -version" "utvls -version" "utvio -formats"; do
+            echo "::group::$cmd"
+            # shellcheck disable=SC2086
+            if "$bin"/$cmd > out.txt 2>&1; then
+              # Image and movie plugins that fail to load are reported but do not change the exit code.
+              if grep -E "dyld\[|cannot open (fb|movie) plugin|failed to load" out.txt; then
+                echo "FAIL: $cmd reported a library or plugin load error" | tee -a canary.log
+                grep -E -A3 "dyld\[|cannot open (fb|movie) plugin|failed to load" out.txt | head -40 >> canary.log
+                status=1
+              else
+                echo "ok: $cmd"
+              fi
+            else
+              echo "FAIL: $cmd exited with an error" | tee -a canary.log
+              head -40 out.txt | tee -a canary.log
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit $status
+
+      - name: Open or update an issue
+        if: failure() && steps.check.conclusion == 'failure' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Homebrew canary: the current release does not start with today's Homebrew"
+          version=$(brew list --versions --cask utv || true)
+          {
+            echo "The daily Homebrew canary failed: \`$version\` installed from the tap does not start with current Homebrew libraries."
+            echo
+            echo "Usual cause: Homebrew upgraded a library incompatibly (see #85). Usual fix: cut a new release so it is built against the current libraries."
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo '```text'
+            head -c 6000 canary.log
+            echo '```'
+          } > body.md
+          existing=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "in:title \"$title\"" --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" -R "$GITHUB_REPOSITORY" --body-file body.md
+          else
+            gh issue create -R "$GITHUB_REPOSITORY" --title "$title" --label bug --body-file body.md
+          fi

@@ -72,6 +72,16 @@ OpenUTV **intentionally does not ship x265 (HEVC encoding)** in any binary we di
 - **macOS and Linux** link Homebrew's OpenImageIO/libheif, which include x265. Those are installed on the user's machine from Homebrew, not redistributed by us.
 - Any change to this policy is a legal/licensing decision for the maintainers, not an engineering one.
 
+### 1.5 macOS and Linux Link the User's Homebrew Libraries: No Bundling
+
+`UTV.app` and the Linux build **intentionally do not bundle** Qt, FFmpeg, OpenColorIO, OpenImageIO and the other third-party libraries. They load them from the user's Homebrew. This keeps the download small and keeps us from redistributing other projects' binaries, including patent-encumbered codecs (see 1.4). This is a deliberate decision, not a gap to fix: do not propose bundling the libraries into the app.
+
+- **Known consequence**: Homebrew upgrades libraries independently of UTV. An incompatible upgrade breaks the current release until a new one is built. OpenColorIO 2.5 -> 2.6 did this (#85): OCIO puts its version in every C++ symbol, so `UTV-bin` aborted in dyld before running any code. The same happens in reverse when a user installs a new UTV without upgrading their libraries.
+- **How it is handled instead**:
+  - the macOS launcher (`src/bin/nsapps/UTV/UTVLauncher.mm`) starts `UTV-bin -version` before the real launch and, if dyld fails, shows which library does not match and the command that fixes it (`brew update && brew upgrade && brew upgrade --cask utv`);
+  - `.github/workflows/homebrew-canary.yml` installs the current release from the tap every day with that day's Homebrew, checks that it starts, and opens an issue when it does not;
+  - the fix for a break is a new release, which is built against the current libraries.
+
 ---
 
 ## 2. Architecture: Launching & Runtime Initialization

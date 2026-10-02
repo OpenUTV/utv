@@ -314,6 +314,164 @@ static void runDiagnostics(void) {
     }
 }
 
+//
+// Homebrew upgrades its libraries independently of UTV. When one changes incompatibly
+// (e.g. OpenColorIO 2.5 -> 2.6 renames every symbol), dyld aborts UTV-bin before any of
+// its code runs: no window, no log, no dialog. Start UTV-bin once with -version, which
+// loads and binds every library and exits in under 0.1s, and report a load failure.
+//
+// Returns nil if UTV-bin loads, or if the check itself could not run or failed for some
+// other reason (never block a launch on the check). Otherwise returns dyld's message.
+//
+static NSString *libraryLoadFailure(NSString *realBin) {
+    // stderr goes to a file rather than a pipe, so the child can never block on a full pipe.
+    NSString *errPath = [NSTemporaryDirectory()
+        stringByAppendingPathComponent:[NSString stringWithFormat:@"openutv_library_check_%d.txt", getpid()]];
+    [[NSFileManager defaultManager] createFileAtPath:errPath contents:nil attributes:nil];
+    NSFileHandle *errFile = [NSFileHandle fileHandleForWritingAtPath:errPath];
+    if (!errFile) {
+        return nil;
+    }
+
+    NSTask *task = [[NSTask alloc] init];
+    task.executableURL = [NSURL fileURLWithPath:realBin];
+    task.arguments = @[@"-version"];
+    task.standardError = errFile;
+    task.standardOutput = [NSFileHandle fileHandleWithNullDevice];
+    task.standardInput = [NSFileHandle fileHandleWithNullDevice];
+
+    NSString *output = nil;
+    if ([task launchAndReturnError:nil]) {
+        // Give up after 20 seconds and let the normal launch proceed.
+        for (int i = 0; i < 2000 && [task isRunning]; i++) {
+            usleep(10000);
+        }
+
+        if ([task isRunning]) {
+            [task terminate];
+        } else if ([task terminationReason] == NSTaskTerminationReasonUncaughtSignal) {
+            output = [NSString stringWithContentsOfFile:errPath encoding:NSUTF8StringEncoding error:nil];
+        }
+    }
+
+    [errFile closeFile];
+    [[NSFileManager defaultManager] removeItemAtPath:errPath error:nil];
+
+    if (!output) {
+        return nil;
+    }
+
+    NSRange dyld = [output rangeOfString:@"dyld["];
+    if (dyld.location == NSNotFound) {
+        return nil;
+    }
+
+    NSString *message = [[output substringFromIndex:dyld.location]
+        stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    return [message length] > 1200 ? [message substringToIndex:1200] : message;
+}
+
+// The Homebrew formula named in a dyld message, e.g. ".../Cellar/opencolorio/2.6.0/lib/..." -> "opencolorio 2.6.0".
+static NSString *formulaInLoadFailure(NSString *message) {
+    NSRange all = NSMakeRange(0, [message length]);
+
+    NSRegularExpression *cellar = [NSRegularExpression regularExpressionWithPattern:@"/Cellar/([^/\\s]+)/([^/\\s]+)/" options:0 error:nil];
+    NSTextCheckingResult *m = [[cellar matchesInString:message options:0 range:all] lastObject];
+    if (m) {
+        return [NSString stringWithFormat:@"%@ %@", [message substringWithRange:[m rangeAtIndex:1]],
+                                          [message substringWithRange:[m rangeAtIndex:2]]];
+    }
+
+    // "Library not loaded" names the path UTV was linked to: <prefix>/opt/<formula>/lib/...
+    NSRegularExpression *opt = [NSRegularExpression regularExpressionWithPattern:@"/opt/([^/\\s]+)/lib/" options:0 error:nil];
+    m = [[opt matchesInString:message options:0 range:all] firstObject];
+    return m ? [message substringWithRange:[m rangeAtIndex:1]] : nil;
+}
+
+static NSString *const kLibraryFixCommand = @"brew update && brew upgrade && brew upgrade --cask utv";
+
+static void launchTerminalLibraryUpdate(void) {
+    NSString *appBundlePath = [[NSBundle mainBundle] bundlePath];
+
+    NSMutableString *script = [NSMutableString string];
+    [script appendString:@"#!/bin/bash\n"];
+    [script appendString:@"# OpenUTV Library Update Script\n\n"];
+    [script appendString:@"if [ -f \"/opt/homebrew/bin/brew\" ]; then\n"];
+    [script appendString:@"    eval \"$(/opt/homebrew/bin/brew shellenv)\"\n"];
+    [script appendString:@"elif [ -f \"/usr/local/bin/brew\" ]; then\n"];
+    [script appendString:@"    eval \"$(/usr/local/bin/brew shellenv)\"\n"];
+    [script appendString:@"fi\n\n"];
+    [script appendString:@"echo '--> Updating Homebrew libraries and OpenUTV so they match'\n"];
+    [script appendFormat:@"echo '    %@'\n", kLibraryFixCommand];
+    [script appendString:@"brew update && brew upgrade\n"];
+    [script appendString:@"brew upgrade --cask utv 2>/dev/null || true\n"];
+    [script appendString:@"echo ''\n"];
+
+    if (appBundlePath && [appBundlePath hasSuffix:@".app"]) {
+        [script appendString:@"read -r -p 'Press [Enter] to launch OpenUTV now, or close this window... '\n"];
+        [script appendFormat:@"open -a \"%@\" 2>/dev/null || true\n", appBundlePath];
+        [script appendString:@"exit 0\n"];
+    } else {
+        [script appendString:@"read -n 1 -s -r -p 'Press any key to close...' && exit 0\n"];
+    }
+
+    NSString *scriptPath = [NSTemporaryDirectory() stringByAppendingPathComponent:@"openutv_update_libraries.command"];
+    NSError *writeErr = nil;
+    [script writeToFile:scriptPath atomically:YES encoding:NSUTF8StringEncoding error:&writeErr];
+    if (writeErr) {
+        NSLog(@"UTVLauncher: Failed to write command script: %@", writeErr);
+        return;
+    }
+    chmod([scriptPath UTF8String], 0755);
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:scriptPath]];
+}
+
+static void reportLibraryLoadFailure(NSString *failure, BOOL isFinder) {
+    NSString *formula = formulaInLoadFailure(failure);
+
+    if (!isFinder) {
+        fprintf(stderr, "\n");
+        fprintf(stderr, "================================================================================\n");
+        fprintf(stderr, "  UTV: Homebrew libraries do not match this version of UTV\n");
+        fprintf(stderr, "================================================================================\n\n");
+        fprintf(stderr, "UTV could not load%s%s. Homebrew has upgraded a library since this version of UTV\n",
+                formula ? " " : " a required library", formula ? [formula UTF8String] : "");
+        fprintf(stderr, "was built, or the library is older than this version of UTV needs.\n\n");
+        fprintf(stderr, "To update the libraries and UTV so they match, run:\n");
+        fprintf(stderr, "  %s\n\n", [kLibraryFixCommand UTF8String]);
+        fprintf(stderr, "Details:\n%s\n\n", [failure UTF8String]);
+        fprintf(stderr, "If this does not help, report it at https://github.com/OpenUTV/utv/issues\n");
+        fprintf(stderr, "================================================================================\n\n");
+        return;
+    }
+
+    [NSApplication sharedApplication];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApp activateIgnoringOtherApps:YES];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setAlertStyle:NSAlertStyleCritical];
+    [alert setMessageText:@"UTV and its Homebrew libraries don't match"];
+    [alert setInformativeText:[NSString stringWithFormat:
+        @"UTV could not load %@.\n\n"
+        @"Homebrew has upgraded a library since this version of UTV was built, or the library is older than this "
+        @"version of UTV needs. Updating both fixes it:\n\n%@\n\nDetails:\n%@",
+        formula ?: @"a required library", kLibraryFixCommand,
+        [failure length] > 400 ? [[failure substringToIndex:400] stringByAppendingString:@"…"] : failure]];
+    [alert addButtonWithTitle:@"Update with Homebrew"];
+    [alert addButtonWithTitle:@"Copy Command"];
+    [alert addButtonWithTitle:@"Quit"];
+
+    NSModalResponse response = [alert runModal];
+    if (response == NSAlertFirstButtonReturn) {
+        launchTerminalLibraryUpdate();
+    } else if (response == NSAlertSecondButtonReturn) {
+        NSPasteboard *pb = [NSPasteboard generalPasteboard];
+        [pb clearContents];
+        [pb setString:kLibraryFixCommand forType:NSPasteboardTypeString];
+    }
+}
+
 static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
     if (isatty(STDIN_FILENO) || isatty(STDOUT_FILENO) || isatty(STDERR_FILENO)) {
         return NO;
@@ -373,6 +531,13 @@ int main(int argc, char *argv[]) {
 
             NSString *realBin = findRealBinary();
             if (realBin) {
+                if (getenv("UTV_SKIP_LIBRARY_CHECK") == NULL) {
+                    NSString *failure = libraryLoadFailure(realBin);
+                    if (failure) {
+                        reportLibraryLoadFailure(failure, isLaunchedFromFinder(argc, argv));
+                        return 1;
+                    }
+                }
                 execv([realBin UTF8String], argv);
                 perror("UTVLauncher: execv failed");
                 return 1;
@@ -398,7 +563,7 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "\nTo install the missing dependencies with Homebrew, run:\n");
             fprintf(stderr, "  brew install %s && brew link --overwrite ffmpeg-full\n\n", [missingList UTF8String]);
             fprintf(stderr, "Or install UTV using Homebrew Cask (installs all dependencies automatically):\n");
-            fprintf(stderr, "  brew tap OpenUTV/utv https://github.com/OpenUTV/utv\n");
+            fprintf(stderr, "  brew tap OpenUTV/utv\n");
             fprintf(stderr, "  brew trust OpenUTV/utv\n");
             fprintf(stderr, "  brew install --cask utv\n\n");
             fprintf(stderr, "For more information or to report issues, visit: https://github.com/OpenUTV/utv\n");
