@@ -2,6 +2,8 @@
 //  Copyright (c) 2013 Tweak Software
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -530,6 +532,7 @@ namespace IPCore
                 , mergeRender(false)
                 , norender(false)
                 , doBlend(false)
+                , outputTexture(false)
                 , mergeContext(0)
                 , device(0)
                 , fullSerialNum(0)
@@ -554,6 +557,7 @@ namespace IPCore
             size_t numImages;
             bool norender; // don't actually render, just record
             bool doBlend;
+            bool outputTexture;           // rendering into an IPImage::OutputTexture
             IPImage::BlendMode blendMode; // blending state
             const AuxRender* auxRenderer;
             InternalRenderContext* mergeContext;
