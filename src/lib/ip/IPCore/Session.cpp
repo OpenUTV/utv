@@ -2,6 +2,8 @@
 //  Copyright (c) 2012 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -12,6 +14,7 @@
 #include <IPCore/Exception.h>
 #include <IPCore/SessionIPNode.h>
 #include <IPCore/Session.h>
+#include <IPCore/HoverPreviewOverlayGL.h>
 #include <IPCore/PerFrameAudioRenderer.h>
 #include <IPCore/GroupIPNode.h>
 #include <IPCore/SoundTrackIPNode.h>
@@ -198,6 +201,7 @@ namespace IPCore
         {
             session->setEventVideoDevice(session->controlVideoDevice());
             session->userRender(session->controlVideoDevice(), "render", contents);
+            session->renderHoverPreviewOverlay();
         }
 
         if (forOutput)
@@ -366,6 +370,7 @@ namespace IPCore
         , m_wantsRedraw(false)
         , m_fullScreen(false)
         , m_renderer(0)
+        , m_hoverPreviewOverlay(0)
         , m_realfps(0)
         , m_lastCheckTime(0)
         , m_lastCheckFrame(0)
@@ -650,11 +655,13 @@ namespace IPCore
         clear();
 
         delete m_renderer;
+        delete m_hoverPreviewOverlay;
         delete m_proxyImage;
         delete m_errorImage;
         delete m_fpsCalc;
 
         m_renderer = 0;
+        m_hoverPreviewOverlay = 0;
         m_proxyImage = 0;
         m_errorImage = 0;
         m_fpsCalc = 0;
@@ -982,6 +989,19 @@ namespace IPCore
             cerr << "WARNING: requested unknown renderer type " << type << " using Composite" << endl;
             m_renderer = new ImageRenderer("Composite");
         }
+    }
+
+    HoverPreviewOverlayGL* Session::hoverPreviewOverlay()
+    {
+        if (!m_hoverPreviewOverlay)
+            m_hoverPreviewOverlay = new HoverPreviewOverlayGL();
+        return m_hoverPreviewOverlay;
+    }
+
+    void Session::renderHoverPreviewOverlay() const
+    {
+        if (m_hoverPreviewOverlay && m_renderer)
+            m_hoverPreviewOverlay->render(m_renderer, controlVideoDevice());
     }
 
     void Session::chooseNextBestRenderer()

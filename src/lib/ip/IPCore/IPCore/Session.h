@@ -2,6 +2,8 @@
 // Copyright (c) 2005 Tweak Inc.
 // All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //******************************************************************************
@@ -28,6 +30,7 @@
 namespace IPCore
 {
     class AudioRenderer;
+    class HoverPreviewOverlayGL;
     class IPNode;
     class ImageRenderer;
     class PropertyInfo;
@@ -513,6 +516,17 @@ namespace IPCore
         virtual void setRendererType(const std::string&);
 
         ImageRenderer* renderer() const { return m_renderer; }
+
+        //
+        //  Timeline hover preview overlay (see HoverPreviewOverlayGL). It
+        //  is created on first call, so it costs nothing until a UI uses
+        //  it. renderHoverPreviewOverlay() draws it over the control device
+        //  after the UI, and does nothing until then. Main thread only.
+        //
+
+        HoverPreviewOverlayGL* hoverPreviewOverlay();
+
+        void renderHoverPreviewOverlay() const;
 
         void setRendererBGType(unsigned int);
 
@@ -1181,6 +1195,7 @@ namespace IPCore
         IPGraph* m_graph;
         std::string m_name;
         ImageRenderer* m_renderer;
+        HoverPreviewOverlayGL* m_hoverPreviewOverlay;
         Timer m_timer;
         Timer m_stopTimer;
         Timer m_userTimer;
