@@ -412,7 +412,7 @@ jobs:
           # Headless, as on a render node: no X server at all. utvio creates its GL context through EGL.
           env -u DISPLAY UTV_GL_DEBUG=1 _build/stage/app/bin/utvio \
             "solid,red=1,green=0.5,blue=0,width=64,height=64,start=1,end=1.movieproc" -o /tmp/utvio-headless.exr 2>&1 | tail -6
-          env -u DISPLAY ctest --test-dir _build --output-on-failure --timeout 900 -R 'cli-smoke|image-format-roundtrip'
+          env -u DISPLAY ctest --test-dir _build --verbose --timeout 900 -R 'cli-smoke|image-format-roundtrip'
 
       - name: Save CCache
         if: always()

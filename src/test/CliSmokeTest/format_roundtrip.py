@@ -11,6 +11,9 @@ For each format listed by `utvio -formats` with Write capability:
   2. utvio converts the result back to PPM
   3. the pixels are compared against the source at known sample points
 
+It then decodes the files in samples/ (the same test image, encoded elsewhere), which checks that
+a format can be read on platforms where it cannot be written, e.g. HEIC on Windows.
+
 The source has distinct colored blocks in three corners, so a vertical flip, horizontal flop,
 channel swap, dropped channel, or truncated file all fail. Only pure 0/1 values are used so the
 check is independent of transfer functions. The test also fails if a format is advertised as
@@ -73,14 +76,15 @@ if sys.platform.startswith("linux"):
     # FITS written by utvio crashes (SIGSEGV) when read back on Linux.
     KNOWN_FAILURES["fits"] = "https://github.com/OpenUTV/utv/issues/67"
 if IS_WINDOWS:
-    KNOWN_FAILURES.update(
-        {
-            "heic": "https://github.com/OpenUTV/utv/issues/67",
-            "heif": "https://github.com/OpenUTV/utv/issues/67",
-            "hif": "https://github.com/OpenUTV/utv/issues/67",
-            "fits": "https://github.com/OpenUTV/utv/issues/67",
-        }
-    )
+    KNOWN_FAILURES["fits"] = "https://github.com/OpenUTV/utv/issues/67"
+
+# Writers that depend on software the user installs. A write that fails with this message is a
+# skip, not a failure: on Windows, HEIC is written with the HEVC encoder from the Microsoft Store
+# extensions, which OpenUTV does not ship (AGENTS.md 1.4).
+ENCODER_NOT_INSTALLED = re.compile(r"no HEIF/HEVC encoder installed")
+NOT_INSTALLED = "encoder not installed"
+
+SAMPLES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "samples")
 
 
 def write_source_ppm(path):
@@ -174,6 +178,8 @@ def roundtrip(utvio, env, timeout, workdir, source, ext):
     decoded = os.path.join(workdir, f"t.{ext}.back.ppm")
 
     result = run_tool([utvio, "-err-to-out", source, "-o", encoded], env, timeout)
+    if ENCODER_NOT_INSTALLED.search(result.output):
+        return NOT_INSTALLED
     if result.timed_out or result.returncode != 0 or not os.path.isfile(encoded):
         return f"write failed (exit {result.returncode}, timed_out={result.timed_out}): {last_error(result.output)}"
 
@@ -181,11 +187,26 @@ def roundtrip(utvio, env, timeout, workdir, source, ext):
     if result.timed_out or result.returncode != 0 or not os.path.isfile(decoded):
         return f"read back failed (exit {result.returncode}, timed_out={result.timed_out}): {last_error(result.output)}"
 
+    return check_decoded(decoded, ext)
+
+
+def check_decoded(decoded, ext):
     try:
         img = read_pnm(decoded)
     except (ValueError, OSError) as exc:
         return f"could not parse decoded PPM: {exc}"
     return check_pixels(img, LOSSY_TOLERANCE.get(ext, DEFAULT_TOLERANCE))
+
+
+def decode_sample(utvio, env, timeout, workdir, sample_path):
+    name = os.path.basename(sample_path)
+    ext = name.rsplit(".", 1)[-1].lower()
+    decoded = os.path.join(workdir, f"sample.{name}.ppm")
+
+    result = run_tool([utvio, "-err-to-out", sample_path, "-o", decoded], env, timeout)
+    if result.timed_out or result.returncode != 0 or not os.path.isfile(decoded):
+        return f"read failed (exit {result.returncode}, timed_out={result.timed_out}): {last_error(result.output)}"
+    return check_decoded(decoded, ext)
 
 
 def last_error(output):
@@ -232,10 +253,23 @@ def main():
     with ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 2)) as pool:
         results = list(pool.map(lambda e: (e, roundtrip(utvio, env, args.timeout, workdir, source, e)), tested))
 
+    samples = sorted(os.listdir(SAMPLES_DIR)) if os.path.isdir(SAMPLES_DIR) and not args.only else []
+
     failures = []
+    for name in samples:
+        problem = decode_sample(utvio, env, args.timeout, workdir, os.path.join(SAMPLES_DIR, name))
+        if problem:
+            failures.append((name, problem))
+            print(f"FAIL sample {name}: {problem}")
+        else:
+            print(f"ok   sample {name} (read)")
+
+    not_installed = [ext for ext, problem in results if problem == NOT_INSTALLED]
     for ext, problem in results:
         known = KNOWN_FAILURES.get(ext)
-        if problem and known:
+        if problem == NOT_INSTALLED:
+            print(f"skip {ext}: needs an encoder that is not installed on this machine")
+        elif problem and known:
             print(f"xfail {ext}: {problem} (known: {known})")
         elif problem:
             failures.append((ext, problem))
@@ -251,9 +285,10 @@ def main():
         shutil.rmtree(workdir, ignore_errors=True)
 
     if failures:
-        print(f"\n{len(failures)} of {len(tested)} formats failed the round trip")
+        print(f"\n{len(failures)} of {len(tested) + len(samples)} checks failed")
         return 1
-    xfails = sum(1 for ext, problem in results if problem and ext in KNOWN_FAILURES)
+    tested = [ext for ext in tested if ext not in not_installed]
+    xfails = sum(1 for ext, problem in results if problem and problem != NOT_INSTALLED and ext in KNOWN_FAILURES)
     passed = len(tested) - xfails
     suffix = f" ({xfails} known failures, see above)" if xfails else ""
     print(f"\n{passed} of {len(tested)} writable image formats round-tripped{suffix}")

@@ -407,6 +407,9 @@ runs:
         }
         ctest --test-dir _build --output-on-failure --timeout 900
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        # Show the per-format results (which formats were written, read, or skipped for a missing encoder).
+        ctest --test-dir _build --verbose --timeout 900 -R image-format-roundtrip
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       shell: powershell
 
     - name: Install UTV
