@@ -58,3 +58,5 @@ jobs:
             if (-not (Test-Path (Join-Path $dir $f))) { throw "Installer did not produce $f" }
           }
           Write-Host "Installed files present in $dir"
+          # The installer copies with robocopy, whose success codes are non-zero and would fail the step.
+          exit 0
