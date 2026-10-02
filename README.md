@@ -119,8 +119,10 @@ brew install --cask utv
 To upgrade an existing installation:
 
 ```bash
-brew upgrade --cask utv
+brew update && brew upgrade --cask utv
 ```
+
+UTV uses the multimedia libraries from your Homebrew rather than bundling its own, so each release is built against the Homebrew versions of that day. If UTV stops starting after Homebrew upgrades a library, upgrade UTV with the command above. If a newly installed UTV does not start, bring the libraries up to date with `brew update && brew upgrade`.
 
 This automatically installs `UTV.app` along with all required multimedia dependencies (`ffmpeg-full`, `qt`, `opencolorio`, `openimageio`, `openexr`, etc.).
 
