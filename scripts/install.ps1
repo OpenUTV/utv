@@ -5,15 +5,27 @@
     Installs OpenUTV to Program Files (or AppData for non-admin users),
     automatically verifies and installs OpenUTVDeps runtime dependencies,
     configures system PATH, and creates Start Menu and Desktop shortcuts.
+.PARAMETER Version
+    "latest" (default) installs the latest release. A release tag such as "2026.9" installs that
+    release. "dev-build" installs the newest development pre-release built from main.
+.PARAMETER ZipPath
+    Install from a UTV Windows zip already on disk (for example a CI build artifact) instead of
+    downloading a release.
 .EXAMPLE
     irm https://openutv.com/install.ps1 | iex
     irm https://raw.githubusercontent.com/OpenUTV/utv/main/scripts/install.ps1 | iex
+.EXAMPLE
+    # Development pre-release (parameters can't be passed through "irm | iex")
+    & ([scriptblock]::Create((irm https://openutv.com/install.ps1))) -Version dev-build
+.EXAMPLE
+    .\install.ps1 -ZipPath .\UTV-windows-x64.zip
 #>
 [CmdletBinding()]
 param(
     [string]$Version = "latest",
     [string]$DepsVersion = "26.5",
     [string]$InstallDir = "",
+    [string]$ZipPath = "",
     [switch]$SkipDeps = $false,
     [switch]$NoShortcuts = $false,
     [switch]$Uninstall = $false
@@ -164,8 +176,39 @@ if ($depsFound) {
 }
 
 # Step 2: Resolve UTV Release Asset
-Write-Host "`n--- Downloading OpenUTV ($Version) ---" -ForegroundColor Cyan
-if ($Version -eq "latest") {
+#
+# The default (no parameters) installs the latest release. The opt-in paths below, -ZipPath and
+# -Version dev-build, must not change what the default does.
+$zipUrl = $null
+$localZip = $null
+if ($ZipPath) {
+    if (-not (Test-Path -LiteralPath $ZipPath -PathType Leaf)) {
+        Write-Error "-ZipPath: file not found: $ZipPath"
+        return
+    }
+    $localZip = (Resolve-Path -LiteralPath $ZipPath).Path
+    if ($Version -eq "latest") { $Version = "local" }
+    Write-Host "`n--- Installing OpenUTV from $localZip ---" -ForegroundColor Cyan
+} else {
+    Write-Host "`n--- Downloading OpenUTV ($Version) ---" -ForegroundColor Cyan
+}
+
+if (-not $localZip -and $Version -eq "dev-build") {
+    # The development pre-release keeps one moving tag, and its asset name does not contain the tag.
+    $apiUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/tags/dev-build"
+    try {
+        $releaseData = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+        $asset = $releaseData.assets | Where-Object { $_.name -match "UTV-.*-windows-x64\.zip" } | Select-Object -First 1
+        if ($asset) {
+            $zipUrl = $asset.browser_download_url
+        }
+    } catch {
+        Write-Warning "Could not query GitHub API for the dev-build release. Falling back to the default asset URL."
+    }
+    if (-not $zipUrl) {
+        $zipUrl = "https://github.com/$RepoOwner/$RepoName/releases/download/dev-build/UTV-dev-windows-x64.zip"
+    }
+} elseif (-not $localZip -and $Version -eq "latest") {
     $apiUrl = "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest"
     try {
         $releaseData = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
@@ -179,16 +222,21 @@ if ($Version -eq "latest") {
     }
 }
 
-if (-not $zipUrl) {
+if (-not $localZip -and -not $zipUrl) {
     if ($Version -eq "latest") { $Version = "2026.9" }
     $zipUrl = "https://github.com/$RepoOwner/$RepoName/releases/download/$Version/UTV-$Version-windows-x64.zip"
 }
 
 Write-Host "Release Version: $Version" -ForegroundColor White
-Write-Host "Download URL: $zipUrl" -ForegroundColor Gray
 
 $tempZip = Join-Path $env:TEMP "OpenUTV-$Version-windows-x64.zip"
-Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing
+if ($localZip) {
+    # Work on a copy: the temporary zip is deleted after extraction.
+    Copy-Item -LiteralPath $localZip -Destination $tempZip -Force
+} else {
+    Write-Host "Download URL: $zipUrl" -ForegroundColor Gray
+    Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing
+}
 
 # Step 3: Extract & Install Application Files
 Write-Host "`n--- Installing OpenUTV into $InstallDir ---" -ForegroundColor Cyan
@@ -196,6 +244,15 @@ $tempExtract = Join-Path $env:TEMP "OpenUTV-Extract-$(Get-Random)"
 New-Item -ItemType Directory -Force -Path $tempExtract | Out-Null
 Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
 Remove-Item -Force $tempZip -ErrorAction SilentlyContinue
+
+# A CI artifact downloaded from the GitHub web page is a zip that contains the UTV zip.
+if ($localZip -and -not (Test-Path (Join-Path $tempExtract "utv-windows-x64"))) {
+    $innerZips = @(Get-ChildItem -Path $tempExtract -Filter "*.zip" -File)
+    if ($innerZips.Count -eq 1) {
+        Expand-Archive -Path $innerZips[0].FullName -DestinationPath $tempExtract -Force
+        Remove-Item -Force $innerZips[0].FullName -ErrorAction SilentlyContinue
+    }
+}
 
 $sourceDir = Join-Path $tempExtract "utv-windows-x64"
 if (-not (Test-Path $sourceDir)) {
