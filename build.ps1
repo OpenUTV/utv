@@ -68,19 +68,34 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootst
     $env:PATH += ";$env:ALLUSERSPROFILE\chocolatey\bin"
 }
 
-# --- 2. Visual Studio 2022 ---
-Write-Host "`n--- Checking Visual Studio 2022 ---" -ForegroundColor Cyan
+# --- 2. Visual Studio 2022 or newer (CI builds with 2022) ---
+Write-Host "`n--- Checking Visual Studio ---" -ForegroundColor Cyan
 $vsInstalled = $false
-if (Get-Command vswhere -ErrorAction SilentlyContinue) {
-    $vsPath = & vswhere -version "[17.0,18.0)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath
+# The Visual Studio Installer ships vswhere; Chocolatey's (step 3) may not be installed yet.
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+if (-not (Test-Path $vswhere)) { $vswhere = (Get-Command vswhere -ErrorAction SilentlyContinue).Source }
+if ($vswhere) {
+    $vsPath = & $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath
     if ($vsPath) { 
         $vsInstalled = $true 
         Write-Host "Found Visual Studio at $vsPath" -ForegroundColor Gray
     }
 }
 
+# CMake generator for the Visual Studio found: 2026 (18.x) or 2022 (17.x).
+$CmakeGenerator = "Visual Studio 17 2022"
+if ($vsInstalled) {
+    $vsMajor = ((& $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationVersion) -split '\.')[0]
+    if ($vsMajor -eq "18") { $CmakeGenerator = "Visual Studio 18 2026" }
+    # Use the CMake that ships with Visual Studio when none is on PATH.
+    $vsCmake = Join-Path $vsPath "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+    if (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$vsCmake\cmake.exe")) {
+        $env:PATH = "$vsCmake;$env:PATH"
+    }
+}
+
 if (-not $vsInstalled -and -not $SkipBootstrapping) {
-    Write-Host "Visual Studio 2022 with C++ workload not found. Installing via Chocolatey..." -ForegroundColor Yellow
+    Write-Host "Visual Studio with the C++ workload not found. Installing Visual Studio 2022 Build Tools via Chocolatey..." -ForegroundColor Yellow
     # Install Build Tools and the Native Desktop (C++) workload
     & choco install visualstudio2022buildtools --yes --no-progress
     & choco install visualstudio2022-workload-nativedesktop --yes --no-progress
@@ -114,48 +129,21 @@ if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
     $PythonPath = $env:pythonLocation
 }
 else {
-    $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
+    # The release the build is pinned to (cmake/openutv-deps-version.txt): the launchers only accept that one.
+    $DepsVersion = (Get-Content (Join-Path $ProjectRoot "cmake\openutv-deps-version.txt") -TotalCount 1).Trim()
+    $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
     if (-not $DepsDir -and -not $SkipBootstrapping) {
-        Write-Host "OpenUTVDeps MSI not found. Downloading latest release..." -ForegroundColor Yellow
-        $MsiPath = Join-Path $env:TEMP "OpenUTVDeps.msi"
-        $downloadSuccess = $false
-        if (Get-Command gh -ErrorAction SilentlyContinue) {
-            try {
-                & gh release download --repo OpenUTV/utv-dependencies --pattern "*.msi" --dir $env:TEMP --clobber
-                $downloaded = Get-ChildItem -Path $env:TEMP -Filter "*OpenUTVDeps*.msi" | Select-Object -First 1
-                if ($downloaded) {
-                    $MsiPath = $downloaded.FullName
-                    $downloadSuccess = $true
-                }
-            } catch {
-                Write-Warning "gh release download failed, trying HTTP download..."
-            }
+        Write-Host "OpenUTVDeps $DepsVersion not found. Downloading it..." -ForegroundColor Yellow
+        $MsiPath = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
+        Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi" -OutFile $MsiPath
+        Write-Host "Installing MSI (this may take a minute)..."
+        $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$MsiPath`" /qn /passive" -Wait -PassThru
+        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
+            Write-Host "MSI installed successfully." -ForegroundColor Green
+            $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
         }
-        if (-not $downloadSuccess) {
-            try {
-                $ReleaseUrl = "https://api.github.com/repos/openutv/utv-dependencies/releases/latest"
-                $ReleaseData = Invoke-RestMethod -Uri $ReleaseUrl
-                $Asset = $ReleaseData.assets | Where-Object { $_.name -like "*.msi" } | Select-Object -First 1
-                if ($Asset) {
-                    Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $MsiPath
-                    $downloadSuccess = $true
-                }
-            } catch {
-                Write-Warning "GitHub API rate limit or error, using direct release download URL..."
-                Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v26.3/OpenUTVDeps-26.3-win64.msi" -OutFile $MsiPath
-                $downloadSuccess = $true
-            }
-        }
-        if ($downloadSuccess -and (Test-Path $MsiPath)) {
-            Write-Host "Installing MSI (this may take a minute)..."
-            $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$MsiPath`" /qn /passive" -Wait -PassThru
-            if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
-                Write-Host "MSI installed successfully." -ForegroundColor Green
-                $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
-            }
-            else {
-                Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
-            }
+        else {
+            Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
         }
     }
 
@@ -182,6 +170,11 @@ $env:PKG_CONFIG_PATH = "$DepsSlash/lib/pkgconfig;$env:PKG_CONFIG_PATH"
 $env:CMAKE_ARGS = "-DCMAKE_PREFIX_PATH=$DepsSlash -DZLIB_ROOT=$DepsSlash"
 $env:INCLUDE = "$($DepsDir.FullName)\include;$env:INCLUDE"
 $env:LIB = "$($DepsDir.FullName)\lib;$env:LIB"
+
+# The build runs staged tools (format caches, package install) that load the OpenUTVDeps DLLs. The MSI does not put
+# them on the system PATH, so put them on this process's PATH, as the launchers do for installed programs.
+$DepsPySide = Join-Path $DepsDir.FullName "tools\python3\Lib\site-packages\PySide6"
+$env:PATH = "$($DepsDir.FullName)\bin;$DepsPySide;$env:PATH"
 
 # Ensure Python C-extension modules (.pyd files like _socket.pyd) exist
 $DllsPath = Join-Path $PythonPath "DLLs"
@@ -271,7 +264,7 @@ if ($env:OPENUTV_DEPS_ROOT) {
 
 $CmakeArgs = @(
     "-B", $BuildDir,
-    "-G", "Visual Studio 17 2022",
+    "-G", $CmakeGenerator,
     "-A", "x64",
     "-DCMAKE_BUILD_TYPE=$BuildType",
     "-DRV_DEPS_WIN_PERL_ROOT=c:/Strawberry/perl/bin",

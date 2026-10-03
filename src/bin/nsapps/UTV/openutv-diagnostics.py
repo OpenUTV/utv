@@ -229,9 +229,14 @@ def collect_package_info(diag_dir):
 
     elif sys_name == "Windows":
         lines.append("--- OpenUTVDeps & Installed Environments ---")
-        deps_root = os.environ.get("OPENUTV_DEPS_ROOT", "")
+        version_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "openutv-deps-version.txt")
+        if os.path.isfile(version_file):
+            with open(version_file, encoding="utf-8") as f:
+                lines.append(f"Required OpenUTVDeps: {f.read().strip()}")
+        deps_root = os.environ.get("UTV_DEPS_ROOT") or os.environ.get("OPENUTV_DEPS_ROOT", "")
         if deps_root:
-            lines.append(f"OPENUTV_DEPS_ROOT: {deps_root}")
+            lines.append(f"OpenUTVDeps in use: {deps_root}")
+        lines.append(f"OpenGL (UTV_OPENGL): {os.environ.get('UTV_OPENGL', 'not set')}")
         for p in sorted(glob.glob(r"C:\Program Files\OpenUTVDeps*")):
             lines.append(f"Found Dependency Directory: {p}")
 

@@ -122,6 +122,13 @@ IF(NOT RV_APPLICATION_TYPE)
   )
 ENDIF()
 
+# The OpenUTVDeps release Windows builds use. The launchers only run with this release, CI installs it, and the package ships the file so the installer knows
+# which release to install.
+FILE(
+  STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/openutv-deps-version.txt" UTV_DEPS_VERSION
+  LIMIT_COUNT 1
+)
+
 # Auto-detect OpenUTVDeps vcpkg toolchain on Windows
 IF(WIN32
    AND NOT DEFINED CMAKE_TOOLCHAIN_FILE
@@ -134,6 +141,13 @@ IF(WIN32
     )
     LIST(REVERSE DEPS_DIRS)
     LIST(GET DEPS_DIRS 0 LATEST_DEPS_DIR)
+    IF(EXISTS "C:/Program Files/OpenUTVDeps ${UTV_DEPS_VERSION}")
+      SET(LATEST_DEPS_DIR
+          "C:/Program Files/OpenUTVDeps ${UTV_DEPS_VERSION}"
+      )
+    ELSE()
+      MESSAGE(WARNING "OpenUTVDeps ${UTV_DEPS_VERSION} is not installed; building against ${LATEST_DEPS_DIR}. The launchers will not accept that release.")
+    ENDIF()
     IF(EXISTS "${LATEST_DEPS_DIR}/scripts/buildsystems/vcpkg.cmake")
       MESSAGE(STATUS "Auto-detected OpenUTVDeps vcpkg toolchain: ${LATEST_DEPS_DIR}")
       SET(CMAKE_TOOLCHAIN_FILE
@@ -285,10 +299,3 @@ ELSEIF(RV_TARGET_DARWIN)
 ENDIF()
 
 INCLUDE(CPack)
-
-IF(RV_TARGET_WINDOWS)
-  INSTALL(
-    PROGRAMS src/UTV.bat
-    DESTINATION bin
-  )
-ENDIF()

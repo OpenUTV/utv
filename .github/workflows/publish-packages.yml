@@ -88,8 +88,11 @@ jobs:
           git push origin main
           echo "Successfully updated OpenUTV/homebrew-utv tap!"
 
+  # Paused: the Scoop, winget and Chocolatey packages are not maintained for now. install.ps1 and the
+  # release zip are the supported ways to install on Windows. Remove `if: false` to publish again.
   publish-scoop:
     name: Update Scoop Bucket (OpenUTV/scoop-utv)
+    if: false
     needs: [verify-release]
     runs-on: ubuntu-latest
     steps:
@@ -129,8 +132,11 @@ jobs:
             echo "::warning::$MANIFEST not found in scoop-utv repository. Run scripts/register-scoop.ps1 first."
           fi
 
+  # Paused: the Scoop, winget and Chocolatey packages are not maintained for now. install.ps1 and the
+  # release zip are the supported ways to install on Windows. Remove `if: false` to publish again.
   publish-winget:
     name: Submit winget-pkgs PR
+    if: false
     needs: [verify-release]
     runs-on: ubuntu-latest
     steps:
@@ -250,8 +256,11 @@ jobs:
           fi
           echo "Winget package submission completed!"
 
+  # Paused: the Scoop, winget and Chocolatey packages are not maintained for now. install.ps1 and the
+  # release zip are the supported ways to install on Windows. Remove `if: false` to publish again.
   publish-chocolatey:
     name: Push to Chocolatey
+    if: false
     needs: [verify-release]
     runs-on: windows-latest
     steps:

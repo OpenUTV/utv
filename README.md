@@ -142,9 +142,8 @@ irm https://raw.githubusercontent.com/OpenUTV/utv/main/scripts/install.ps1 | iex
 
 The installer:
 
-- Detects whether `OpenUTVDeps-*.msi` is installed and automatically downloads and installs missing multimedia dependencies silently.
-- Extracts and registers OpenUTV binaries.
-- Configures system or user `PATH`.
+- Installs the `OpenUTVDeps` release this OpenUTV release was built against, if it is missing.
+- Installs OpenUTV and adds its `cmd` folder (launchers only: `utv`, `utvio`, `utvls`, `utvpkg`, `py-interp` and the `rv*` names) to the system or user `PATH`. Nothing else goes into your environment.
 - Creates Start Menu shortcuts with proper working directories.
 - Registers in Windows *Installed Apps* / *Add or Remove Programs* for clean uninstallation.
 
@@ -159,12 +158,12 @@ Download `UTV-<version>-macOS-arm64.zip` directly from our **[Releases](https://
 
 #### Windows (Standalone ZIP)
 
-1. **Install Dependencies**:
-   Download and run the latest `OpenUTVDeps-*-win64.msi` installer from **[OpenUTV Dependencies Releases](https://github.com/OpenUTV/utv-dependencies/releases/latest)**. This automatically installs all multimedia libraries and registers them with your system `PATH`.
-2. **Download OpenUTV for Windows**:
+1. **Download OpenUTV for Windows**:
    Download the latest `UTV-<version>-windows-x64.zip` archive from our **[Releases](https://github.com/OpenUTV/utv/releases)** page.
-3. **Extract and Run**:
-   Extract to a folder of your choice and launch `bin\utv.exe`.
+2. **Extract and Run**:
+   Extract to a folder of your choice and launch `bin\utv.exe`. If the `OpenUTVDeps` release it needs (named in `bin\openutv-deps-version.txt`) is not installed, OpenUTV says which one and offers its download page: install `OpenUTVDeps-<version>-win64.msi` from **[OpenUTV Dependencies Releases](https://github.com/OpenUTV/utv-dependencies/releases)**.
+3. **Command line (optional)**:
+   Add the extracted `cmd` folder to your `PATH` for `utv`, `utvio`, `utvls`, `utvpkg`, `py-interp` and their `rv*` names. They need no other environment setup.
 
 #### Windows SmartScreen Notice
 

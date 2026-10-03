@@ -2,9 +2,16 @@
 .SYNOPSIS
     Official OpenUTV Windows Installer and Upgrader.
 .DESCRIPTION
-    Installs OpenUTV to Program Files (or AppData for non-admin users),
-    automatically verifies and installs OpenUTVDeps runtime dependencies,
-    configures system PATH, and creates Start Menu and Desktop shortcuts.
+    Installs OpenUTV to Program Files (or AppData for non-admin users), installs the OpenUTVDeps
+    release the package needs, puts <install>\cmd on PATH, creates Start Menu and Desktop shortcuts
+    and registers OpenUTV in Installed Apps.
+
+    The release zip also works without this script: extract it anywhere and run bin\utv.exe. The
+    launchers find OpenUTVDeps and set the environment for their own process, so the installer sets
+    no environment variables besides PATH. <install>\cmd only contains launchers; bin, with the
+    DLLs, stays off PATH.
+.PARAMETER DepsVersion
+    OpenUTVDeps release to install. Default: the one the package names in bin\openutv-deps-version.txt.
 .PARAMETER Version
     "latest" (default) installs the latest release. A release tag such as "2026.9" installs that
     release. "dev-build" installs the newest development pre-release built from main.
@@ -23,7 +30,7 @@
 [CmdletBinding()]
 param(
     [string]$Version = "latest",
-    [string]$DepsVersion = "26.5",
+    [string]$DepsVersion = "",
     [string]$InstallDir = "",
     [string]$ZipPath = "",
     [switch]$SkipDeps = $false,
@@ -48,6 +55,41 @@ if (-not $InstallDir) {
         $InstallDir = "$env:ProgramFiles\OpenUTV"
     } else {
         $InstallDir = "$env:LOCALAPPDATA\Programs\OpenUTV"
+    }
+}
+
+$pathScope = if ($isAdmin) { "Machine" } else { "User" }
+
+function Remove-FromPath([string[]]$dirs, [string]$scope) {
+    $current = [Environment]::GetEnvironmentVariable("Path", $scope)
+    if (-not $current) { return }
+    $trimmed = $dirs | ForEach-Object { $_.TrimEnd('\') }
+    $kept = $current -split ';' | Where-Object { $_ -and ($trimmed -notcontains $_.TrimEnd('\')) }
+    $new = $kept -join ';'
+    if ($new -ne $current) {
+        [Environment]::SetEnvironmentVariable("Path", $new, $scope)
+        Write-Host "Removed $($dirs -join ', ') from $scope PATH." -ForegroundColor Gray
+    }
+}
+
+# Earlier installers stored the dependency location and Python/Qt settings in the user or system
+# environment. The launchers set them per process now. Only values that point at OpenUTV or
+# OpenUTVDeps are removed, never a user's own PYTHONHOME or QT_PLUGIN_PATH. OPENUTV_DEPS_ROOT in
+# the system environment belongs to the OpenUTVDeps MSI and is left alone.
+function Remove-LegacyEnvironment {
+    $scopes = @("User")
+    if ($isAdmin) { $scopes += "Machine" }
+    foreach ($scope in $scopes) {
+        $names = @("UTV_DEPS_ROOT", "UTV_HOME", "OPENUTV_HOME", "PYTHONHOME", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH")
+        if ($scope -eq "User") { $names += "OPENUTV_DEPS_ROOT" }
+        foreach ($name in $names) {
+            $value = [Environment]::GetEnvironmentVariable($name, $scope)
+            if ($value -and ($value -like "*OpenUTVDeps*" -or $value -like "*\OpenUTV" -or $value -like "*\OpenUTV\*")) {
+                [Environment]::SetEnvironmentVariable($name, $null, $scope)
+                [Environment]::SetEnvironmentVariable($name, $null, "Process")
+                Write-Host "Removed $name from the $scope environment (was $value)." -ForegroundColor Gray
+            }
+        }
     }
 }
 
@@ -94,15 +136,9 @@ if ($Uninstall) {
         }
     }
 
-    # Remove from PATH
-    $binDir = Join-Path $InstallDir "bin"
-    $pathScope = if ($isAdmin) { "Machine" } else { "User" }
-    $currentEnvPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
-    if ($currentEnvPath -like "*$binDir*") {
-        $paths = $currentEnvPath -split ';' | Where-Object { $_ -and $_.TrimEnd('\') -ne $binDir.TrimEnd('\') }
-        [Environment]::SetEnvironmentVariable("Path", ($paths -join ';'), $pathScope)
-        Write-Host "Removed $binDir from $pathScope PATH." -ForegroundColor Gray
-    }
+    # Remove from PATH (cmd; bin from older installs) and earlier installers' environment variables
+    Remove-FromPath @((Join-Path $InstallDir "cmd"), (Join-Path $InstallDir "bin")) $pathScope
+    Remove-LegacyEnvironment
 
     # Remove files
     if (Test-Path $InstallDir) {
@@ -123,59 +159,7 @@ Write-Host "===============================================" -ForegroundColor Cy
 Write-Host "Target Directory: $InstallDir" -ForegroundColor White
 Write-Host "Administrative Privileges: $isAdmin`n" -ForegroundColor White
 
-# Step 1: Check and Install OpenUTVDeps
-Write-Host "--- Checking OpenUTV Dependencies (v$DepsVersion) ---" -ForegroundColor Cyan
-$depsFound = $false
-$detectedDepsPath = ""
-
-if (Test-Path "C:\Program Files\OpenUTVDeps $DepsVersion\bin\OpenImageIO.dll") {
-    $depsFound = $true
-    $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
-} elseif ($env:UTV_DEPS_ROOT -and (Test-Path "$env:UTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
-    $depsFound = $true
-    $detectedDepsPath = $env:UTV_DEPS_ROOT
-} elseif ($env:OPENUTV_DEPS_ROOT -and (Test-Path "$env:OPENUTV_DEPS_ROOT\bin\OpenImageIO.dll")) {
-    $depsFound = $true
-    $detectedDepsPath = $env:OPENUTV_DEPS_ROOT
-} elseif (Test-Path "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll") {
-    $found = Get-Item "C:\Program Files\OpenUTVDeps*\bin\OpenImageIO.dll" | Select-Object -First 1
-    $depsFound = $true
-    $detectedDepsPath = $found.Directory.Parent.FullName
-} else {
-    $uninst = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
-        Where-Object { $_.DisplayName -like "OpenUTVDeps $DepsVersion*" -or $_.DisplayName -like "OpenUTV Dependencies $DepsVersion*" } |
-        Select-Object -First 1
-    if ($uninst -and $uninst.InstallLocation -and (Test-Path "$($uninst.InstallLocation)\bin\OpenImageIO.dll")) {
-        $depsFound = $true
-        $detectedDepsPath = $uninst.InstallLocation.TrimEnd('\')
-    }
-}
-
-if ($depsFound) {
-    Write-Host "OpenUTV dependencies detected at: $detectedDepsPath" -ForegroundColor Green
-} elseif (-not $SkipDeps) {
-    Write-Host "OpenUTV dependencies not found. Downloading OpenUTVDeps MSI installer..." -ForegroundColor Yellow
-    $msiUrl = "https://github.com/$RepoOwner/$DepsRepoName/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
-    $tempMsi = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
-
-    Write-Host "Downloading $msiUrl..." -ForegroundColor White
-    Invoke-WebRequest -Uri $msiUrl -OutFile $tempMsi -UseBasicParsing
-
-    Write-Host "Installing OpenUTVDeps (silent MSI install)..." -ForegroundColor Yellow
-    $msiProc = Start-Process msiexec.exe -ArgumentList "/i `"$tempMsi`" /qn /norestart MSIFASTINSTALL=7" -Wait -PassThru
-    Remove-Item -Force $tempMsi -ErrorAction SilentlyContinue
-
-    if ($msiProc.ExitCode -ne 0 -and $msiProc.ExitCode -ne 3010) {
-        Write-Error "Failed to install OpenUTVDeps MSI. Exit code: $($msiProc.ExitCode)"
-        return
-    }
-    Write-Host "OpenUTVDeps installed successfully!" -ForegroundColor Green
-    $detectedDepsPath = "C:\Program Files\OpenUTVDeps $DepsVersion"
-} else {
-    Write-Host "Skipping OpenUTVDeps download/install (-SkipDeps)." -ForegroundColor Gray
-}
-
-# Step 2: Resolve UTV Release Asset
+# Step 1: Resolve UTV Release Asset
 #
 # The default (no parameters) installs the latest release. The opt-in paths below, -ZipPath and
 # -Version dev-build, must not change what the default does.
@@ -188,9 +172,9 @@ if ($ZipPath) {
     }
     $localZip = (Resolve-Path -LiteralPath $ZipPath).Path
     if ($Version -eq "latest") { $Version = "local" }
-    Write-Host "`n--- Installing OpenUTV from $localZip ---" -ForegroundColor Cyan
+    Write-Host "--- Installing OpenUTV from $localZip ---" -ForegroundColor Cyan
 } else {
-    Write-Host "`n--- Downloading OpenUTV ($Version) ---" -ForegroundColor Cyan
+    Write-Host "--- Downloading OpenUTV ($Version) ---" -ForegroundColor Cyan
 }
 
 if (-not $localZip -and $Version -eq "dev-build") {
@@ -238,8 +222,7 @@ if ($localZip) {
     Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -UseBasicParsing
 }
 
-# Step 3: Extract & Install Application Files
-Write-Host "`n--- Installing OpenUTV into $InstallDir ---" -ForegroundColor Cyan
+# Step 2: Extract
 $tempExtract = Join-Path $env:TEMP "OpenUTV-Extract-$(Get-Random)"
 New-Item -ItemType Directory -Force -Path $tempExtract | Out-Null
 Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force
@@ -258,213 +241,121 @@ $sourceDir = Join-Path $tempExtract "utv-windows-x64"
 if (-not (Test-Path $sourceDir)) {
     $sourceDir = $tempExtract
 }
+if (-not (Test-Path (Join-Path $sourceDir "bin\utv.exe"))) {
+    Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue
+    Write-Error "Installation failed: the package has no bin\utv.exe"
+    return
+}
 
-# Dedicated CLI tools get launcher shims (a copy of utv.exe as <tool>.exe, the real binary as
-# <tool>-bin.exe). That needs a launcher that dispatches on its own file name, which only builds
-# with OpenUTV/utv#63 have; they are the ones that ship openutv-run.cmd. An older launcher always
-# starts the viewer, so shimming it made every CLI tool open a viewer, and the startup update check
-# (which runs py-interp.exe) relaunch the viewer endlessly (OpenUTV/utv#73). Check the package
-# itself, before it is moved into place, so files from a previous install can't fool the check.
-$cliTools = @("utvio", "utvpkg", "py-interp", "utvls")
-$sourceBin = Join-Path $sourceDir "bin"
-$launcherSupportsShims = Test-Path (Join-Path $sourceBin "openutv-run.cmd")
-$packagedTools = @($cliTools | Where-Object { Test-Path (Join-Path $sourceBin "$_.exe") })
+# Step 3: OpenUTVDeps, the release this package was built against
+if (-not $DepsVersion) {
+    $versionFile = Join-Path $sourceDir "bin\openutv-deps-version.txt"
+    # Packages from before the launcher rework (2026.11 and older) do not name it; they use 26.5.
+    $DepsVersion = if (Test-Path $versionFile) { (Get-Content $versionFile -TotalCount 1).Trim() } else { "26.5" }
+}
+Write-Host "`n--- Checking OpenUTV Dependencies (OpenUTVDeps $DepsVersion) ---" -ForegroundColor Cyan
 
+function Test-DepsRoot([string]$root) {
+    return $root -and (Test-Path (Join-Path $root "bin\OpenImageIO.dll")) -and
+        (Test-Path (Join-Path $root "tools\python3\Lib\site-packages\PySide6\Qt6Core.dll"))
+}
+
+function Format-Version([string]$version) {
+    return ($version.Trim() -replace '^v', '') -replace '(\.0)+$', ''
+}
+
+$detectedDepsPath = ""
+$installedDeps = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*", "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+    Where-Object { ($_.DisplayName -like "OpenUTVDeps*" -or $_.DisplayName -like "OpenUTV Dependencies*") -and $_.InstallLocation }
+foreach ($entry in $installedDeps) {
+    $root = $entry.InstallLocation.TrimEnd('\')
+    if ((Test-DepsRoot $root) -and $entry.DisplayVersion -and ((Format-Version $entry.DisplayVersion) -eq (Format-Version $DepsVersion))) {
+        $detectedDepsPath = $root
+        break
+    }
+}
+if (-not $detectedDepsPath -and (Test-DepsRoot "$env:ProgramFiles\OpenUTVDeps $DepsVersion")) {
+    $detectedDepsPath = "$env:ProgramFiles\OpenUTVDeps $DepsVersion"
+}
+
+if ($detectedDepsPath) {
+    Write-Host "OpenUTVDeps $DepsVersion found at: $detectedDepsPath" -ForegroundColor Green
+} elseif (-not $SkipDeps) {
+    Write-Host "OpenUTVDeps $DepsVersion not found. Downloading the OpenUTVDeps MSI installer..." -ForegroundColor Yellow
+    $msiUrl = "https://github.com/$RepoOwner/$DepsRepoName/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi"
+    $tempMsi = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
+
+    Write-Host "Downloading $msiUrl..." -ForegroundColor White
+    Invoke-WebRequest -Uri $msiUrl -OutFile $tempMsi -UseBasicParsing
+
+    Write-Host "Installing OpenUTVDeps (silent MSI install)..." -ForegroundColor Yellow
+    $msiProc = Start-Process msiexec.exe -ArgumentList "/i `"$tempMsi`" /qn /norestart MSIFASTINSTALL=7" -Wait -PassThru
+    Remove-Item -Force $tempMsi -ErrorAction SilentlyContinue
+
+    if ($msiProc.ExitCode -ne 0 -and $msiProc.ExitCode -ne 3010) {
+        Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue
+        Write-Error "Failed to install OpenUTVDeps MSI. Exit code: $($msiProc.ExitCode)"
+        return
+    }
+    Write-Host "OpenUTVDeps $DepsVersion installed successfully!" -ForegroundColor Green
+} else {
+    Write-Host "Skipping OpenUTVDeps download/install (-SkipDeps)." -ForegroundColor Gray
+}
+
+# Step 4: Install the application files
+Write-Host "`n--- Installing OpenUTV into $InstallDir ---" -ForegroundColor Cyan
+$installPrefix = $InstallDir.TrimEnd('\') + '\'
+$running = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($installPrefix, [System.StringComparison]::OrdinalIgnoreCase) })
+if ($running.Count -gt 0) {
+    Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue
+    Write-Error "OpenUTV is running from $InstallDir ($(($running | ForEach-Object { $_.ProcessName } | Sort-Object -Unique) -join ', ')). Close it and run the installer again."
+    return
+}
+
+# Replace what the package ships instead of copying over it: a file an earlier release had (a
+# plugin, a launcher, .cmd wrappers) would otherwise stay and be loaded.
+if (Test-Path $InstallDir) {
+    foreach ($item in Get-ChildItem -LiteralPath $sourceDir) {
+        $target = Join-Path $InstallDir $item.Name
+        if (Test-Path -LiteralPath $target) {
+            Remove-Item -LiteralPath $target -Recurse -Force
+        }
+    }
+}
 New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
 & robocopy $sourceDir $InstallDir /E /MOVE /NDL /NFL /NJH /NJS /nc /ns /np | Out-Null
 Remove-Item -Recurse -Force $tempExtract -ErrorAction SilentlyContinue
 
-$utvExe = Join-Path $InstallDir "bin\utv.exe"
+$binDir = Join-Path $InstallDir "bin"
+$cmdDir = Join-Path $InstallDir "cmd"
+$utvExe = Join-Path $binDir "utv.exe"
 if (-not (Test-Path $utvExe)) {
-    Write-Error "Installation failed: utv.exe was not found in $InstallDir\bin"
+    Write-Error "Installation failed: utv.exe was not found in $binDir"
     return
 }
 
-# Step 4: Configure PATH, Isolated CLI Shims, and Environment
-Write-Host "`n--- Configuring Environment & Isolated CLI Tools ---" -ForegroundColor Cyan
-$binDir = Join-Path $InstallDir "bin"
-$pathScope = if ($isAdmin) { "Machine" } else { "User" }
+# Step 5: PATH
+Write-Host "`n--- Configuring PATH ---" -ForegroundColor Cyan
+Remove-LegacyEnvironment
 
-# Remove orphaned legacy qt.conf if present without plugins\Qt (prevents blocking PySide6 Qt plugin loading)
-$legacyQtConf = Join-Path $binDir "qt.conf"
-$qtPluginDir = Join-Path $InstallDir "plugins\Qt"
-if ((Test-Path $legacyQtConf) -and -not (Test-Path $qtPluginDir)) {
-    Remove-Item -Force $legacyQtConf -ErrorAction SilentlyContinue
-    Write-Host "Removed legacy qt.conf." -ForegroundColor Gray
-}
-
-# Give dedicated CLI tools (utvio, utvpkg, py-interp, utvls) -bin copies and launcher shims when the
-# packaged launcher supports them (see $launcherSupportsShims above).
-$utvExe = Join-Path $binDir "utv.exe"
-foreach ($tool in $cliTools) {
-    $toolExe = Join-Path $binDir "$tool.exe"
-    $toolBin = Join-Path $binDir "$tool-bin.exe"
-    $packaged = $packagedTools -contains $tool
-
-    if ($launcherSupportsShims) {
-        if ($packaged -and (Test-Path $utvExe)) {
-            # <tool>.exe is this package's real binary; it replaces any -bin copy from a previous install.
-            Move-Item -Force -Path $toolExe -Destination $toolBin
-            Copy-Item -Force -Path $utvExe -Destination $toolExe
-            Write-Host "Configured hermetic launcher for $tool.exe" -ForegroundColor Gray
-        }
-    }
-    elseif (Test-Path $toolBin) {
-        # Repair an install shimmed against a launcher that can't dispatch (OpenUTV/utv#73).
-        if ($packaged) {
-            # This package's real <tool>.exe is already in place; drop the stale -bin copy.
-            Remove-Item -Force -Path $toolBin
-        }
-        else {
-            Move-Item -Force -Path $toolBin -Destination $toolExe
-        }
-        Write-Host "Restored $tool.exe (launcher shims need a newer OpenUTV build)" -ForegroundColor Gray
+# Only cmd (launchers) goes on PATH. Packages from before the launcher rework have no cmd directory;
+# their bin goes on PATH as before.
+$pathDir = if (Test-Path $cmdDir) { $cmdDir } else { $binDir }
+function Select-OtherPathEntries([string]$path) {
+    return ($path -split ";") | Where-Object {
+        $_ -and
+        $_ -notlike "*OpenUTVDeps*" -and
+        $_ -notlike "*openutv-dependencies*" -and
+        $_.TrimEnd('\') -ne $binDir.TrimEnd('\') -and
+        $_.TrimEnd('\') -ne $cmdDir.TrimEnd('\')
     }
 }
+$persistentPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
+[Environment]::SetEnvironmentVariable("Path", ((@($pathDir) + (Select-OtherPathEntries $persistentPath)) -join ";"), $pathScope)
+$env:Path = (@($pathDir) + (Select-OtherPathEntries $env:Path)) -join ";"
+Write-Host "  + Added to $pathScope PATH: $pathDir" -ForegroundColor Gray
 
-# Deploy companion .cmd scripts for seamless CLI usage without PATH pollution
-$cmdShimTemplate = @'
-@echo off
-setlocal
-
-:: Discover OpenUTVDeps runtime root directory
-set "DEPS_ROOT="
-if defined UTV_DEPS_ROOT if exist "%UTV_DEPS_ROOT%\bin\OpenImageIO.dll" set "DEPS_ROOT=%UTV_DEPS_ROOT%"
-if not defined DEPS_ROOT if defined OPENUTV_DEPS_ROOT if exist "%OPENUTV_DEPS_ROOT%\bin\OpenImageIO.dll" set "DEPS_ROOT=%OPENUTV_DEPS_ROOT%"
-
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "UTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v "OPENUTV_DEPS_ROOT" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKCU\Software\OpenUTV" /v "DepsPath" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /f "tokens=2*" %%a in ('reg query "HKLM\Software\OpenUTV" /v "DepsPath" 2^>nul') do if exist "%%b\bin\OpenImageIO.dll" set "DEPS_ROOT=%%b"
-)
-if not defined DEPS_ROOT (
-    for /d %%d in ("%ProgramFiles%\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "DEPS_ROOT=%%d"
-)
-if not defined DEPS_ROOT (
-    for /d %%d in ("%LOCALAPPDATA%\Programs\OpenUTVDeps*") do if exist "%%d\bin\OpenImageIO.dll" set "DEPS_ROOT=%%d"
-)
-
-if not defined DEPS_ROOT (
-    echo OpenUTV: Could not locate OpenUTVDeps runtime dependencies. >&2
-    exit /b 1
-)
-
-set "APP_DIR=%~dp0"
-if "%APP_DIR:~-1%"=="\" set "APP_DIR=%APP_DIR:~0,-1%"
-
-set "PATH=%APP_DIR%;%DEPS_ROOT%\bin;%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6;%DEPS_ROOT%\tools\python3;%DEPS_ROOT%\tools\python3\Scripts;%PATH%"
-set "PYTHONHOME=%DEPS_ROOT%\tools\python3"
-set "QT_PLUGIN_PATH=%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6\plugins"
-set "QT_QPA_PLATFORM_PLUGIN_PATH=%DEPS_ROOT%\tools\python3\Lib\site-packages\PySide6\plugins\platforms"
-set "UTV_DEPS_ROOT=%DEPS_ROOT%"
-set "OPENUTV_DEPS_ROOT=%DEPS_ROOT%"
-set "UTV_HOME=%APP_DIR%"
-set "OPENUTV_HOME=%APP_DIR%"
-'@
-
-# Write openutv-run.cmd
-$openutvRunContent = $cmdShimTemplate + "`r`n`r`n%*`r`nexit /b %ERRORLEVEL%`r`n"
-Set-Content -Path (Join-Path $binDir "openutv-run.cmd") -Value $openutvRunContent -Encoding ASCII
-
-# Write utvio.cmd, utvpkg.cmd, py-interp.cmd, utvls.cmd
-foreach ($tool in $cliTools) {
-    $dispatch = @"
-
-if exist "%APP_DIR%\$tool-bin.exe" (
-    "%APP_DIR%\$tool-bin.exe" %*
-) else if exist "%APP_DIR%\$tool.exe" (
-    "%APP_DIR%\$tool.exe" %*
-) else (
-    echo OpenUTV: Could not locate $tool executable. >&2
-    exit /b 1
-)
-exit /b %ERRORLEVEL%
-"@
-    Set-Content -Path (Join-Path $binDir "$tool.cmd") -Value ($cmdShimTemplate + $dispatch) -Encoding ASCII
-}
-
-# Write openutv-diagnostics.cmd and openutv-check-updates.cmd
-$diagDispatch = @"
-
-if exist "%APP_DIR%\py-interp-bin.exe" (
-    "%APP_DIR%\py-interp-bin.exe" "%APP_DIR%\openutv-diagnostics.py" %*
-) else if exist "%APP_DIR%\py-interp.exe" (
-    "%APP_DIR%\py-interp.exe" "%APP_DIR%\openutv-diagnostics.py" %*
-) else if exist "%DEPS_ROOT%\tools\python3\python.exe" (
-    "%DEPS_ROOT%\tools\python3\python.exe" "%APP_DIR%\openutv-diagnostics.py" %*
-) else (
-    python "%APP_DIR%\openutv-diagnostics.py" %*
-)
-exit /b %ERRORLEVEL%
-"@
-Set-Content -Path (Join-Path $binDir "openutv-diagnostics.cmd") -Value ($cmdShimTemplate + $diagDispatch) -Encoding ASCII
-
-$updateDispatch = @"
-
-if exist "%APP_DIR%\py-interp-bin.exe" (
-    "%APP_DIR%\py-interp-bin.exe" "%APP_DIR%\openutv-check-updates.py" %*
-) else if exist "%APP_DIR%\py-interp.exe" (
-    "%APP_DIR%\py-interp.exe" "%APP_DIR%\openutv-check-updates.py" %*
-) else if exist "%DEPS_ROOT%\tools\python3\python.exe" (
-    "%DEPS_ROOT%\tools\python3\python.exe" "%APP_DIR%\openutv-check-updates.py" %*
-) else (
-    python "%APP_DIR%\openutv-check-updates.py" %*
-)
-exit /b %ERRORLEVEL%
-"@
-Set-Content -Path (Join-Path $binDir "openutv-check-updates.cmd") -Value ($cmdShimTemplate + $updateDispatch) -Encoding ASCII
-
-# Configure persistent environment variables
-if ($detectedDepsPath -and (Test-Path $detectedDepsPath)) {
-    [Environment]::SetEnvironmentVariable("UTV_DEPS_ROOT", $detectedDepsPath, $pathScope)
-    [Environment]::SetEnvironmentVariable("OPENUTV_DEPS_ROOT", $detectedDepsPath, $pathScope)
-    $env:UTV_DEPS_ROOT = $detectedDepsPath
-    $env:OPENUTV_DEPS_ROOT = $detectedDepsPath
-}
-[Environment]::SetEnvironmentVariable("UTV_HOME", $InstallDir, $pathScope)
-[Environment]::SetEnvironmentVariable("OPENUTV_HOME", $InstallDir, $pathScope)
-$env:UTV_HOME = $InstallDir
-$env:OPENUTV_HOME = $InstallDir
-
-# Clean global pollution: remove PYTHONHOME, QT_PLUGIN_PATH, QT_QPA_PLATFORM_PLUGIN_PATH
-[Environment]::SetEnvironmentVariable("PYTHONHOME", $null, $pathScope)
-[Environment]::SetEnvironmentVariable("QT_PLUGIN_PATH", $null, $pathScope)
-[Environment]::SetEnvironmentVariable("QT_QPA_PLATFORM_PLUGIN_PATH", $null, $pathScope)
-$env:PYTHONHOME = $null
-$env:QT_PLUGIN_PATH = $null
-$env:QT_QPA_PLATFORM_PLUGIN_PATH = $null
-
-# Configure PATH: ONLY $binDir, zero pollution from OpenUTVDeps/Scoop/Choco
-$currentEnvPath = [Environment]::GetEnvironmentVariable("Path", $pathScope)
-$cleanList = ($currentEnvPath -split ";") | Where-Object {
-    $_ -ne "" -and
-    $_ -notlike "*OpenUTVDeps*" -and
-    $_ -notlike "*openutv-dependencies*" -and
-    $_ -ne $binDir
-}
-
-$newEnvPath = (@($binDir) + $cleanList) -join ";"
-[Environment]::SetEnvironmentVariable("Path", $newEnvPath, $pathScope)
-$env:Path = (@($binDir) + (($env:Path -split ";") | Where-Object { $_ -notlike "*OpenUTVDeps*" -and $_ -notlike "*openutv-dependencies*" -and $_ -ne $binDir })) -join ";"
-
-Write-Host "Environment configured hermetically (Zero `$PATH pollution)." -ForegroundColor Green
-Write-Host "  + Added to $pathScope PATH: $binDir" -ForegroundColor Gray
-Write-Host "  - Cleaned dependency folders and global PYTHONHOME/QT_PLUGIN_PATH from environment." -ForegroundColor Gray
-
-# Step 5: Create Start Menu and Desktop Shortcuts
+# Step 6: Create Start Menu and Desktop Shortcuts
 if (-not $NoShortcuts) {
     Write-Host "`n--- Creating Shortcuts ---" -ForegroundColor Cyan
     $wsh = New-Object -ComObject WScript.Shell
@@ -500,7 +391,7 @@ if (-not $NoShortcuts) {
     }
 }
 
-# Step 6: Register Windows Add/Remove Programs (ARP)
+# Step 7: Register Windows Add/Remove Programs (ARP)
 Write-Host "`n--- Registering in Windows Installed Apps ---" -ForegroundColor Cyan
 $regRoot = if ($isAdmin) { "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" } else { "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" }
 $appRegKey = Join-Path $regRoot "OpenUTV"
@@ -545,5 +436,5 @@ Write-Host "  OpenUTV $Version installed successfully!" -ForegroundColor Green
 Write-Host "===============================================" -ForegroundColor Green
 Write-Host "You can run OpenUTV from:" -ForegroundColor White
 Write-Host "  1. Start Menu: 'OpenUTV'" -ForegroundColor Cyan
-Write-Host "  2. Terminal:   utv" -ForegroundColor Cyan
+Write-Host "  2. Terminal:   utv, utvio, utvls, utvpkg, py-interp (in a new terminal)" -ForegroundColor Cyan
 Write-Host "  3. Binary:     $utvExe`n" -ForegroundColor White

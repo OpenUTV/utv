@@ -10,7 +10,8 @@ Each tool must start, resolve its runtime dependencies, and exit within a timeou
 output. A missing shared library, Qt platform plugin, or Python home shows up here as a crash, a
 loader error, or a hang instead of in front of a user.
 
-On Windows the .cmd wrappers are preferred over the raw .exe files, since that is what users run.
+On Windows these are the staged programs themselves; launcher_test.py tests the launchers users run
+from an installed tree.
 
 Usage: cli_smoke.py --bin-dir <staged bin dir> [--timeout 60]
 """

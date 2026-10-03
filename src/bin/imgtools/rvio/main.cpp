@@ -105,6 +105,18 @@
 
 #include <TwkGLFFBO/FBOVideoDevice.h>
 
+#ifdef PLATFORM_WINDOWS
+//
+//  Laptops with integrated and discrete graphics: run this process's OpenGL on the NVIDIA or AMD GPU
+//  instead of the power-saving integrated one. The drivers read these exports from the executable.
+//
+extern "C"
+{
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 // RVIO third party optional customization
 #if defined(RVIO_THIRD_PARTY_CUSTOMIZATION)
 extern void rvioThirdPartyCustomization(TwkApp::Bundle& bundle, char* licarg);

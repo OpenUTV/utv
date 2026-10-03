@@ -23,11 +23,8 @@ CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-check-updates.py ${RV_STAGE_BIN_DIR}/o
 IF(WIN32)
   CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-diagnostics.cmd ${RV_STAGE_BIN_DIR}/openutv-diagnostics.cmd COPYONLY)
   CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-check-updates.cmd ${RV_STAGE_BIN_DIR}/openutv-check-updates.cmd COPYONLY)
-  CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-run.cmd ${RV_STAGE_BIN_DIR}/openutv-run.cmd COPYONLY)
-  CONFIGURE_FILE(${_HELPER_SRC_DIR}/utvio.cmd ${RV_STAGE_BIN_DIR}/utvio.cmd COPYONLY)
-  CONFIGURE_FILE(${_HELPER_SRC_DIR}/utvpkg.cmd ${RV_STAGE_BIN_DIR}/utvpkg.cmd COPYONLY)
-  CONFIGURE_FILE(${_HELPER_SRC_DIR}/py-interp.cmd ${RV_STAGE_BIN_DIR}/py-interp.cmd COPYONLY)
-  CONFIGURE_FILE(${_HELPER_SRC_DIR}/utvls.cmd ${RV_STAGE_BIN_DIR}/utvls.cmd COPYONLY)
+  # install.ps1 reads it to install the matching OpenUTVDeps release.
+  CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/cmake/openutv-deps-version.txt ${RV_STAGE_BIN_DIR}/openutv-deps-version.txt COPYONLY)
 ELSE()
   CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-diagnostics.py ${RV_STAGE_BIN_DIR}/openutv-diagnostics COPYONLY)
   CONFIGURE_FILE(${_HELPER_SRC_DIR}/openutv-check-updates.py ${RV_STAGE_BIN_DIR}/openutv-check-updates COPYONLY)

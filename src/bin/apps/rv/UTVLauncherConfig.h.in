@@ -1,0 +1,10 @@
+//
+// Copyright (C) 2026 Makai Systems and OpenUTV Contributors.
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+
+#pragma once
+
+// The OpenUTVDeps release this build was compiled against (cmake/openutv-deps-version.txt).
+#define UTV_DEPS_VERSION L"@UTV_DEPS_VERSION@"
