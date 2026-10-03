@@ -108,6 +108,18 @@
 
 extern const char* rv_linux_dark;
 
+#ifdef PLATFORM_WINDOWS
+//
+//  Laptops with integrated and discrete graphics: run this process's OpenGL on the NVIDIA or AMD GPU
+//  instead of the power-saving integrated one. The drivers read these exports from the executable.
+//
+extern "C"
+{
+    __declspec(dllexport) unsigned long NvOptimusEnablement = 1;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+#endif
+
 // RV third party optional customization
 #if defined(RV_THIRD_PARTY_CUSTOMIZATION)
 extern void rvThirdPartyCustomization(TwkApp::Bundle& bundle, char* licarg);
@@ -244,87 +256,6 @@ static void setPlatformSpecificLocale()
 
 int utf8Main(int argc, char* argv[])
 {
-#ifdef PLATFORM_WINDOWS
-    // Verify OpenUTVDeps is installed or discoverable before initializing the runtime
-    bool depsFound = false;
-    char depsRootBuf[MAX_PATH] = {0};
-    if (GetEnvironmentVariableA("UTV_DEPS_ROOT", depsRootBuf, MAX_PATH) > 0
-        || GetEnvironmentVariableA("OPENUTV_DEPS_ROOT", depsRootBuf, MAX_PATH) > 0)
-    {
-        std::string testPath = std::string(depsRootBuf) + "\\bin";
-        DWORD attr = GetFileAttributesA(testPath.c_str());
-        if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
-        {
-            depsFound = true;
-        }
-    }
-
-    if (!depsFound)
-    {
-        std::vector<std::string> searchBases;
-        char progFiles[MAX_PATH] = {0};
-        if (GetEnvironmentVariableA("ProgramFiles", progFiles, MAX_PATH) > 0)
-        {
-            searchBases.push_back(std::string(progFiles));
-        }
-        searchBases.push_back("C:\\Program Files");
-        char localApp[MAX_PATH] = {0};
-        if (GetEnvironmentVariableA("LOCALAPPDATA", localApp, MAX_PATH) > 0)
-        {
-            searchBases.push_back(std::string(localApp));
-        }
-        searchBases.push_back("C:");
-
-        for (const auto& base : searchBases)
-        {
-            std::string pattern = base + "\\OpenUTVDeps*";
-            WIN32_FIND_DATAA ffd;
-            HANDLE hFind = FindFirstFileA(pattern.c_str(), &ffd);
-            if (hFind != INVALID_HANDLE_VALUE)
-            {
-                do
-                {
-                    if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-                    {
-                        std::string candidate = base + "\\" + ffd.cFileName;
-                        std::string binPath = candidate + "\\bin";
-                        DWORD attr = GetFileAttributesA(binPath.c_str());
-                        if (attr != INVALID_FILE_ATTRIBUTES && (attr & FILE_ATTRIBUTE_DIRECTORY))
-                        {
-                            depsFound = true;
-                            SetEnvironmentVariableA("UTV_DEPS_ROOT", candidate.c_str());
-                            SetEnvironmentVariableA("OPENUTV_DEPS_ROOT", candidate.c_str());
-                            char currentPath[32767] = {0};
-                            GetEnvironmentVariableA("PATH", currentPath, 32767);
-                            std::string newPath = binPath + ";" + currentPath;
-                            SetEnvironmentVariableA("PATH", newPath.c_str());
-                            break;
-                        }
-                    }
-                } while (FindNextFileA(hFind, &ffd) != 0);
-                FindClose(hFind);
-            }
-            if (depsFound)
-            {
-                break;
-            }
-        }
-    }
-
-    if (!depsFound)
-    {
-        int choice = MessageBoxW(NULL,
-                                 L"OpenUTV requires the OpenUTVDeps package (FFmpeg, Python, Qt, OpenColorIO, OpenEXR) which was not found "
-                                 L"on this computer.\n\nWould you like to open the OpenUTV Dependencies download page now?",
-                                 L"OpenUTV - Dependencies Required", MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON1 | MB_TOPMOST);
-        if (choice == IDYES)
-        {
-            ShellExecuteW(NULL, L"open", L"https://github.com/OpenUTV/utv-dependencies/releases/latest", NULL, NULL, SW_SHOWNORMAL);
-        }
-        return 1;
-    }
-#endif
-
 #ifdef PLATFORM_LINUX
     XInitThreads();
 #endif

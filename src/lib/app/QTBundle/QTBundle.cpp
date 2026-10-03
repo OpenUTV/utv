@@ -362,6 +362,15 @@ namespace TwkApp
             init();
         string n = name;
 #ifdef WIN32
+        //
+        //  Installed layout: <name>.exe is the launcher and <name>-bin.exe the program. This process
+        //  already runs with the environment the launcher set up, so the programs it starts (utvio for
+        //  thumbnails, py-interp for helpers, another viewer) can run directly: no extra process, and
+        //  suspending or killing the job reaches the program itself.
+        //
+        QFileInfo program(m_bin.absoluteFilePath((n + "-bin.exe").c_str()));
+        if (program.exists() && program.isExecutable())
+            return program.absoluteFilePath().toUtf8().data();
         n += ".exe";
 #endif
         QFileInfo file(m_bin.absoluteFilePath(n.c_str()));

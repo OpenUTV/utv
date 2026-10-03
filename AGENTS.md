@@ -86,40 +86,29 @@ OpenUTV **intentionally does not ship x265 (HEVC encoding)** in any binary we di
 
 ## 2. Architecture: Launching & Runtime Initialization
 
-### 2.1 Native Trampoline Launcher on Windows (`utv.exe`)
+### 2.1 Windows Launchers (`utv.exe` and the console launcher)
 
-On Windows, launching `utv-bin.exe` directly often fails due to missing environment variables, DLL search paths, and dependency locations. OpenUTV uses a native C++ launcher (`src/bin/apps/rv/UTVLauncherWin.cpp`) compiled as `utv.exe`.
+Full reference: [`docs/architecture/windows_runtime_architecture.md`](docs/architecture/windows_runtime_architecture.md).
 
-The launcher performs the following:
+- A release zip must work when extracted anywhere; `scripts/install.ps1` only adds convenience (OpenUTVDeps install, `<install>\cmd` on `PATH`, shortcuts, *Installed Apps*). Never write `PYTHONHOME`, `QT_PLUGIN_PATH` or dependency directories to the user or system environment.
+- `src/bin/apps/rv/UTVLauncherWin.cpp` builds two launchers: `utv.exe` (GUI subsystem, also `rv.exe`) for the viewer, and `utv-cli-launcher.exe` (console subsystem). `cmake/install/post_install_windows.cmake` installs every program in `bin` as `<name>-bin.exe` behind a copy of the console launcher, adds the legacy `rv*` names as launchers, and copies all launchers into `cmd`.
+- Command line tools must sit behind the **console** launcher: a GUI-subsystem launcher in front of a console tool loses the exit code in shells and opens a visible console window when the caller has none (the console flashes of #58).
+- The launchers find the OpenUTVDeps release pinned in `cmake/openutv-deps-version.txt` (`UTV_DEPS_ROOT` first, then *Installed Apps* entries, `OPENUTV_DEPS_ROOT`, `Program Files`), refuse other releases with a message naming the one to install, set `PATH`/`PYTHONHOME`/Qt variables for their own process only, start the program in a kill-on-close job with `SEM_FAILCRITICALERRORS`, and return its exit code. They never write to the installation directory.
+- The viewer starts helper programs (`utvio` thumbnails, `py-interp`) as `<name>-bin.exe` directly: `QTBundle::executableFile()` prefers them.
 
-1. **Dependency Auto-Discovery**:
-   - Searches `C:\Program Files\OpenUTVDeps*` and `%OPENUTV_DEPS_ROOT%`.
-   - Inspects the Windows Registry under `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenUTVDeps*` and `HKCU`.
-   - Discovers PySide6's Qt distribution and bundled Python environments.
-2. **DLL Search Path Management**:
-   - Calls `SetDllDirectoryW` and `AddDllDirectory()` with `LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS`.
-   - Injects dependency paths (`bin/`, `installed/x64-windows/bin/`, `tools/python3/`, etc.).
-3. **Environment Setup**:
-   - Sets `PATH`, `PYTHONHOME`, `QT_PLUGIN_PATH`, `QTWEBENGINEPROCESS_PATH`, and `QTWEBENGINE_RESOURCES_PATH`.
+### 2.2 OpenGL: GPU Driver or Mesa, per Process
 
-### 2.2 OpenGL Hardware vs. Software Fallback
+- `bin\opengl32.dll` is a forwarder (`src/bin/apps/rv/opengl32/`) with the exports of the Windows `opengl32.dll`. It forwards to `System32\opengl32.dll` (the GPU driver) or, with `UTV_OPENGL=software`, to Mesa llvmpipe from OpenUTVDeps (PySide6's `opengl32sw.dll`).
+- The launchers of OpenGL programs set `UTV_OPENGL` from a WGL probe: software when the renderer is "GDI Generic" (no GPU driver: Hyper-V, VirtualBox without 3D, RDP without a GPU) or older than OpenGL 2.1, or when forced with `--software-gl` / `UTV_SOFTWARE_GL=1`. Child processes inherit the decision.
+- `utv-bin.exe` and `utvio-bin.exe` export `NvOptimusEnablement` / `AmdPowerXpressRequestHighPerformance` so hybrid-GPU laptops use the discrete GPU.
 
-- OpenUTV probes the host system's GPU capabilities before launching `utv-bin.exe`:
-  - Creates a temporary hidden 1x1 window, sets up a pixel format, and creates a WGL context.
-  - Queries `glGetString(GL_RENDERER)` and `glGetString(GL_VERSION)`.
-  - If OpenGL version is `<= 2.1` or the renderer contains `"GDI Generic"` (indicating unaccelerated Microsoft Basic Display Adapter), it automatically activates Mesa software OpenGL fallback (`opengl32sw.dll`).
-
-### 2.3 OpenGL Context Unification (`QT_OPENGL=desktop`)
+### 2.3 One OpenGL Implementation per Process (`QT_OPENGL=desktop`)
 >
 > [!IMPORTANT]
-> **Never set `QT_OPENGL=software` on Windows.**
-> When `QT_OPENGL=software` is set:
+> **Never set `QT_OPENGL=software` on Windows, and never ship Mesa as `bin\opengl32.dll`.**
+> With `QT_OPENGL=software`, Qt's `qwindows.dll` loads `opengl32sw.dll` while OpenUTV and GLEW use `opengl32.dll`: two OpenGL implementations in one process, unrelated contexts, and a black viewport.
 >
-> 1. Qt's Windows platform plugin (`qwindows.dll`) explicitly loads `opengl32sw.dll`.
-> 2. OpenUTV (`utv-bin.exe`) and GLEW link against `opengl32.dll`.
-> 3. If Mesa llvmpipe is placed as `opengl32.dll`, two separate instances of Mesa run concurrently inside the same process. This causes context sharing failures, broken texture IDs, and a blank/black viewport.
->
-> **The Solution**: Keep `QT_OPENGL=desktop` and deploy Mesa llvmpipe as `opengl32.dll` in the application directory. Both Qt and OpenUTV resolve OpenGL from the identical DLL instance, ensuring context and framebuffer sharing function correctly.
+> The launchers set `QT_OPENGL=desktop`, so Qt loads `opengl32.dll` by name and gets the forwarder, like everything else in the process. Select software rendering with `UTV_OPENGL=software`.
 
 ### 2.4 Hardened Logging Subsystem (`FileLogger.cpp`)
 

@@ -53,30 +53,13 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        Write-Host "Downloading OpenUTVDeps MSI via gh release download..."
-        try {
-            gh release download --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
-        } catch {
-            Write-Warning "gh release download encountered an error, checking fallback releases..."
-        }
+        # The release cmake/openutv-deps-version.txt pins: the launchers only accept that one.
+        $DepsVersion = (Get-Content (Join-Path $env:GITHUB_WORKSPACE "cmake\openutv-deps-version.txt") -TotalCount 1).Trim()
+        Write-Host "Downloading the OpenUTVDeps $DepsVersion MSI..."
+        gh release download "v$DepsVersion" --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
         $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
         if (-not $MsiFile) {
-            Write-Host "Searching recent releases in OpenUTV/utv-dependencies for an MSI package..."
-            $releases = gh release list --repo OpenUTV/utv-dependencies | ForEach-Object { ($_ -split "`t")[2] }
-            foreach ($rel in $releases) {
-                Write-Host "Checking release $rel..."
-                try {
-                    gh release download $rel --repo OpenUTV/utv-dependencies --pattern "*.msi" --clobber
-                    $MsiFile = Get-ChildItem -Filter "*.msi" | Select-Object -First 1
-                    if ($MsiFile) {
-                        Write-Host "Found MSI package in release $rel"
-                        break
-                    }
-                } catch { }
-            }
-        }
-        if (-not $MsiFile) {
-            Write-Error "Could not find or download OpenUTVDeps MSI asset from any release."
+            Write-Error "Could not download the OpenUTVDeps $DepsVersion MSI (release v$DepsVersion of OpenUTV/utv-dependencies)."
             exit 1
         }
         Write-Host "Installing MSI: $($MsiFile.FullName)..."
@@ -87,7 +70,7 @@ runs:
             exit 1
         }
         Write-Host "Installation complete."
-        $DepsDir = Get-ChildItem -Path "C:\Program Files\OpenUTVDeps *" | Sort-Object Name -Descending | Select-Object -First 1
+        $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
         if ($DepsDir) {
             Write-Host "Found OpenUTVDeps at $($DepsDir.FullName)"
             $DepsSlash = $DepsDir.FullName.Replace('\', '/')
@@ -397,14 +380,9 @@ runs:
 
     - name: Tests
       run: |
-        # Match the installed layout: "Deploy Runtime Support" ships Mesa as opengl32.dll next to the executables.
-        # Without it the staged tools get the GDI OpenGL 1.1 stub on GPU-less runners and crash when rendering.
-        if ($env:OPENUTV_DEPS_ROOT) {
-            $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
-            if (Test-Path $SwGl) {
-                Copy-Item -Path $SwGl -Destination "_build\stage\app\bin\opengl32.dll" -Force
-            }
-        }
+        # GPU-less runner: the GDI OpenGL 1.1 stub cannot render. The opengl32.dll forwarder next to the staged
+        # executables loads Mesa from OpenUTVDeps (OPENUTV_DEPS_ROOT) instead, as the launcher does on such machines.
+        $env:UTV_OPENGL = "software"
         ctest --test-dir _build --output-on-failure --timeout 900
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         # Show the per-format results (which formats were written, read, or skipped for a missing encoder).
@@ -449,11 +427,6 @@ runs:
             if (Test-Path $Py314Dll) {
                 Copy-Item -Path $Py314Dll -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
             }
-            $SwGl = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PySide6\opengl32sw.dll"
-            if (Test-Path $SwGl) {
-                Copy-Item -Path $SwGl -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
-                Copy-Item -Path $SwGl -Destination "_install\bin\opengl32.dll" -Force -ErrorAction SilentlyContinue
-            }
             # Deploy PyOpenColorIO from OpenUTVDeps if present
             $OcioInDeps = Join-Path $env:OPENUTV_DEPS_ROOT "tools\python3\Lib\site-packages\PyOpenColorIO"
             if (Test-Path $OcioInDeps) {
@@ -479,13 +452,6 @@ runs:
                 }
             }
         }
-        # Deploy helper scripts (diagnostics packager and update checker)
-        $HelperSrc = Join-Path $env:GITHUB_WORKSPACE "src\bin\nsapps\UTV"
-        if (Test-Path $HelperSrc) {
-            Write-Host "Deploying openutv-diagnostics and openutv-check-updates to _install\bin..."
-            Copy-Item -Path "$HelperSrc\openutv-diagnostics.*" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
-            Copy-Item -Path "$HelperSrc\openutv-check-updates.*" -Destination "_install\bin" -Force -ErrorAction SilentlyContinue
-        }
         if (-not (Test-Path "_install\bin\python3.dll") -and (Get-Command python.exe -ErrorAction SilentlyContinue)) {
             $pyDir = Split-Path (Get-Command python.exe).Source
             if (Test-Path "$pyDir\python3.dll") {
@@ -493,6 +459,14 @@ runs:
             }
         }
       shell: powershell
+
+    - name: Test installed launchers
+      shell: powershell
+      run: |
+        # The package as users get it: tools run from _install\cmd, OpenUTVDeps off PATH (launcher_test.py
+        # removes it), so the launchers must find it themselves.
+        python src\test\CliSmokeTest\launcher_test.py --install-dir "$env:GITHUB_WORKSPACE\_install"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     - name: Windows Defender Supply Chain Security Scan
       shell: powershell

@@ -166,59 +166,71 @@ ENDIF()
 RV_STAGE(TYPE "MAIN_EXECUTABLE" TARGET ${_target})
 
 IF(RV_TARGET_WINDOWS)
-  ADD_CUSTOM_COMMAND(
-    TARGET ${_target}
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_target}> ${RV_STAGE_BIN_DIR}/rv-bin.exe
-    COMMENT "Creating rv-bin.exe copy in ${RV_STAGE_BIN_DIR}"
-  )
-
-  SET(_launcher_target
-      "utv"
-  )
-  ADD_EXECUTABLE(
-    ${_launcher_target}
-    UTVLauncherWin.cpp "${CMAKE_CURRENT_BINARY_DIR}/RV.rc"
-  )
-
-  SET_PROPERTY(
-    TARGET ${_launcher_target}
-    PROPERTY WIN32_EXECUTABLE True
-  )
-
-  TARGET_LINK_OPTIONS(${_launcher_target} PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/RV.manifest")
-
-  TARGET_LINK_LIBRARIES(
-    ${_launcher_target}
-    PRIVATE comctl32 shell32 shlwapi advapi32 user32 kernel32
-  )
-
-  SET_TARGET_PROPERTIES(
-    ${_launcher_target}
-    PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_BIN_DIR}"
-               OUTPUT_NAME "utv"
-  )
+  #
+  # Launchers (UTVLauncherWin.cpp): utv.exe starts the viewer, utv-cli-launcher.exe is the console launcher that cmake/install/post_install_windows.cmake
+  # installs as every command line tool. Both look for the OpenUTVDeps release in cmake/openutv-deps-version.txt.
+  #
+  CONFIGURE_FILE(UTVLauncherConfig.h.in "${CMAKE_CURRENT_BINARY_DIR}/launcher/UTVLauncherConfig.h" @ONLY)
 
   FOREACH(
-    OUTPUTCONFIG
-    ${CMAKE_CONFIGURATION_TYPES}
+    _launcher_target
+    utv utv_cli_launcher
   )
-    STRING(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+    ADD_EXECUTABLE(
+      ${_launcher_target}
+      UTVLauncherWin.cpp "${CMAKE_CURRENT_BINARY_DIR}/RV.rc"
+    )
+    TARGET_INCLUDE_DIRECTORIES(
+      ${_launcher_target}
+      PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/launcher"
+    )
+    TARGET_LINK_OPTIONS(${_launcher_target} PRIVATE "/MANIFEST:EMBED" "/MANIFESTINPUT:${CMAKE_CURRENT_SOURCE_DIR}/RV.manifest")
+    TARGET_LINK_LIBRARIES(
+      ${_launcher_target}
+      PRIVATE shell32 advapi32 user32 gdi32 kernel32
+    )
     SET_TARGET_PROPERTIES(
       ${_launcher_target}
-      PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${RV_STAGE_BIN_DIR}"
+      PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${RV_STAGE_BIN_DIR}"
     )
+    FOREACH(
+      OUTPUTCONFIG
+      ${CMAKE_CONFIGURATION_TYPES}
+    )
+      STRING(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+      SET_TARGET_PROPERTIES(
+        ${_launcher_target}
+        PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} "${RV_STAGE_BIN_DIR}"
+      )
+    ENDFOREACH()
+    ADD_DEPENDENCIES(main_executable ${_launcher_target})
+    ADD_DEPENDENCIES(${_launcher_target} ${_target})
   ENDFOREACH()
 
-  ADD_DEPENDENCIES(main_executable ${_launcher_target})
-  ADD_DEPENDENCIES(${_launcher_target} ${_target})
+  SET_TARGET_PROPERTIES(
+    utv
+    PROPERTIES WIN32_EXECUTABLE True
+               OUTPUT_NAME "utv"
+  )
+  SET_TARGET_PROPERTIES(
+    utv_cli_launcher
+    PROPERTIES OUTPUT_NAME "utv-cli-launcher"
+  )
+  TARGET_COMPILE_DEFINITIONS(
+    utv_cli_launcher
+    PRIVATE UTV_CONSOLE_LAUNCHER=1
+  )
 
+  # rv.exe: the legacy name, the same launcher. It starts utv-bin.exe.
   ADD_CUSTOM_COMMAND(
-    TARGET ${_launcher_target}
+    TARGET utv
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${_launcher_target}> ${RV_STAGE_BIN_DIR}/rv.exe
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:utv> ${RV_STAGE_BIN_DIR}/rv.exe
     COMMENT "Creating rv.exe copy in ${RV_STAGE_BIN_DIR}"
   )
+
+  # opengl32.dll forwarder: GPU driver or Mesa, per process.
+  ADD_SUBDIRECTORY(opengl32)
 ELSEIF(RV_TARGET_LINUX)
   ADD_CUSTOM_COMMAND(
     TARGET ${_target}

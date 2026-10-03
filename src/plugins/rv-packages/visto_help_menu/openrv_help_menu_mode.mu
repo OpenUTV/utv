@@ -143,6 +143,12 @@ class: UTVHelpMenuMinorMode : MinorMode
             {
                 let base = io.path.basename(rv);
                 let dir = rv.substr(0, rv.size() - base.size());
+                if (runtime.build_os() == "WINDOWS")
+                {
+                    //  py-interp.exe is the launcher; the viewer already has its environment.
+                    let pb = io.path.join(dir, "py-interp-bin.exe");
+                    if (io.path.exists(pb)) return pb;
+                }
                 let pyName = if runtime.build_os() == "WINDOWS" then "py-interp.exe" else "py-interp";
                 let p = io.path.join(dir, pyName);
                 if (io.path.exists(p)) return p;

@@ -51,7 +51,7 @@ def prepare_environment():
 
 
 def find_tool(bin_dir, name):
-    """Locate a staged tool, preferring the user-facing Windows .cmd wrapper when one exists."""
+    """Locate a staged tool; on Windows the helper scripts are .cmd files."""
     candidates = [name + ".cmd", name + ".exe", name] if IS_WINDOWS else [name]
     for candidate in candidates:
         path = os.path.join(bin_dir, candidate)

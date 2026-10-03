@@ -254,7 +254,8 @@ class LocalThumbnailGen(rvtypes.MinorMode):
         rvio = os.getenv("RV_APP_RVIO") or os.getenv("UTV_APP_UTVIO")
         if not rvio:
             exe_dir = Path(sys.executable).parent
-            for candidate in ("utvio", "rvio", "utvio.exe", "rvio.exe"):
+            # utvio-bin.exe: the Windows program behind the utvio.exe launcher.
+            for candidate in ("utvio", "rvio", "utvio-bin.exe", "utvio.exe", "rvio.exe"):
                 p = exe_dir / candidate
                 if p.is_file() and os.access(p, os.X_OK):
                     rvio = str(p)
