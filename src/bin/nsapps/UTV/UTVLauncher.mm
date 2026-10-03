@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <mach-o/dyld.h>
 #import <sys/stat.h>
+#import <spawn.h>
 #import <unistd.h>
 #import <stdlib.h>
 #import <stdio.h>
@@ -544,6 +545,15 @@ int main(int argc, char *argv[]) {
                         reportLibraryLoadFailure(failure, isLaunchedFromFinder(argc, argv));
                         return 1;
                     }
+                }
+                if (isLaunchedFromFinder(argc, argv)) {
+                    extern char **environ;
+                    pid_t child;
+                    if (posix_spawn(&child, [realBin UTF8String], NULL, NULL, argv, environ) == 0) {
+                        return 0;
+                    }
+                    perror("UTVLauncher: posix_spawn failed");
+                    return 1;
                 }
                 execv([realBin UTF8String], argv);
                 perror("UTVLauncher: execv failed");
