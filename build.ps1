@@ -130,6 +130,18 @@ if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
     if (Test-Path "$nasmDir\nasm.exe") { $env:PATH = "$nasmDir;$env:PATH" }
 }
 
+# sccache: optional compiler cache, makes rebuilds much faster (used in step 7 when present).
+if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+    if ((Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootstrapping) {
+        Write-Host "sccache not found. Installing it via Chocolatey for faster rebuilds..." -ForegroundColor Yellow
+        & choco install sccache --yes --no-progress
+        $env:PATH += ";C:\ProgramData\chocolatey\bin"
+    }
+    if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+        Write-Warning "sccache is not installed: every build compiles from scratch. Install it for much faster rebuilds: 'choco install sccache' (admin), 'scoop install sccache', or https://github.com/mozilla/sccache/releases"
+    }
+}
+
 # --- 4. OpenUTVDeps MSI ---
 Write-Host "`n--- Checking OpenUTVDeps MSI ---" -ForegroundColor Cyan
 # The release the build is pinned to (cmake/openutv-deps-version.txt): the launchers only accept that one.

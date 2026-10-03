@@ -60,3 +60,6 @@ vcpkg/
 *.cer
 .env
 .env.*
+
+# aqtinstall log written by build.ps1 when it installs Qt
+aqtinstall.log
