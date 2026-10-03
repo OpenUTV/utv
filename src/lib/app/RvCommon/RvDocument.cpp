@@ -2617,6 +2617,8 @@ namespace Rv
         if (node->width() != width || node->height() != height)
             node->setGeometry(width, height, "uint8");
 
+        m_session->graph().updateHoverPreviewDisplay();
+
         //
         //  The cache threads signal textureCacheUpdated after every run, so
         //  listen only while the preview is shown. Connect before the node
