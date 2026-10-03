@@ -205,9 +205,7 @@ The CI/CD pipeline consists of 7 modular workflows:
    - Automatically generates release notes categorized by Conventional Commit types (`scripts/generate-changelog.sh`).
 5. **`publish-packages.yml`** (Triggered on Release Publication):
    - Automatically pushes cask updates to `OpenUTV/homebrew-utv`.
-   - Updates the Scoop manifest in `OpenUTV/scoop-utv`.
-   - Submits update PR to `microsoft/winget-pkgs` via `wingetcreate`.
-   - Packs and pushes Chocolatey `.nupkg` to `community.chocolatey.org`.
+   - **Paused** (`if: false`): the Scoop (`OpenUTV/scoop-utv`), winget (`microsoft/winget-pkgs`) and Chocolatey jobs. Those packages are not maintained for now; `install.ps1` and the release zip are the supported Windows installs. Don't fix or re-enable them without the maintainers deciding to.
 6. **`codeql.yml`**:
    - Weekly scheduled CodeQL security scanning for C++ and Python vulnerabilities.
 7. **`dependabot-auto-merge.yml`**:
@@ -245,6 +243,8 @@ The package publishing pipeline requires the following per-service repository se
 | `APPLE_API_ISSUER` | App Store Connect Issuer UUID | Apple Notary Service API |
 
 ### 3.5 One-Time Windows Package Manager Registration Scripts
+
+> Paused along with the Scoop, winget and Chocolatey publish jobs (3.2); kept for when they are reopened.
 
 To bootstrap package manager registrations, execute the provided setup scripts on a Windows machine:
 
