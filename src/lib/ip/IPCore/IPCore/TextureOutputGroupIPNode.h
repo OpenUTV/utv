@@ -2,6 +2,8 @@
 //  Copyright (c) 2013 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -49,6 +51,7 @@ namespace IPCore
 
         virtual IPImage* evaluate(const Context&);
         virtual IPImageID* evaluateIdentifier(const Context&);
+        virtual void metaEvaluate(const Context&, MetaEvalVisitor&);
 
         void initContext(Context&) const;
 
