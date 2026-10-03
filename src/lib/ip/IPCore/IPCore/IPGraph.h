@@ -491,6 +491,17 @@ namespace IPCore
         std::string hoverPreviewImageIdentifier() const;
 
         //
+        //  Gives the hover preview the primary display group's display
+        //  settings, so it looks like the viewer: copies, in place, the
+        //  display pipeline values that changed since the last call. The
+        //  node list, and what only changes in a graph edit, are copied
+        //  while the cache threads are stopped (see endGraphEdit()). Main
+        //  thread only.
+        //
+
+        void updateHoverPreviewDisplay();
+
+        //
         //  Turn caching on/off for the whole graph
         //
 
@@ -812,6 +823,7 @@ namespace IPCore
 
         void createHoverPreviewNode();
         void deleteHoverPreviewNode();
+        void copyHoverPreviewDisplayPipeline();
 
         void dispatchCachingThreadsSafely();
 
@@ -862,6 +874,7 @@ namespace IPCore
         DisplayGroups m_displayGroups;
         OutputGroupIPNode* m_defaultOutputGroup;
         TextureOutputGroupIPNode* m_hoverPreviewNode;
+        std::atomic<bool> m_hoverPreviewDisplayChanged;
         bool m_cacheMissed;
         bool m_cacheStop;
         ThreadDataVector m_threadData;
