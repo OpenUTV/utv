@@ -1,5 +1,7 @@
 # Chapter 4 - User Interface
 
+<!-- Modified in 2026 by Seth Rosenthal to add the timeline hover preview documentation. -->
+
 The goal of RV's user interface is to be minimal in appearance, but complete in function. By default, RV starts with no visible interface other than a menu bar and the timeline, and even these can be turned off from the command line or preferences. While its appearance is minimal, its interaction is not: almost every key on the keyboard does something and it's possible to use key-chords and prefix-keys to extend this further.
 
 Emacs users will find this feature familiar. RV can have prefix-keys that when pressed remap the entire keyboard or mouse bindings or both.
@@ -336,6 +338,24 @@ All the hotkeys mentioned in Table [4.5](#useful-timeline-hotkeys) are also rele
 Figure 4.14:
 
 Timeline Magnifier Configuration Popup Menu
+
+#### 4.5.7 Hover Preview
+
+When you hover the pointer over the timeline, a small preview of the frame under the pointer appears just above the timeline, with the name of its source. An arrow under the preview points at the frame. The preview follows the pointer, and fades out when the pointer leaves the timeline or when you click in the timeline to scrub.
+
+The preview uses the same display color settings as the viewer, including OCIO display transforms and display LUTs.
+
+Use the **View** → **Hover Preview** menu to choose when the preview appears. The choice is remembered between sessions.
+
+|             |                                                                                                                                                           |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Off         | Never show the preview.                                                                                                                                   |
+| When Paused | Show the preview only while playback is stopped. This is the default.                                                                                     |
+| Always      | Show the preview during playback too. Preview frames are decoded before the frames playback needs, so with heavy media, hovering can make playback stall. |
+
+**Note** that the preview needs the Region or Look-ahead cache (see Section [4.7](#47-caching)). With caching off, no preview appears. Caching is turned off automatically when you load intra-frame movies such as ProRes, DNxHR or Motion JPEG; turn on Look-ahead caching from the Tools menu to use the preview with them.
+
+The preview comes from the Hover Preview package, which you can turn off in the Packages preferences.
 
 ### 4.6 Audio
 
