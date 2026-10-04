@@ -131,8 +131,13 @@ if [ "${INSTALL_DEPS}" -eq 1 ]; then
             vulkan-headers vulkan-loader
     # RHEL / Rocky Setup
     elif command -v dnf >/dev/null 2>&1; then
-        $SUDO dnf install -y epel-release dnf-plugins-core
-        $SUDO dnf config-manager --set-enabled crb || true
+        # CRB (CodeReady Builder; "powertools" on EL8) and EPEL provide ninja-build and other -devel
+        # packages. CRB needs dnf-plugins-core for config-manager; enable it before installing EPEL.
+        $SUDO dnf install -y dnf-plugins-core
+        $SUDO dnf config-manager --set-enabled crb || $SUDO dnf config-manager --set-enabled powertools
+        $SUDO dnf install -y epel-release
+        $SUDO dnf makecache
+        dnf repolist --enabled
         $SUDO dnf install -y --nogpgcheck https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true
         $SUDO dnf groupinstall -y "Development Tools"
         $SUDO dnf install -y --allowerasing \
