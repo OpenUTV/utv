@@ -103,15 +103,23 @@ if (-not $vsInstalled -and -not $SkipBootstrapping) {
 
 # --- 3. System Build Tools ---
 Write-Host "`n--- Checking Build Tools ---" -ForegroundColor Cyan
-$requiredTools = @("jom", "winflexbison3", "nasm", "patch", "vswhere", "pkgconfiglite")
-$missingTools = @()
-
-foreach ($tool in $requiredTools) {
-    $cmd = if ($tool -eq "pkgconfiglite") { "pkg-config" } else { $tool }
-    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
-        $missingTools += $tool
-    }
+# Chocolatey package -> command it provides
+$requiredTools = [ordered]@{
+    "jom"           = "jom"
+    "winflexbison3" = "win_bison"
+    "nasm"          = "nasm"
+    "patch"         = "patch"
+    "vswhere"       = "vswhere"
+    "pkgconfiglite" = "pkg-config"
 }
+
+# Chocolatey's nasm package installs to Program Files without adding it to PATH.
+$nasmDir = Join-Path $env:ProgramFiles "NASM"
+if ((Test-Path "$nasmDir\nasm.exe") -and -not (Get-Command nasm -ErrorAction SilentlyContinue)) {
+    $env:PATH = "$nasmDir;$env:PATH"
+}
+
+$missingTools = @($requiredTools.Keys | Where-Object { -not (Get-Command $requiredTools[$_] -ErrorAction SilentlyContinue) })
 
 if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
     Write-Host "Missing tools: $($missingTools -join ', '). Installing via Chocolatey..." -ForegroundColor Yellow
@@ -119,46 +127,57 @@ if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
         & choco install $tool --yes --no-progress
     }
     $env:PATH += ";C:\ProgramData\chocolatey\bin"
+    if (Test-Path "$nasmDir\nasm.exe") { $env:PATH = "$nasmDir;$env:PATH" }
+}
+
+# sccache: optional compiler cache, makes rebuilds much faster (used in step 7 when present).
+if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+    if ((Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootstrapping) {
+        Write-Host "sccache not found. Installing it via Chocolatey for faster rebuilds..." -ForegroundColor Yellow
+        & choco install sccache --yes --no-progress
+        $env:PATH += ";C:\ProgramData\chocolatey\bin"
+    }
+    if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
+        Write-Warning "sccache is not installed: every build compiles from scratch. Install it for much faster rebuilds: 'choco install sccache' (admin), 'scoop install sccache', or https://github.com/mozilla/sccache/releases"
+    }
 }
 
 # --- 4. OpenUTVDeps MSI ---
 Write-Host "`n--- Checking OpenUTVDeps MSI ---" -ForegroundColor Cyan
-# Honor existing pythonLocation if set in CI
+# The release the build is pinned to (cmake/openutv-deps-version.txt): the launchers only accept that one.
+$DepsVersion = (Get-Content (Join-Path $ProjectRoot "cmake\openutv-deps-version.txt") -TotalCount 1).Trim()
+$DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
+if (-not $DepsDir -and -not $SkipBootstrapping) {
+    Write-Host "OpenUTVDeps $DepsVersion not found. Downloading it..." -ForegroundColor Yellow
+    $MsiPath = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
+    Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi" -OutFile $MsiPath
+    Write-Host "Installing MSI (this may take a minute)..."
+    $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$MsiPath`" /qn /passive" -Wait -PassThru
+    if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
+        Write-Host "MSI installed successfully." -ForegroundColor Green
+        $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
+    }
+    else {
+        Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
+    }
+}
+if (-not $DepsDir) {
+    Write-Error "OpenUTVDeps $DepsVersion is required but not found. Install OpenUTVDeps-$DepsVersion-win64.msi."
+    exit 1
+}
+Write-Host "Using OpenUTVDeps at $($DepsDir.FullName)" -ForegroundColor Gray
+
+# Python: pythonLocation when CI (or an earlier run of this script in the same shell) set it, else the OpenUTVDeps one.
 if ($env:pythonLocation -and (Test-Path "$env:pythonLocation\python.exe")) {
-    Write-Host "Using existing Python from environment: $env:pythonLocation" -ForegroundColor Gray
     $PythonPath = $env:pythonLocation
 }
 else {
-    # The release the build is pinned to (cmake/openutv-deps-version.txt): the launchers only accept that one.
-    $DepsVersion = (Get-Content (Join-Path $ProjectRoot "cmake\openutv-deps-version.txt") -TotalCount 1).Trim()
-    $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
-    if (-not $DepsDir -and -not $SkipBootstrapping) {
-        Write-Host "OpenUTVDeps $DepsVersion not found. Downloading it..." -ForegroundColor Yellow
-        $MsiPath = Join-Path $env:TEMP "OpenUTVDeps-$DepsVersion-win64.msi"
-        Invoke-WebRequest -Uri "https://github.com/OpenUTV/utv-dependencies/releases/download/v$DepsVersion/OpenUTVDeps-$DepsVersion-win64.msi" -OutFile $MsiPath
-        Write-Host "Installing MSI (this may take a minute)..."
-        $msiProcess = Start-Process msiexec.exe -ArgumentList "/i `"$MsiPath`" /qn /passive" -Wait -PassThru
-        if ($msiProcess.ExitCode -eq 0 -or $msiProcess.ExitCode -eq 3010) {
-            Write-Host "MSI installed successfully." -ForegroundColor Green
-            $DepsDir = Get-Item -Path "C:\Program Files\OpenUTVDeps $DepsVersion" -ErrorAction SilentlyContinue
-        }
-        else {
-            Write-Error "MSI installation failed with exit code $($msiProcess.ExitCode)"
-        }
-    }
-
-    if (-not $DepsDir) {
-        Write-Error "OpenUTVDeps MSI is required but not found. Please install it manually."
-        exit 1
-    }
     $PythonPath = Join-Path $DepsDir.FullName "tools\python3"
     if (-not (Test-Path "$PythonPath\python.exe")) {
         $PythonPath = Join-Path $DepsDir.FullName "installed\x64-windows\tools\python3"
     }
-    if (-not (Test-Path "$PythonPath\python.exe")) {
-        $PythonPath = Join-Path $DepsDir.FullName "bin"
-    }
 }
+Write-Host "Using Python at $PythonPath" -ForegroundColor Gray
 
 # Sync pythonLocation for CMake
 $env:pythonLocation = $PythonPath
@@ -226,12 +245,17 @@ else {
         Write-Host "Qt $QtVersion not found at $QtPath. Installing via aqtinstall..." -ForegroundColor Yellow
         if (-not (Test-Path $QtTargetDir)) { New-Item -ItemType Directory -Path $QtTargetDir }
         
-        # Ensure aqtinstall is present in bundled python
+        # aqtinstall from master, as CI's install-qt-action uses: the 3.3.0 release cannot find Qt 6.11 in Qt's
+        # repository, which now has a directory per architecture (qt6_6112/qt6_6112_msvc2022_64).
+        # --python, not --system: --system takes the first Python on PATH, which can be the user's own.
         & "$PythonPath\python.exe" -m pip install --upgrade uv
-        & "$PythonPath\Scripts\uv.exe" pip install --system aqtinstall
-        
+        & "$PythonPath\Scripts\uv.exe" pip install --python "$PythonPath\python.exe" "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@master"
+
+        # The modules and archives CI installs (.github/actions/build-windows/action.yml, windows_qt6_modules/archives).
         Write-Host "Installing Qt $QtVersion (this will take a while)..."
-        & "$PythonPath\Scripts\aqt.exe" install-qt windows desktop $QtVersion win64_msvc2022_64 --outputdir $QtTargetDir --modules qt3d qt5compat qtactiveqt qtcharts qtconnectivity qtdatavis3d qtgrpc qthttpserver qtimageformats qtlanguageserver qtlocation qtlottie qtmultimedia qtnetworkauth qtpdf qtpositioning qtquick3d qtquick3dphysics qtquickeffectmaker qtquicktimeline qtremoteobjects qtscxml qtsensors qtserialbus qtserialport qtshadertools qtspeech qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets qtwebview
+        & "$PythonPath\python.exe" -m aqt install-qt windows desktop $QtVersion win64_msvc2022_64 --outputdir $QtTargetDir `
+            --modules qtimageformats qtmultimedia qtpdf qtpositioning qtshadertools qtwebchannel qtwebengine `
+            --archives d3dcompiler_47 opengl32sw qtbase qtdeclarative qtsvg qttools qttranslations
     }
 }
 
@@ -248,7 +272,15 @@ Write-Host "Using QT_HOME=$env:QT_HOME"
 # --- 6. Python Dependencies ---
 Write-Host "`n--- Syncing Python Dependencies ---" -ForegroundColor Cyan
 & "$PythonPath\python.exe" -m pip install --upgrade uv
-& "$PythonPath\Scripts\uv.exe" pip install --system -r "$ProjectRoot\requirements.txt"
+& "$PythonPath\Scripts\uv.exe" pip install --python "$PythonPath\python.exe" -r "$ProjectRoot\requirements.txt"
+
+# Stop with the exit code of a failed native step (cmake, cpack) instead of continuing.
+function Assert-LastExitCode([string]$step) {
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "`n$step failed (exit code $LASTEXITCODE)." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+}
 
 # --- 7. Configure CMake ---
 Write-Host "`n--- Configuring CMake ---" -ForegroundColor Cyan
@@ -292,6 +324,7 @@ if (Get-Command sccache -ErrorAction SilentlyContinue) {
 }
 
 & cmake $CmakeArgs
+Assert-LastExitCode "CMake configure"
 
 # --- 8. Build ---
 Write-Host "`n--- Building UTV ---" -ForegroundColor Cyan
@@ -299,20 +332,24 @@ $Parallelism = [System.Environment]::ProcessorCount
 
 Write-Host "Building dependencies target..."
 & cmake --build $BuildDir --config $BuildType --parallel $Parallelism --target dependencies
+Assert-LastExitCode "Building the dependencies target"
 
 Write-Host "Building main_executable target..."
 & cmake --build $BuildDir --config $BuildType --parallel $Parallelism --target main_executable
+Assert-LastExitCode "Building the main_executable target"
 
 # --- 9. Install / Package ---
 if ($Install) {
     Write-Host "`n--- Installing UTV ---" -ForegroundColor Cyan
     & cmake --install $BuildDir --prefix $InstallDir --config $BuildType
+    Assert-LastExitCode "cmake --install"
 }
 
 if ($Package) {
     Write-Host "`n--- Packaging UTV ---" -ForegroundColor Cyan
     Set-Location $BuildDir
     & cpack -G NSIS -C $BuildType
+    Assert-LastExitCode "cpack"
     Set-Location $ProjectRoot
 }
 
