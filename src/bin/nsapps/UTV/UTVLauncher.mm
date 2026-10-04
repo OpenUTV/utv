@@ -10,6 +10,7 @@
 #import <mach-o/dyld.h>
 #import <sys/stat.h>
 #import <spawn.h>
+#import <vector>
 #import <unistd.h>
 #import <stdlib.h>
 #import <stdio.h>
@@ -495,6 +496,43 @@ static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
     return YES;
 }
 
+@interface UTVLaunchEventCollector : NSObject <NSApplicationDelegate>
+@property(nonatomic, strong) NSMutableArray<NSString *> *requests;
+@end
+
+@implementation UTVLaunchEventCollector
+- (instancetype)init {
+    if ((self = [super init])) {
+        _requests = [NSMutableArray array];
+    }
+    return self;
+}
+
+- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls {
+    for (NSURL *url in urls) {
+        [self.requests addObject:[url isFileURL] ? [url path] : [url absoluteString]];
+    }
+}
+@end
+
+static NSArray<NSString *> *collectLaunchOpenRequests(void) {
+    UTVLaunchEventCollector *collector = [[UTVLaunchEventCollector alloc] init];
+    [NSApplication sharedApplication];
+    [NSApp setDelegate:collector];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    [NSApp finishLaunching];
+
+    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:0.4];
+    while ([deadline timeIntervalSinceNow] > 0) {
+        NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
+                                            untilDate:deadline
+                                               inMode:NSDefaultRunLoopMode
+                                              dequeue:YES];
+        if (event) [NSApp sendEvent:event];
+    }
+    return collector.requests;
+}
+
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         NSString *brewPrefix = detectBrewPrefix();
@@ -547,9 +585,20 @@ int main(int argc, char *argv[]) {
                     }
                 }
                 if (isLaunchedFromFinder(argc, argv)) {
+                    NSArray<NSString *> *opened = collectLaunchOpenRequests();
+                    NSMutableArray<NSString *> *args = [NSMutableArray array];
+                    for (int i = 0; i < argc; ++i) {
+                        if (i > 0 && strncmp(argv[i], "-psn_", 5) == 0) continue;
+                        [args addObject:[NSString stringWithUTF8String:argv[i]]];
+                    }
+                    [args addObjectsFromArray:opened];
+                    std::vector<char *> childArgv;
+                    for (NSString *a in args) childArgv.push_back(const_cast<char *>([a UTF8String]));
+                    childArgv.push_back(NULL);
+
                     extern char **environ;
                     pid_t child;
-                    if (posix_spawn(&child, [realBin UTF8String], NULL, NULL, argv, environ) == 0) {
+                    if (posix_spawn(&child, [realBin UTF8String], NULL, NULL, childArgv.data(), environ) == 0) {
                         return 0;
                     }
                     perror("UTVLauncher: posix_spawn failed");
