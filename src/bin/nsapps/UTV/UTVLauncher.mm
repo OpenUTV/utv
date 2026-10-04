@@ -498,12 +498,13 @@ static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
 
 @interface UTVLaunchEventCollector : NSObject <NSApplicationDelegate>
 @property(nonatomic, strong) NSMutableArray<NSString *> *requests;
+@property(nonatomic, assign) BOOL finished;
 @end
 
 @implementation UTVLaunchEventCollector
 - (instancetype)init {
     if ((self = [super init])) {
-        _requests = [NSMutableArray array];
+        _requests = [[NSMutableArray alloc] init];
     }
     return self;
 }
@@ -512,6 +513,10 @@ static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
     for (NSURL *url in urls) {
         [self.requests addObject:[url isFileURL] ? [url path] : [url absoluteString]];
     }
+}
+
+- (void)applicationDidFinishLaunching:(NSNotification *)notification {
+    self.finished = YES;
 }
 @end
 
@@ -522,8 +527,8 @@ static NSArray<NSString *> *collectLaunchOpenRequests(void) {
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     [NSApp finishLaunching];
 
-    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:0.4];
-    while ([deadline timeIntervalSinceNow] > 0) {
+    NSDate *deadline = [NSDate dateWithTimeIntervalSinceNow:3.0];
+    while (!collector.finished && [deadline timeIntervalSinceNow] > 0) {
         NSEvent *event = [NSApp nextEventMatchingMask:NSEventMaskAny
                                             untilDate:deadline
                                                inMode:NSDefaultRunLoopMode
