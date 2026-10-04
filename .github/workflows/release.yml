@@ -569,8 +569,13 @@ jobs:
     steps:
       - name: Install Core Packages
         run: |
-          dnf install -y git gcc gcc-c++ cmake ninja-build python3 python3-pip epel-release
-          dnf config-manager --set-enabled crb || true
+          # ninja-build comes from CRB: enable CRB (needs dnf-plugins-core) and EPEL before installing.
+          dnf install -y dnf-plugins-core
+          dnf config-manager --set-enabled crb
+          dnf install -y epel-release
+          dnf makecache
+          dnf repolist --enabled
+          dnf install -y git gcc gcc-c++ cmake ninja-build python3 python3-pip
 
       - name: Check out repository
         uses: actions/checkout@v7
