@@ -1,0 +1,355 @@
+/* Colors. Light is the default; dark applies when the system is set to dark
+   (unless the reader picked light with the theme button, which sets
+   data-theme on <html>) or when the reader picked dark. The dark values
+   are listed twice because CSS can't share them between the two cases. */
+:root {
+    color-scheme: light;
+    --bg: #fff;
+    --fg: #000;
+    --muted: #555;
+    --link: #0000ee;      /* browser defaults */
+    --link-visited: #551a8b;
+    --accent: teal;
+    --rule: #ddd;
+    --rule-strong: #999;
+    --header-bg: #eee;
+    --stripe-bg: #f5f5f5;
+    --code-bg: #f0f0f0;
+    --kbd-bg: #e6e6e6;
+    --key-rule: #9cc;
+    --key-header-bg: #d9eeee;
+    --toc-bg: #e2eaef;
+    --image-bg: transparent;
+    /* Typst's code highlighting colors (written into the HTML) */
+    --syntax-blue: #4b69c6;
+    --syntax-red: #d73948;
+    --syntax-green: #198810;
+    --syntax-magenta: #b60157;
+    --syntax-gray: #74747c;
+    --syntax-purple: #8b41b1;
+    --syntax-teal: #1d6c76;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #201e1c;
+        --fg: #dcdcdc;
+        --muted: #a0a0a0;
+        --link: #f8b48a;
+        --link-visited: #f5a3c4;
+        --accent: #e0b060;
+        --rule: #44403c;
+        --rule-strong: #726e6a;
+        --header-bg: #34302c;
+        --stripe-bg: #292623;
+        --code-bg: #2c2926;
+        --kbd-bg: #3b3733;
+        --key-rule: #5c4a2a;
+        --key-header-bg: #3b311e;
+        --toc-bg: var(--header-bg);
+        --image-bg: #fff;
+        --syntax-blue: #8fa6f0;
+        --syntax-red: #f2838c;
+        --syntax-green: #74cf6c;
+        --syntax-magenta: #f27ab0;
+        --syntax-gray: #a29a9a;
+        --syntax-purple: #c69cf0;
+        --syntax-teal: #5ec4cf;
+    }
+}
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #201e1c;
+    --fg: #dcdcdc;
+    --muted: #a0a0a0;
+    --link: #f8b48a;
+    --link-visited: #f5a3c4;
+    --accent: #e0b060;
+    --rule: #44403c;
+    --rule-strong: #726e6a;
+    --header-bg: #34302c;
+    --stripe-bg: #292623;
+    --code-bg: #2c2926;
+    --kbd-bg: #3b3733;
+    --key-rule: #5c4a2a;
+    --key-header-bg: #3b311e;
+    --toc-bg: var(--header-bg);
+    --image-bg: #fff;
+    --syntax-blue: #8fa6f0;
+    --syntax-red: #f2838c;
+    --syntax-green: #74cf6c;
+    --syntax-magenta: #f27ab0;
+    --syntax-gray: #a29a9a;
+    --syntax-purple: #c69cf0;
+    --syntax-teal: #5ec4cf;
+}
+body {
+    background: var(--bg);
+    color: var(--fg);
+}
+a:link { color: var(--link); }
+a:visited { color: var(--link-visited); }
+/* Typst writes each highlighted token's color inline; map them to the
+   palette (!important is what lets a stylesheet beat an inline style). If a
+   Typst update changes its colors these stop matching and code keeps the
+   light colors. */
+[style="color: #4b69c6"] { color: var(--syntax-blue) !important; }
+[style="color: #d73948"] { color: var(--syntax-red) !important; }
+[style="color: #198810"] { color: var(--syntax-green) !important; }
+[style="color: #b60157"] { color: var(--syntax-magenta) !important; }
+[style="color: #74747c"] { color: var(--syntax-gray) !important; }
+[style="color: #8b41b1"] { color: var(--syntax-purple) !important; }
+[style="color: #1d6c76"] { color: var(--syntax-teal) !important; }
+
+/* Base text size. Browsers default to 16px; the PDF's 11pt body text is
+   about 15px at "actual size" but reads larger on paper-like page views, so
+   bump HTML up a step. Percent keeps the reader's own browser setting as the
+   baseline. */
+html {
+    font-size: 112.5%;   /* 18px at the browser default */
+}
+kbd.key {
+    font-family: "Fira Code", monospace;
+    font-size: 80%;
+    padding: 1px 5px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    background: var(--kbd-bg);
+}
+span.menuitem {
+    font-family: "Helvetica Neue", sans-serif;
+    font-weight: bold;
+}
+.key-table table {
+    margin: 1em auto;
+    border-collapse: collapse;
+}
+.key-table th, .key-table td {
+    padding: 5px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--key-rule);
+}
+.key-table th {
+    background: var(--key-header-bg);
+    border-top: 2px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+}
+.key-table tbody tr:nth-child(even) { background: var(--stripe-bg); }
+.shell pre {
+    background: var(--code-bg);
+    padding: 8px;
+    border-radius: 3px;
+    overflow-x: auto;
+}
+
+.image-row {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+}
+.image-row {
+    align-items: flex-end;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* keep each image's own (1:1) size; only shrink when the row is too narrow */
+.image-row img {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;   /* the row itself is already 90% wide */
+    /* the row centers the group; auto margins here would spread them apart */
+    margin-left: 0;
+    margin-right: 0;
+}
+/* Typst writes fixed width/height attributes on <img>; height: auto keeps
+   the aspect ratio when max-width shrinks the image */
+/* 90% leaves a 5% margin each side so wide images don't run text-width */
+figure img {
+    max-width: 90%;
+    height: auto;
+    border: 1px solid var(--rule);
+    background: var(--image-bg);
+    /* Typst emits images as display: block with a fixed width; auto side
+       margins center them */
+    margin-left: auto;
+    margin-right: auto;
+}
+figure {
+    margin: 2em 0;
+}
+figcaption {
+    font-size: 90%;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 0.5em;
+}
+
+/* default tables (key-table has its own rules above) */
+table {
+    border-collapse: collapse;
+    margin: 1em auto;
+}
+th, td {
+    padding: 4px 10px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--rule);
+}
+thead th {
+    background: var(--header-bg);
+    border-bottom: 1.5px solid var(--rule-strong);
+}
+
+/* long reference tables of key bindings */
+.key-table.compact {
+    font-size: 85%;
+}
+
+/* Contents (Typst's <nav role="doc-toc">, only in whole-manual builds).
+   Wide screens: pinned to the left as a sidebar, which also works without
+   JavaScript. manual.js adds folding, highlights the current section, and
+   on narrow screens turns the contents into an overlay behind a button. */
+nav[role="doc-toc"] ol {
+    margin: 0;
+    padding-left: 1.3em;
+}
+nav[role="doc-toc"] li {
+    position: relative;
+    margin: 0.15em 0;
+}
+nav[role="doc-toc"] a {
+    color: inherit;
+    text-decoration: none;
+}
+nav[role="doc-toc"] a:hover {
+    text-decoration: underline;
+}
+nav[role="doc-toc"] a.toc-current {
+    color: var(--accent);
+    font-weight: bold;
+}
+.toc-folder.toc-closed > ol {
+    display: none;
+}
+.toc-toggle {
+    position: absolute;
+    left: -1.3em;
+    width: 1.3em;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+}
+.toc-toggle::before {
+    content: "\25BE";   /* down triangle */
+}
+.toc-folder.toc-closed > .toc-toggle::before {
+    content: "\25B8";   /* right triangle */
+}
+.toc-show {
+    display: none;
+}
+
+/* The sidebar narrows with the window: a quarter of its width, between
+   9.75rem and 19rem. At 700px a quarter is about 9.75rem, so below that it
+   becomes the "Contents" button without a jump in size. Change the minimum
+   and the two 700px breakpoints below together. */
+:root {
+    --toc-width: clamp(9.75rem, 25vw, 19rem);
+}
+@media (min-width: 700px) {
+    body:has(> nav[role="doc-toc"]) {
+        margin-left: calc(var(--toc-width) + 2em);
+    }
+    nav[role="doc-toc"] {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: var(--toc-width);
+        box-sizing: border-box;
+        overflow-y: auto;
+        padding: 1em 1em 2em 0.5em;
+        border-right: 1px solid var(--rule);
+        background: var(--toc-bg);
+        font-size: 85%;
+    }
+    nav[role="doc-toc"] > h2 {
+        font-size: 1.2em;
+        margin: 0 0 0.5em 1.3em;
+    }
+}
+
+@media (max-width: 699.98px) {
+    html.toc-js nav[role="doc-toc"] {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        overflow-y: auto;
+        padding: 1em 1em 4em 0.5em;
+        background: var(--toc-bg);
+    }
+    html.toc-js.toc-overlay nav[role="doc-toc"] {
+        display: block;
+    }
+    html.toc-js .toc-show {
+        display: block;
+        position: fixed;
+        right: 1em;
+        bottom: 1em;
+        z-index: 11;
+        padding: 0.5em 1em;
+        border: 1px solid var(--accent);
+        border-radius: 4px;
+        background: var(--bg);
+        color: var(--accent);
+        font: inherit;
+        cursor: pointer;
+    }
+}
+
+/* title block of a whole manual (title-page() in manual-lib.typ) */
+.doc-title h1 {
+    margin-bottom: 0.2em;
+}
+.doc-title .doc-version {
+    margin-top: 0;
+    color: var(--muted);
+}
+/* the same, repeated at the top of the contents by manual.js */
+.toc-title {
+    margin: 0 0 1em 1.3em;
+    font-weight: bold;
+}
+.toc-title span {
+    display: block;
+    font-weight: normal;
+    font-size: 0.9em;
+    color: var(--muted);
+}
+
+/* light / dark / automatic button (manual.js), top right */
+.theme-toggle {
+    position: fixed;
+    top: 0.6em;
+    right: 0.6em;
+    z-index: 12;
+    width: 2em;
+    height: 2em;
+    padding: 0;
+    border: 1px solid var(--rule-strong);
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 0.9rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+}
+.theme-toggle:hover {
+    opacity: 1;
+}
