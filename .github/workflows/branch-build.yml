@@ -61,7 +61,7 @@ jobs:
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          python3 -c '
+          python3 << 'EOF'
           import os, sys, json
 
           event_name = os.environ.get("EVENT_NAME", "")
@@ -119,9 +119,10 @@ jobs:
           github_output = os.environ.get("GITHUB_OUTPUT", "")
           if github_output:
               with open(github_output, "a") as f:
-                  f.write(f"authorized={'true' if authorized else 'false'}\n")
+                  auth_val = "true" if authorized else "false"
+                  f.write(f"authorized={auth_val}\n")
                   f.write(f"safe_tag={safe_tag}\n")
-          '
+          EOF
 
   lint:
     name: 1. Lint Codebase
