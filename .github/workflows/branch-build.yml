@@ -12,6 +12,22 @@ on:
       - '.github/actions/build-windows/**'
       - '.github/workflows/branch-build.yml'
       - 'requirements.txt'
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - 'src/**'
+      - 'cmake/**'
+      - 'CMakeLists.txt'
+      - 'build.sh'
+      - '.github/actions/build-windows/**'
+      - '.github/workflows/branch-build.yml'
+      - 'requirements.txt'
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to build (leave empty to build current branch ref)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,17 +37,102 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: branch-${{ github.ref_name }}
+  group: branch-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
+  check-authorization:
+    name: 0. Verify Authorization
+    runs-on: ubuntu-latest
+    outputs:
+      authorized: ${{ steps.auth.outputs.authorized }}
+      safe_tag: ${{ steps.auth.outputs.safe_tag }}
+    steps:
+      - name: Evaluate Build Authorization
+        id: auth
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+          PR_ACTION: ${{ github.event.action }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_ASSOC: ${{ github.event.pull_request.author_association }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 -c '
+          import os, sys, json
+
+          event_name = os.environ.get("EVENT_NAME", "")
+          actor = os.environ.get("ACTOR", "")
+          is_fork = os.environ.get("IS_FORK", "false").lower() == "true"
+          pr_action = os.environ.get("PR_ACTION", "")
+          pr_author = os.environ.get("PR_AUTHOR", "")
+          pr_assoc = os.environ.get("PR_ASSOC", "")
+          pr_number = os.environ.get("PR_NUMBER", "")
+          ref_name = os.environ.get("REF_NAME", "")
+          labels_raw = os.environ.get("PR_LABELS", "[]")
+
+          try:
+              labels = [str(x).lower() for x in json.loads(labels_raw)]
+          except Exception:
+              labels = []
+
+          APPROVED_USERS = {"sethrosenthal100", "mcoliver"}
+          APPROVED_ASSOC = {"OWNER", "MEMBER", "COLLABORATOR"}
+          APPROVED_LABELS = {"build-binaries", "ok-to-test", "ci:build"}
+
+          authorized = False
+          reason = ""
+
+          if event_name == "push" or event_name == "workflow_dispatch":
+              authorized = True
+              reason = f"Direct {event_name} execution by {actor}"
+          elif event_name == "pull_request":
+              if not is_fork and pr_action != "labeled":
+                  # Internal branch pushes already build via "push" trigger; avoid duplicate matrix runs
+                  authorized = False
+                  reason = f"Internal branch PR {pr_number}: push to branch already builds binaries"
+              else:
+                  if pr_author.lower() in APPROVED_USERS:
+                      authorized = True
+                      reason = f"PR author {pr_author} is in approved contributor list"
+                  elif pr_assoc in APPROVED_ASSOC:
+                      authorized = True
+                      reason = f"PR author association {pr_assoc} is approved"
+                  elif any(l in APPROVED_LABELS for l in labels):
+                      authorized = True
+                      reason = f"PR {pr_number} has approval label: {labels}"
+                  else:
+                      authorized = False
+                      reason = f"PR author {pr_author} is not in approved list and PR has no approval label"
+
+          if pr_number:
+              safe_tag = f"pr-{pr_number}"
+          else:
+              safe_tag = ref_name.replace("/", "-")
+
+          print(f"Build authorization result: authorized={authorized} ({reason})")
+          print(f"Safe tag: {safe_tag}")
+
+          github_output = os.environ.get("GITHUB_OUTPUT", "")
+          if github_output:
+              with open(github_output, "a") as f:
+                  f.write(f"authorized={'true' if authorized else 'false'}\n")
+                  f.write(f"safe_tag={safe_tag}\n")
+          '
+
   lint:
     name: 1. Lint Codebase
-    if: github.repository_owner == 'OpenUTV'
+    needs: [check-authorization]
+    if: needs.check-authorization.outputs.authorized == 'true' && github.repository_owner == 'OpenUTV'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -46,12 +147,14 @@ jobs:
 
   build-macos:
     name: 2a. Build macOS (Ad-Hoc)
-    needs: [lint]
+    needs: [check-authorization, lint]
+    if: needs.check-authorization.outputs.authorized == 'true'
     runs-on: macos-26
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           fetch-depth: 0
 
@@ -133,7 +236,7 @@ jobs:
           codesign --force --deep --sign - "_build/stage/app/UTV.app"
           mkdir -p _dist
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          SAFE_BRANCH="${{ needs.check-authorization.outputs.safe_tag }}"
           cd _build/stage/app
           ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
@@ -147,7 +250,8 @@ jobs:
 
   build-windows:
     name: 2b. Build Windows
-    needs: [lint]
+    needs: [check-authorization, lint]
+    if: needs.check-authorization.outputs.authorized == 'true'
     runs-on: windows-2022
     timeout-minutes: 90
     env:
@@ -156,6 +260,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           fetch-depth: 0
 
@@ -176,7 +281,7 @@ jobs:
         shell: powershell
         run: |
           $ShortSha = git rev-parse --short=7 HEAD
-          $SafeBranch = "${{ github.ref_name }}".Replace("/", "-")
+          $SafeBranch = "${{ needs.check-authorization.outputs.safe_tag }}"
           $ZipName = "UTV-$SafeBranch-$ShortSha-windows-x64.zip"
           New-Item -ItemType Directory -Force -Path "_dist" | Out-Null
           Rename-Item -Path "_install" -NewName "utv-windows-x64"
@@ -191,14 +296,15 @@ jobs:
 
   build-linux:
     name: 2c. Build Linux (Ubuntu)
-    needs: [lint]
-    if: github.repository_owner == 'OpenUTV'
+    needs: [check-authorization, lint]
+    if: needs.check-authorization.outputs.authorized == 'true' && github.repository_owner == 'OpenUTV'
     runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: recursive
           fetch-depth: 0
 
@@ -290,7 +396,7 @@ jobs:
         run: |
           mkdir -p _dist
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
-          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          SAFE_BRANCH="${{ needs.check-authorization.outputs.safe_tag }}"
           if [ -d "_build/stage/app" ]; then
             tar -czf "_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-linux-x64.tar.gz" -C _build/stage/app .
           fi
