@@ -79,7 +79,7 @@ jobs:
           except Exception:
               labels = []
 
-          APPROVED_USERS = {"sethrosenthal100", "mcoliver"}
+          APPROVED_USERS = {"sethrosenthal100", "jimhourihan", "mcoliver"}
           APPROVED_ASSOC = {"OWNER", "MEMBER", "COLLABORATOR"}
           APPROVED_LABELS = {"build-binaries", "ok-to-test", "ci:build"}
 
