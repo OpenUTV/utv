@@ -1,0 +1,44 @@
+/* Let long table cells wrap; the Read the Docs theme keeps them on one line
+   and makes wide tables scroll sideways. */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
+}
+
+/* multi-figure (manual_ext.py): images side by side at their own size,
+   shrinking only when the row is too narrow, as in the Typst HTML. Each
+   image is wrapped in a link. */
+figure.image-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    justify-content: center;
+    align-items: flex-end;
+}
+figure.image-row > a {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+figure.image-row img {
+    max-width: 100%;
+    height: auto;
+}
+figure.image-row figcaption {
+    flex-basis: 100%;
+}
+
+/* "Version ..." (build-rtd.sh's layout.html): under the project name, above
+   the search box, in smaller type */
+.wy-side-nav-search {
+    display: flex;
+    flex-direction: column;
+}
+.wy-side-nav-search > div.version {
+    order: 1;
+    margin: 0.2em 0 0.6em;
+    font-size: 85%;
+    color: rgba(255, 255, 255, 0.8);
+}
+.wy-side-nav-search > [role="search"] {
+    order: 2;
+}

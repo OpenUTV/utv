@@ -11,14 +11,14 @@ The "standard" windows registry files here are:
 
         Register UTV as the handler for "utvlink://" and "rvlink://" custom protocols.  Docs on the protocol here:
 
-            https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/rv-user-manual-chapter-c.md
+            https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/deprecated_docs/rv-user-manual-chapter-c.md
 
 
 The "utvpush" / "rvpush" files are alternates to support different workflows.  UTVPUSH (rvpush)
 is an executable we provide that allows you to communicate with a running UTV
 from the command line.  Docs here:
 
-    https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/rv-user-manual-chapter-eighteen.md
+    https://github.com/OpenUTV/utv/blob/main/docs/rv-manuals/rv-user-manual/deprecated_docs/rv-user-manual-chapter-eighteen.md
 
 It is a general utility, but it is used here in the .reg files to avoid UTV
 startup time when loading media by using a running UTV if one is available.

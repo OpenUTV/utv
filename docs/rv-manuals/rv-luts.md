@@ -88,6 +88,6 @@ When RV reads a pre-LUT from this file format and it can determine that the pre-
 ...  
 ```
 
-In the above listing, lines preLUTStart to preLUTEnd are linear pre-LUT values. In this case the pre-LUT values are mapping values int the range [0,13.5] down to [0,1] for processing by a 3D LUT (which is not shown). For a summary of the RSR .csp format see Appendix [G](../rv-manuals/rv-user-manual/rv-user-manual-chapter-g.md) .
+In the above listing, lines preLUTStart to preLUTEnd are linear pre-LUT values. In this case the pre-LUT values are mapping values int the range [0,13.5] down to [0,1] for processing by a 3D LUT (which is not shown). For a summary of the RSR .csp format see Appendix [G](../rv-manuals/rv-user-manual/deprecated_docs/rv-user-manual-chapter-g.md) .
 
 For the most part, it’s not necessary to know the distinction between a linear and non-linear pre-LUT in the file. However, the behavior of the pre-LUT outside the bounds of its largest and smallest input values will be different for linear pre-LUTs. Since the pre-LUT is represented as a matrix, it will not clamp values outside the specified range. Non-linear pre-LUTs will clamp values.

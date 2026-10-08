@@ -1,0 +1,4 @@
+# Versions build-rtd.sh is tested with (Sphinx 9 needs Python 3.11+).
+sphinx==9.1.0
+sphinx-rtd-theme==3.1.0
+docutils==0.22.4

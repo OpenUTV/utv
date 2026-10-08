@@ -208,7 +208,7 @@ A Full Checkpoint is just like a regular checkpoint except that an entire sequen
 
 ## Working with Media in UTV
 
-Relevant here is the chapter on the [Session Manager](../rv-manuals/rv-user-manual/rv-user-manual-chapter-five.md) and the section on [navigation](../rv-manuals/rv-user-manual/rv-user-manual-chapter-five.md#54-navigating-between-views)
+Relevant here is the chapter on the [Session Manager](../rv-manuals/rv-user-manual/deprecated_docs/rv-user-manual-chapter-five.md) and the section on [navigation](../rv-manuals/rv-user-manual/deprecated_docs/rv-user-manual-chapter-five.md#54-navigating-between-views)
 
 ### Folders
 
