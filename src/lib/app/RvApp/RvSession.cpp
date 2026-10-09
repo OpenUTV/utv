@@ -1660,7 +1660,9 @@ namespace Rv
                     ensureAudioRenderer();
             }
 
-            if (Options::sharedOptions().autoCacheMode)
+            // Session restoration still replaces pipeline nodes after media
+            // loads. Defer Auto caching until readGTO finishes rebuilding them.
+            if (Options::sharedOptions().autoCacheMode && !m_readingGTO)
             {
                 determineAndApplyAutoCacheMode();
             }
@@ -3728,6 +3730,11 @@ namespace Rv
 
             userGenericEvent("after-session-read", filename);
         } // HOP_PROF_DYN for TEARDOWN
+
+        // Media callbacks defer Auto caching while the session graph is being
+        // restored. Apply it after reconstruction and after-session-read handlers.
+        if (Options::sharedOptions().autoCacheMode)
+            determineAndApplyAutoCacheMode();
     }
 
     void RvSession::readLUTOnAll(string name, const string& nodeType, bool activate)
