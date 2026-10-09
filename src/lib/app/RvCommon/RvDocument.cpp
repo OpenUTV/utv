@@ -2,6 +2,8 @@
 // Copyright (c) 2007 Tweak Inc.
 // All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -43,7 +45,9 @@
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
 #include <IPCore/AudioRenderer.h>
+#include <IPCore/HoverPreviewOverlayGL.h>
 #include <IPCore/ImageRenderer.h>
+#include <IPCore/TextureOutputGroupIPNode.h>
 #include <RvApp/RvSession.h>
 #include <IPCore/ImageRenderer.h>
 #include <IPBaseNodes/SourceIPNode.h>
@@ -55,6 +59,7 @@
 #include <TwkMath/Iostream.h>
 #include <TwkDeploy/Deploy.h>
 #include <TwkUtil/File.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -141,6 +146,53 @@ namespace Rv
         RvDocument* m_doc;
     };
 
+    //
+    //  Receives the timeline hover preview events sent by the hover_preview
+    //  package: "hover-preview-show" with contents "frame|x|y|label" (the
+    //  label is last, so it may contain '|'), and "hover-preview-clear".
+    //
+
+    class HoverPreviewEventNode : public EventNode
+    {
+    public:
+        explicit HoverPreviewEventNode(RvDocument* doc)
+            : EventNode("HoverPreviewEventNode")
+            , m_doc(doc)
+        {
+        }
+
+        Result receiveEvent(const Event& event) override
+        {
+            if (const auto* gevent = dynamic_cast<const GenericStringEvent*>(&event))
+            {
+                if (event.name() == "hover-preview-show")
+                {
+                    const string& contents = gevent->stringContent();
+                    const size_t p0 = contents.find('|');
+                    const size_t p1 = p0 == string::npos ? p0 : contents.find('|', p0 + 1);
+                    const size_t p2 = p1 == string::npos ? p1 : contents.find('|', p1 + 1);
+
+                    if (p2 != string::npos)
+                    {
+                        m_doc->showHoverPreview(atoi(contents.substr(0, p0).c_str()), atof(contents.substr(p0 + 1, p1 - p0 - 1).c_str()),
+                                                atof(contents.substr(p1 + 1, p2 - p1 - 1).c_str()), contents.substr(p2 + 1));
+                    }
+
+                    return EventAccept;
+                }
+                else if (event.name() == "hover-preview-clear")
+                {
+                    m_doc->clearHoverPreview();
+                    return EventAccept;
+                }
+            }
+            return EventAcceptAndContinue;
+        }
+
+    private:
+        RvDocument* m_doc;
+    };
+
     static QString translateMenuText(const QString& rawTitle)
     {
         if (rawTitle.isEmpty() || rawTitle == "_")
@@ -214,6 +266,10 @@ namespace Rv
         , m_sourceEditor(0)
         , m_displayLink(0)
         , m_blockingOverlay(0)
+        , m_hoverPreviewFadeTimer(0)
+        , m_hoverPreviewFadeStart(0)
+        , m_hoverPreviewFadingOut(false)
+        , m_hoverPreviewActive(false)
     {
         DB("RvDocument constructed");
 
@@ -323,6 +379,11 @@ namespace Rv
         m_frameChangedTimer = new QTimer(this);
         m_frameChangedTimer->setSingleShot(true);
         connect(m_frameChangedTimer, SIGNAL(timeout()), this, SLOT(frameChanged()));
+
+        m_hoverPreviewFadeTimer = new QTimer(this);
+        m_hoverPreviewFadeTimer->setInterval(16);
+        connect(m_hoverPreviewFadeTimer, SIGNAL(timeout()), this, SLOT(hoverPreviewFadeStep()));
+        m_viewWidget->installEventFilter(this);
 
         m_menuTimer = new QTimer(this);
         m_menuTimer->setSingleShot(true);
@@ -474,6 +535,9 @@ namespace Rv
             m_uiBlockingEventNode = std::make_unique<UIBlockingEventNode>(this);
             m_uiBlockingEventNode->listenTo(m_session);
 
+            m_hoverPreviewEventNode = std::make_unique<HoverPreviewEventNode>(this);
+            m_hoverPreviewEventNode->listenTo(m_session);
+
             // 10.5 looks better without it (no longer has the 100% white top)
             // setAttribute(Qt::WA_MacBrushedMetal);
 
@@ -493,6 +557,7 @@ namespace Rv
 
             m_session->playStartSignal().connect(boost::bind(&RvDocument::playStartSlot, this, std::placeholders::_1));
             m_session->playStopSignal().connect(boost::bind(&RvDocument::playStopSlot, this, std::placeholders::_1));
+            m_session->beforeSessionClearSignal().connect(boost::bind(&RvDocument::hideHoverPreview, this));
             m_session->physicalVideoDeviceChangedSignal().connect(
                 boost::bind(&RvDocument::physicalVideoDeviceChangedSlot, this, std::placeholders::_1));
         }
@@ -2471,6 +2536,22 @@ namespace Rv
                            });
     }
 
+    bool RvDocument::eventFilter(QObject* object, QEvent* event)
+    {
+        if (object == m_viewWidget && event->type() == QEvent::Resize && m_hoverPreviewActive)
+        {
+            //
+            //  The arrow position belongs to the old timeline geometry.
+            //  Hide before the resized view renders, and let the package
+            //  resend even if the next hover is on the same frame.
+            //
+
+            hideHoverPreview();
+            m_session->userGenericEvent("hover-preview-hidden", "");
+        }
+        return QMainWindow::eventFilter(object, event);
+    }
+
     void RvDocument::resizeEvent(QResizeEvent* event)
     {
         QMainWindow::resizeEvent(event);
@@ -2503,6 +2584,176 @@ namespace Rv
         else
         {
             m_blockingOverlay->hide();
+        }
+    }
+
+    namespace
+    {
+        //
+        //  Hover preview size in points (scaled by the device pixel ratio),
+        //  and the clear delay and fade length in milliseconds.
+        //
+
+        const float hoverPreviewWidth = 256.0f;
+        const float hoverPreviewHeight = 144.0f;
+        const qint64 hoverPreviewClearDelay = 120;
+        const qint64 hoverPreviewFadeTime = 280;
+    } // namespace
+
+    void RvDocument::showHoverPreview(int frame, float x, float y, const std::string& label)
+    {
+        if (!m_session)
+            return;
+
+        IPCore::TextureOutputGroupIPNode* node = m_session->graph().hoverPreviewNode();
+        if (!node)
+            return;
+
+        const TwkApp::VideoDevice* device = m_session->controlVideoDevice();
+        const float scale = device ? device->devicePixelRatio() : 1.0f;
+        const int width = int(hoverPreviewWidth * scale + 0.5f);
+        const int height = int(hoverPreviewHeight * scale + 0.5f);
+
+        if (node->width() != width || node->height() != height)
+            node->setGeometry(width, height, "uint8");
+
+        m_session->graph().updateHoverPreviewDisplay();
+
+        //
+        //  The cache threads signal textureCacheUpdated after every run, so
+        //  listen only while the preview is shown. Connect before the node
+        //  is queued, so its first evaluation is not missed.
+        //
+
+        if (!m_hoverPreviewActive)
+        {
+            m_hoverPreviewTextureConnection =
+                m_session->graph().textureCacheUpdated().connect(boost::bind(&RvDocument::textureCacheUpdatedSlot, this));
+
+            //
+            //  An evaluation still running when the preview was hidden may
+            //  have left an image of another frame: drop it, so nothing is
+            //  drawn until this frame's image is ready.
+            //
+
+            m_session->graph().releaseHoverPreviewImage();
+            m_hoverPreviewImageID.clear();
+        }
+
+        //
+        //  Request the desired frame. The cache-worker queue holds a node
+        //  once, and evaluation reads its current frame, so pending requests
+        //  coalesce while an earlier evaluation may still be running.
+        //
+
+        m_session->graph().requestHoverPreviewFrame(frame);
+        m_hoverPreviewActive = true;
+
+        IPCore::HoverPreviewOverlayGL* overlay = m_session->hoverPreviewOverlay();
+        overlay->setPosition(x, y);
+        overlay->setImageSize(width, height);
+        overlay->setLabel(label);
+
+        if (m_hoverPreviewFadingOut || (overlay->opacity() < 1.0f && !m_hoverPreviewFadeTimer->isActive()))
+            startHoverPreviewFade(false);
+
+        m_session->askForRedraw();
+    }
+
+    void RvDocument::clearHoverPreview()
+    {
+        if (m_hoverPreviewActive && !m_hoverPreviewFadingOut)
+            startHoverPreviewFade(true);
+    }
+
+    void RvDocument::startHoverPreviewFade(bool out)
+    {
+        m_hoverPreviewFadingOut = out;
+        m_hoverPreviewFadeStart = m_session->hoverPreviewOverlay()->opacity();
+        m_hoverPreviewFadeClock.start();
+        m_hoverPreviewFadeTimer->start();
+    }
+
+    void RvDocument::hoverPreviewFadeStep()
+    {
+        qint64 t = m_hoverPreviewFadeClock.elapsed();
+
+        if (m_hoverPreviewFadingOut)
+        {
+            t -= hoverPreviewClearDelay;
+            if (t < 0)
+                return;
+        }
+
+        const float change = float(t) / float(hoverPreviewFadeTime);
+        float opacity = m_hoverPreviewFadingOut ? m_hoverPreviewFadeStart - change : m_hoverPreviewFadeStart + change;
+
+        if (m_hoverPreviewFadingOut && opacity <= 0.0f)
+        {
+            hideHoverPreview();
+            return;
+        }
+
+        if (!m_hoverPreviewFadingOut && opacity >= 1.0f)
+        {
+            opacity = 1.0f;
+            m_hoverPreviewFadeTimer->stop();
+        }
+
+        m_session->hoverPreviewOverlay()->setOpacity(opacity);
+        m_session->askForRedraw();
+    }
+
+    void RvDocument::hideHoverPreview()
+    {
+        m_hoverPreviewFadeTimer->stop();
+        m_hoverPreviewFadingOut = false;
+
+        if (!m_session || !m_hoverPreviewActive)
+            return;
+
+        //
+        //  The overlay draws only while the node has a texture, so the node
+        //  stays active until the fade has finished.
+        //
+
+        m_session->hoverPreviewOverlay()->setOpacity(0.0f);
+
+        if (IPCore::TextureOutputGroupIPNode* node = m_session->graph().hoverPreviewNode())
+            node->setActive(false);
+
+        m_session->graph().releaseHoverPreviewImage();
+        m_hoverPreviewTextureConnection.disconnect();
+        m_hoverPreviewActive = false;
+        m_session->askForRedraw();
+    }
+
+    void RvDocument::textureCacheUpdatedSlot()
+    {
+        //
+        //  Called on a cache thread after a caching run or when a texture
+        //  output has been cached. Redraw on the main thread to show it.
+        //
+
+        QMetaObject::invokeMethod(this, "hoverPreviewTextureUpdated", Qt::QueuedConnection);
+    }
+
+    void RvDocument::hoverPreviewTextureUpdated()
+    {
+        if (!m_hoverPreviewActive || !m_session)
+            return;
+
+        //
+        //  The signal comes after every caching run, so redraw only when
+        //  the preview's image has changed.
+        //
+
+        const string id = m_session->graph().hoverPreviewImageIdentifier();
+
+        if (id != m_hoverPreviewImageID)
+        {
+            m_hoverPreviewImageID = id;
+            m_session->askForRedraw();
         }
     }
 

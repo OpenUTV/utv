@@ -1,6 +1,8 @@
 //******************************************************************************
 // Copyright (c) 2001-2002 Tweak Inc. All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //******************************************************************************
@@ -2172,6 +2174,15 @@ namespace IPCore
         context.mainSerialNum = baseContext.mainSerialNum;
         context.auxRenderer = baseContext.auxRenderer;
 
+        //
+        //  An OutputTexture is a side effect of the render, not part of the
+        //  displayed content. Mark its branch so that the images rendered
+        //  into it are not recorded as displayed images.
+        //
+
+        if (root->destination == IPImage::OutputTexture)
+            context.outputTexture = true;
+
         if (fbo)
         {
             {
@@ -3209,6 +3220,16 @@ namespace IPCore
 
         if (context.mergeRender)
             return; // do not need to record these
+
+        //
+        //  Images rendered into an OutputTexture are not on the display, so
+        //  the UI must not find them. The OutputTexture itself is still
+        //  recorded (by its parent context), so its texture can be found by
+        //  tag.
+        //
+
+        if (context.outputTexture)
+            return;
 
         m_renderedImages.resize(m_renderedImages.size() + 1);
         RenderedImage& s = m_renderedImages.back();

@@ -2,6 +2,8 @@
 //  Copyright (c) 2012 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -18,6 +20,7 @@
 #include <IPCore/IPProperty.h>
 #include <IPCore/NodeManager.h>
 #include <IPCore/OutputGroupIPNode.h>
+#include <IPCore/PipelineGroupIPNode.h>
 #include <IPCore/RootIPNode.h>
 #include <IPCore/SessionIPNode.h>
 #include <IPCore/ShaderProgram.h>
@@ -272,6 +275,8 @@ namespace IPCore
         , m_profilingTimer(0)
         , m_newFrame(false)
         , m_defaultOutputGroup(0)
+        , m_hoverPreviewNode(0)
+        , m_hoverPreviewDisplayChanged(true)
         , m_topologyChanged(false)
         , m_cacheTimingOutput(false)
         , m_evalSlowMedia(false)
@@ -513,6 +518,9 @@ namespace IPCore
         if (n == m_rootNode)
             m_rootNode = 0;
 
+        if (n == m_hoverPreviewNode)
+            m_hoverPreviewNode = 0;
+
         if (n == m_viewNode)
         {
             m_viewNode = 0;
@@ -615,6 +623,8 @@ namespace IPCore
             finishCachingThread();
         }
 
+        deleteHoverPreviewNode();
+
         //
         //  Unhook all inputs. This will prevent the need for recursive
         //  deletion -- at least at the top level.
@@ -664,6 +674,8 @@ namespace IPCore
 
         m_defaultOutputGroup->setInputs1(m_viewGroupNode);
         m_rootNode->appendInput(m_viewGroupNode->waveformNode());
+
+        createHoverPreviewNode();
     }
 
     void IPGraph::setPhysicalDevices(const VideoModules& modules)
@@ -744,6 +756,320 @@ namespace IPCore
         m_rootNode->appendInput(displayGroup);
     }
 
+    void IPGraph::createHoverPreviewNode()
+    {
+        m_hoverPreviewNode = newTextureOutputGroup("hoverPreview");
+
+        if (!m_hoverPreviewNode)
+            return;
+
+        m_hoverPreviewNode->setGeometry(256, 144, "uint8");
+        m_hoverPreviewNode->setTag("hoverPreview");
+
+        //
+        //  Take the input from the view pipeline rather than the view
+        //  group, so the viewer's pan and zoom are not applied: the preview
+        //  always shows the whole frame.
+        //
+
+        m_hoverPreviewNode->setInputs1(m_viewGroupNode->viewPipelineNode());
+
+        //
+        //  As a root input, the node is drawn by the main renderer into a
+        //  texture tagged "hoverPreview", which the UI finds with
+        //  RenderQuery::taggedTextureImages(). The root renders texture
+        //  outputs before the display groups (see RootIPNode::evaluate()),
+        //  so the texture exists by the time the UI draws. It is appended,
+        //  like the waveform, because the root's first input answers its
+        //  range and size queries. While the node is inactive, or until the
+        //  cache threads have evaluated its frame, it returns no image and
+        //  the renderer skips it.
+        //
+
+        m_rootNode->appendInput(m_hoverPreviewNode);
+
+        copyHoverPreviewDisplayPipeline();
+    }
+
+    namespace
+    {
+        //
+        //  Helpers for the hover preview's display settings. Like
+        //  PropertyContainer::copy(), they only consider copyable
+        //  components and properties.
+        //
+
+        bool isCopyable(const Property* p) { return !p->info() || p->info()->isCopyable(); }
+
+        //
+        //  True if copying the viewer's state (from) over the preview's
+        //  (to) would change it: a property differs or is missing.
+        //
+
+        bool componentDiffers(const Component* to, const Component* from)
+        {
+            const Component::Properties& props = from->properties();
+
+            for (size_t i = 0; i < props.size(); i++)
+            {
+                if (isCopyable(props[i]))
+                {
+                    const Property* p = to ? to->find(props[i]->name()) : 0;
+                    if (!p || !p->equalityCompare(props[i]))
+                        return true;
+                }
+            }
+
+            const Component::Components& comps = from->components();
+
+            for (size_t i = 0; i < comps.size(); i++)
+            {
+                if (comps[i]->isCopyable() && componentDiffers(to ? to->component(comps[i]->name()) : 0, comps[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        bool nodeDiffers(const IPNode* to, const IPNode* from)
+        {
+            const PropertyContainer::Components& comps = from->components();
+
+            for (size_t i = 0; i < comps.size(); i++)
+            {
+                if (comps[i]->isCopyable() && componentDiffers(to->component(comps[i]->name()), comps[i]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        //
+        //  Copies the values that differ, in place, the way the UI sets a
+        //  property: only properties that may change while the cache
+        //  threads run (not marked RequiresGraphEdit, see PropertyInfo) and
+        //  that the preview's node already has. Returns true if anything
+        //  changed.
+        //
+
+        bool copyChangedValues(Component* to, const Component* from)
+        {
+            bool changed = false;
+            const Component::Properties& props = from->properties();
+
+            for (size_t i = 0; i < props.size(); i++)
+            {
+                const PropertyInfo* info = dynamic_cast<const PropertyInfo*>(props[i]->info());
+
+                if (isCopyable(props[i]) && !(info && info->requiresGraphEdit()))
+                {
+                    Property* p = to->find(props[i]->name());
+
+                    if (p && !p->equalityCompare(props[i]))
+                    {
+                        p->copy(props[i]);
+                        changed = true;
+                    }
+                }
+            }
+
+            const Component::Components& comps = from->components();
+
+            for (size_t i = 0; i < comps.size(); i++)
+            {
+                if (comps[i]->isCopyable())
+                {
+                    if (Component* c = to->component(comps[i]->name()))
+                        changed = copyChangedValues(c, comps[i]) || changed;
+                }
+            }
+
+            return changed;
+        }
+
+        bool copyChangedNodeValues(IPNode* to, const IPNode* from)
+        {
+            bool changed = false;
+            const PropertyContainer::Components& comps = from->components();
+
+            for (size_t i = 0; i < comps.size(); i++)
+            {
+                if (comps[i]->isCopyable())
+                {
+                    if (Component* c = to->component(comps[i]->name()))
+                        changed = copyChangedValues(c, comps[i]) || changed;
+                }
+            }
+
+            return changed;
+        }
+
+        //
+        //  The preview's and the viewer's display pipelines have the same
+        //  node types, pair by pair.
+        //
+
+        bool samePipelineNodes(const IPNode::IPNodes& a, const IPNode::IPNodes& b)
+        {
+            if (a.size() != b.size())
+                return false;
+
+            for (size_t i = 0; i < a.size(); i++)
+            {
+                if (a[i]->protocol() != b[i]->protocol())
+                    return false;
+            }
+
+            return true;
+        }
+    } // namespace
+
+    void IPGraph::copyHoverPreviewDisplayPipeline()
+    {
+        //
+        //  Called while the cache threads are stopped: when the preview is
+        //  created, and at the end of a graph edit. Gives the preview's
+        //  display pipeline the viewer's node list, which creates and
+        //  deletes nodes (the viewer's list only changes in a graph edit:
+        //  pipeline.nodes requires one). Then copies the whole state of
+        //  every node that differs and lets it rebuild what it derives from
+        //  it, as applying a display profile does (see Profile::apply()).
+        //  This covers what only changes in a graph edit: properties marked
+        //  RequiresGraphEdit, display profiles, added properties.
+        //
+
+        DisplayGroupIPNode* display = primaryDisplayGroup();
+        if (!m_hoverPreviewNode || !display)
+            return;
+
+        PipelineGroupIPNode* from = display->displayPipelineNode();
+        PipelineGroupIPNode* to = m_hoverPreviewNode->displayPipelineNode();
+
+        if (!from || !to || from->definition() != to->definition())
+            return;
+
+        to->setPipeline(from->pipeline());
+
+        const IPNodes& fromNodes = from->pipelineNodes();
+        const IPNodes& toNodes = to->pipelineNodes();
+
+        if (!samePipelineNodes(fromNodes, toNodes))
+            return;
+
+        for (size_t i = 0; i < fromNodes.size(); i++)
+        {
+            if (nodeDiffers(toNodes[i], fromNodes[i]))
+            {
+                toNodes[i]->copy(fromNodes[i]);
+                toNodes[i]->readCompleted(toNodes[i]->protocol(), toNodes[i]->protocolVersion());
+            }
+        }
+
+        m_hoverPreviewDisplayChanged = false;
+    }
+
+    void IPGraph::updateHoverPreviewDisplay()
+    {
+        DisplayGroupIPNode* display = primaryDisplayGroup();
+        if (!m_hoverPreviewNode || !display || !m_hoverPreviewDisplayChanged)
+            return;
+
+        PipelineGroupIPNode* from = display->displayPipelineNode();
+        PipelineGroupIPNode* to = m_hoverPreviewNode->displayPipelineNode();
+        if (!from || !to)
+            return;
+
+        //
+        //  If the node lists differ, wait for copyHoverPreviewDisplayPipeline()
+        //  at the end of the next graph edit.
+        //
+
+        const IPNodes& fromNodes = from->pipelineNodes();
+        const IPNodes& toNodes = to->pipelineNodes();
+
+        if (!samePipelineNodes(fromNodes, toNodes))
+            return;
+
+        //
+        //  The cache threads are running, so make the same change the UI
+        //  makes when it sets a viewer display property: copy only the
+        //  values that differ, in place, and let only the nodes that
+        //  changed rebuild what they derive from them (OCIO processors,
+        //  LUTs, ...). readCompleted() does that without property change
+        //  notifications, which are for the viewer's nodes.
+        //
+        //  NOTE: this shares a race that RV and OpenRV already have when
+        //  the UI changes a display property while the cache threads run:
+        //  some nodes, such as OCIOIPNode, rebuild that state without a
+        //  lock while a cache thread may be evaluating them. Properties
+        //  that need protecting are marked RequiresGraphEdit; the UI only
+        //  changes those in a graph edit, and they are copied at the end
+        //  of one (see copyHoverPreviewDisplayPipeline()).
+        //
+
+        for (size_t i = 0; i < fromNodes.size(); i++)
+        {
+            if (copyChangedNodeValues(toNodes[i], fromNodes[i]))
+                toNodes[i]->readCompleted(toNodes[i]->protocol(), toNodes[i]->protocolVersion());
+        }
+
+        m_hoverPreviewDisplayChanged = false;
+    }
+
+    void IPGraph::requestHoverPreviewFrame(int frame)
+    {
+        if (!m_hoverPreviewNode)
+            return;
+
+        m_hoverPreviewNode->setFrame(frame);
+        m_hoverPreviewNode->setActive(true);
+    }
+
+    void IPGraph::releaseHoverPreviewImage()
+    {
+        if (!m_hoverPreviewNode)
+            return;
+
+        TWK_CACHE_LOCK(m_fbcache, "releaseHoverPreviewImage");
+        m_fbcache.flushPerNodeCache(m_hoverPreviewNode);
+        TWK_CACHE_UNLOCK(m_fbcache, "releaseHoverPreviewImage");
+    }
+
+    string IPGraph::hoverPreviewImageIdentifier() const
+    {
+        string identifier;
+
+        if (m_hoverPreviewNode)
+        {
+            //
+            //  Read it under the lock, so a cache thread can't replace (and
+            //  free) the image meanwhile.
+            //
+
+            TWK_CACHE_LOCK(m_fbcache, "hoverPreviewImageIdentifier");
+            if (const TwkFB::FrameBuffer* fb = m_fbcache.perNodeCacheContents(m_hoverPreviewNode))
+                identifier = fb->identifier();
+            TWK_CACHE_UNLOCK(m_fbcache, "hoverPreviewImageIdentifier");
+        }
+
+        return identifier;
+    }
+
+    void IPGraph::deleteHoverPreviewNode()
+    {
+        //
+        //  The node's destructor calls removeNode(), which clears
+        //  m_hoverPreviewNode.
+        //
+
+        if (m_hoverPreviewNode)
+        {
+            m_hoverPreviewNode->willDelete();
+            m_hoverPreviewNode->disconnectInputs();
+            delete m_hoverPreviewNode;
+        }
+    }
+
     void IPGraph::setPrimaryDisplayGroup(DisplayGroupIPNode* node)
     {
         DisplayGroups::iterator i = std::find(m_displayGroups.begin(), m_displayGroups.end(), node);
@@ -765,6 +1091,7 @@ namespace IPCore
             swap(*i, m_displayGroups.front());
 
             m_rootNode->appendInput(m_displayGroups.front());
+            m_hoverPreviewDisplayChanged = true;
         }
     }
 
@@ -943,6 +1270,14 @@ namespace IPCore
                 m_audioConfigured = false;
                 audioConfigure(m_lastAudioConfiguration);
             }
+
+            //
+            //  The cache threads are stopped until redispatched, so the
+            //  preview's display pipeline can follow a change to the
+            //  viewer's node list now.
+            //
+
+            copyHoverPreviewDisplayPipeline();
 
             if (m_cacheMode != NeverCache)
                 redispatchCachingThread();
@@ -2061,6 +2396,12 @@ IPGraph::findNodesByAbstractPath(int frame,
         dispatchCachingThreadsSafely();
     }
 
+    void IPGraph::requestTextureOutput(const TextureOutputGroupIPNode* node)
+    {
+        m_fbcache.pushCachableOutputItem(node->name());
+        redispatchCachingThread();
+    }
+
     void IPGraph::redispatchCachingThread()
     {
         if (m_cacheMode == NeverCache || m_editing || isMediaLoading())
@@ -2262,6 +2603,22 @@ IPGraph::findNodesByAbstractPath(int frame,
         }
     }
 
+    bool IPGraph::evaluateTextureOutput(const string& nodeName, size_t threadNum)
+    {
+        TextureOutputGroupIPNode* node = dynamic_cast<TextureOutputGroupIPNode*>(findNode(nodeName));
+        if (!node || !node->isActive())
+            return false;
+
+        IPNode::Context context(1, 1, m_fbcache.displayFPS(), 0, 0, IPNode::CacheEvalThread, threadNum, m_fbcache, false);
+        context.cacheNode = node;
+
+        IPImage* img = node->evaluate(context);
+        TWK_CACHE_LOCK(m_fbcache, "");
+        m_fbcache.checkInAndDelete(img);
+        TWK_CACHE_UNLOCK(m_fbcache, "");
+        return true;
+    }
+
     void IPGraph::evalThreadMain(EvalThreadData* threadData)
     {
         const size_t nthreads = m_threadData.size();
@@ -2336,48 +2693,16 @@ IPGraph::findNodesByAbstractPath(int frame,
                 string itemName;
                 if ((itemName = m_fbcache.popCachableOutputItem()) != "")
                 {
-                    IPNode* itemNode = findNode(itemName);
-                    TextureOutputGroupIPNode* textNode = 0;
-                    if ((textNode = dynamic_cast<TextureOutputGroupIPNode*>(itemNode)))
+                    try
                     {
-                        if (textNode->isActive())
-                        {
-                            /*
-                            ostringstream str;
-                            str << "thread " << id << ": output item to eval: "
-                            << itemName << " tag " << textNode->tag() << endl;
-                            cerr << str.str();
-                            */
-
-                            IPNode::Context context(1, 1, m_fbcache.displayFPS(), 0, 0, IPNode::CacheEvalThread, id, m_fbcache, false);
-
-                            context.cacheNode = textNode;
-
-                            try
-                            {
-                                IPImage* img = textNode->evaluate(context);
-                                TWK_CACHE_LOCK(m_fbcache, "");
-                                m_fbcache.checkInAndDelete(img);
-                                TWK_CACHE_UNLOCK(m_fbcache, "");
-                                ++texturesCached;
-                            }
-                            catch (...)
-                            {
-                                /*
-                                ostringstream str;
-                                str << "EXCEPTION: thread " << id << ": output
-                                item to eval: " << itemName << " tag " <<
-                                textNode->tag() << endl; cerr << str.str();
-                                //  Just try again ?
-                                m_fbcache.pushCachableOutputItem(itemName);
-                                */
-                            }
-                        }
+                        if (evaluateTextureOutput(itemName, id))
+                            ++texturesCached;
                     }
-                    //
-                    //  If we did find a texture item to cache, loop around
-                    //  again, otherwise begin caching "frames" as usual.
-                    //
+                    catch (...)
+                    {
+                        // Preserve the existing behavior: discard failed requests.
+                    }
+                    // Process queued textures before ordinary frame caching.
                     continue;
                 }
 
@@ -3535,6 +3860,18 @@ IPGraph::findNodesByAbstractPath(int frame,
 
         ostringstream str;
         const IPNode* pc = dynamic_cast<const IPNode*>(p->container());
+
+        //
+        //  Note changes to the viewer's display settings for
+        //  updateHoverPreviewDisplay().
+        //
+
+        if (const DisplayGroupIPNode* display = primaryDisplayGroup())
+        {
+            const IPNode* pipeline = display->displayPipelineNode();
+            if (pipeline && (pc == pipeline || pc->group() == pipeline))
+                m_hoverPreviewDisplayChanged = true;
+        }
         string n = pc->propertyFullName(p);
         TwkApp::GenericStringEvent event("graph-state-change", this, n);
         sendEvent(event);
@@ -3774,6 +4111,11 @@ IPGraph::findNodesByAbstractPath(int frame,
         if (group)
             group->setPhysicalVideoDevice(device);
         return group;
+    }
+
+    TextureOutputGroupIPNode* IPGraph::newTextureOutputGroup(const std::string& nodeName)
+    {
+        return newNodeOfType<TextureOutputGroupIPNode>("TextureOutputGroup", nodeName);
     }
 
     IPNode* IPGraph::newNode(const string& typeName, const string& nodeName, GroupIPNode* group)
