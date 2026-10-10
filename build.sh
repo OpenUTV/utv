@@ -17,7 +17,9 @@ LOG_FILE=""
 BMD_SDK=""
 PRORES_SDK=""
 CUSTOM_VERSION=""
-PYTHON_VERSION="3.13"
+# Must match the Python that Homebrew's pyside formula is built for (python@3.14). Homebrew's
+# unversioned python3 moves ahead of pyside (it became 3.15 in October 2026), so never build against it.
+PYTHON_VERSION="3.14"
 GCC_VERSION="15"
 
 # Parse arguments
@@ -284,10 +286,10 @@ if ! command -v uv >/dev/null 2>&1; then
 fi
 
 if [ ! -d "${VENV_DIR}" ]; then
-    if [[ "$OSTYPE" == "darwin"* ]] && [ -x "/opt/homebrew/bin/python3" ]; then
-        uv venv "${VENV_DIR}" --python "/opt/homebrew/bin/python3" --system-site-packages
-    elif [ -x "/home/linuxbrew/.linuxbrew/bin/python3" ]; then
-        uv venv "${VENV_DIR}" --python "/home/linuxbrew/.linuxbrew/bin/python3" --system-site-packages
+    if [[ "$OSTYPE" == "darwin"* ]] && [ -x "/opt/homebrew/opt/python@${PYTHON_VERSION}/bin/python${PYTHON_VERSION}" ]; then
+        uv venv "${VENV_DIR}" --python "/opt/homebrew/opt/python@${PYTHON_VERSION}/bin/python${PYTHON_VERSION}" --system-site-packages
+    elif [ -x "/home/linuxbrew/.linuxbrew/opt/python@${PYTHON_VERSION}/bin/python${PYTHON_VERSION}" ]; then
+        uv venv "${VENV_DIR}" --python "/home/linuxbrew/.linuxbrew/opt/python@${PYTHON_VERSION}/bin/python${PYTHON_VERSION}" --system-site-packages
     elif command -v python3 >/dev/null 2>&1; then
         uv venv "${VENV_DIR}" --python "$(command -v python3)" --system-site-packages
     else
