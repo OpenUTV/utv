@@ -88,7 +88,7 @@ namespace Mu
 
         Value(unsigned int i) { _int = (unsigned int)i; }
 
-        inline Value(const Value&);
+        Value(const Value&) = default;
         MU_GC_NEW_DELETE
 
         //
@@ -117,8 +117,6 @@ namespace Mu
 
         T t;
     };
-
-    inline Value::Value(const Value& v) { memcpy(this, &v, sizeof(Value)); }
 
     // template <typename T> T Value::as() const { return reinterpret_cast<const
     // Valign<T>*>(this)->t; } template <typename T> T& Value::as() { return
