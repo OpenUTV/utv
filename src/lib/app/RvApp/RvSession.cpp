@@ -1698,7 +1698,18 @@ namespace Rv
             try
             {
                 const SourceIPNode::MovieInfo& minfo = src->mediaMovieInfo(0);
-                if (!minfo.video)
+
+                //
+                //  The frame sequence reader reports video=true and no
+                //  VideoCodec, so the checks below would take an EXR/DPX/PNG
+                //  sequence for fast intra-frame video and turn caching off.
+                //  Recognize it by the frame symbols in its name instead.
+                //
+
+                const std::string& name = src->mediaName(0);
+                const bool isFrameSequence = TwkUtil::replaceFrameSymbols(name, 1) != name;
+
+                if (!minfo.video || isFrameSequence)
                 {
                     hasImageSequence = true;
                     detectedMediaDesc = "image sequence";
