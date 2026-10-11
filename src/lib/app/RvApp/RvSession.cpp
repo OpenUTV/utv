@@ -62,6 +62,7 @@
 #include <TwkMath/Math.h>
 #include <TwkMovie/Movie.h>
 #include <TwkMovie/MovieIO.h>
+#include <TwkFB/IO.h>
 #include <TwkUtil/File.h>
 #include <TwkUtil/FrameUtils.h>
 #include <TwkUtil/PathConform.h>
@@ -1700,19 +1701,23 @@ namespace Rv
                 const SourceIPNode::MovieInfo& minfo = src->mediaMovieInfo(0);
 
                 //
-                //  The frame sequence reader reports video=true and no
-                //  VideoCodec, so the checks below would take an EXR/DPX/PNG
-                //  sequence for fast intra-frame video and turn caching off.
-                //  Recognize it by the frame symbols in its name instead.
+                //  The image reader reports video=true and no VideoCodec, so
+                //  the checks below would take an EXR/DPX/PNG sequence, or a
+                //  single JPEG or PNG, for fast intra-frame video and turn
+                //  caching off. Recognize images by the frame symbols in a
+                //  sequence name, or by an image plugin reading the file's
+                //  extension. Movie formats belong to the movie plugins, not
+                //  the image plugins.
                 //
 
                 const std::string& name = src->mediaName(0);
                 const bool isFrameSequence = TwkUtil::replaceFrameSymbols(name, 1) != name;
+                const bool isImageFile = TwkFB::GenericIO::findByExtension(TwkUtil::extension(name)) != nullptr;
 
-                if (!minfo.video || isFrameSequence)
+                if (!minfo.video || isFrameSequence || isImageFile)
                 {
                     hasImageSequence = true;
-                    detectedMediaDesc = "image sequence";
+                    detectedMediaDesc = "images";
                     break;
                 }
 
@@ -1756,7 +1761,7 @@ namespace Rv
         if (hasImageSequence)
         {
             setCaching(RvSession::BufferCache);
-            cout << "INFO: Auto-caching: Detected image sequence; activated Look-Ahead Cache." << endl;
+            cout << "INFO: Auto-caching: Detected images; activated Look-Ahead Cache." << endl;
         }
         else if (hasInterFrameVideo)
         {
