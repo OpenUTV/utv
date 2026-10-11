@@ -1876,10 +1876,16 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
     redraw();
 }
 
+//
+//  Choosing a cache mode yourself turns Auto off for this session, so the
+//  next media load doesn't replace your choice.
+//
+
 \: cacheModeFunc (EventFunc; int mode)
 {
     \: (void; Event event)
     {
+        setAutoCacheMode(false);
         setCacheMode(mode);
         redraw();
     };
@@ -1889,9 +1895,21 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
 {
     \: (void; Event event)
     {
+        setAutoCacheMode(false);
         setCacheMode(if cacheMode() == mode then CacheOff else mode);
         redraw();
     };
+}
+
+\: autoCacheModeOn (void; Event event)
+{
+    setAutoCacheMode(true);
+    redraw();
+}
+
+\: autoCacheState (int;)
+{
+    if autoCacheMode() then CheckedMenuState else UncheckedMenuState;
 }
 
 \: cacheStateFunc ((int;); int mode)
@@ -6435,6 +6453,7 @@ global bool debugGC = false;
                 menuItem("Reload Changed Frames", "key-down--control--C", "system_category", ~loadCurrentSourcesChangedFrames, sourcesExistState),
                 menuSeparator(),
                 menuText("Cache Mode"),
+                menuItem("   Auto (Choose by Media Type)", "", "system_category", autoCacheModeOn, autoCacheState),
                 menuItem("   Look-Ahead Cache", "", "system_category", cacheModeFunc(CacheBuffer), cacheStateFunc(CacheBuffer)),
                 menuItem("   Region Cache", "", "system_category", cacheModeFunc(CacheGreedy), cacheStateFunc(CacheGreedy)),
                 menuItem("   Cache Off", "", "system_category", cacheModeFunc(CacheOff), cacheStateFunc(CacheOff)),

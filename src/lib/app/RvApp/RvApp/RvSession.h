@@ -159,6 +159,16 @@ namespace Rv
         void determineAndApplyAutoCacheMode();
 
         //
+        //  Auto caching for this session. It starts from the preference.
+        //  Choosing a cache mode from the menu turns it off for the session;
+        //  turning it back on re-decides from the loaded media.
+        //
+
+        bool autoCacheMode() const { return m_autoCacheMode; }
+
+        void setAutoCacheMode(bool);
+
+        //
         //  Delete a node. This can be a source (group) node or whatever
         //
 
@@ -370,6 +380,7 @@ namespace Rv
         int m_gtoSourceTotal;
         int m_gtoSourceCount;
         bool m_userHasSetViewSize;
+        bool m_autoCacheMode{false};
 
         // The source node which gives its fps to the graph.
         // Normally the first source inserted in the graph.
