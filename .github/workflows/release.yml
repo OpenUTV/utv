@@ -181,6 +181,7 @@ jobs:
         run: |
           export COPYFILE_DISABLE=1
           find _build/stage/app/UTV.app -name "._*" -delete
+          python3 src/build/prune_package.py _build/stage/app/UTV.app
           mkdir -p _build/stage/unsigned
           tar -czf _build/stage/unsigned/UTV.app.tar.gz -C _build/stage/app UTV.app
         shell: bash
@@ -547,6 +548,7 @@ jobs:
         run: |
           mkdir -p _dist
           if [ -d "_build/stage/app" ]; then
+            python3 src/build/prune_package.py _build/stage/app
             tar -czf "_dist/UTV-${{ needs.version.outputs.version }}-linux-x64.tar.gz" -C _build/stage/app .
           fi
         shell: bash
