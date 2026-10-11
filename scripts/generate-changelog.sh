@@ -53,10 +53,11 @@ if [ -n "$OTHER" ]; then
   echo ""
 fi
 
-# Contributors: commit authors plus human Co-authored-by trailers, as
+# Contributors: the humans who authored or co-authored commits, as
 # "@login (Name)". The login comes from a GitHub noreply address, or from the
 # GitHub API when GH_TOKEN and GITHUB_REPOSITORY are set (as in CI); otherwise
-# just the name is shown. Bots and AI co-authors are left out.
+# just the name is shown. The list is humans only: bots, and AI coding tools
+# that sign commits as authors or co-authors, are left out.
 
 login_from_email() {
   # 12345+login@users.noreply.github.com or login@users.noreply.github.com
@@ -65,9 +66,22 @@ login_from_email() {
   esac
 }
 
+# $1 is "Name <email>". Matching is case-insensitive and uses the exact names
+# and addresses these tools sign with, so people who happen to be called Claude
+# or Jules, or who work at Google, are still credited.
 is_excluded() {
-  case "$1" in
-    *"[bot]"* | *@anthropic.com* | *@openai.com*) return 0 ;;
+  local who
+  who=$(printf "%s" "$1" | tr '[:upper:]' '[:lower:]')
+  case "$who" in
+    *"[bot]"*) return 0 ;;                                          # GitHub Apps and bot accounts
+    *@anthropic.com* | "claude <"* | "claude code <"* | "claude opus "* | "claude sonnet "* | "claude haiku "* | "claude fable "*)
+      return 0 ;;                                                    # Claude, Claude Code
+    *@openai.com* | "codex <"* | "chatgpt <"* | "chatgpt codex"*) return 0 ;;   # OpenAI Codex
+    "copilot <"* | *+copilot@users.noreply.github.com*) return 0 ;;  # GitHub Copilot coding agent
+    *@cursor.com* | *@cursor.sh*) return 0 ;;                         # Cursor
+    *@aider.chat*) return 0 ;;                                       # Aider
+    *@cognition.ai* | *devin-ai-integration*) return 0 ;;             # Devin
+    "gemini-code-assist"* | "google-labs-jules"*) return 0 ;;        # Gemini Code Assist, Jules
   esac
   return 1
 }
@@ -86,7 +100,10 @@ while IFS=$'\t' read -r sha name email; do
   [ -z "$sha" ] && continue
   login=""
   if [ -n "${GH_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && command -v gh >/dev/null 2>&1; then
-    login=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}" --jq '.author.login // empty' 2>/dev/null || true)
+    # "login<TAB>type"; skip accounts GitHub itself marks as bots.
+    info=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}" --jq '[.author.login // "", .author.type // ""] | @tsv' 2>/dev/null || true)
+    login="${info%%$'\t'*}"
+    [ "${info#*$'\t'}" = "Bot" ] && continue
   fi
   add_contributor "$name" "$email" "$login"
 done < <(git log "$RANGE" --format="%H%x09%aN%x09%aE")
