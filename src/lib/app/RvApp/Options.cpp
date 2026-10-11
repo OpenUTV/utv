@@ -1220,6 +1220,7 @@ namespace Rv
                                           "exrInherit",
                                           "exrMaxAsync",
                                           "exrNoOneChannel",
+                                          "exrReadWindowIsDisplayWindow",
                                           "exrReadWindow",
                                           "exrPlanar3Chan",
                                           "exrStripAlpha",
@@ -1253,6 +1254,7 @@ namespace Rv
                                           "over",
                                           "play",
                                           "playMode",
+                                          "loopMode",
                                           "prefetch",
                                           "useThreadedUpload",
                                           "useAppleClientStorage",
@@ -1477,6 +1479,13 @@ namespace Rv
                                  static_cast<size_t>((char*)(&this->audioGlobalOffset) - (char*)this),
                                  static_cast<size_t>((char*)(&this->audioDeviceLatency) - (char*)this),
                                  0};
+
+        //  Each name labels the offset at the same index, so a field added to
+        //  one list must be added to the other.
+        static_assert(sizeof(intfields) / sizeof(intfields[0]) == sizeof(intoffsets) / sizeof(intoffsets[0]),
+                      "intfields and intoffsets are out of step");
+        static_assert(sizeof(floatfields) / sizeof(floatfields[0]) == sizeof(floatoffsets) / sizeof(floatoffsets[0]),
+                      "floatfields and floatoffsets are out of step");
 
         {
             size_t* o = intoffsets;
