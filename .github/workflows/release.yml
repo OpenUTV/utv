@@ -643,7 +643,8 @@ jobs:
           chmod +x ./scripts/generate-changelog.sh
           EOF=$(openssl rand -hex 8)
           echo "notes<<$EOF" >> $GITHUB_OUTPUT
-          ./scripts/generate-changelog.sh HEAD "${{ needs.version.outputs.version }}" >> $GITHUB_OUTPUT || ./scripts/generate-changelog.sh HEAD >> $GITHUB_OUTPUT
+          # The new version isn't tagged yet; the script finds the previous release tag.
+          GH_TOKEN="${{ github.token }}" ./scripts/generate-changelog.sh HEAD >> $GITHUB_OUTPUT
           echo "$EOF" >> $GITHUB_OUTPUT
         shell: bash
 
