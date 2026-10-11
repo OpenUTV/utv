@@ -1669,6 +1669,15 @@ namespace Rv
 
     void RvSession::determineAndApplyAutoCacheMode()
     {
+        //
+        //  Batch sessions (utvio) pull every frame synchronously and never
+        //  play back, as rvio always did. Starting the look-ahead cache
+        //  threads there races utvio's own reads and crashes it.
+        //
+
+        if (batchMode())
+            return;
+
         const RvGraph::Sources& sources = rvgraph().imageSources();
         if (sources.empty())
             return;
