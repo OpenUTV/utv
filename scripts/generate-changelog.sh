@@ -6,8 +6,10 @@ TARGET_REF="${1:-HEAD}"
 PREV_TAG="${2:-}"
 
 if [ -z "$PREV_TAG" ]; then
-  # Find the most recent semantic release tag before TARGET_REF
-  PREV_TAG=$(git describe --tags --abbrev=0 "${TARGET_REF}^" 2>/dev/null || echo "")
+  # Find the most recent release tag (YYYY.N) before TARGET_REF. Only release
+  # tags count: the rolling dev-build tag moves with every development build,
+  # and matching it would list only the commits since the previous one.
+  PREV_TAG=$(git describe --tags --abbrev=0 --match '[0-9][0-9][0-9][0-9].[0-9]*' "${TARGET_REF}^" 2>/dev/null || echo "")
 fi
 
 if [ -n "$PREV_TAG" ]; then
@@ -51,25 +53,68 @@ if [ -n "$OTHER" ]; then
   echo ""
 fi
 
-# Extract unique human contributors (commit authors + co-authors)
-CONTRIBUTORS=$( {
-  git log "$RANGE" --format="%aN"
-  git log "$RANGE" --format="%(trailers:key=Co-authored-by,valueonly=true)" | sed 's/ <.*//'
-} 2>/dev/null | grep -v -E "^\s*$" | grep -v -i "\[bot\]" | sort -u || true )
+# Contributors: commit authors plus human Co-authored-by trailers, as
+# "@login (Name)". The login comes from a GitHub noreply address, or from the
+# GitHub API when GH_TOKEN and GITHUB_REPOSITORY are set (as in CI); otherwise
+# just the name is shown. Bots and AI co-authors are left out.
 
-if [ -n "$CONTRIBUTORS" ]; then
+login_from_email() {
+  # 12345+login@users.noreply.github.com or login@users.noreply.github.com
+  case "$1" in
+    *@users.noreply.github.com) echo "${1%@users.noreply.github.com}" | sed 's/^[0-9]*+//' ;;
+  esac
+}
+
+is_excluded() {
+  case "$1" in
+    *"[bot]"* | *@anthropic.com* | *@openai.com*) return 0 ;;
+  esac
+  return 1
+}
+
+# One "login<TAB>name" line per author or co-author; login may be empty.
+PEOPLE=""
+
+add_contributor() {
+  local name="$1" email="$2" login="$3"
+  is_excluded "$name <$email>" && return
+  [ -z "$login" ] && login=$(login_from_email "$email")
+  PEOPLE+="${login}"$'\t'"${name}"$'\n'
+}
+
+while IFS=$'\t' read -r sha name email; do
+  [ -z "$sha" ] && continue
+  login=""
+  if [ -n "${GH_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && command -v gh >/dev/null 2>&1; then
+    login=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}" --jq '.author.login // empty' 2>/dev/null || true)
+  fi
+  add_contributor "$name" "$email" "$login"
+done < <(git log "$RANGE" --format="%H%x09%aN%x09%aE")
+
+while IFS= read -r trailer; do
+  [ -z "$trailer" ] && continue
+  name="${trailer% <*}"
+  email=$(echo "$trailer" | sed -n 's/.*<\(.*\)>.*/\1/p')
+  add_contributor "$name" "$email" ""
+done < <(git log "$RANGE" --format="%(trailers:key=Co-authored-by,valueonly=true)")
+
+# Keep one line per person, in order of first appearance. A name seen without
+# a login (a commit from an address not linked to GitHub) merges into the same
+# name's @login entry.
+CONTRIBUTOR_LINES=$(printf "%s" "$PEOPLE" | awk -F'\t' '
+  NF == 0 { next }
+  { key = tolower($1 != "" ? $1 : $2); name = tolower($2) }
+  $1 != "" { if (!(key in seen)) { seen[key] = 1; order[++n] = "* @" $1 " (" $2 ")"; named[name] = 1 } ; next }
+  { pending[++m] = $2 }
+  END {
+    for (i = 1; i <= n; i++) print order[i]
+    for (i = 1; i <= m; i++) { k = tolower(pending[i]); if (!(k in named) && !(k in done)) { done[k] = 1; print "* " pending[i] } }
+  }')
+
+if [ -n "$CONTRIBUTOR_LINES" ]; then
   echo "### Contributors"
   echo "Special thanks to all contributors who worked on this release:"
   echo ""
-  while IFS= read -r contributor; do
-    if [ -n "$contributor" ]; then
-      if [ "$contributor" = "Michael Oliver" ]; then
-        echo "* @mcoliver (Michael Oliver)"
-      else
-        echo "* ${contributor}"
-      fi
-    fi
-  done <<< "$CONTRIBUTORS"
+  echo "$CONTRIBUTOR_LINES"
   echo ""
 fi
-

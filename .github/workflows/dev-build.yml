@@ -490,7 +490,7 @@ jobs:
         id: changelog
         run: |
           chmod +x ./scripts/generate-changelog.sh
-          CHANGES=$(./scripts/generate-changelog.sh HEAD || echo "Development build updates.")
+          CHANGES=$(GH_TOKEN="${{ github.token }}" ./scripts/generate-changelog.sh HEAD || echo "Development build updates.")
 
           cat << EOF > dev_notes.md
           > [!WARNING]
