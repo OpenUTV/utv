@@ -640,6 +640,22 @@ struct LexinumericCompare
                     ef.exists = (dirFilesSet.count(filename) != 0);
                     ef.frame = frms[i];
 
+                    //
+                    //  A negative frame may be on disk as foo.-0005.exr
+                    //  rather than the printf-style foo.-005.exr.
+                    //
+
+                    if (!ef.exists && frms[i] < 0)
+                    {
+                        string alt = replaceFrameSymbols(pattern.c_str(), frms[i], 24 /* fps: same default as above */, true);
+
+                        if (dirFilesSet.count(alt) != 0)
+                        {
+                            ef.name = alt;
+                            ef.exists = true;
+                        }
+                    }
+
                     if (justOne)
                     {
                         if (ef.exists)
@@ -833,7 +849,15 @@ struct LexinumericCompare
     //
     // See FrameUtils.h for more info
     //
-    string replaceFrameSymbols(const string& cs, int frame, int fps)
+    static void formatFrame(char* fstr, size_t size, int frame, int pad, bool padNegativeMagnitude)
+    {
+        if (padNegativeMagnitude && frame < 0)
+            snprintf(fstr, size, "-%0*d", pad, -frame);
+        else
+            snprintf(fstr, size, "%0*d", pad, frame);
+    }
+
+    string replaceFrameSymbols(const string& cs, int frame, int fps, bool padNegativeMagnitude)
     {
         Match m;
         string s = cs;
@@ -862,10 +886,8 @@ struct LexinumericCompare
                 f %= m.subInt(5);
             if (m.hasSub(6))
                 f += m.subInt(6);
-            char fmtstr[16];
-            snprintf(fmtstr, 16, "%%0%dd", pad);
             char fstr[16];
-            snprintf(fstr, 16, fmtstr, f);
+            formatFrame(fstr, sizeof(fstr), f, pad, padNegativeMagnitude);
             s = s.replace(m.subStartPos(0), m.subLen(0), fstr);
             m = Match(unPaddedFrameSymRE, s);
         }
@@ -888,7 +910,7 @@ struct LexinumericCompare
             if (m.hasSub(6))
                 f += m.subInt(6);
             char fstr[16];
-            snprintf(fstr, 16, "%04d", f);
+            formatFrame(fstr, sizeof(fstr), f, 4, padNegativeMagnitude);
             s = s.replace(m.subStartPos(0), m.subLen(0), fstr);
             m = Match(paddedFrameSymRE, s);
         }
@@ -1110,7 +1132,7 @@ struct LexinumericCompare
 
     string firstFileInPattern(const SequenceName& seq)
     {
-        ExistingFileList files = existingFilesInSequence(seq);
+        ExistingFileList files = existingFilesInSequence(seq, true);
         return (files.size() > 0) ? files.front().name : "";
     }
 

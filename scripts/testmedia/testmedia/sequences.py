@@ -170,9 +170,23 @@ def seq_padding(ctx, p, outdir):
     return result
 
 
+def render_negative_seq(ctx, p, outdir, negative_name):
+    # ffmpeg cannot write negative frame numbers, so render from 0 and rename into place.
+    staged = dict(p, start=0)
+    render_frames(ctx, staged, outdir, "tmp", "png", "rgb24")
+    for i in range(p["frames"]):
+        frame = p["start"] + i
+        name = negative_name(frame) if frame < 0 else frame_file("frame", "png", frame)
+        os.replace(os.path.join(outdir, frame_file("tmp", "png", i)), os.path.join(outdir, name))
+    result = seq_result(p, "frame", "png", "rgb24")
+    last = p["start"] + p["frames"] - 1
+    result.path = f"frame.{p['start']}-{last}#.png"
+    return result
+
+
 @recipe(
     "seq-negative-frames",
-    "PNG sequence numbered -0005 .. 0006, crossing zero",
+    "PNG sequence numbered -0005 .. 0006, crossing zero (digits padded, sign in front)",
     tags=("sequence", "edge", "naming"),
     needs=(FFMPEG, ffmpeg_encoder("png")),
     width=640,
@@ -182,16 +196,22 @@ def seq_padding(ctx, p, outdir):
     pattern="counter",
 )
 def seq_negative(ctx, p, outdir):
-    # ffmpeg cannot write negative frame numbers, so render from 0 and rename into place.
-    staged = dict(p, start=0)
-    render_frames(ctx, staged, outdir, "tmp", "png", "rgb24")
-    for i in range(p["frames"]):
-        frame = p["start"] + i
-        name = f"frame.-{abs(frame):04d}.png" if frame < 0 else frame_file("frame", "png", frame)
-        os.replace(os.path.join(outdir, frame_file("tmp", "png", i)), os.path.join(outdir, name))
-    result = seq_result(p, "frame", "png", "rgb24")
-    result.path = "frame.-5-6#.png"
-    return result
+    return render_negative_seq(ctx, p, outdir, lambda f: f"frame.-{abs(f):04d}.png")
+
+
+@recipe(
+    "seq-negative-frames-printf",
+    "PNG sequence numbered -005 .. 0006, crossing zero (printf %04d, sign counts toward padding)",
+    tags=("sequence", "edge", "naming"),
+    needs=(FFMPEG, ffmpeg_encoder("png")),
+    width=640,
+    height=360,
+    frames=12,
+    start=-5,
+    pattern="counter",
+)
+def seq_negative_printf(ctx, p, outdir):
+    return render_negative_seq(ctx, p, outdir, lambda f: f"frame.{f:04d}.png")
 
 
 @recipe(

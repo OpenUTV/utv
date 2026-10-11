@@ -168,7 +168,13 @@ namespace TwkUtil
     //     foo.#/7+1.xxx   ->  foo.0006.xxx
     //     foo\@.#.xxx     ->  foo@.0012.xxx
     //
-    TWKUTIL_EXPORT std::string replaceFrameSymbols(const std::string& s, int frame, int fps = 24);
+    //     Negative frames are formatted like printf, so the sign counts
+    //     toward the padding: frame -5 with # gives foo.-005.xxx. When
+    //     padNegativeMagnitude is true, # and @ pad the digits instead
+    //     and put the sign in front, giving foo.-0005.xxx. Both spellings
+    //     are common on disk.
+    //
+    TWKUTIL_EXPORT std::string replaceFrameSymbols(const std::string& s, int frame, int fps = 24, bool padNegativeMagnitude = false);
 
     //
     //     Parse a Shake-like time string and return a list of corresponding
