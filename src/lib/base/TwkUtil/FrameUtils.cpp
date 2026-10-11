@@ -647,7 +647,7 @@ struct LexinumericCompare
 
                     if (!ef.exists && frms[i] < 0)
                     {
-                        string alt = replaceFrameSymbols(pattern.c_str(), frms[i], 24, true);
+                        string alt = replaceFrameSymbols(pattern.c_str(), frms[i], 24 /* fps: same default as above */, true);
 
                         if (dirFilesSet.count(alt) != 0)
                         {
