@@ -1,6 +1,8 @@
 #
 # Copyright (C) 2022  Autodesk, Inc. All Rights Reserved.
 #
+# Modified in 2026 by Seth Rosenthal for timeline hover preview.
+#
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -52,6 +54,7 @@ SET(_sources
     Profile.cpp
     CoreDefinitions.cpp
     RenderQuery.cpp
+    HoverPreviewOverlayGL.cpp
 )
 
 # TODO: Find out whether ALL files are used and replace with a *.glsl glob ???

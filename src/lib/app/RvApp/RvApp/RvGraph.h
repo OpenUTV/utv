@@ -2,6 +2,8 @@
 // Copyright (c) 2007 Tweak Inc.
 // All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //******************************************************************************
@@ -54,6 +56,7 @@ namespace Rv
         virtual void removeNode(IPCore::IPNode*);
         virtual IPCore::DisplayGroupIPNode* newDisplayGroup(const std::string& nodeName, const TwkApp::VideoDevice* d = 0);
         virtual IPCore::OutputGroupIPNode* newOutputGroup(const std::string& nodeName, const TwkApp::VideoDevice* d = 0);
+        virtual IPCore::TextureOutputGroupIPNode* newTextureOutputGroup(const std::string& nodeName);
 
         const Sources& imageSources() const { return m_imageSources; }
 

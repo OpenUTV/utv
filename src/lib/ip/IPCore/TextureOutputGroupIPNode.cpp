@@ -2,6 +2,8 @@
 //  Copyright (c) 2013 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -58,10 +60,7 @@ namespace IPCore
         setProperty(m_outFrame, f);
 
         if (pushItem)
-        {
-            graph()->cache().pushCachableOutputItem(name());
-            graph()->redispatchCachingThread();
-        }
+            graph()->requestTextureOutput(this);
     }
 
     void TextureOutputGroupIPNode::setActive(bool b)
@@ -71,10 +70,7 @@ namespace IPCore
         setProperty(m_active, b ? 1 : 0);
 
         if (pushItem)
-        {
-            graph()->cache().pushCachableOutputItem(name());
-            graph()->redispatchCachingThread();
-        }
+            graph()->requestTextureOutput(this);
     }
 
     void TextureOutputGroupIPNode::setGeometry(int w, int h, const string& dt)
@@ -248,5 +244,15 @@ namespace IPCore
     }
 
     bool TextureOutputGroupIPNode::cached() const { return (graph()->cache().perNodeCacheContents(this) != 0); }
+
+    void TextureOutputGroupIPNode::metaEvaluate(const Context&, MetaEvalVisitor&)
+    {
+        //
+        //  The texture is a side effect of the render for the UI, not part
+        //  of the displayed image, so graph queries (properties by type,
+        //  sources at a frame, ...) must not find the nodes inside it. Like
+        //  AudioTextureIPNode, don't do anything here.
+        //
+    }
 
 } // namespace IPCore

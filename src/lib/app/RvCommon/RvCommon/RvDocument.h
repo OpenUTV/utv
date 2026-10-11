@@ -2,12 +2,15 @@
 // Copyright (c) 2007 Tweak Inc.
 // All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 // SPDX-License-Identifier: Apache-2.0
 //
 //******************************************************************************
 #ifndef __rv_qt__RvDocument__h__
 #define __rv_qt__RvDocument__h__
 #include <TwkGLF/GL.h>
+#include <QtCore/QElapsedTimer>
 #include <QtCore/QFileSystemWatcher>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QStackedLayout>
@@ -44,6 +47,7 @@ namespace Rv
     class RvSourceEditor;
     class DisplayLink;
     class UIBlockingEventNode;
+    class HoverPreviewEventNode;
 
     class RvDocument
         : public QMainWindow
@@ -149,6 +153,19 @@ namespace Rv
 
         void setUIBlocked(bool blocked);
 
+        //
+        //  Timeline hover preview, driven by the hover-preview-show and
+        //  hover-preview-clear events (see the hover_preview package). x
+        //  and y are where the middle of the preview's bottom edge goes,
+        //  in framebuffer pixels with the origin at the bottom left.
+        //  The preview fades in when shown. Clearing fades it out after a
+        //  short delay, so moving across gaps in the timeline doesn't make
+        //  it flicker.
+        //
+
+        void showHoverPreview(int frame, float x, float y, const std::string& label);
+        void clearHoverPreview();
+
     protected:
         // Overrides for TwkUtil::Notifier
         virtual bool receive(Notifier*, Notifier*, MessageId, MessageData*) override;
@@ -168,6 +185,8 @@ namespace Rv
         //  A slot so MetalView::render() can trigger it via a queued connection.
         void fallbackMetalToGLView();
 #endif
+        void hoverPreviewFadeStep();
+        void hoverPreviewTextureUpdated();
 
     private:
         void purgeMenus();
@@ -180,6 +199,7 @@ namespace Rv
         void moveEvent(QMoveEvent*) override;
         void showEvent(QShowEvent*) override;
         void resizeEvent(QResizeEvent*) override;
+        bool eventFilter(QObject*, QEvent*) override;
 
         void setBuildMenu();
 
@@ -194,6 +214,10 @@ namespace Rv
         //  Returns whether the active presentation view has completed its first
         //  paint, regardless of which backend (GLView/MetalView) is active.
         bool activeViewFirstPaintCompleted() const;
+
+        void startHoverPreviewFade(bool out);
+        void hideHoverPreview();
+        void textureCacheUpdatedSlot();
 
     private:
         RvSession* m_session;
@@ -236,6 +260,14 @@ namespace Rv
         DisplayLink* m_displayLink;
         QWidget* m_blockingOverlay;
         std::unique_ptr<UIBlockingEventNode> m_uiBlockingEventNode;
+        std::unique_ptr<HoverPreviewEventNode> m_hoverPreviewEventNode;
+        QTimer* m_hoverPreviewFadeTimer;
+        QElapsedTimer m_hoverPreviewFadeClock;
+        float m_hoverPreviewFadeStart;
+        bool m_hoverPreviewFadingOut;
+        bool m_hoverPreviewActive;
+        boost::signals2::connection m_hoverPreviewTextureConnection;
+        std::string m_hoverPreviewImageID;
     };
 
 } // namespace Rv

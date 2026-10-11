@@ -2,6 +2,8 @@
 //  Copyright (c) 2012 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -25,6 +27,7 @@
 #include <IPCore/Exception.h>
 #include <IPCore/NodeManager.h>
 #include <IPCore/OutputGroupIPNode.h>
+#include <IPCore/TextureOutputGroupIPNode.h>
 #include <IPCore/PipelineGroupIPNode.h>
 #include <IPCore/RootIPNode.h>
 #include <IPCore/SessionIPNode.h>
@@ -123,6 +126,8 @@ namespace Rv
             finishCachingThread();
         }
 
+        deleteHoverPreviewNode();
+
         //
         //  Unhook all inputs. This will prevent the need for recursive
         //  deletion -- at least at the top level.
@@ -200,6 +205,8 @@ namespace Rv
         setPhysicalDevicesInternal(modules);
 
         m_rootNode->appendInput(m_viewGroupNode->waveformNode());
+
+        createHoverPreviewNode();
     }
 
     DisplayGroupIPNode* RvGraph::newDisplayGroup(const std::string& nodeName, const TwkApp::VideoDevice* device)
@@ -230,6 +237,11 @@ namespace Rv
         if (group)
             group->setPhysicalVideoDevice(device);
         return group;
+    }
+
+    TextureOutputGroupIPNode* RvGraph::newTextureOutputGroup(const std::string& nodeName)
+    {
+        return newNodeOfType<TextureOutputGroupIPNode>("RVTextureOutputGroup", nodeName);
     }
 
     TwkContainer::PropertyContainer* RvGraph::sparseContainer(IPNode* node)

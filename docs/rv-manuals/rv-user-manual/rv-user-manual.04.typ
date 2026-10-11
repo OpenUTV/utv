@@ -1,3 +1,5 @@
+// Modified in 2026 by Seth Rosenthal to add the timeline hover preview documentation.
+
 #import "../common/manual-lib.typ": *
 #show: manual
 
@@ -687,6 +689,39 @@ additional items for setting the height of the audio waveform display.
     caption: [Timeline Magnifier Configuration Popup Menu],
 )
 
+#only-for("openutv")[
+=== Hover Preview <hover-preview>
+
+When you hover the pointer over the timeline, a small preview of the frame
+under the pointer appears just above the timeline, with the name of its
+source. An arrow under the preview points at the frame. The preview follows
+the pointer, and fades out when the pointer leaves the timeline or when
+you click in the timeline to scrub.
+
+The preview uses the same display color settings as the viewer, including
+OCIO display transforms and display LUTs.
+
+Use the #menu("View") → #menu("Hover Preview") menu to choose when the preview
+appears. The choice is remembered between sessions.
+
+#table(
+    columns: (auto, 1fr),
+    table.header[Mode][Behavior],
+    [Off], [Never show the preview.],
+    [When Paused], [Show the preview only while playback is stopped. This is the default.],
+    [Always], [Show the preview during playback too. Preview frames are decoded before the frames playback needs, so with heavy media, excessive hovering can make playback stall.],
+)
+
+*Note:* The preview needs the Region or Look-ahead cache (see @caching).
+With caching off, no preview appears. Caching is turned off automatically
+when you load intra-frame movies such as ProRes, DNxHR or Motion JPEG;
+turn on Look-ahead caching from the #menu("Tools") menu to use the preview
+with them.
+
+The preview comes from the Hover Preview package, which you can turn off
+in the Packages preferences.
+]
+
 == Audio <audio>
 
 When playing back audio with an image sequence or movie file, #app can be in
@@ -827,7 +862,7 @@ intervals of 1 second at 24 FPS:
 
 #appshell("syncflash,start=1,end=500,interval=1,fps=24.movieproc")
 
-== Caching
+== Caching <caching>
 
 #app has a three state cache: it's either off, caching the current in/out
 range, or being used as a look-ahead (also known as a ring) buffer.

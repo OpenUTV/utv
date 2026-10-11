@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Seth Rosenthal.
+# SPDX-License-Identifier: Apache-2.0
+
+package: Hover Preview
+author: Seth Rosenthal
+organization: OpenUTV
+version: 1.0
+rv: 3.12.10
+openrv: 1.0.0
+requires: ''
+
+modes:
+  - file: hover_preview_mode
+    load: immediate
+
+description: |
+
+  <p>
+  Shows a preview of the frame under the mouse when you hover over the
+  timeline: a small picture of that frame with its source name, in a panel
+  just above the timeline that points at the frame.
+  </p>
+
+  <p>
+  The View menu gets a "Hover Preview" submenu to choose when the preview
+  appears: Off, When Paused (the default) or Always. The choice is stored
+  in the preferences, so it is remembered when you exit.
+  </p>
+
+  <h2>How It Works</h2>
+
+  <p>
+  The mode watches pointer events over the timeline and asks the timeline
+  which frame is under the mouse. It sends the internal event
+  "hover-preview-show" with "frame|x|y|label" (x and y are where the
+  panel's arrow points, in framebuffer pixels) and "hover-preview-clear"
+  when the preview should go away. UTV renders the frame and draws the
+  panel. The mode passes every event on, so the timeline and other modes
+  still receive them.
+  </p>

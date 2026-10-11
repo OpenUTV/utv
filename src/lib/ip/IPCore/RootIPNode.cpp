@@ -2,6 +2,8 @@
 //  Copyright (c) 2012 Tweak Software.
 //  All rights reserved.
 //
+// Modified in 2026 by Seth Rosenthal for timeline hover preview.
+//
 //  SPDX-License-Identifier: Apache-2.0
 //
 //
@@ -29,48 +31,26 @@ namespace IPCore
             return IPImage::newNoImage(this, "No Input");
         IPImage* root = new IPImage(this, IPImage::GroupType, 0, 0, 1.0, IPImage::NoBuffer);
 
+        //
+        //  Images rendered into textures for the UI (the audio waveform,
+        //  texture output groups such as the hover preview) go first, so
+        //  their textures exist by the time the display groups draw the
+        //  UI. The order of the inputs themselves is left alone: the first
+        //  input also answers the root's range and size queries.
+        //
+
+        vector<IPImage*> others;
+
         try
         {
-            // make sure audio waveform is the first
-            int hasAudioWave = -1;
-            for (size_t i = 1; i < nodes.size(); i++)
+            for (size_t i = 0; i < nodes.size(); i++)
             {
-                if (nodes[i]->name().find("audioWaveform") != std::string::npos)
+                if (IPImage* img = nodes[i]->evaluate(context))
                 {
-                    hasAudioWave = i;
-                    break;
-                }
-            }
-            size_t index = 0;
-            if (hasAudioWave >= 1)
-            {
-                if (IPImage* img = nodes[hasAudioWave]->evaluate(context))
-                {
-                    root->appendChild(img);
-                }
-                for (size_t i = 0; i < hasAudioWave; i++)
-                {
-                    if (IPImage* img = nodes[i]->evaluate(context))
-                    {
+                    if (img->destination == IPImage::OutputTexture)
                         root->appendChild(img);
-                    }
-                }
-                for (size_t i = hasAudioWave + 1; i < nodes.size(); i++)
-                {
-                    if (IPImage* img = nodes[i]->evaluate(context))
-                    {
-                        root->appendChild(img);
-                    }
-                }
-            }
-            else
-            {
-                for (size_t i = 0; i < nodes.size(); i++)
-                {
-                    if (IPImage* img = nodes[i]->evaluate(context))
-                    {
-                        root->appendChild(img);
-                    }
+                    else
+                        others.push_back(img);
                 }
             }
         }
@@ -85,9 +65,14 @@ namespace IPCore
 
             TWK_CACHE_LOCK(graph()->cache(), "root exc");
             graph()->cache().checkInAndDelete(root);
+            for (size_t i = 0; i < others.size(); i++)
+                graph()->cache().checkInAndDelete(others[i]);
             TWK_CACHE_UNLOCK(graph()->cache(), "root exc");
             throw;
         }
+
+        for (size_t i = 0; i < others.size(); i++)
+            root->appendChild(others[i]);
 
         return root;
     }
