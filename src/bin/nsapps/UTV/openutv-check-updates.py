@@ -319,11 +319,21 @@ if [ -f "/opt/homebrew/bin/brew" ]; then
 elif [ -f "/usr/local/bin/brew" ]; then
     eval "$(/usr/local/bin/brew shellenv)"
 fi
-brew upgrade --cask utv
-echo ""
-echo "================================================================="
-echo "  Upgrade finished! You can now restart OpenUTV."
-echo "================================================================="
+# Fetch the tap first: Homebrew only refreshes taps on its own every so often,
+# so without this it can still see the previous release as the latest.
+brew update
+if brew upgrade --cask utv; then
+    echo ""
+    echo "================================================================="
+    echo "  Upgrade finished! You can now restart OpenUTV."
+    echo "================================================================="
+else
+    echo ""
+    echo "================================================================="
+    echo "  The upgrade did not complete. See the messages above, or run:"
+    echo "    brew update && brew upgrade --cask utv"
+    echo "================================================================="
+fi
 read -n 1 -s -r -p "Press any key to close..." && exit 0
 """)
                 os.chmod(script_path, 0o755)
