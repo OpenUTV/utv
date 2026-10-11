@@ -37,6 +37,15 @@ LINUX_SYSTEM_LIBS = {
     "ld-linux",
 }
 
+# Never map these to an unversioned name. Python's minor version is part of its ABI, and the unversioned
+# libpython3 belongs to whichever Python Homebrew currently links as python3 (3.15 while pyside still
+# needs 3.14), so the remapped binary would load a different interpreter than the one it was built for.
+VERSION_LOCKED_LIBS = ("libpython", "Python.framework")
+
+
+def version_locked(lib):
+    return any(name in lib for name in VERSION_LOCKED_LIBS)
+
 
 def get_dependencies_macho(binary_path):
     try:
@@ -90,7 +99,9 @@ def sanitize_macho_binary(binary_path):
         # 2. Map versioned dylibs (e.g. libOpenEXR-3_4.33.dylib, libImath-3_2.30.dylib, libopenjph.0.31.dylib)
         # to generic unversioned symlinks (e.g. libOpenEXR.dylib, libImath.dylib, libopenjph.dylib).
         # This ensures OpenUTV remains compatible across package manager minor updates.
-        if current_dep.startswith(BREW_PREFIX) or "/opt/" in current_dep or "/Cellar/" in current_dep:
+        if (
+            current_dep.startswith(BREW_PREFIX) or "/opt/" in current_dep or "/Cellar/" in current_dep
+        ) and not version_locked(current_dep):
             dir_name = os.path.dirname(current_dep)
             base_name = os.path.basename(current_dep)
             generic_name = re.sub(r"(-[0-9_]+|\.[0-9]+).*\.dylib$", ".dylib", base_name)
@@ -137,7 +148,7 @@ def sanitize_elf_binary(binary_path):
     changed = False
     for lib in needed_libs:
         # Skip glibc and system standard libraries
-        if any(sys_lib in lib for sys_lib in LINUX_SYSTEM_LIBS):
+        if any(sys_lib in lib for sys_lib in LINUX_SYSTEM_LIBS) or version_locked(lib):
             continue
 
         generic_lib = re.sub(r"(-[0-9_]+|\.so\.[0-9]+|\.[0-9]+).*", ".so", lib)
