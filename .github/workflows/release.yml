@@ -559,35 +559,6 @@ jobs:
           path: _dist/UTV-${{ needs.version.outputs.version }}-linux-x64.tar.gz
           retention-days: 7
 
-  build-linux-rhel:
-    name: 3d. Build Linux (Enterprise / Rocky 9)
-    needs: [version]
-    if: inputs.platforms == 'all' || inputs.platforms == 'linux-only'
-    runs-on: ubuntu-latest
-    container: rockylinux:9
-    continue-on-error: true
-    steps:
-      - name: Install Core Packages
-        run: |
-          # ninja-build comes from CRB: enable CRB (needs dnf-plugins-core) and EPEL before installing.
-          dnf install -y dnf-plugins-core
-          dnf config-manager --set-enabled crb
-          dnf install -y epel-release
-          dnf makecache
-          dnf repolist --enabled
-          dnf install -y git gcc gcc-c++ cmake ninja-build python3 python3-pip
-
-      - name: Check out repository
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Run Build Script (RHEL/Rocky)
-        run: |
-          chmod +x ./build.sh
-          ./build.sh --install-deps --release --clean --version "${{ needs.version.outputs.clean_version }}"
-
   release:
     name: 5. Publish Release
     needs: [lint, version, sign-macos, sign-windows, build-linux-ubuntu]
