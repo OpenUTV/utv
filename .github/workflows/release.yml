@@ -386,8 +386,6 @@ jobs:
     if: inputs.platforms == 'all' || inputs.platforms == 'windows-only'
     runs-on: windows-2022
     timeout-minutes: 90
-    env:
-      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
@@ -469,7 +467,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Restore Homebrew cache

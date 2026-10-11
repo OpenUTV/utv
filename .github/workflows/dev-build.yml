@@ -288,8 +288,6 @@ jobs:
     needs: [version]
     runs-on: windows-2022
     timeout-minutes: 90
-    env:
-      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
@@ -348,7 +346,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Restore Homebrew cache
@@ -536,4 +534,39 @@ jobs:
             --title "OpenUTV Development Build" \
             --notes-file dev_notes.md \
             _dist/*
+        shell: bash
+
+  prune-caches:
+    name: Prune Superseded Caches
+    needs: [build-macos, build-windows, build-linux]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Delete old cache generations and branch copies
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          # The repository has 10 GB of Actions cache. Keep only the newest
+          # entry of each cache saved on main; delete older generations,
+          # branch and PR copies, and sccache's old per-object entries
+          # (from when it used the GitHub cache backend directly).
+          gh api --paginate "repos/${GH_REPO}/actions/caches?per_page=100" \
+            --jq '.actions_caches[] | {id, key, ref, createdAt: .created_at}' | jq -s . > caches.json
+          jq -r '
+            map(select(.ref != "refs/heads/main" or (.key | startswith("sccache/")))) | .[].id
+          ' caches.json > delete.txt
+          for prefix in Linux-brew- macOS-brew- Linux-ccache- macOS-ccache- Windows-sccache- Windows-uv-; do
+            jq -r --arg p "$prefix" '
+              map(select(.ref == "refs/heads/main" and (.key | startswith($p))))
+              | sort_by(.createdAt) | reverse | .[1:] | .[].id
+            ' caches.json >> delete.txt
+          done
+          echo "Deleting $(wc -l < delete.txt) of $(jq length caches.json) caches"
+          while read -r id; do
+            gh cache delete "$id" || true
+          done < delete.txt
+          gh api "repos/${GH_REPO}/actions/cache/usage" --jq '"Cache usage now: \(.active_caches_size_in_bytes/1073741824*100|floor/100) GB in \(.active_caches_count) entries"'
         shell: bash

@@ -40,6 +40,10 @@ concurrency:
   group: branch-${{ github.event.pull_request.number || inputs.pr_number || github.ref_name }}
   cancel-in-progress: true
 
+# Branch builds restore the Homebrew, ccache and sccache caches that builds on
+# main save (dev-build.yml) and don't save their own: per-branch copies of
+# multi-GB caches overflow the repository's 10 GB cache limit and evict the rest.
+
 jobs:
   check-authorization:
     name: 0. Verify Authorization
@@ -227,15 +231,6 @@ jobs:
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
         shell: bash
 
-      - name: Save Homebrew cache
-        if: always()
-        uses: actions/cache/save@v6
-        with:
-          path: |
-            ~/Library/Caches/Homebrew/downloads
-            ~/Library/Caches/Homebrew/Casks
-          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
-
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:
@@ -257,13 +252,6 @@ jobs:
 
       - name: Run tests (macOS)
         run: ctest --test-dir _build --output-on-failure --timeout 900
-
-      - name: Save CCache
-        if: always()
-        uses: actions/cache/save@v6
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
 
       - name: Package Ad-Hoc Signed App
         run: |
@@ -289,8 +277,6 @@ jobs:
     if: needs.check-authorization.outputs.authorized == 'true'
     runs-on: windows-2022
     timeout-minutes: 90
-    env:
-      SCCACHE_GHA_ENABLED: "true"
     steps:
       - name: Check out repository code
         uses: actions/checkout@v7
@@ -311,6 +297,7 @@ jobs:
       - name: Build Windows Executable
         uses: ./.github/actions/build-windows
         with:
+          save-caches: 'false'
           version: 'dev'
 
       - name: Package Windows Branch Archive
@@ -355,7 +342,7 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        run: echo "date=$(date +%Y-%W)" >> $GITHUB_OUTPUT
         shell: bash
 
       - name: Restore Homebrew cache
@@ -380,14 +367,6 @@ jobs:
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
                openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
         shell: bash
-
-      - name: Save Homebrew cache
-        if: always()
-        uses: actions/cache/save@v6
-        with:
-          path: |
-            ~/.cache/Homebrew/downloads
-          key: ${{ runner.os }}-brew-${{ steps.date.outputs.date }}-${{ hashFiles('**/build.sh') }}
 
       - name: Restore CCache
         uses: actions/cache/restore@v6
@@ -420,13 +399,6 @@ jobs:
           env -u DISPLAY UTV_GL_DEBUG=1 _build/stage/app/bin/utvio \
             "solid,red=1,green=0.5,blue=0,width=64,height=64,start=1,end=1.movieproc" -o /tmp/utvio-headless.exr 2>&1 | tail -6
           env -u DISPLAY ctest --test-dir _build --verbose --timeout 900 -R 'cli-smoke|image-format-roundtrip'
-
-      - name: Save CCache
-        if: always()
-        uses: actions/cache/save@v6
-        with:
-          path: ~/.ccache
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
 
       - name: Package Linux Branch Archive
         if: success()
