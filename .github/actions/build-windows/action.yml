@@ -2,6 +2,10 @@ name: Build UTV on Windows
 description: Build and test UTV on Windows
 
 inputs:
+  save-caches:
+    description: "Save the sccache, CMake, Vulkan SDK and uv caches ('false' on branch builds, which reuse main's)"
+    required: false
+    default: 'true'
   version:
     required: false
     default: ''
@@ -112,6 +116,22 @@ runs:
           }
         }
 
+    - name: Restore uv cache
+      uses: actions/cache/restore@v6
+      id: windows-uv-cache
+      with:
+        path: C:/uv-cache
+        key: ${{ runner.os }}-uv-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-uv-
+
+    - name: Use the uv cache
+      shell: powershell
+      run: |
+        # Built wheels (OpenTimelineIO comes from git and is compiled) and
+        # downloads are kept between runs.
+        "UV_CACHE_DIR=C:\uv-cache" | Add-Content -Path $env:GITHUB_ENV
+
     - name: Configure Bundled Python
       shell: powershell
       run: |
@@ -194,8 +214,8 @@ runs:
         Write-Host "Bundled Python: $env:pythonLocation\python.exe"
       shell: powershell
 
-    - name: Cache CMake for Windows
-      uses: actions/cache@v6
+    - name: Restore CMake for Windows
+      uses: actions/cache/restore@v6
       id: windows-cmake-cache
       with:
         path: "C:/Program Files/CMake"
@@ -206,8 +226,15 @@ runs:
       run: choco install cmake --version=${{ inputs.cmake-version }} --allow-downgrade --yes --no-progress
       shell: powershell
 
-    - name: Cache Vulkan SDK for Windows
-      uses: actions/cache@v6
+    - name: Save CMake for Windows
+      if: inputs.save-caches == 'true' && steps.windows-cmake-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: "C:/Program Files/CMake"
+        key: ${{ runner.os }}-cmake-${{ inputs.cmake-version }}
+
+    - name: Restore Vulkan SDK for Windows
+      uses: actions/cache/restore@v6
       id: windows-vulkan-cache
       with:
         path: "C:/VulkanSDK"
@@ -230,6 +257,13 @@ runs:
             "$($VulkanDir.FullName)\Bin" | Add-Content -Path $env:GITHUB_PATH
         }
       shell: powershell
+
+    - name: Save Vulkan SDK for Windows
+      if: inputs.save-caches == 'true' && steps.windows-vulkan-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: "C:/VulkanSDK"
+        key: ${{ runner.os }}-vulkan-sdk-1.4.350
 
     - name: Set PATH environment variable
       run: |
@@ -306,6 +340,13 @@ runs:
         }
       shell: powershell
 
+    - name: Save uv cache
+      if: inputs.save-caches == 'true' && steps.windows-uv-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: C:/uv-cache
+        key: ${{ runner.os }}-uv-${{ hashFiles('requirements.txt') }}
+
     - name: Setup sccache
       uses: mozilla-actions/sccache-action@v0.0.11
       with:
@@ -317,7 +358,7 @@ runs:
             "C:\Users\runneradmin\.cargo\bin" | Add-Content -Path $env:GITHUB_PATH
         }
         "SCCACHE_DIR=C:\.sccache" | Add-Content -Path $env:GITHUB_ENV
-        "SCCACHE_CACHE_SIZE=5G" | Add-Content -Path $env:GITHUB_ENV
+        "SCCACHE_CACHE_SIZE=2G" | Add-Content -Path $env:GITHUB_ENV
       shell: powershell
 
     - name: Restore Sccache
@@ -505,7 +546,7 @@ runs:
       shell: powershell
 
     - name: Save Sccache
-      if: always()
+      if: always() && inputs.save-caches == 'true'
       uses: actions/cache/save@v6
       with:
         path: "C:/.sccache"
