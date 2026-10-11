@@ -222,6 +222,7 @@ namespace Rv
         Options& opts = Options::sharedOptions();
         m_realtime = (opts.playMode == 2);
         m_playMode = static_cast<PlayMode>(opts.loopMode);
+        m_autoCacheMode = opts.autoCacheMode != 0;
 
         if (firstTime)
         {
@@ -902,7 +903,7 @@ namespace Rv
             setCaching(RvSession::BufferCache);
         else if (opts.useNoCache)
             setCaching(RvSession::NeverCache);
-        else if (opts.autoCacheMode)
+        else if (m_autoCacheMode)
             determineAndApplyAutoCacheMode();
 
         // setFrame(1);
@@ -1663,11 +1664,19 @@ namespace Rv
 
             // Session restoration still replaces pipeline nodes after media
             // loads. Defer Auto caching until readGTO finishes rebuilding them.
-            if (Options::sharedOptions().autoCacheMode && !m_readingGTO)
+            if (m_autoCacheMode && !m_readingGTO)
             {
                 determineAndApplyAutoCacheMode();
             }
         }
+    }
+
+    void RvSession::setAutoCacheMode(bool on)
+    {
+        m_autoCacheMode = on;
+
+        if (on)
+            determineAndApplyAutoCacheMode();
     }
 
     void RvSession::determineAndApplyAutoCacheMode()
@@ -3745,7 +3754,7 @@ namespace Rv
 
         // Media callbacks defer Auto caching while the session graph is being
         // restored. Apply it after reconstruction and after-session-read handlers.
-        if (Options::sharedOptions().autoCacheMode)
+        if (m_autoCacheMode)
             determineAndApplyAutoCacheMode();
     }
 

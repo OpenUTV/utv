@@ -258,6 +258,8 @@ all_mu_commands = [
     "addSourcesVerbose",
     "setProgressiveSourceLoading",
     "progressiveSourceLoading",
+    "setAutoCacheMode",
+    "autoCacheMode",
     "setBGMethod",
     "activeModes",
     "optionsNoPackages",

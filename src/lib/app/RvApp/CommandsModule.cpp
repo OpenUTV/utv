@@ -1494,6 +1494,10 @@ namespace Rv
         NODE_RETURN(opts.progressiveSourceLoading != 0);
     }
 
+    NODE_IMPLEMENTATION(setAutoCacheMode, void) { RvSession::currentRvSession()->setAutoCacheMode(NODE_ARG(0, bool)); }
+
+    NODE_IMPLEMENTATION(autoCacheMode, bool) { NODE_RETURN(RvSession::currentRvSession()->autoCacheMode()); }
+
     NODE_IMPLEMENTATION(addToSource, void)
     {
         RvSession* s = RvSession::currentRvSession();
@@ -2080,6 +2084,10 @@ namespace Rv
                          new Param(c, "enable", "bool"), End),
 
             new Function(c, "progressiveSourceLoading", progressiveSourceLoading, None, Return, "bool", End),
+
+            new Function(c, "setAutoCacheMode", setAutoCacheMode, None, Return, "void", Parameters, new Param(c, "enable", "bool"), End),
+
+            new Function(c, "autoCacheMode", autoCacheMode, None, Return, "bool", End),
 
             new Function(c, "newImageSource", newImageSource, None, Return, "string", Parameters, new Param(c, "mediaName", "string"),
                          new Param(c, "width", "int"), new Param(c, "height", "int"), new Param(c, "uncropWidth", "int"),
