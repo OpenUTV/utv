@@ -1,6 +1,6 @@
 # OpenUTV 2026.13
 
-OpenUTV 2026.13 makes image sequences play back much faster, adds a hover preview to the timeline, and fixes a crash in `utvio`, sequences with negative frame numbers, and opening files from the Finder.
+OpenUTV 2026.13 makes image sequences and still images play back much faster, shrinks the Linux download to about a quarter of its size, adds a hover preview to the timeline, and fixes a crash in `utvio`, sequences with negative frame numbers, and opening files from the Finder.
 
 **To upgrade on macOS:**
 
@@ -10,11 +10,13 @@ brew update && brew upgrade --cask utv
 
 ---
 
-### Image sequences play much faster (#109, #96)
+### Image sequences and still images play much faster (#109, #113, #96)
 
 Since 2026.9, the default **Auto** caching mode turned caching **off** for EXR, DPX, PNG and other image sequences, when it was meant to turn the look-ahead cache on. Every frame was then decoded one at a time during playback, so the **Reader Threads** setting made no difference.
 
-Auto caching now gives image sequences the look-ahead cache. On a 6144 × 6144 PNG sequence, playback went from about 2 fps to about 16 fps on the same Mac with 8 reader threads, and Reader Threads works again. Movies are unaffected: H.264 and other inter-frame codecs still get the look-ahead cache, and ProRes and DNxHR still play without caching.
+Auto caching now gives image sequences, and separate still images such as a set of JPEGs or PNGs, the look-ahead cache. On a 6144 × 6144 PNG sequence, playback went from about 2 fps to about 16 fps on the same Mac with 8 reader threads, and Reader Threads works again. Movies are unaffected: H.264 and other inter-frame codecs still get the look-ahead cache, and ProRes and DNxHR still play without caching.
+
+**Auto no longer overrides your choice.** Choosing Look-Ahead, Region or Cache Off from **Tools > Cache Mode** now turns Auto off for that session, so loading more media keeps your choice. The new **Auto (Choose by Media Type)** menu item turns it back on. The log now names the file that decided Auto's choice and why, for example `beachday.jpg is an image or image sequence; using the Look-Ahead cache.` (#113)
 
 For large frames, raise the look-ahead cache size in **Preferences > Caching** so that it holds enough frames: one 6K RGB frame is about 108 MB.
 
@@ -37,6 +39,7 @@ The preview needs a cache to draw from. If you see no preview for ProRes, DNxHR 
 - **Sequences whose first frame is missing open**, in the viewer and in the file browser, instead of failing because the first frame of the range isn't on disk (#108).
 - **Loading a session no longer starts caching early.** Auto caching waits until the whole session has been read (#104). Thanks to Seth Rosenthal.
 - **macOS: opening files from the Finder works with window managers and accessibility tools.** UTV's window was invisible to Accessibility when UTV was launched from the Finder, the Dock or `open`. Files and `rvlink://` links opened from the Finder still arrive (#92). Thanks to Alfonso Casado.
+- **Linux: the download is about 70 MB instead of 270 MB.** Static libraries and test programs that nothing uses at run time are no longer packaged; the macOS app also drops about 48 MB of them (#115).
 - **Linux: builds no longer pick up Homebrew's Python 3.15.** Homebrew moved its default Python to 3.15 while UTV uses 3.14. On Linux this could link UTV to the wrong Python library and stop it from starting with "No module named 'encodings'" (#107).
 
 ### Behind the scenes
@@ -47,3 +50,4 @@ The preview needs a cache to draw from. If you see no preview for ProRes, DNxHR 
 - The Python OpenColorIO package is now 2.6 or later (#101).
 - Windows `build.ps1` works on a fresh machine with Visual Studio 2026 (#93), and the Rocky Linux release build installs its packages again (#94).
 - Manual CI builds can now build a given pull request (#110), and the options debug dump labels every field correctly (#111).
+- Release notes now list every change and human contributor since the last release (#114), and CI builds reuse their caches again instead of having them evicted (#116).
