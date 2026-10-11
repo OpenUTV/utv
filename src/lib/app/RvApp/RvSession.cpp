@@ -1695,13 +1695,17 @@ namespace Rv
             return;
 
         //
-        //  Each choice names the first file that made it, so the log says
-        //  which media decided the cache mode and why.
+        //  Each choice names the first file that made it, and its codec when
+        //  the reader reports one, so the log says which media decided the
+        //  cache mode and why.
         //
 
         std::string imageFile;     // images: decoded independently, worth caching ahead
         std::string slowSeekFile;  // slow to seek: inter-frame video (H.264, HEVC, ...), RED
         std::string fastVideoFile; // decodes each frame on its own: ProRes, DNxHR, ...
+
+        auto describe = [](const std::string& name, const std::string& codec)
+        { return TwkUtil::basename(name) + (codec.empty() ? std::string() : " (" + codec + ")"); };
 
         for (size_t i = 0; i < sources.size(); ++i)
         {
@@ -1715,11 +1719,11 @@ namespace Rv
                 const std::string& name = src->mediaName(0);
 
                 //
-                //  The image reader reports video=true, so it can't be told
-                //  from intra-frame video by MovieInfo alone. Recognize images
-                //  by the frame symbols in a sequence name, or by an image
-                //  plugin reading the file's extension. Movie formats belong to
-                //  the movie plugins, not the image plugins.
+                //  The image reader reports video=true and no codec, so it
+                //  can't be told from intra-frame video by MovieInfo alone.
+                //  Recognize images by the frame symbols in a sequence name, or
+                //  by an image plugin reading the file's extension. Movie
+                //  formats belong to the movie plugins, not the image plugins.
                 //
 
                 const bool isFrameSequence = TwkUtil::replaceFrameSymbols(name, 1) != name;
@@ -1728,22 +1732,36 @@ namespace Rv
                 if (!minfo.video || isFrameSequence || isImageFile)
                 {
                     if (imageFile.empty())
-                        imageFile = name;
+                        imageFile = describe(name, "");
+                    continue;
                 }
-                else if (minfo.slowRandomAccess)
-                {
-                    //
-                    //  MovieFFMpeg sets slowRandomAccess for inter-frame codecs
-                    //  and leaves it false for intra-frame codecs and ProRes.
-                    //  MovieRED always sets it.
-                    //
 
-                    if (slowSeekFile.empty())
-                        slowSeekFile = name;
-                }
-                else if (fastVideoFile.empty())
+                //
+                //  MovieFFMpeg copies the first video track's VideoCodec onto
+                //  the proxy. It sets slowRandomAccess for inter-frame codecs
+                //  (and URLs and MPEG containers); MovieRED always sets it.
+                //
+
+                std::string codecName;
+                if (minfo.proxy.hasAttribute("VideoCodec"))
+                    codecName = minfo.proxy.attribute<std::string>("VideoCodec");
+
+                std::string lowerCodec = codecName;
+                boost::algorithm::to_lower(lowerCodec);
+
+                const bool isKnownFastIntra =
+                    (lowerCodec.find("prores") != std::string::npos || lowerCodec.find("dnx") != std::string::npos
+                     || lowerCodec.find("jpeg 2000") != std::string::npos || lowerCodec.find("mjpeg") != std::string::npos
+                     || lowerCodec.find("motion jpeg") != std::string::npos);
+
+                if (isKnownFastIntra || !minfo.slowRandomAccess)
                 {
-                    fastVideoFile = name;
+                    if (fastVideoFile.empty())
+                        fastVideoFile = describe(name, codecName);
+                }
+                else if (slowSeekFile.empty())
+                {
+                    slowSeekFile = describe(name, codecName);
                 }
             }
             catch (...)
@@ -1754,20 +1772,17 @@ namespace Rv
         if (!imageFile.empty())
         {
             setCaching(RvSession::BufferCache);
-            cout << "INFO: Auto-caching: " << TwkUtil::basename(imageFile) << " is an image or image sequence; using the Look-Ahead cache."
-                 << endl;
+            cout << "INFO: Auto-caching: " << imageFile << " is an image or image sequence; using the Look-Ahead cache." << endl;
         }
         else if (!slowSeekFile.empty())
         {
             setCaching(RvSession::BufferCache);
-            cout << "INFO: Auto-caching: " << TwkUtil::basename(slowSeekFile)
-                 << " is slow to seek (for example H.264 or HEVC video); using the Look-Ahead cache." << endl;
+            cout << "INFO: Auto-caching: " << slowSeekFile << " is slow to seek; using the Look-Ahead cache." << endl;
         }
         else if (!fastVideoFile.empty())
         {
             setCaching(RvSession::NeverCache);
-            cout << "INFO: Auto-caching: " << TwkUtil::basename(fastVideoFile)
-                 << " decodes each frame on its own (for example ProRes or DNxHR video); playing without a cache." << endl;
+            cout << "INFO: Auto-caching: " << fastVideoFile << " decodes each frame on its own; playing without a cache." << endl;
         }
     }
 
