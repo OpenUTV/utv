@@ -267,6 +267,7 @@ jobs:
 
       - name: Package Ad-Hoc Signed App
         run: |
+          python3 src/build/prune_package.py _build/stage/app/UTV.app
           python3 "${PWD}/src/build/sanitize_homebrew_links.py" "_build/stage/app/UTV.app" || true
           codesign --force --deep --sign - "_build/stage/app/UTV.app"
           mkdir -p _dist
@@ -435,6 +436,7 @@ jobs:
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           SAFE_BRANCH="${{ needs.check-authorization.outputs.safe_tag }}"
           if [ -d "_build/stage/app" ]; then
+            python3 src/build/prune_package.py _build/stage/app
             tar -czf "_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-linux-x64.tar.gz" -C _build/stage/app .
           fi
         shell: bash
