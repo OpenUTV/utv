@@ -42,6 +42,22 @@ LINUX_SYSTEM_LIBS = {
 # needs 3.14), so the remapped binary would load a different interpreter than the one it was built for.
 VERSION_LOCKED_LIBS = ("libpython", "Python.framework")
 
+# The GPU driver stack on Linux always comes from the system (bin/utv skips Homebrew's mesa and libglvnd
+# and preloads the system libGL/libEGL). Distributions install only the versioned names (libGLX.so.0,
+# libOpenGL.so.0, ...) unless their -dev packages are present, so an unversioned reference would not
+# resolve on an ordinary desktop. Their sonames are stable, so keep them as linked.
+LINUX_DRIVER_LIBS = (
+    "libGL.so",
+    "libGLX.so",
+    "libOpenGL.so",
+    "libEGL.so",
+    "libGLdispatch.so",
+    "libGLES",
+    "libgbm.so",
+    "libdrm.so",
+    "libvulkan.so",
+)
+
 
 def version_locked(lib):
     return any(name in lib for name in VERSION_LOCKED_LIBS)
@@ -149,6 +165,8 @@ def sanitize_elf_binary(binary_path):
     for lib in needed_libs:
         # Skip glibc and system standard libraries
         if any(sys_lib in lib for sys_lib in LINUX_SYSTEM_LIBS) or version_locked(lib):
+            continue
+        if lib.startswith(LINUX_DRIVER_LIBS):
             continue
 
         generic_lib = re.sub(r"(-[0-9_]+|\.so\.[0-9]+|\.[0-9]+).*", ".so", lib)
