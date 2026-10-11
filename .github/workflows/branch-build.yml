@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to build (leave empty to build current branch ref)'
+        description: 'PR number to build, merged into current main (leave empty to build the selected branch)'
         required: false
         type: string
 
@@ -37,7 +37,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 concurrency:
-  group: branch-${{ github.event.pull_request.number || github.ref_name }}
+  group: branch-${{ github.event.pull_request.number || inputs.pr_number || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -47,6 +47,8 @@ jobs:
     outputs:
       authorized: ${{ steps.auth.outputs.authorized }}
       safe_tag: ${{ steps.auth.outputs.safe_tag }}
+      checkout_ref: ${{ steps.auth.outputs.checkout_ref }}
+      trusted_code: ${{ steps.auth.outputs.trusted_code }}
     steps:
       - name: Evaluate Build Authorization
         id: auth
@@ -59,10 +61,15 @@ jobs:
           PR_ASSOC: ${{ github.event.pull_request.author_association }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
           REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 << 'EOF'
-          import os, sys, json
+          import os, re, subprocess, sys, json
 
           event_name = os.environ.get("EVENT_NAME", "")
           actor = os.environ.get("ACTOR", "")
@@ -73,6 +80,16 @@ jobs:
           pr_number = os.environ.get("PR_NUMBER", "")
           ref_name = os.environ.get("REF_NAME", "")
           labels_raw = os.environ.get("PR_LABELS", "[]")
+          input_pr = os.environ.get("INPUT_PR_NUMBER", "").strip()
+          repo = os.environ.get("REPO", "")
+
+          # What to build, and whether it is this repo's own code. Fork code
+          # must never run next to the vendor SDK checkout and its token.
+          checkout_ref = os.environ.get("SHA", "")
+          trusted_code = True
+          if event_name == "pull_request":
+              checkout_ref = os.environ.get("PR_HEAD_SHA", "") or checkout_ref
+              trusted_code = not is_fork
 
           try:
               labels = [str(x).lower() for x in json.loads(labels_raw)]
@@ -86,7 +103,20 @@ jobs:
           authorized = False
           reason = ""
 
-          if event_name == "push" or event_name == "workflow_dispatch":
+          if event_name == "workflow_dispatch" and input_pr:
+              if not re.fullmatch(r"[0-9]+", input_pr):
+                  sys.exit(f"pr_number must be a number, got {input_pr!r}")
+              pr = json.loads(subprocess.run(
+                  ["gh", "api", f"repos/{repo}/pulls/{input_pr}"],
+                  check=True, capture_output=True, text=True).stdout)
+              if pr["state"] != "open":
+                  sys.exit(f"PR {input_pr} is {pr['state']}; only open PRs have a merge ref to build")
+              pr_number = input_pr
+              checkout_ref = f"refs/pull/{input_pr}/merge"
+              trusted_code = (pr["head"]["repo"] or {}).get("full_name") == repo
+              authorized = True
+              reason = f"workflow_dispatch of PR {input_pr} ({pr['head']['label']}) by {actor}"
+          elif event_name == "push" or event_name == "workflow_dispatch":
               authorized = True
               reason = f"Direct {event_name} execution by {actor}"
           elif event_name == "pull_request":
@@ -115,6 +145,7 @@ jobs:
 
           print(f"Build authorization result: authorized={authorized} ({reason})")
           print(f"Safe tag: {safe_tag}")
+          print(f"Checkout ref: {checkout_ref} (trusted code: {trusted_code})")
 
           github_output = os.environ.get("GITHUB_OUTPUT", "")
           if github_output:
@@ -122,6 +153,8 @@ jobs:
                   auth_val = "true" if authorized else "false"
                   f.write(f"authorized={auth_val}\n")
                   f.write(f"safe_tag={safe_tag}\n")
+                  f.write(f"checkout_ref={checkout_ref}\n")
+                  f.write(f"trusted_code={'true' if trusted_code else 'false'}\n")
           EOF
 
   lint:
@@ -133,7 +166,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ needs.check-authorization.outputs.checkout_ref }}
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -155,11 +188,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ needs.check-authorization.outputs.checkout_ref }}
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
+        if: needs.check-authorization.outputs.trusted_code == 'true'
         continue-on-error: true
         uses: actions/checkout@v7
         with:
@@ -261,11 +295,12 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ needs.check-authorization.outputs.checkout_ref }}
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
+        if: needs.check-authorization.outputs.trusted_code == 'true'
         continue-on-error: true
         uses: actions/checkout@v7
         with:
@@ -305,11 +340,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ needs.check-authorization.outputs.checkout_ref }}
           submodules: recursive
           fetch-depth: 0
 
       - name: Check out proprietary vendor SDKs
+        if: needs.check-authorization.outputs.trusted_code == 'true'
         continue-on-error: true
         uses: actions/checkout@v7
         with:
