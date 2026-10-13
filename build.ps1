@@ -70,35 +70,37 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootst
 
 # --- 2. Visual Studio 2022 or newer (CI builds with 2022) ---
 Write-Host "`n--- Checking Visual Studio ---" -ForegroundColor Cyan
-$vsInstalled = $false
-# The Visual Studio Installer ships vswhere; Chocolatey's (step 3) may not be installed yet.
-$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-if (-not (Test-Path $vswhere)) { $vswhere = (Get-Command vswhere -ErrorAction SilentlyContinue).Source }
-if ($vswhere) {
-    $vsPath = & $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath
-    if ($vsPath) { 
-        $vsInstalled = $true 
-        Write-Host "Found Visual Studio at $vsPath" -ForegroundColor Gray
-    }
+# The C++ workload is NativeDesktop in Community/Professional/Enterprise and VCTools in Build Tools.
+$vsWorkloads = @("Microsoft.VisualStudio.Workload.NativeDesktop", "Microsoft.VisualStudio.Workload.VCTools")
+function Find-VisualStudio([string]$property) {
+    # The Visual Studio Installer ships vswhere; Chocolatey's (step 3) may not be installed yet.
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (-not (Test-Path $vswhere)) { $vswhere = (Get-Command vswhere -ErrorAction SilentlyContinue).Source }
+    if (-not $vswhere) { return $null }
+    & $vswhere -latest -version "[17.0,)" -products * -requiresAny -requires $vsWorkloads -property $property
 }
+
+$vsPath = Find-VisualStudio installationPath
+if (-not $vsPath -and -not $SkipBootstrapping) {
+    Write-Host "Visual Studio with the C++ workload not found. Installing Visual Studio 2022 Build Tools via Chocolatey..." -ForegroundColor Yellow
+    # Install Build Tools and its C++ workload (the nativedesktop package does not apply to Build Tools)
+    & choco install visualstudio2022buildtools --yes --no-progress
+    & choco install visualstudio2022-workload-vctools --yes --no-progress
+    $vsPath = Find-VisualStudio installationPath
+}
+$vsInstalled = [bool]$vsPath
+if ($vsInstalled) { Write-Host "Found Visual Studio at $vsPath" -ForegroundColor Gray }
 
 # CMake generator for the Visual Studio found: 2026 (18.x) or 2022 (17.x).
 $CmakeGenerator = "Visual Studio 17 2022"
 if ($vsInstalled) {
-    $vsMajor = ((& $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationVersion) -split '\.')[0]
+    $vsMajor = ((Find-VisualStudio installationVersion) -split '\.')[0]
     if ($vsMajor -eq "18") { $CmakeGenerator = "Visual Studio 18 2026" }
     # Use the CMake that ships with Visual Studio when none is on PATH.
     $vsCmake = Join-Path $vsPath "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
     if (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$vsCmake\cmake.exe")) {
         $env:PATH = "$vsCmake;$env:PATH"
     }
-}
-
-if (-not $vsInstalled -and -not $SkipBootstrapping) {
-    Write-Host "Visual Studio with the C++ workload not found. Installing Visual Studio 2022 Build Tools via Chocolatey..." -ForegroundColor Yellow
-    # Install Build Tools and the Native Desktop (C++) workload
-    & choco install visualstudio2022buildtools --yes --no-progress
-    & choco install visualstudio2022-workload-nativedesktop --yes --no-progress
 }
 
 # --- 3. System Build Tools ---
@@ -140,6 +142,19 @@ if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
     if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
         Write-Warning "sccache is not installed: every build compiles from scratch. Install it for much faster rebuilds: 'choco install sccache' (admin), 'scoop install sccache', or https://github.com/mozilla/sccache/releases"
     }
+}
+
+# Vulkan SDK, as in CI. Without it cmake/dependencies/vulkan.cmake builds the Vulkan loader from source,
+# which fails under the Visual Studio generator (the C++ compile options reach MASM).
+$VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+if (-not $env:VULKAN_SDK -and -not $VulkanDir -and -not $SkipBootstrapping) {
+    Write-Host "Vulkan SDK not found. Installing it via Chocolatey..." -ForegroundColor Yellow
+    & choco install vulkan-sdk --yes --no-progress
+    $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+}
+if (-not $env:VULKAN_SDK -and $VulkanDir) {
+    $env:VULKAN_SDK = $VulkanDir.FullName
+    $env:PATH = "$($VulkanDir.FullName)\Bin;$env:PATH"
 }
 
 # --- 4. OpenUTVDeps MSI ---
