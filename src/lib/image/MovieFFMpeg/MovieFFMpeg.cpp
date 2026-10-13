@@ -1051,7 +1051,17 @@ namespace TwkMovie
                     }
                 }
             }
-            // If the hardware format is not offered or context missing, fall back to default software format
+            // If the hardware format is not offered or context missing, fall back to the
+            // first software format. The list puts hardware formats first, and those
+            // have no device context here.
+            for (const enum AVPixelFormat* pixelFormat = pixelFormats; *pixelFormat != -1; pixelFormat++)
+            {
+                const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(*pixelFormat);
+                if (desc && !(desc->flags & AV_PIX_FMT_FLAG_HWACCEL))
+                {
+                    return *pixelFormat;
+                }
+            }
             return pixelFormats[0];
         }
 
@@ -1101,6 +1111,12 @@ namespace TwkMovie
             return HwDecodeMode::All;
         }
 
+        bool isHardwareDecodableCodec(AVCodecID codecId)
+        {
+            return (codecId == AV_CODEC_ID_PRORES || codecId == AV_CODEC_ID_H264 || codecId == AV_CODEC_ID_HEVC
+                    || codecId == AV_CODEC_ID_VP9 || codecId == AV_CODEC_ID_AV1);
+        }
+
         bool isCodecEligibleForHardwareDecode(AVCodecID codecId)
         {
             HwDecodeMode mode = getHardwareDecodeMode();
@@ -1112,8 +1128,47 @@ namespace TwkMovie
             {
                 return (codecId == AV_CODEC_ID_PRORES);
             }
-            return (codecId == AV_CODEC_ID_PRORES || codecId == AV_CODEC_ID_H264 || codecId == AV_CODEC_ID_HEVC
-                    || codecId == AV_CODEC_ID_VP9 || codecId == AV_CODEC_ID_AV1);
+            return isHardwareDecodableCodec(codecId);
+        }
+
+        // Prints once per codec why it is decoded on the CPU, so a slow file can be
+        // told apart from a missing or disabled hardware decoder (#96).
+        void announceSoftwareDecode(const char* codecName, const std::string& reason)
+        {
+            static std::set<std::string> announced;
+            static std::mutex announcedMutex;
+            std::lock_guard<std::mutex> lock(announcedMutex);
+            if (announced.insert(codecName).second)
+            {
+                std::cout << "INFO: Decoding '" << codecName << "' on the CPU: " << reason << "." << std::endl;
+            }
+        }
+
+        // The hardware acceleration methods this FFmpeg build has, e.g. "cuda, d3d11va".
+        std::string hardwareDeviceTypeNames()
+        {
+            std::string names;
+            for (AVHWDeviceType t = av_hwdevice_iterate_types(AV_HWDEVICE_TYPE_NONE); t != AV_HWDEVICE_TYPE_NONE;
+                 t = av_hwdevice_iterate_types(t))
+            {
+                const char* name = av_hwdevice_get_type_name(t);
+                if (name)
+                    names += (names.empty() ? "" : ", ") + std::string(name);
+            }
+            return names.empty() ? "has none" : "has " + names;
+        }
+
+        // Intra-only codecs such as ProRes and DNxHR split each frame into slices,
+        // so slice threading uses every core with one frame of latency. H.264 and
+        // HEVC files often have one slice per frame, so slice threading leaves them
+        // on one core: a 4K60 HEVC clip decoded at about 33 fps with slice
+        // threading and 115 fps with frame threading on the same Mac (#96).
+        // Hardware decoders keep slice threading, as before.
+        int decoderThreadType(AVCodecID codecId, bool hardware)
+        {
+            const AVCodecDescriptor* desc = avcodec_descriptor_get(codecId);
+            const bool intraOnly = desc && (desc->props & AV_CODEC_PROP_INTRA_ONLY);
+            return (hardware || intraOnly) ? FF_THREAD_SLICE : (FF_THREAD_FRAME | FF_THREAD_SLICE);
         }
 
         std::vector<AVHWDeviceType> getCandidateHardwareDeviceTypes()
@@ -1694,7 +1749,12 @@ namespace TwkMovie
         bool hwAttempted = false;
         if (isCodecEligibleForHardwareDecode(avStream->codecpar->codec_id))
         {
-            if (initHardwareAcceleration(avCodec, avCodecContext, hardwareContext))
+            if (!initHardwareAcceleration(avCodec, avCodecContext, hardwareContext))
+            {
+                announceSoftwareDecode(avCodec->name,
+                                       "no hardware decoder could be opened for it (this FFmpeg build " + hardwareDeviceTypeNames() + ")");
+            }
+            else
             {
                 hwAttempted = true;
                 static std::set<std::pair<AVCodecID, std::string>> hwAnnouncedCodecs;
@@ -1709,10 +1769,16 @@ namespace TwkMovie
                 }
             }
         }
+        else if (isHardwareDecodableCodec(avStream->codecpar->codec_id))
+        {
+            announceSoftwareDecode(avCodec->name, getHardwareDecodeMode() == HwDecodeMode::Disabled
+                                                      ? "hardware decoding is turned off in Preferences > Caching"
+                                                      : "Preferences > Caching limits hardware decoding to ProRes");
+        }
 
         // Open the codec
         (*avCodecContext)->thread_count = m_io->codecThreads();
-        (*avCodecContext)->thread_type = FF_THREAD_SLICE;
+        (*avCodecContext)->thread_type = decoderThreadType(avStream->codecpar->codec_id, hwAttempted);
         if (avStream->codecpar->codec_id == AV_CODEC_ID_PRORES_RAW)
         {
             (*avCodecContext)->apply_cropping = 0;
@@ -1734,6 +1800,7 @@ namespace TwkMovie
                 hardwareContext->deviceName.clear();
                 (*avCodecContext)->opaque = nullptr;
                 (*avCodecContext)->get_format = nullptr;
+                (*avCodecContext)->thread_type = decoderThreadType(avStream->codecpar->codec_id, false);
                 if (avcodec_open2(*avCodecContext, avCodec, nullptr) >= 0)
                 {
                     goto codec_opened;
@@ -4403,7 +4470,14 @@ namespace TwkMovie
         {
             AVPixelFormat hardwarePixelFormat = hardwareContext->pixelFormat;
 
-            if (track->videoFrame->format == hardwarePixelFormat)
+            if (track->videoFrame->format != hardwarePixelFormat)
+            {
+                // FFmpeg opened the hardware decoder but then decoded this stream in
+                // software, e.g. a profile or size the GPU can't decode.
+                announceSoftwareDecode(track->avCodecContext->codec->name,
+                                       "the " + hardwareContext->deviceName + " hardware decoder can't decode this stream");
+            }
+            else
             {
                 // retrieve data from GPU to CPU
                 softwareFrame = av_frame_alloc();
