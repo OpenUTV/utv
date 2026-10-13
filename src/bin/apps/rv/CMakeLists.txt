@@ -54,7 +54,10 @@ IF(RV_TARGET_WINDOWS)
   LIST(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/RV.rc")
 ENDIF()
 
-QT_ADD_RESOURCES(_rv_qrc rv.qrc)
+# qt.conf points Qt at a bundled plugins/Qt; Linux uses the system or Homebrew Qt's own paths.
+IF(NOT RV_TARGET_LINUX)
+  QT_ADD_RESOURCES(_rv_qrc rv.qrc)
+ENDIF()
 
 ADD_EXECUTABLE(
   ${_target}
