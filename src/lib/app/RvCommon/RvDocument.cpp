@@ -773,26 +773,23 @@ namespace Rv
         }
         else if (m == IPCore::Session::eventDeviceChangedMessage())
         {
+            // Pointer events are in logical pixels, so their domain is too.
+            const TwkApp::VideoDevice* ed = m_session->eventVideoDevice();
+            const float edw = ed ? ed->width() / ed->devicePixelRatio() : 0.0f;
+            const float edh = ed ? ed->height() / ed->devicePixelRatio() : 0.0f;
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
             if (m_metalView)
             {
-                if (m_session->eventVideoDevice() && m_metalView->videoDevice())
-                {
-                    m_metalView->videoDevice()->translator().setRelativeDomain(m_session->eventVideoDevice()->width(),
-                                                                               m_session->eventVideoDevice()->height());
-                }
+                if (ed && m_metalView->videoDevice())
+                    m_metalView->videoDevice()->translator().setRelativeDomain(edw, edh);
             }
-            else if (m_session->eventVideoDevice() && m_glView->videoDevice())
+            else if (ed && m_glView->videoDevice())
             {
-                m_glView->videoDevice()->translator().setRelativeDomain(m_session->eventVideoDevice()->width(),
-                                                                        m_session->eventVideoDevice()->height());
+                m_glView->videoDevice()->translator().setRelativeDomain(edw, edh);
             }
 #else
-            if (m_session->eventVideoDevice() && m_glView->videoDevice())
-            {
-                m_glView->videoDevice()->translator().setRelativeDomain(m_session->eventVideoDevice()->width(),
-                                                                        m_session->eventVideoDevice()->height());
-            }
+            if (ed && m_glView->videoDevice())
+                m_glView->videoDevice()->translator().setRelativeDomain(edw, edh);
 #endif
         }
         else if (m == TwkApp::Document::filenameChangedMessage())
