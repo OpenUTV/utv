@@ -260,20 +260,9 @@ int utf8Main(int argc, char* argv[])
     XInitThreads();
 #endif
 
-#ifdef PLATFORM_WINDOWS
-    // High DPI support is disabled by default on Windows.
-    // This is a temporary measure due to reported crashes with
-    // QtWebEngineWidgets in Qt 6.5.3 on high DPI displays. To enable High DPI
-    // support, set the environment variable "RV_QT_HDPI_SUPPORT". Note: The
-    // "RV_QT_HDPI_SUPPORT" environment variable was also used in previous
-    // versions of RV.
-    const bool noHighDPISupport = getenv("RV_QT_HDPI_SUPPORT") == nullptr;
-#else
-    // High DPI support is enabled by default on non-Windows platforms.
-    // To disable High DPI support, set the environment variable
-    // "RV_NO_QT_HDPI_SUPPORT".
+    // High DPI support is enabled by default. To disable it, set the
+    // environment variable "RV_NO_QT_HDPI_SUPPORT".
     const bool noHighDPISupport = getenv("RV_NO_QT_HDPI_SUPPORT") != nullptr;
-#endif
 
     if (noHighDPISupport)
     {
