@@ -205,7 +205,7 @@ The CI/CD pipeline consists of 7 modular workflows:
    - Automatically generates release notes categorized by Conventional Commit types (`scripts/generate-changelog.sh`).
 5. **`publish-packages.yml`** (Triggered on Release Publication):
    - Automatically pushes cask updates to `OpenUTV/homebrew-utv`.
-   - **Paused** (`if: false`): the Scoop (`OpenUTV/scoop-utv`), winget (`microsoft/winget-pkgs`) and Chocolatey jobs. Those packages are not maintained for now; `install.ps1` and the release zip are the supported Windows installs. Don't fix or re-enable them without the maintainers deciding to.
+   - Windows has no package-manager packages: `install.ps1` (`irm https://openutv.com/install.ps1 | iex`) installs UTV and the OpenUTVDeps MSI it needs, and the release zip plus the MSI is the manual install. The winget, Scoop and Chocolatey packages were removed; don't add them back without the maintainers deciding to.
 6. **`codeql.yml`**:
    - Weekly scheduled CodeQL security scanning for C++ and Python vulnerabilities.
 7. **`dependabot-auto-merge.yml`**:
@@ -232,36 +232,9 @@ The package publishing pipeline requires the following per-service repository se
 | Secret | Purpose | Permissions / Scope |
 | :--- | :--- | :--- |
 | `HOMEBREW_TAP_TOKEN` | Updates `OpenUTV/homebrew-utv` | GitHub PAT with `repo` scope |
-| `SCOOP_BUCKET_TOKEN` | Updates `OpenUTV/scoop-utv` | GitHub PAT with `repo` scope |
-| `WINGET_PAT` | Submits PR to `microsoft/winget-pkgs` | GitHub PAT with `public_repo` scope |
-| `CHOCO_API_KEY` | Pushes to Chocolatey Community Repository | API key from `community.chocolatey.org` |
 | `GH_TOKEN_DEPS_READ` | Accesses private vendor SDKs | GitHub PAT with `repo:read` scope |
 | `MACOS_CERTIFICATE` | Developer ID Application certificate (Base64) | Apple Developer Program |
 | `MACOS_CERTIFICATE_PWD` | Password for macOS certificate `.p12` | - |
 | `APPLE_API_KEY` | App Store Connect API Key (Base64) | Apple Notary Service API |
 | `APPLE_API_KEY_ID` | App Store Connect Key ID | Apple Notary Service API |
 | `APPLE_API_ISSUER` | App Store Connect Issuer UUID | Apple Notary Service API |
-
-### 3.5 One-Time Windows Package Manager Registration Scripts
-
-> Paused along with the Scoop, winget and Chocolatey publish jobs (3.2); kept for when they are reopened.
-
-To bootstrap package manager registrations, execute the provided setup scripts on a Windows machine:
-
-1. **Scoop**:
-
-   ```powershell
-   pwsh .\scripts\register-scoop.ps1 -Version "2026.7"
-   ```
-
-2. **winget**:
-
-   ```powershell
-   pwsh .\scripts\register-winget.ps1 -Version "2026.7" -Submit
-   ```
-
-3. **Chocolatey**:
-
-   ```powershell
-   pwsh .\scripts\register-chocolatey.ps1 -Version "2026.7" -ApiKey "<YOUR_API_KEY>"
-   ```

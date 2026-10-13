@@ -362,29 +362,6 @@ read -n 1 -s -r -p "Press any key to close..." && exit 0
     # Windows
     # -------------------------------------------------------------------------
     elif sys_name == "Windows":
-        # Check if installed via Chocolatey or Scoop (only for app)
-        has_choco = False
-        has_scoop = False
-        if not is_deps:
-            if shutil.which("choco"):
-                r = subprocess.run(
-                    ["choco", "list", "--local-only", "openutv"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    text=True,
-                )
-                if "openutv" in r.stdout.lower():
-                    has_choco = True
-            if shutil.which("scoop"):
-                r = subprocess.run(
-                    ["scoop", "list", "openutv"],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    text=True,
-                )
-                if "openutv" in r.stdout.lower():
-                    has_scoop = True
-
         # Try interactive Tkinter window for multi-choice support
         chosen_action = [None]
         try:
@@ -421,10 +398,7 @@ read -n 1 -s -r -p "Press any key to close..." && exit 0
                 chosen_action[0] = act
                 root.destroy()
 
-            upgrade_btn_text = (
-                "Upgrade via Chocolatey" if has_choco else ("Upgrade via Scoop" if has_scoop else "Download Update")
-            )
-            btn_upgrade = ttk.Button(btn_frame, text=upgrade_btn_text, command=lambda: on_action("upgrade"))
+            btn_upgrade = ttk.Button(btn_frame, text="Download Update", command=lambda: on_action("upgrade"))
             btn_upgrade.pack(side="left", padx=4)
 
             btn_tomorrow = ttk.Button(btn_frame, text="Remind Tomorrow", command=lambda: on_action("tomorrow"))
@@ -468,12 +442,7 @@ read -n 1 -s -r -p "Press any key to close..." && exit 0
 
         act = chosen_action[0]
         if act == "upgrade":
-            if has_choco:
-                subprocess.Popen(["powershell.exe", "-NoExit", "-Command", "choco upgrade openutv -y"])
-            elif has_scoop:
-                subprocess.Popen(["powershell.exe", "-NoExit", "-Command", "scoop update openutv"])
-            else:
-                webbrowser.open(target_url)
+            webbrowser.open(target_url)
         elif act == "tomorrow":
             snooze_update(days=1, is_deps=is_deps)
         elif act == "week":
