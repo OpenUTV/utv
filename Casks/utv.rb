@@ -26,6 +26,7 @@ cask "utv" do
   depends_on formula: "openjpeg"
   depends_on formula: "openjph"
   depends_on formula: "pyside"
+  depends_on formula: "python@3.15"
   depends_on formula: "qt"
   depends_on formula: "spdlog"
   depends_on formula: "webp"
