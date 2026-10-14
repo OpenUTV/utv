@@ -170,6 +170,28 @@ namespace TwkApp
         }
 #endif
 
+#ifndef PLATFORM_WINDOWS
+        // Homebrew builds pyside for one Python version and moves it to a newer one on its own schedule. Its
+        // modules use Python's stable ABI (*.abi3.so), so when there is no build for our Python, the build for
+        // another version still loads. Appended, so a build for our Python always wins.
+        {
+            const char* brewPrefix = depsRoot ? depsRoot : getenv("HOMEBREW_PREFIX");
+            QDir pysideLib(QString(brewPrefix ? brewPrefix : "/home/linuxbrew/.linuxbrew") + "/opt/pyside/lib");
+            if (pysideLib.exists() && !pysideLib.exists("python" PYTHON_VERSION))
+            {
+                for (const QString& py : pysideLib.entryList(QStringList() << "python3.*", QDir::Dirs, QDir::Name | QDir::Reversed))
+                {
+                    QDir sitePackages(pysideLib.absoluteFilePath(py + "/site-packages"));
+                    if (sitePackages.exists("PySide6"))
+                    {
+                        addPathToEnvVar("PYTHONPATH", sitePackages.absolutePath().toUtf8().constData(), false);
+                        break;
+                    }
+                }
+            }
+        }
+#endif
+
         addPathToEnvVar("PYTHONPATH", m_pyhome.absoluteFilePath("lib-dynload").toUtf8().constData(), forceToFront);
         addPathToEnvVar("PYTHONPATH", m_pyhome.absolutePath().toUtf8().constData(), forceToFront);
         QDir bundledSitePackages(m_pyhome.absoluteFilePath("site-packages"));

@@ -66,19 +66,6 @@ if [ -z "$UTV_NO_SYSTEM_GL_PRELOAD" ]; then
     export LD_PRELOAD
 fi
 
-# Homebrew builds pyside for one Python version and moves it to a newer one on its own schedule. When it
-# no longer matches the Python UTV was built for, PySide6 can't be imported. Set UTV_SKIP_PYSIDE_CHECK=1
-# to skip the warning.
-if [ -z "$UTV_SKIP_PYSIDE_CHECK" ] && [ -d "$deps/opt/pyside/lib" ]; then
-    our_python=$(basename "$(ls -d "$UTV_HOME"/lib/python3.* 2>/dev/null | head -n 1)" | sed 's/^python//')
-    if [ -n "$our_python" ] && [ ! -d "$deps/opt/pyside/lib/python$our_python" ]; then
-        pyside_python=$(basename "$(ls -d "$deps"/opt/pyside/lib/python3.* 2>/dev/null | head -n 1)" | sed 's/^python//')
-        echo "WARNING: This version of UTV uses Python $our_python, but Homebrew's pyside is built for Python ${pyside_python:-another version}." >&2
-        echo "WARNING: PySide6 can't be loaded, so UTV's PySide features (such as Media Info) are turned off." >&2
-        echo "WARNING: Update UTV to a release built for Python ${pyside_python:-that version}." >&2
-    fi
-fi
-
 LD_LIBRARY_PATH="$libpath${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 PATH="$bindir:$PATH"
 export LD_LIBRARY_PATH PATH
