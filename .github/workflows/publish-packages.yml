@@ -61,6 +61,18 @@ jobs:
           SHA256=$(sha256sum "$ASSET_NAME" | awk '{print $1}')
           echo "SHA256 for $ASSET_NAME: $SHA256"
 
+          # UTV links Homebrew's Python directly, but nothing else in the cask keeps that exact version installed
+          # once pyside and the other formulas move to a newer Python, so `brew autoremove` could delete it.
+          # Take the version from the app itself so the cask always matches the release.
+          PYTHON_DIR=$(unzip -Z1 "$ASSET_NAME" | grep -oE 'UTV\.app/Contents/lib/python3\.[0-9]+/' | head -n 1 || true)
+          PYTHON_FORMULA="python@${PYTHON_DIR#UTV.app/Contents/lib/python}"
+          PYTHON_FORMULA="${PYTHON_FORMULA%/}"
+          if [ -z "$PYTHON_DIR" ]; then
+            echo "::error::Could not find Contents/lib/python3.X in $ASSET_NAME"
+            exit 1
+          fi
+          echo "UTV ${VERSION} uses ${PYTHON_FORMULA}"
+
           echo "Cloning OpenUTV/homebrew-utv..."
           git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/OpenUTV/homebrew-utv.git" tap_repo
           cd tap_repo
@@ -71,6 +83,12 @@ jobs:
           if [ -f "$CASK_FILE" ]; then
             sed -i "s/version \".*\"/version \"${VERSION}\"/" "$CASK_FILE"
             sed -i "s/sha256 \".*\"/sha256 \"${SHA256}\"/" "$CASK_FILE"
+            if grep -q 'depends_on formula: "python@' "$CASK_FILE"; then
+              sed -i "s/depends_on formula: \"python@[0-9.]*\"/depends_on formula: \"${PYTHON_FORMULA}\"/" "$CASK_FILE"
+            else
+              sed -i "/depends_on formula: \"pyside\"/a\\  depends_on formula: \"${PYTHON_FORMULA}\"" "$CASK_FILE"
+            fi
+            grep -q "depends_on formula: \"${PYTHON_FORMULA}\"" "$CASK_FILE" || { echo "::error::Failed to add ${PYTHON_FORMULA} to $CASK_FILE"; exit 1; }
           else
             echo "::error::$CASK_FILE not found in tap repo. Please initialize it first."
             exit 1
