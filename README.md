@@ -17,7 +17,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/C%2B%2B-20-00599C?logo=c%2B%2B&logoColor=white" alt="C++20" />
   <img src="https://img.shields.io/badge/Qt-6.11-41CD52?logo=qt&logoColor=white" alt="Qt 6.11" />
-  <img src="https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white" alt="Python 3.14" />
+  <img src="https://img.shields.io/badge/Python-3.15-3776AB?logo=python&logoColor=white" alt="Python 3.15" />
   <a href="https://github.com/OpenUTV/utv/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?logo=git&logoColor=white" alt="PRs Welcome" /></a>
   <a href="https://github.com/OpenUTV/utv/stargazers"><img src="https://img.shields.io/github/stars/OpenUTV/utv?style=social" alt="GitHub Stars" /></a>
 </p>
@@ -96,7 +96,7 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 | **Cinema RAW (BRAW, RED, ARRI)** | Unsupported | **Native dynamic runtime loading for Blackmagic RAW (`.braw`), RED Digital Cinema (`.r3d`), and ARRIRAW** |
 | **Apple Silicon HEIC** | Software / slow decode | **Hardware-accelerated CoreGraphics/ImageIO** with full P3/Rec.2020 |
 | **Media Information Panel** | Non selectable, image overlay | **secondary panel, Live playhead/viewport tracking, source clip dropdown, instant search filter, and 1-click export (Text/CSV/JSON)** |
-| **Modern Tech Stack** | Outdated Qt / Python 3.9–3.10 | **Modern Qt 6.11, Python 3.14, OpenEXR 3.4, OIIO 3.1, FFmpeg 9+** |
+| **Modern Tech Stack** | Outdated Qt / Python 3.9–3.10 | **Modern Qt 6.11, Python 3.15 (3.14 on Windows), OpenEXR 3.4, OIIO 3.1, FFmpeg 9+** |
 | **In-App Update Checking** | None | **Automated GitHub release checker** (`Help -> Check for Updates...`) |
 | **Integrated Bug Reporting** | None (manual GitHub issue filing) | **Native 1-click Bug Reporter** with auto-collected system specs |
 | **Build & CI Pipeline** | Multi-hour brittle builds, hard-to-cache | **6-min macOS / 18-min Windows CI**, auditable binary banking & sccache |
@@ -182,7 +182,7 @@ The Linux build is for x86-64 and, like the macOS app, loads Qt, FFmpeg, OpenCol
 1. **Install Homebrew on Linux** if you don't have it, then the libraries UTV uses:
 
    ```bash
-   brew install qt pyside python@3.14 ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo glew
+   brew install qt pyside python@3.15 ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo glew
    ```
 
 2. **Download** `UTV-<version>-linux-x64.tar.gz` from our **[Releases](https://github.com/OpenUTV/utv/releases)** page and extract it to a folder of your choice.
@@ -203,7 +203,7 @@ If you want to build UTV from source or contribute to the project, the process i
 ### 1. Install Dependencies (macOS)
 
 ```bash
-brew install ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache qt ffmpeg-full openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo doctest
+brew install ninja readline sqlite3 xz zlib tcl-tk@8 python-tk autoconf automake libtool python@3.15 yasm clang-format black meson nasm pkg-config glew ccache qt ffmpeg-full openexr imath opencolorio libraw libtiff libpng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo doctest
 ```
 
 ### 2. Build the Application

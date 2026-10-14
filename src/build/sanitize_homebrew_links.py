@@ -38,8 +38,8 @@ LINUX_SYSTEM_LIBS = {
 }
 
 # Never map these to an unversioned name. Python's minor version is part of its ABI, and the unversioned
-# libpython3 belongs to whichever Python Homebrew currently links as python3 (3.15 while pyside still
-# needs 3.14), so the remapped binary would load a different interpreter than the one it was built for.
+# libpython3 belongs to whichever Python Homebrew currently links as python3, which can differ from the
+# one pyside is built for, so the remapped binary would load a different interpreter than its own.
 VERSION_LOCKED_LIBS = ("libpython", "Python.framework")
 
 # The GPU driver stack on Linux always comes from the system (bin/utv skips Homebrew's mesa and libglvnd
