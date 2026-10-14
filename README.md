@@ -86,10 +86,10 @@ OpenUTV is committed to being an active, positive part of the open-source visual
 | **macOS Distribution** | Unsigned, manual build required, Gatekeeper blocks | **Signed & Apple Notarized**, instant `brew install --cask utv` |
 | **intelligent caching** | User must select cache behavior | **Intelligently sets cache behavior** based on media metadata |
 | **Windows Installation** | Complex manual setup, DLL missing errors | **Self-contained MSVC CRT**, zero-config `OpenUTVDeps` MSI |
-| **Linux Packaging** | Requires compiling heavy VFX deps tree | **Precompiled zero-config DEB & RPM** (`/usr/local/openutv-deps`) |
+| **Linux Packaging** | Requires compiling heavy VFX deps tree | **Prebuilt x86-64 build that loads its libraries from Homebrew on Linux** (no compiling) |
 | **Hardware GPU Acceleration** | Limited / platform-specific patchwork | **Auto-detecting GPU across macOS (VideoToolbox), Linux (NVDEC/VAAPI), Windows (NVDECODE/D3D11VA)** |
 | **CPU Fallback Architecture** | Hard failure if GPU pipeline errors | **Intelligent, zero-configuration fallback** to multithreaded CPU decode |
-| **PNG Sequence Playback** | Standard `libpng` (single-threaded / CPU bottleneck) | **Ultra-fast SIMD `libspng` (3–4× faster FPS playback)** with `libpng` fallback |
+| **Image Sequence Playback** | Manual cache setup | **Look-ahead cache chosen automatically**, decoding frames in parallel across the reader threads |
 | **Vector Graphics (SVG)** | Unsupported | **Native SVG vector rendering (`io_svg`)** via NanoSVG |
 | **Video Codec Support** | Basic broadcast formats | **WebM, FLAC, Opus, AAC, M4A, WMA, VOB, TS, WMV, Y4M** |
 | **Camera RAW & Modern Formats** | Restricted RAW set | **Panasonic RW2, Sony SR2, Hasselblad 3FR, Phase One IIQ, Samsung SRW, Nikon NRW, Canon/Sony HIF, QOI** |
@@ -174,6 +174,25 @@ When launching `utv.exe` for the first time, Windows Defender SmartScreen may di
 
 > [!NOTE]
 > **Windows Code Signing:** Microsoft requires an EV Code Signing Certificate or Azure Trusted Signing to bypass SmartScreen warnings. As an independent open-source project, our binaries are 100% auditable and built transparently on public GitHub Actions runners. If an individual or sponsor would like to fund an EV certificate for the project, please reach out via [GitHub Discussions](https://github.com/OpenUTV/utv/discussions)!
+
+#### Linux (Standalone tarball)
+
+The Linux build is for x86-64 and, like the macOS app, loads Qt, FFmpeg, OpenColorIO, OpenImageIO and its other libraries from [Homebrew on Linux](https://docs.brew.sh/Homebrew-on-Linux) instead of bundling them.
+
+1. **Install Homebrew on Linux** if you don't have it, then the libraries UTV uses:
+
+   ```bash
+   brew install qt pyside python@3.14 ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo glew
+   ```
+
+2. **Download** `UTV-<version>-linux-x64.tar.gz` from our **[Releases](https://github.com/OpenUTV/utv/releases)** page and extract it to a folder of your choice.
+3. **Run** `bin/utv` (and `bin/utvio`, `bin/utvls`, … for the command line tools).
+
+UTV uses your system's OpenGL driver, which a desktop install normally already has (Ubuntu/Debian: `libgl1 libglx0 libopengl0 libegl1`). **2026.13 and earlier** also need the OpenGL development package to start (Ubuntu/Debian: `sudo apt install libglvnd-dev`; Fedora/RHEL: `sudo dnf install libglvnd-devel`); later releases don't.
+
+#### Enterprise Linux (Rocky, Alma, RHEL)
+
+We don't currently publish a build for Enterprise Linux. Studios on the [VFX Reference Platform](https://vfxplatform.com/) can build UTV from source: see [Preparing UTV on Rocky 8 and 9](docs/build_system/config_linux_rocky89.md). Let us know in [GitHub Discussions](https://github.com/OpenUTV/utv/discussions) if a prebuilt Enterprise Linux build would help you.
 
 ---
 
