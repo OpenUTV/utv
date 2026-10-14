@@ -167,6 +167,34 @@ DarwinBundle::DarwinBundle(const FileName& appName,
     }
 #endif
 
+#ifdef PYTHON_VERSION
+    // Homebrew builds pyside for one Python version and moves it to a newer one on its own schedule. Its
+    // modules use Python's stable ABI (*.abi3.so), so when there is no build for our Python, the build for
+    // another version still loads. Appended, so a build for our Python always wins.
+    {
+        const char *brewPrefix = getenv("UTV_DEPS_ROOT") ?: getenv("HOMEBREW_PREFIX");
+        NSString *pysideLib = [[NSString stringWithUTF8String:brewPrefix ?: "/opt/homebrew"]
+            stringByAppendingPathComponent:@"opt/pyside/lib"];
+        NSString *ours = [pysideLib stringByAppendingPathComponent:@"python" PYTHON_VERSION];
+        if (fileExists([pysideLib UTF8String]) && !fileExists([ours UTF8String]))
+        {
+            NSArray *names = [[[NSFileManager defaultManager] contentsOfDirectoryAtPath:pysideLib error:nil]
+                sortedArrayUsingSelector:@selector(localizedStandardCompare:)];
+            for (NSString *name in [names reverseObjectEnumerator])
+            {
+                NSString *sitePackages =
+                    [[pysideLib stringByAppendingPathComponent:name] stringByAppendingPathComponent:@"site-packages"];
+                if ([name hasPrefix:@"python3."]
+                    && fileExists([[sitePackages stringByAppendingPathComponent:@"PySide6"] UTF8String]))
+                {
+                    addPathToEnvVar("PYTHONPATH", [sitePackages UTF8String], false);
+                    break;
+                }
+            }
+        }
+    }
+#endif
+
     // Add bundled site-packages from Contents/lib/pythonX.Y/site-packages
     NSString *bundleContents = [[m_bundle->bundle bundlePath] stringByAppendingPathComponent:@"Contents"];
     NSString *bundleLib = [bundleContents stringByAppendingPathComponent:@"lib"];
