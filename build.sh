@@ -17,9 +17,9 @@ LOG_FILE=""
 BMD_SDK=""
 PRORES_SDK=""
 CUSTOM_VERSION=""
-# Must match the Python that Homebrew's pyside formula is built for (python@3.14). Homebrew's
-# unversioned python3 moves ahead of pyside (it became 3.15 in October 2026), so never build against it.
-PYTHON_VERSION="3.14"
+# Must match the Python that Homebrew's pyside formula is built for (python@3.15 since pyside 6.12.0_1).
+# Homebrew's unversioned python3 can move ahead of pyside, so never build against it.
+PYTHON_VERSION="3.15"
 GCC_VERSION="15"
 
 # Parse arguments
@@ -279,6 +279,13 @@ fi
 
 # 1. Setup Python Environment
 echo "--- Setting up Python Environment ---"
+# Packages without a wheel for this Python are compiled from source, and uv reuses those builds when
+# staging the app. Without a deployment target they require the build host's macOS instead of the app's
+# minimum (CMAKE_OSX_DEPLOYMENT_TARGET in CMakeLists.txt).
+if [[ "$OSTYPE" == "darwin"* ]] && [ -z "${MACOSX_DEPLOYMENT_TARGET:-}" ]; then
+    MACOSX_DEPLOYMENT_TARGET=$(sed -n '/SET(CMAKE_OSX_DEPLOYMENT_TARGET/{n;s/[^0-9.]//gp;}' "${PROJECT_ROOT}/CMakeLists.txt")
+    export MACOSX_DEPLOYMENT_TARGET
+fi
 if ! command -v uv >/dev/null 2>&1; then
     echo "uv not found. Installing astral uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh

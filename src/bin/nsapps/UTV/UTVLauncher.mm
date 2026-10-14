@@ -24,7 +24,7 @@ static const struct DepCheck kRequiredDependencies[] = {
     {"qt", {"opt/qt", "opt/qtbase", NULL}},
     {"boost", {"opt/boost", NULL}},
     {"ffmpeg-full", {"opt/ffmpeg-full", "opt/ffmpeg", NULL}},
-    {"python@3.14", {"opt/python@3.14", "opt/python3", "opt/python", NULL}},
+    {"python@3.15", {"opt/python@3.15", "opt/python3", "opt/python", NULL}},
     {"opencolorio", {"opt/opencolorio", NULL}},
     {"openimageio", {"opt/openimageio", NULL}},
     {"openexr", {"opt/openexr", NULL}},
