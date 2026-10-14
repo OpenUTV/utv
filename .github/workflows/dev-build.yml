@@ -514,18 +514,31 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="dev-build"
-          if gh release view "$tag" >/dev/null 2>&1; then
-            echo "Recreating $tag release so published_at reflects the latest build time..."
-            gh release delete "$tag" --yes --cleanup-tag=false || true
+
+          # Point the rolling tag at this commit before touching the release. `gh release create --target`
+          # only applies when it creates the tag, and GitHub orders releases by the tagged commit's date.
+          # GITHUB_TOKEN may not point a ref at a commit whose .github/workflows differ from main's, which
+          # happens when a workflow change is merged while this build runs (ab7579e1 after #131). The
+          # release used to be deleted first, so that left no dev-build release at all.
+          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1; then
+            tag_cmd=(gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true)
+          else
+            tag_cmd=(gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$GITHUB_SHA")
+          fi
+          if ! "${tag_cmd[@]}" >/dev/null; then
+            echo "::warning::Could not move the $tag tag to $GITHUB_SHA (workflow files changed on main during this build?). Updating the existing release's files and notes instead."
+            if gh release view "$tag" >/dev/null 2>&1; then
+              gh release upload "$tag" --clobber _dist/*
+              gh release edit "$tag" --notes-file dev_notes.md
+              exit 0
+            fi
+            echo "::error::No $tag release to update."
+            exit 1
           fi
 
-          # Point the rolling tag at this commit. `gh release create --target` only applies when it
-          # creates the tag, so an existing tag stayed on its original commit. GitHub orders releases by
-          # the tagged commit's date, which kept the pre-release below newer stable releases.
-          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1; then
-            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true >/dev/null
-          else
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$GITHUB_SHA" >/dev/null
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Recreating $tag release so published_at reflects the latest build time..."
+            gh release delete "$tag" --yes --cleanup-tag=false
           fi
 
           echo "Publishing development release..."
