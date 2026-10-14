@@ -519,13 +519,13 @@ jobs:
             gh release delete "$tag" --yes --cleanup-tag=false || true
           fi
 
-          # Point the rolling tag at this commit. `gh release create --target` only applies when it
-          # creates the tag, so an existing tag stayed on its original commit. GitHub orders releases by
-          # the tagged commit's date, which kept the pre-release below newer stable releases.
+          # Point the rolling tag at this commit by deleting it and letting `gh release create --target`
+          # create it again (`--target` is ignored when the tag already exists, and GitHub orders releases by
+          # the tagged commit's date). Don't move it with a PATCH: GITHUB_TOKEN can't update a ref across
+          # commits that change .github/workflows, so every build after a workflow change failed with
+          # "Resource not accessible by integration" after the release was already deleted.
           if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1; then
-            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" -f sha="$GITHUB_SHA" -F force=true >/dev/null
-          else
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${tag}" -f sha="$GITHUB_SHA" >/dev/null
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}"
           fi
 
           echo "Publishing development release..."
