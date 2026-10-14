@@ -416,7 +416,10 @@ int utf8Main(int argc, char* argv[])
 
     bool noPrefs = false;
     bool resetPrefs = false;
+#ifndef PLATFORM_LINUX
+    // qt.conf; Linux uses its Qt's own plugin paths (see CMakeLists.txt)
     Q_INIT_RESOURCE(rv);
+#endif
 
     //
     //  Expand any rvlink urls in argv
