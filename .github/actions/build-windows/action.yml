@@ -243,9 +243,23 @@ runs:
     - name: Install build tools (Ninja, flex, bison, nasm, patch, pkg-config, Vulkan)
       run: |
         choco feature enable -n allowEmptyChecksums
-        choco install ninja winflexbison3 nasm patch pkgconfiglite --yes --no-progress --allow-empty-checksums --ignore-checksums
+        # The Chocolatey community feed sometimes times out (HTTP 504). Retry, and stop here on failure
+        # instead of letting CMake fail later with "Could NOT find PkgConfig".
+        function Install-ChocoPackages([string[]]$Packages) {
+            for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+                choco install @Packages --yes --no-progress --allow-empty-checksums --ignore-checksums
+                if ($LASTEXITCODE -eq 0) { return }
+                Write-Host "::warning::choco install $Packages failed (exit $LASTEXITCODE), attempt $Attempt of 3"
+                Start-Sleep -Seconds (30 * $Attempt)
+            }
+            throw "choco install $Packages failed after 3 attempts"
+        }
+        Install-ChocoPackages ninja, winflexbison3, nasm, patch, pkgconfiglite
+        if (-not (Test-Path "C:\ProgramData\chocolatey\bin\pkg-config.exe")) {
+            throw "pkg-config.exe is missing after installing pkgconfiglite"
+        }
         if ("${{ steps.windows-vulkan-cache.outputs.cache-hit }}" -ne "true") {
-            choco install vulkan-sdk --yes --no-progress --allow-empty-checksums --ignore-checksums
+            Install-ChocoPackages vulkan-sdk
         }
         "C:\ProgramData\chocolatey\bin" | Add-Content -Path $env:GITHUB_PATH
         $VulkanDir = Get-ChildItem -Path "C:\VulkanSDK" -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
