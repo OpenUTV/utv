@@ -279,6 +279,13 @@ fi
 
 # 1. Setup Python Environment
 echo "--- Setting up Python Environment ---"
+# Packages without a wheel for this Python are compiled from source, and uv reuses those builds when
+# staging the app. Without a deployment target they require the build host's macOS instead of the app's
+# minimum (CMAKE_OSX_DEPLOYMENT_TARGET in CMakeLists.txt).
+if [[ "$OSTYPE" == "darwin"* ]] && [ -z "${MACOSX_DEPLOYMENT_TARGET:-}" ]; then
+    MACOSX_DEPLOYMENT_TARGET=$(sed -n '/SET(CMAKE_OSX_DEPLOYMENT_TARGET/{n;s/[^0-9.]//gp;}' "${PROJECT_ROOT}/CMakeLists.txt")
+    export MACOSX_DEPLOYMENT_TARGET
+fi
 if ! command -v uv >/dev/null 2>&1; then
     echo "uv not found. Installing astral uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
