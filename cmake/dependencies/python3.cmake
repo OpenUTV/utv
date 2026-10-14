@@ -81,6 +81,16 @@ IF(NOT UV_EXECUTABLE)
   ENDIF()
 ENDIF()
 
+# Packages without a wheel for this Python are compiled from source. Without this they target the build host's macOS (e.g. 26.0 on macos-26 runners) instead of
+# the app's minimum.
+IF(RV_TARGET_DARWIN
+   AND CMAKE_OSX_DEPLOYMENT_TARGET
+)
+  SET(ENV{MACOSX_DEPLOYMENT_TARGET}
+      "${CMAKE_OSX_DEPLOYMENT_TARGET}"
+  )
+ENDIF()
+
 IF(UV_EXECUTABLE
    AND EXISTS "${UV_EXECUTABLE}"
 )
