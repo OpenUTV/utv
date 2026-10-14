@@ -17,9 +17,9 @@ LOG_FILE=""
 BMD_SDK=""
 PRORES_SDK=""
 CUSTOM_VERSION=""
-# Must match the Python that Homebrew's pyside formula is built for (python@3.14). Homebrew's
-# unversioned python3 moves ahead of pyside (it became 3.15 in October 2026), so never build against it.
-PYTHON_VERSION="3.14"
+# Must match the Python that Homebrew's pyside formula is built for (python@3.15 since pyside 6.12.0_1).
+# Homebrew's unversioned python3 can move ahead of pyside, so never build against it.
+PYTHON_VERSION="3.15"
 GCC_VERSION="15"
 
 # Parse arguments
