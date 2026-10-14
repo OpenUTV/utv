@@ -15,8 +15,8 @@
       "paths": ["opt/ffmpeg-full", "opt/ffmpeg"]
     },
     {
-      "name": "python@3.14",
-      "paths": ["opt/python@3.14", "opt/python3", "opt/python"]
+      "name": "python@3.15",
+      "paths": ["opt/python@3.15", "opt/python3", "opt/python"]
     },
     {
       "name": "opencolorio",

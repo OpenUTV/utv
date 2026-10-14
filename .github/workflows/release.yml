@@ -135,7 +135,7 @@ jobs:
         run: |
           brew update
           brew install --formula \
-               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk@3.14 autoconf automake libtool python@3.14 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
+               ninja readline sqlite3 xz zlib tcl-tk@8 python-tk@3.15 autoconf automake libtool python@3.15 yasm clang-format black meson nasm pkg-config glew ccache doctest qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost openimageio openjpeg webp yaml-cpp spdlog icu4c openjph jpeg-turbo
         shell: bash
 
@@ -489,7 +489,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y build-essential patchelf mold tcsh libgl1-mesa-dev libglu1-mesa-dev libegl1-mesa-dev libosmesa6-dev libudev-dev libaio-dev libreadline-dev libx11-dev libxcursor-dev libxext-dev libxi-dev libxinerama-dev libxrandr-dev libxrender-dev libxcomposite-dev libxdamage-dev libxtst-dev libxxf86vm-dev libxkbcommon-dev libxkbcommon-x11-dev libffi-dev libasound2-dev libpulse-dev
           brew update
           brew install --formula \
-               ninja pkg-config ccache glew doctest python@3.14 qt pyside \
+               ninja pkg-config ccache glew doctest python@3.15 qt pyside \
                ffmpeg openexr imath opencolorio libraw libtiff libpng libspng boost \
                openimageio openjpeg webp yaml-cpp spdlog openjph jpeg-turbo
         shell: bash
@@ -558,35 +558,6 @@ jobs:
           name: UTV-${{ needs.version.outputs.version }}-linux-x64
           path: _dist/UTV-${{ needs.version.outputs.version }}-linux-x64.tar.gz
           retention-days: 7
-
-  build-linux-rhel:
-    name: 3d. Build Linux (Enterprise / Rocky 9)
-    needs: [version]
-    if: inputs.platforms == 'all' || inputs.platforms == 'linux-only'
-    runs-on: ubuntu-latest
-    container: rockylinux:9
-    continue-on-error: true
-    steps:
-      - name: Install Core Packages
-        run: |
-          # ninja-build comes from CRB: enable CRB (needs dnf-plugins-core) and EPEL before installing.
-          dnf install -y dnf-plugins-core
-          dnf config-manager --set-enabled crb
-          dnf install -y epel-release
-          dnf makecache
-          dnf repolist --enabled
-          dnf install -y git gcc gcc-c++ cmake ninja-build python3 python3-pip
-
-      - name: Check out repository
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Run Build Script (RHEL/Rocky)
-        run: |
-          chmod +x ./build.sh
-          ./build.sh --install-deps --release --clean --version "${{ needs.version.outputs.clean_version }}"
 
   release:
     name: 5. Publish Release

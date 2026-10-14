@@ -130,7 +130,7 @@ Full reference: [`docs/architecture/windows_runtime_architecture.md`](docs/archi
 
 ### 2.6 macOS Notarization, Hardened Runtime & Codesigning Order
 
-- When Python wheels are installed via `requirements.txt` into `UTV.app/Contents/lib/python3.14/site-packages`, packages such as `opencolorio` bundle standalone CLI binaries under `PyOpenColorIO/bin/` (e.g. `ociocpuinfo`, `ocioconvert`).
+- When Python wheels are installed via `requirements.txt` into `UTV.app/Contents/lib/python3.15/site-packages`, packages such as `opencolorio` bundle standalone CLI binaries under `PyOpenColorIO/bin/` (e.g. `ociocpuinfo`, `ocioconvert`).
 - **Apple Notarization Requirement**: Apple's Notary Service scans *every* Mach-O binary in the entire `.zip` archive. Unsigned CLI binaries or binaries missing a secure timestamp / hardened runtime will cause notarization rejection.
   - OpenUTV only requires the in-process Python C-extension (`import PyOpenColorIO as OCIO`); the standalone CLI binaries are unnecessary inside the GUI application bundle.
   - `build.sh` and `build-and-release.yml` explicitly purge `bin/` directories inside `Contents/lib/**/site-packages/`.
