@@ -474,6 +474,89 @@ static void reportLibraryLoadFailure(NSString *failure, BOOL isFinder) {
     }
 }
 
+// The Python version UTV was built for, from the bundle's Contents/lib/python3.X directory.
+static NSString *bundledPythonVersion(void) {
+    NSString *libDir = [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:@"Contents/lib"];
+    for (NSString *name in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:libDir error:nil]) {
+        if ([name hasPrefix:@"python3."]) {
+            return [name substringFromIndex:[@"python" length]];
+        }
+    }
+    return nil;
+}
+
+// Homebrew builds pyside for one Python version, and moves it to a newer one on its own schedule. When that
+// version is not the one UTV was built for, PySide6 can't be imported and UTV's PySide features don't load.
+// Returns the Python version Homebrew's pyside is built for when it doesn't match, otherwise nil.
+static NSString *pysidePythonMismatch(NSString *brewPrefix, NSString *ourPython) {
+    NSString *pysideLib = [brewPrefix stringByAppendingPathComponent:@"opt/pyside/lib"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (!ourPython || ![fm fileExistsAtPath:pysideLib]) {
+        return nil;
+    }
+    if ([fm fileExistsAtPath:[pysideLib stringByAppendingPathComponent:[@"python" stringByAppendingString:ourPython]]]) {
+        return nil;
+    }
+    for (NSString *name in [fm contentsOfDirectoryAtPath:pysideLib error:nil]) {
+        if ([name hasPrefix:@"python3."]) {
+            return [name substringFromIndex:[@"python" length]];
+        }
+    }
+    return nil;
+}
+
+// Warns that PySide features are unavailable. Returns NO if the user chose to quit or update instead of
+// starting UTV.
+static BOOL warnPySideMismatch(NSString *brewPrefix, NSString *ourPython, NSString *pysidePython, BOOL isFinder) {
+    if (!isFinder) {
+        fprintf(stderr, "\n");
+        fprintf(stderr, "WARNING: This version of UTV uses Python %s, but Homebrew's pyside is built for Python %s.\n",
+                [ourPython UTF8String], [pysidePython UTF8String]);
+        fprintf(stderr, "WARNING: PySide6 can't be loaded, so UTV's PySide features (such as Media Info) are turned off.\n");
+        fprintf(stderr, "WARNING: Update UTV to a release built for Python %s:\n", [pysidePython UTF8String]);
+        fprintf(stderr, "WARNING:   %s\n\n", [kLibraryFixCommand UTF8String]);
+        return YES;
+    }
+
+    // Asking again only when either side changes, e.g. after a Homebrew pyside update or a new UTV.
+    NSString *pysideKeg =
+        [[brewPrefix stringByAppendingPathComponent:@"opt/pyside"] stringByResolvingSymlinksInPath];
+    NSString *suppressKey = @"SuppressPySidePythonWarning";
+    NSString *suppressValue = [NSString stringWithFormat:@"%@|%@", ourPython, pysideKeg];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    if ([[defaults stringForKey:suppressKey] isEqualToString:suppressValue]) {
+        return YES;
+    }
+
+    [NSApplication sharedApplication];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+    [NSApp activateIgnoringOtherApps:YES];
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setAlertStyle:NSAlertStyleWarning];
+    [alert setMessageText:@"Some UTV features are unavailable"];
+    [alert setInformativeText:[NSString stringWithFormat:
+        @"This version of UTV uses Python %@, but Homebrew's PySide is now built for Python %@, so UTV can't load "
+        @"it. UTV still works, but its PySide features, such as Media Info, are turned off.\n\n"
+        @"Updating UTV to a release built for Python %@ fixes this:\n\n%@",
+        ourPython, pysidePython, pysidePython, kLibraryFixCommand]];
+    [alert addButtonWithTitle:@"Continue"];
+    [alert addButtonWithTitle:@"Update with Homebrew"];
+    [alert addButtonWithTitle:@"Quit"];
+    [alert setShowsSuppressionButton:YES];
+    [[alert suppressionButton] setTitle:@"Don't show this again until Homebrew's PySide changes"];
+
+    NSModalResponse response = [alert runModal];
+    if ([[alert suppressionButton] state] == NSControlStateValueOn) {
+        [defaults setObject:suppressValue forKey:suppressKey];
+    }
+    if (response == NSAlertSecondButtonReturn) {
+        launchTerminalLibraryUpdate();
+        return NO;
+    }
+    return response == NSAlertFirstButtonReturn;
+}
+
 static BOOL isLaunchedFromFinder(int argc, char *argv[]) {
     if (isatty(STDIN_FILENO) || isatty(STDOUT_FILENO) || isatty(STDERR_FILENO)) {
         return NO;
@@ -587,6 +670,14 @@ int main(int argc, char *argv[]) {
                     if (failure) {
                         reportLibraryLoadFailure(failure, isLaunchedFromFinder(argc, argv));
                         return 1;
+                    }
+                }
+                if (getenv("UTV_SKIP_PYSIDE_CHECK") == NULL) {
+                    NSString *ourPython = bundledPythonVersion();
+                    NSString *pysidePython = pysidePythonMismatch(brewPrefix, ourPython);
+                    if (pysidePython &&
+                        !warnPySideMismatch(brewPrefix, ourPython, pysidePython, isLaunchedFromFinder(argc, argv))) {
+                        return 0;
                     }
                 }
                 if (isLaunchedFromFinder(argc, argv)) {

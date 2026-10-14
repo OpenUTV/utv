@@ -66,6 +66,21 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+          # Homebrew builds pyside for one Python version and moves it on its own schedule. UTV still
+          # starts when they don't match, but PySide6 can't be imported, so check it explicitly.
+          echo "::group::import PySide6"
+          app_python=$(basename "$(ls -d /Applications/UTV.app/Contents/lib/python3.* | head -n 1)")
+          pyside_python=$(basename "$(ls -d "$(brew --prefix)"/opt/pyside/lib/python3.* | head -n 1)")
+          echo "UTV uses ${app_python}; Homebrew's pyside is built for ${pyside_python}"
+          if "$bin"/py-interp -c "import PySide6.QtCore" > out.txt 2>&1; then
+            echo "ok: import PySide6"
+          else
+            echo "FAIL: py-interp cannot import PySide6 (UTV uses ${app_python}, Homebrew's pyside is built for ${pyside_python})" | tee -a canary.log
+            tail -5 out.txt | tee -a canary.log
+            status=1
+          fi
+          echo "::endgroup::"
           exit $status
 
       - name: Open or update an issue
