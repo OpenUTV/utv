@@ -17,6 +17,16 @@ namespace TwkGLF
     void InitPBOPools();
     void UninitPBOPools();
 
+    //
+    //  Delete the pools' PBOs now, with the GL context that made them (or
+    //  one sharing with it) current. Otherwise they are only deleted by the
+    //  pools' static destructors at exit, when the GL library may already
+    //  have shut down (Mesa crashes then). No PBO from the pools may be in
+    //  use.
+    //
+
+    void DeletePBOPoolBuffers();
+
     class GLPixelBufferObjectFromPool
     {
     public:

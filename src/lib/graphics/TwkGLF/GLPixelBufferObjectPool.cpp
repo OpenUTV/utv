@@ -518,6 +518,18 @@ namespace TwkGLF
             _cleanupNoLock(_usedPool);
         }
 
+        // Delete every PBO now (see DeletePBOPoolBuffers()).
+        void deleteAll()
+        {
+            std::unique_lock<decltype(_mutex)> guard(_mutex);
+            _cleanupNoLock(_freePool);
+            _cleanupNoLock(_usedPool);
+            _freePool.clear();
+            _usedPool.clear();
+            _allocSize = 0;
+            _allocNbBuffers = 0;
+        }
+
         void setSoftMaxSize(size_t softMaxSize)
         {
             std::unique_lock<decltype(_mutex)> guard(_mutex);
@@ -854,6 +866,12 @@ namespace TwkGLF
             }
         }
 
+        static void deletePBOPoolBuffers()
+        {
+            gPoolToGPU.deleteAll();
+            gPoolFromGPU.deleteAll();
+        }
+
         operator GLPixelBufferObject*() const { return _pPBO; }
 
         void bind()
@@ -946,5 +964,7 @@ namespace TwkGLF
         if (writeBehindUsePBOs)
             PBOWrap::uninitPBOPool(GLPixelBufferObject::FROM_GPU);
     }
+
+    void DeletePBOPoolBuffers() { PBOWrap::deletePBOPoolBuffers(); }
 
 } // namespace TwkGLF
