@@ -12,7 +12,7 @@ IF(RV_VFX_PLATFORM STRGREATER_EQUAL CY2024)
   SET(MU_QT_QAPPLICATION_AVAILABLE_GEOMETRY
       "
        // Get available screen geometry for the screen containing the window\n \
-       let screen = qt.QGuiApplication.screenAt(globalPos);\n \
+       let screen = mainWin.screen();\n \
        if (screen eq nil) screen = qt.QGuiApplication.primaryScreen();\n \
        let usedRect = if (screen eq nil) then mainRect else screen.availableGeometry();\n \
     "
@@ -20,8 +20,7 @@ IF(RV_VFX_PLATFORM STRGREATER_EQUAL CY2024)
   SET(MU_DPI_SCALING_ADJUSTMENT
       "
        // Check for DPI/scaling on the current screen\n \
-       let globalPos = mainWin.mapToGlobal(qt.QPoint(0, 0));\n \
-       let dpiScreen = qt.QGuiApplication.screenAt(globalPos);\n \
+       let dpiScreen = mainWin.screen();\n \
        if (dpiScreen eq nil) dpiScreen = qt.QGuiApplication.primaryScreen();\n \
        let hdpi = system.getenv(\"RV_NO_QT_HDPI_SUPPORT\", nil);\n \
        if (hdpi eq nil || hdpi == 0)\n \

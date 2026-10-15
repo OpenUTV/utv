@@ -17,6 +17,7 @@
 #include <RvCommon/QTGLVideoDevice.h>
 #include <RvCommon/GLView.h>
 #include <RvCommon/DesktopVideoDevice.h>
+#include <RvCommon/DesktopVideoModule.h>
 #include <TwkGLF/GLFBO.h>
 #include <IPCore/Session.h>
 #include <TwkApp/Application.h>
@@ -239,17 +240,21 @@ namespace Rv
         if (isWorkerDevice())
             return;
 
-        if (x != m_x || y != m_y || m_refresh == -1.0)
+        //
+        //  The screen comes from the view rather than from (x, y): see
+        //  DesktopVideoModule::deviceFromScreen(). It is also checked on its
+        //  own, since on Wayland the position never changes.
+        //
+
+        const QScreen* screen = m_view->screen();
+
+        if (x != m_x || y != m_y || screen != m_screen || m_refresh == -1.0)
         {
             float refresh = -1.0;
 
-            VideoDevice::Resolution res = internalResolution();
-            int tx = x + res.width / 2;
-            int ty = y + res.height / 2;
-
-            if (const TwkApp::VideoModule* module = TwkApp::App()->primaryVideoModule())
+            if (const DesktopVideoModule* module = dynamic_cast<const DesktopVideoModule*>(TwkApp::App()->primaryVideoModule()))
             {
-                if (TwkApp::VideoDevice* d = module->deviceFromPosition(tx, ty))
+                if (TwkApp::VideoDevice* d = module->deviceFromScreen(screen))
                 {
                     setPhysicalDevice(d);
                     refresh = d->timing().hz;
@@ -281,6 +286,7 @@ namespace Rv
         }
         m_x = x;
         m_y = y;
+        m_screen = screen;
     }
 
 } // namespace Rv

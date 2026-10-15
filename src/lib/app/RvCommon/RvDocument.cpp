@@ -1397,7 +1397,7 @@ namespace Rv
 
     void RvDocument::center()
     {
-        QScreen* screen = QApplication::screenAt(mapToGlobal(QPoint(0, 0)));
+        QScreen* screen = this->screen();
         if (!screen)
         {
             // Fallback on primary screen.
@@ -1440,7 +1440,7 @@ namespace Rv
         //  top of an existing one.
         //
 
-        QScreen* screen = QApplication::screenAt(mapToGlobal(QPoint(0, 0)));
+        QScreen* screen = this->screen();
         if (!screen)
         {
             // Fallback on primary screen.
@@ -1588,7 +1588,7 @@ namespace Rv
         float w = 0;
         float h = 0;
 
-        QScreen* screen = QApplication::screenAt(mapToGlobal(QPoint(0, 0)));
+        QScreen* screen = this->screen();
         if (!screen)
         {
             // Fallback on primary screen.
@@ -1839,7 +1839,7 @@ namespace Rv
     void RvDocument::toggleFullscreen(bool firstTime)
     {
         DB("toggleFullScreen currently " << isFullScreen());
-        QScreen* screen = QApplication::screenAt(mapToGlobal(QPoint(0, 0)));
+        QScreen* screen = this->screen();
         if (!screen)
         {
             // Fallback on primary screen.

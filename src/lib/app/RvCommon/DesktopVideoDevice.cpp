@@ -29,6 +29,7 @@
 
 #include <QOpenGLContext>
 #include <QScreen>
+#include <QWindow>
 
 // #define DEBUG_NO_FULLSCREEN
 
@@ -175,6 +176,20 @@ namespace Rv
 
         QTGLVideoDevice* vd = new QTGLVideoDevice(0, "local view", vw);
         setViewDevice(vd);
+
+        //
+        //  Give the window its screen before showing it. Wayland ignores
+        //  window positions, so the geometry alone left the window on the
+        //  screen the compositor chose (the controller's); with a screen,
+        //  Qt asks for full screen on that output.
+        //
+
+        const QList<QScreen*> screens = QGuiApplication::screens();
+        if (qtScreen() >= 0 && qtScreen() < screens.size())
+        {
+            viewWidget()->winId();
+            viewWidget()->windowHandle()->setScreen(screens[qtScreen()]);
+        }
 
         QRect g = screenGeometry();
         viewWidget()->move(g.x(), g.y());
