@@ -632,6 +632,11 @@ namespace
             path += L";" + inherited;
         SetEnv(L"PATH", path);
 
+        // Python 3.8+ no longer searches PATH for an extension's DLLs. This lets the deps' OpenImageIO module find OpenImageIO.dll in
+        // deps.bin.
+        if (GetEnv(L"OPENIMAGEIO_PYTHON_LOAD_DLLS_FROM_PATH").empty())
+            SetEnv(L"OPENIMAGEIO_PYTHON_LOAD_DLLS_FROM_PATH", L"1");
+
         //
         //  Always ours, even when the user's environment has these for another Python or Qt: the
         //  embedded Python and Qt cannot load another installation's standard library or plugins.
