@@ -17,4 +17,6 @@ PyOpenGL
 PyOpenGL_accelerate
 requests
 six
-opencolorio>=2.6.0
+opencolorio
+# Windows gets the OpenImageIO Python module from the OpenUTVDeps MSI, next to the OpenImageIO.dll the app uses.
+openimageio; sys_platform != "win32"
