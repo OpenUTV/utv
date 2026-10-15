@@ -130,6 +130,9 @@ ELSE()
   )
 ENDIF()
 
+# The OpenImageIO wheel ships oiiotool, idiff and maketx. The app doesn't use them, and on macOS they would be unsigned executables that fail notarization.
+FILE(REMOVE_RECURSE "${RV_STAGE_PYTHON_SITE_PACKAGES}/OpenImageIO/bin" "${RV_STAGE_PYTHON_SITE_PACKAGES}/bin")
+
 IF(RV_TARGET_LINUX)
   FILE(MAKE_DIRECTORY "${RV_STAGE_BIN_DIR}")
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E create_symlink "${Python3_EXECUTABLE}" "${RV_STAGE_BIN_DIR}/python")

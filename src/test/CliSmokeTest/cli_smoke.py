@@ -40,6 +40,20 @@ CHECKS = [
     ("openutv-check-updates", ["--help"], True, r"Usage: openutv-check-updates"),
 ]
 
+if sys.platform != "win32":
+    # Python packages staged from requirements.txt (Windows gets OpenImageIO from the deps MSI).
+    CHECKS += [
+        (
+            "py-interp",
+            [
+                "-c",
+                "import OpenImageIO, PyOpenColorIO, opentimelineio; print('py-packages-ok', OpenImageIO.__version__)",
+            ],
+            True,
+            r"py-packages-ok",
+        ),
+    ]
+
 if sys.platform.startswith("linux"):
     # Software-rendering, display-less launcher (and its legacy rvio_sw name).
     CHECKS += [
