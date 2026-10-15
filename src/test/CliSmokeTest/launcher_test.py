@@ -39,6 +39,13 @@ CHECKS = [
     ("rvshell", ["-help"], None, r"usage: rvshell"),
     ("rvprof", ["-help"], None, r"usage: rvprof"),
     ("py-interp", ["-c", "import sys, ssl, sqlite3; print('py-interp-ok'); sys.exit(7)"], 7, r"py-interp-ok"),
+    # OpenImageIO comes from the deps MSI and needs the launcher's OPENIMAGEIO_PYTHON_LOAD_DLLS_FROM_PATH.
+    (
+        "py-interp",
+        ["-c", "import OpenImageIO, PyOpenColorIO, opentimelineio; print('py-packages-ok')"],
+        0,
+        r"py-packages-ok",
+    ),
     ("openutv-diagnostics.cmd", ["--help"], 0, r"Usage: openutv-diagnostics"),
 ]
 
@@ -58,6 +65,7 @@ def isolated_environment():
         "QT_PLUGIN_PATH",
         "QT_QPA_PLATFORM_PLUGIN_PATH",
         "UTV_OPENGL",
+        "OPENIMAGEIO_PYTHON_LOAD_DLLS_FROM_PATH",
     ):
         env.pop(name, None)
     keep = [p for p in env.get("PATH", "").split(os.pathsep) if p and "openutvdeps" not in p.lower()]
