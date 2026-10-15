@@ -128,6 +128,16 @@ namespace Rv
         }
     }
 
+    float QTGLVideoDevice::devicePixelRatio() const
+    {
+        // The view's ratio is what sizes its framebuffer. The screen's can differ: on Wayland with
+        // fractional scaling the screen reports 3 while a window at 250% uses 2.5.
+        static bool noQtHighDPISupport = getenv("RV_NO_QT_HDPI_SUPPORT") != nullptr;
+        if (m_view && !noQtHighDPISupport)
+            return static_cast<float>(m_view->devicePixelRatioF());
+        return m_devicePixelRatio;
+    }
+
     void QTGLVideoDevice::redraw() const
     {
         if (!isWorkerDevice())

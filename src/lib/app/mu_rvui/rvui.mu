@@ -2186,7 +2186,10 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
 {
     State state = data();
 
-    let dp = event.pointer() - event.reference(),
+    //  The pointer is in logical pixels; viewSize() and margins() are in
+    //  device pixels.
+    let dpr = devicePixelRatio(),
+        dp = event.pointer() - event.reference(),
         d  = event.domain(),
         ds = state.downScale,
         m  = abs(dp.x / d.x) * ds * 2.0,
@@ -2199,7 +2202,7 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
                        float(viewSize().y - ms[2] - ms[3])/2.0 + float(ms[3]));
 
     let normalizer = math.max(float(viewSize().y - ms[2] - ms[3]), 0.01),
-        focus      = (center - event.reference())/(ds*normalizer),
+        focus      = (center - event.reference()*dpr)/(ds*normalizer),
         diff       = (focus/ds - focus/ns)*ds + state.downPoint;
 
     setScale(ns);
@@ -2214,8 +2217,10 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
     if (state.pixelInfo eq nil || state.pixelInfo.empty()) return;
     let pinfo = state.pixelInfo.front();
 
-    let t = eventToCameraSpace(pinfo.name, event.pointer()) -
-            eventToCameraSpace(pinfo.name, event.reference());
+    //  eventToCameraSpace() takes device pixels; the pointer is logical.
+    let dpr = devicePixelRatio(),
+        t = eventToCameraSpace(pinfo.name, event.pointer()*dpr) -
+            eventToCameraSpace(pinfo.name, event.reference()*dpr);
 
     Point f = state.downPoint + t / scale();
     if (lockToAxis)

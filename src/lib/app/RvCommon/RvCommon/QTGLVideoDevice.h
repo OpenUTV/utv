@@ -74,7 +74,7 @@ namespace Rv
 
         // Device pixel ratio for high DPI displays
         // For reference: https://doc.qt.io/qt-6/highdpi.html
-        float devicePixelRatio() const override { return m_devicePixelRatio; }
+        float devicePixelRatio() const override;
 
     protected:
         QTGLVideoDevice(const std::string& name, QOpenGLWidget* view);
