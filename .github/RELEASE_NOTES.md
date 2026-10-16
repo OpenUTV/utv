@@ -1,6 +1,6 @@
-# OpenUTV 2026.13
+# OpenUTV 2026.14
 
-OpenUTV 2026.13 makes image sequences and still images play back much faster, shrinks the Linux download to about a quarter of its size, adds a hover preview to the timeline, and fixes a crash in `utvio`, sequences with negative frame numbers, and opening files from the Finder.
+OpenUTV 2026.14 moves macOS and Linux to Python 3.15, fixes UTV's Python plugins with today's Homebrew, adds NVIDIA hardware decoding and faster software H.264/HEVC decoding on Windows, fixes high-DPI and mixed-scale multi-monitor display, and gets the Linux build starting on a normal desktop.
 
 **To upgrade on macOS:**
 
@@ -8,46 +8,54 @@ OpenUTV 2026.13 makes image sequences and still images play back much faster, sh
 brew update && brew upgrade --cask utv
 ```
 
----
-
-### Image sequences and still images play much faster (#109, #113, #96)
-
-Since 2026.9, the default **Auto** caching mode turned caching **off** for EXR, DPX, PNG and other image sequences, when it was meant to turn the look-ahead cache on. Every frame was then decoded one at a time during playback, so the **Reader Threads** setting made no difference.
-
-Auto caching now gives image sequences, and separate still images such as a set of JPEGs or PNGs, the look-ahead cache. On a 6144 × 6144 PNG sequence, playback went from about 2 fps to about 16 fps on the same Mac with 8 reader threads, and Reader Threads works again. Movies are unaffected: H.264 and other inter-frame codecs still get the look-ahead cache, and ProRes and DNxHR still play without caching.
-
-**Auto no longer overrides your choice.** Choosing Look-Ahead, Region or Cache Off from **Tools > Cache Mode** now turns Auto off for that session, so loading more media keeps your choice. The new **Auto (Choose by Media Type)** menu item turns it back on. The log now names the file that decided Auto's choice and why, for example `beachday.jpg is an image or image sequence; using the Look-Ahead cache.` (#113)
-
-For large frames, raise the look-ahead cache size in **Preferences > Caching** so that it holds enough frames: one 6K RGB frame is about 108 MB.
+**Windows: this release needs OpenUTV Dependencies 26.6.** `irm https://openutv.com/install.ps1 | iex` installs it automatically. If you use the zip, install `OpenUTVDeps-26.6-win64.msi` first. Installing 26.6 removes 26.5, so 2026.13 and older will no longer start.
 
 ---
 
-### Timeline hover preview (#99)
+### Python 3.15 on macOS and Linux (#128, #129, #131)
 
-![Hover preview over the timeline](https://github.com/OpenUTV/utv/raw/main/docs/images/hover-preview.jpg)
+Homebrew's PySide6 moved to Python 3.15, which left 2026.13's Python plugins unable to load, with errors such as `python module media_info could not be imported`. UTV now uses Python 3.15 on macOS and Linux, and the Homebrew cask installs the Python version UTV was built with.
 
-Hover the mouse over the timeline to see the frame under the pointer, with its source name, in a panel above the timeline. Choose when it appears under **View > Hover Preview**: Off, When Paused (the default) or Always. The preview uses your display color settings, including OCIO.
+UTV can also load Homebrew's PySide6 when it's built for a different Python version, so the next time Homebrew moves PySide ahead of UTV, the Python plugins keep working. Windows stays on Python 3.14 from OpenUTV Dependencies.
 
-The preview needs a cache to draw from. If you see no preview for ProRes, DNxHR or other media that Auto caching plays without a cache, turn on **Look-Ahead** or **Region** caching. Thanks to Seth Rosenthal.
+If you have your own Python packages for UTV, install them for Python 3.15.
+
+---
+
+### `import OpenImageIO` works in UTV's Python (#136, #137)
+
+- **macOS and Linux:** UTV now ships the OpenImageIO Python module, from OpenImageIO's own Python 3.15 packages. Homebrew only builds it for Python 3.14.
+- **Windows:** the OpenImageIO module from OpenUTV Dependencies failed with `DLL load failed`. UTV now lets it find its DLLs.
+
+UTV still reads images with OpenImageIO directly; this is only for your own Python scripts.
+
+---
+
+### Windows: faster video decoding (#121, #125, #96)
+
+- **NVIDIA GPUs can decode with NVDEC.** OpenUTV Dependencies 26.6 adds NVIDIA, AMD and Intel hardware decoders to FFmpeg. UTV now tries NVIDIA's first, and other GPUs keep using D3D11VA.
+- **Software H.264 and HEVC decoding uses all your cores.** UTV only split decoding within a frame, and most camera files have one slice per frame, so they decoded on one core. They now decode several frames at once. ProRes, DNxHR and hardware decoding are unchanged.
+- When a codec that can be hardware-decoded is decoded on the CPU, the log now says why, once per codec.
 
 ---
 
 ### Fixes
 
-- **`utvio` no longer crashes** partway through some renders. The look-ahead cache was starting during batch renders and racing `utvio`'s own frame reads (#106).
-- **Sequences with negative frame numbers open.** A sequence such as `frame.-0005.png … frame.0006.png` was listed correctly but failed to open with "No such file or directory". Both spellings of negative frames, `-0005` and `-005`, now work (#108).
-- **Sequences whose first frame is missing open**, in the viewer and in the file browser, instead of failing because the first frame of the range isn't on disk (#108).
-- **Loading a session no longer starts caching early.** Auto caching waits until the whole session has been read (#104). Thanks to Seth Rosenthal.
-- **macOS: opening files from the Finder works with window managers and accessibility tools.** UTV's window was invisible to Accessibility when UTV was launched from the Finder, the Dock or `open`. Files and `rvlink://` links opened from the Finder still arrive (#92). Thanks to Alfonso Casado.
-- **Linux: the download is about 70 MB instead of 270 MB.** Static libraries and test programs that nothing uses at run time are no longer packaged; the macOS app also drops about 48 MB of them (#115).
-- **Linux: builds no longer pick up Homebrew's Python 3.15.** Homebrew moved its default Python to 3.15 while UTV uses 3.14. On Linux this could link UTV to the wrong Python library and stop it from starting with "No module named 'encodings'" (#107).
+- **High-DPI displays draw correctly** (#124). With fractional scaling on Linux the image was drawn too large and off-center, and on a 2x presentation display such as Sidecar it filled only a quarter of the output. Pointer coordinates now match the image too. Thanks to Jim Hourihan.
+- **Presentation mode opens on the right monitor** with monitors at different scales on Windows and on Linux Wayland (#138, #135). UTV now asks Qt which screen a window is on instead of working it out from window positions. On the COSMIC desktop the window can still open on the wrong screen, because of a COSMIC bug (#139). Thanks to Jim Hourihan.
+- **Linux: UTV starts on a normal desktop.** It no longer needs the `-dev` packages of the GPU driver libraries (#118). It also finds Qt's Wayland and X11 plugins, and `build.sh --install-deps` installs `flex` and `bison` for Homebrew builds (#123). Thanks to Jim Hourihan.
+- **macOS: Upgrade from the update prompt installs the new version.** It ran `brew upgrade` without `brew update`, so right after a release Homebrew didn't know about it yet and the prompt still said the upgrade had finished (#117).
 
 ### Behind the scenes
 
-- **Out-of-tree C++ Mu modules must be rebuilt for this release.** Mu's `Value` type now uses the compiler's copy constructor instead of an old `memcpy`, which makes it trivially copyable and lets the compiler generate better code, but changes how it's passed between functions (#103). Thanks to Jim Hourihan.
-- The RV manuals moved from Markdown to Typst (#100). Thanks to Jim Hourihan.
-- A new test media generator, `scripts/testmedia/utv_testmedia.py`, creates test clips, image sequences, layered EXRs and deliberately corrupt files on demand, and can check a UTV build against them (#105).
-- The Python OpenColorIO package is now 2.6 or later (#101).
-- Windows `build.ps1` works on a fresh machine with Visual Studio 2026 (#93), and the Rocky Linux release build installs its packages again (#94).
-- Manual CI builds can now build a given pull request (#110), and the options debug dump labels every field correctly (#111).
-- Release notes now list every change and human contributor since the last release (#114), and CI builds reuse their caches again instead of having them evicted (#116).
+- **Windows installs only through `install.ps1` or the zip.** The winget, Scoop and Chocolatey packages, which had stopped being published, were removed (#122).
+- The Rocky Linux release build was dropped; Linux releases are built on Ubuntu. The README explains installing on Linux (#119).
+- Windows CI retries Chocolatey installs (#126). The dev build keeps its release when moving the tag fails (#132).
+- FITS images round-trip on Linux now. Windows still reads them back at the wrong size (#67, #140).
+
+### Contributors
+
+Thanks to everyone who worked on this release:
+
+- Jim Hourihan (@jimhourihan)
+- Michael Oliver (@mcoliver)
