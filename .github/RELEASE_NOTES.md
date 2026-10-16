@@ -33,7 +33,7 @@ UTV still reads images with OpenImageIO directly; this is only for your own Pyth
 
 ### Windows: faster video decoding (#121, #125, #96)
 
-- **NVIDIA GPUs can decode with NVDEC.** OpenUTV Dependencies 26.6 adds NVIDIA, AMD and Intel hardware decoders to FFmpeg. UTV now tries NVIDIA's first, and other GPUs keep using D3D11VA.
+- **NVIDIA GPUs now decode with NVDEC.** OpenUTV Dependencies 26.6 adds NVIDIA, AMD and Intel hardware decoders to FFmpeg. UTV tries NVIDIA's first, and other GPUs keep using D3D11VA. A 4K60 HEVC clip that buffered in 2026.13 now plays at a steady 60 fps on an RTX 4090. Thanks to SR2610 for finding and testing this.
 - **Software H.264 and HEVC decoding uses all your cores.** UTV only split decoding within a frame, and most camera files have one slice per frame, so they decoded on one core. They now decode several frames at once. ProRes, DNxHR and hardware decoding are unchanged.
 - When a codec that can be hardware-decoded is decoded on the CPU, the log now says why, once per codec.
 
@@ -59,3 +59,4 @@ Thanks to everyone who worked on this release:
 
 - Jim Hourihan (@jimhourihan)
 - Michael Oliver (@mcoliver)
+- SR2610 (@SR2610), for reporting and testing the Windows decoding fixes
