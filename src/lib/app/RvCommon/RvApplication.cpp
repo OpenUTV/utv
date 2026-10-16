@@ -1831,8 +1831,7 @@ namespace Rv
                     {
                         const DesktopVideoDevice* dd = dynamic_cast<const DesktopVideoDevice*>(d);
 
-                        if (dd
-                            && dd->qtScreen() == QApplication::screens().indexOf(QApplication::screenAt(rvDoc->mapToGlobal(QPoint(0, 0)))))
+                        if (dd && dd->qtScreen() == QApplication::screens().indexOf(rvDoc->screen()))
                         {
                             TWK_THROW_EXC_STREAM("Cannot open presentation device for the same "
                                                  "screen the controller is on");

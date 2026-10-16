@@ -14,6 +14,8 @@
 #include <QtWidgets/QWidget>
 #include <RvCommon/QTTranslator.h>
 
+class QScreen;
+
 namespace Rv
 {
 
@@ -83,6 +85,7 @@ namespace Rv
         int m_x;
         int m_y;
         float m_refresh;
+        const QScreen* m_screen{nullptr};
         float m_devicePixelRatio{1.0f};
         QOpenGLWidget* m_view;
         QTTranslator* m_translator;

@@ -11,6 +11,8 @@
 #include <iostream>
 #include <TwkApp/VideoModule.h>
 
+class QScreen;
+
 namespace Rv
 {
 
@@ -40,6 +42,16 @@ namespace Rv
         //
 
         virtual TwkApp::VideoDevice* deviceFromPosition(int x, int y) const;
+
+        //
+        //  The device for the screen a window is on (QWidget::screen() or
+        //  QWindow::screen()). Prefer it to deviceFromPosition(): Wayland
+        //  doesn't give windows a global position, and with screens at
+        //  different scales Qt's screen geometries don't tile, so a
+        //  position can name the wrong screen.
+        //
+
+        TwkApp::VideoDevice* deviceFromScreen(const QScreen* screen) const;
     };
 
 } // namespace Rv

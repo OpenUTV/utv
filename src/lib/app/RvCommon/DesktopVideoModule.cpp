@@ -49,34 +49,28 @@ namespace Rv
 
     TwkApp::VideoDevice* DesktopVideoModule::deviceFromPosition(int x, int y) const
     {
-        TwkApp::VideoDevice* device = 0;
+        return deviceFromScreen(QGuiApplication::screenAt(QPoint(x, y)));
+    }
 
-        const QList<QScreen*> screens = QGuiApplication::screens();
-        for (int screen = 0; screen < screens.size(); ++screen)
+    TwkApp::VideoDevice* DesktopVideoModule::deviceFromScreen(const QScreen* screen) const
+    {
+        const int index = QGuiApplication::screens().indexOf(const_cast<QScreen*>(screen));
+        if (index < 0)
+            return 0;
+
+        for (int i = 0; i < m_devices.size(); ++i)
         {
-            // Check if the point is part of the screen.
-            if (screens[screen]->geometry().contains(QPoint(x, y)))
+            //
+            //  These devices may be NVDesktopVideoDevices or
+            //  DeskTopVideoDevices.
+            //
+            if (DesktopVideoDevice* dd = dynamic_cast<DesktopVideoDevice*>(m_devices[i]))
             {
-                for (int i = 0; i < m_devices.size(); ++i)
-                {
-                    //
-                    //  These devices may be NVDesktopVideoDevices or
-                    //  DeskTopVideoDevices.
-                    //
-                    TwkApp::VideoDevice* d = m_devices[i];
-
-                    if (DesktopVideoDevice* dd = dynamic_cast<DesktopVideoDevice*>(d))
-                    {
-                        if (dd->qtScreen() == screen)
-                        {
-                            device = d;
-                            break;
-                        }
-                    }
-                }
+                if (dd->qtScreen() == index)
+                    return m_devices[i];
             }
         }
 
-        return device;
+        return 0;
     }
 } // namespace Rv

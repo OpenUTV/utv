@@ -19,6 +19,7 @@ QT_BEGIN_NAMESPACE
 class QOpenGLContext;
 class QOffscreenSurface;
 class QWidget;
+class QScreen;
 QT_END_NAMESPACE
 
 namespace Rv
@@ -113,6 +114,7 @@ namespace Rv
         int m_x{0};
         int m_y{0};
         float m_refresh{-1.0f};
+        const QScreen* m_screen{nullptr};
         bool m_isOpen{false};
 
         // Qt GL context + offscreen surface for GL rendering.

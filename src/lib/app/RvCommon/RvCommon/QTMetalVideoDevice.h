@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+class QScreen;
+
 namespace Rv
 {
     class MetalView;
@@ -123,6 +125,7 @@ namespace Rv
         int m_x{0};
         int m_y{0};
         float m_refresh{-1.0f};
+        const QScreen* m_screen{nullptr};
 
         // Qt GL context + offscreen surface for GL rendering.
         // QOffscreenSurface on macOS is backed by a hidden NSView, which gives

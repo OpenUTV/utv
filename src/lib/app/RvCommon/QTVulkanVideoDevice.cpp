@@ -10,6 +10,7 @@
 #include <RvCommon/QTVulkanVideoDevice.h>
 #include <RvCommon/VulkanWindow.h>
 #include <RvCommon/DesktopVideoDevice.h>
+#include <RvCommon/DesktopVideoModule.h>
 #include <TwkApp/Application.h>
 #include <TwkApp/VideoModule.h>
 #include <TwkApp/Event.h>
@@ -368,18 +369,17 @@ namespace Rv
 
     void QTVulkanVideoDevice::setAbsolutePosition(int x, int y)
     {
-        if (x != m_x || y != m_y || m_refresh == -1.0f)
+        //  The screen comes from the window, not from (x, y): see
+        //  DesktopVideoModule::deviceFromScreen().
+        const QScreen* screen = m_window ? m_window->screen() : nullptr;
+
+        if (x != m_x || y != m_y || screen != m_screen || m_refresh == -1.0f)
         {
             float refresh = -1.0f;
 
-            int w = m_window ? m_window->width() : 0;
-            int h = m_window ? m_window->height() : 0;
-            int tx = x + w / 2;
-            int ty = y + h / 2;
-
-            if (const TwkApp::VideoModule* mod = TwkApp::App()->primaryVideoModule())
+            if (const DesktopVideoModule* mod = dynamic_cast<const DesktopVideoModule*>(TwkApp::App()->primaryVideoModule()))
             {
-                if (TwkApp::VideoDevice* d = mod->deviceFromPosition(tx, ty))
+                if (TwkApp::VideoDevice* d = mod->deviceFromScreen(screen))
                 {
                     setPhysicalDevice(d);
                     refresh = d->timing().hz;
@@ -402,6 +402,7 @@ namespace Rv
         }
         m_x = x;
         m_y = y;
+        m_screen = screen;
     }
 
     void QTVulkanVideoDevice::setPhysicalDevice(VideoDevice* d)
