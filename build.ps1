@@ -69,12 +69,16 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootst
 }
 
 # The Chocolatey community feed sometimes times out (HTTP 504), so retry. Exit codes 1641 and 3010 mean the
-# install succeeded and wants a reboot. Callers check afterwards that what they need is there.
+# install succeeded and wants a reboot. A timeout can also leave a package "not found" with exit code 0, so
+# check that the packages are installed. Callers check afterwards that what they need is there.
 function Install-ChocoPackages([string[]]$Packages) {
     for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
         & choco install @Packages --yes --no-progress | Out-Host
-        if ($LASTEXITCODE -in 0, 1641, 3010) { return }
-        Write-Warning "choco install $Packages failed (exit code $LASTEXITCODE), attempt $Attempt of 3"
+        $ExitCode = $LASTEXITCODE
+        $Installed = @(& choco list --limit-output --id-only)
+        $Missing = @($Packages | Where-Object { $_ -notin $Installed })
+        if ($ExitCode -in 0, 1641, 3010 -and $Missing.Count -eq 0) { return }
+        Write-Warning "choco install $Packages failed (exit code $ExitCode, missing: $Missing), attempt $Attempt of 3"
         if ($Attempt -lt 3) { Start-Sleep -Seconds (30 * $Attempt) }
     }
 }
