@@ -68,37 +68,55 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootst
     $env:PATH += ";$env:ALLUSERSPROFILE\chocolatey\bin"
 }
 
-# --- 2. Visual Studio 2022 or newer (CI builds with 2022) ---
-Write-Host "`n--- Checking Visual Studio ---" -ForegroundColor Cyan
-$vsInstalled = $false
-# The Visual Studio Installer ships vswhere; Chocolatey's (step 3) may not be installed yet.
-$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-if (-not (Test-Path $vswhere)) { $vswhere = (Get-Command vswhere -ErrorAction SilentlyContinue).Source }
-if ($vswhere) {
-    $vsPath = & $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath
-    if ($vsPath) { 
-        $vsInstalled = $true 
-        Write-Host "Found Visual Studio at $vsPath" -ForegroundColor Gray
+# The Chocolatey community feed sometimes times out (HTTP 504), so retry. Exit codes 1641 and 3010 mean the
+# install succeeded and wants a reboot. A timeout can also leave a package "not found" with exit code 0, so
+# check that the packages are installed. Callers check afterwards that what they need is there.
+function Install-ChocoPackages([string[]]$Packages) {
+    for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+        & choco install @Packages --yes --no-progress | Out-Host
+        $ExitCode = $LASTEXITCODE
+        $Installed = @(& choco list --limit-output --id-only)
+        $Missing = @($Packages | Where-Object { $_ -notin $Installed })
+        if ($ExitCode -in 0, 1641, 3010 -and $Missing.Count -eq 0) { return }
+        Write-Warning "choco install $Packages failed (exit code $ExitCode, missing: $Missing), attempt $Attempt of 3"
+        if ($Attempt -lt 3) { Start-Sleep -Seconds (30 * $Attempt) }
     }
 }
+
+# --- 2. Visual Studio 2022 or newer (CI builds with 2022) ---
+Write-Host "`n--- Checking Visual Studio ---" -ForegroundColor Cyan
+# The C++ workload is NativeDesktop in Community/Professional/Enterprise and VCTools in Build Tools.
+$vsWorkloads = @("Microsoft.VisualStudio.Workload.NativeDesktop", "Microsoft.VisualStudio.Workload.VCTools")
+function Find-VisualStudio([string]$property) {
+    # The Visual Studio Installer ships vswhere; Chocolatey's (step 3) may not be installed yet.
+    $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+    if (-not (Test-Path $vswhere)) { $vswhere = (Get-Command vswhere -ErrorAction SilentlyContinue).Source }
+    if (-not $vswhere) { return $null }
+    & $vswhere -latest -version "[17.0,)" -products * -requiresAny -requires $vsWorkloads -property $property
+}
+
+$vsPath = Find-VisualStudio installationPath
+if (-not $vsPath -and -not $SkipBootstrapping) {
+    Write-Host "Visual Studio with the C++ workload not found. Installing Visual Studio 2022 Build Tools via Chocolatey..." -ForegroundColor Yellow
+    # Install Build Tools and its C++ workload (the nativedesktop package does not apply to Build Tools)
+    Install-ChocoPackages visualstudio2022buildtools
+    Install-ChocoPackages visualstudio2022-workload-vctools
+    $vsPath = Find-VisualStudio installationPath
+}
+if (-not $vsPath) {
+    Write-Error "Visual Studio 2022 or newer with the C++ workload is required but not found. Install the 'Desktop development with C++' workload, or Build Tools with 'C++ build tools'."
+    exit 1
+}
+Write-Host "Found Visual Studio at $vsPath" -ForegroundColor Gray
 
 # CMake generator for the Visual Studio found: 2026 (18.x) or 2022 (17.x).
 $CmakeGenerator = "Visual Studio 17 2022"
-if ($vsInstalled) {
-    $vsMajor = ((& $vswhere -latest -version "[17.0,)" -products * -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationVersion) -split '\.')[0]
-    if ($vsMajor -eq "18") { $CmakeGenerator = "Visual Studio 18 2026" }
-    # Use the CMake that ships with Visual Studio when none is on PATH.
-    $vsCmake = Join-Path $vsPath "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
-    if (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$vsCmake\cmake.exe")) {
-        $env:PATH = "$vsCmake;$env:PATH"
-    }
-}
-
-if (-not $vsInstalled -and -not $SkipBootstrapping) {
-    Write-Host "Visual Studio with the C++ workload not found. Installing Visual Studio 2022 Build Tools via Chocolatey..." -ForegroundColor Yellow
-    # Install Build Tools and the Native Desktop (C++) workload
-    & choco install visualstudio2022buildtools --yes --no-progress
-    & choco install visualstudio2022-workload-nativedesktop --yes --no-progress
+$vsMajor = ((Find-VisualStudio installationVersion) -split '\.')[0]
+if ($vsMajor -eq "18") { $CmakeGenerator = "Visual Studio 18 2026" }
+# Use the CMake that ships with Visual Studio when none is on PATH.
+$vsCmake = Join-Path $vsPath "Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin"
+if (-not (Get-Command cmake -ErrorAction SilentlyContinue) -and (Test-Path "$vsCmake\cmake.exe")) {
+    $env:PATH = "$vsCmake;$env:PATH"
 }
 
 # --- 3. System Build Tools ---
@@ -123,9 +141,7 @@ $missingTools = @($requiredTools.Keys | Where-Object { -not (Get-Command $requir
 
 if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
     Write-Host "Missing tools: $($missingTools -join ', '). Installing via Chocolatey..." -ForegroundColor Yellow
-    foreach ($tool in $missingTools) {
-        & choco install $tool --yes --no-progress
-    }
+    Install-ChocoPackages $missingTools
     $env:PATH += ";C:\ProgramData\chocolatey\bin"
     if (Test-Path "$nasmDir\nasm.exe") { $env:PATH = "$nasmDir;$env:PATH" }
 }
@@ -134,12 +150,35 @@ if ($missingTools.Count -gt 0 -and -not $SkipBootstrapping) {
 if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
     if ((Get-Command choco -ErrorAction SilentlyContinue) -and -not $SkipBootstrapping) {
         Write-Host "sccache not found. Installing it via Chocolatey for faster rebuilds..." -ForegroundColor Yellow
-        & choco install sccache --yes --no-progress
+        Install-ChocoPackages sccache
         $env:PATH += ";C:\ProgramData\chocolatey\bin"
     }
     if (-not (Get-Command sccache -ErrorAction SilentlyContinue)) {
         Write-Warning "sccache is not installed: every build compiles from scratch. Install it for much faster rebuilds: 'choco install sccache' (admin), 'scoop install sccache', or https://github.com/mozilla/sccache/releases"
     }
+}
+
+# Vulkan SDK, as in CI. Without it cmake/dependencies/vulkan.cmake builds the Vulkan loader from source,
+# which fails under the Visual Studio generator (the C++ compile options reach MASM).
+# The newest version folder in C:\VulkanSDK, compared as versions (1.4.350.0 is newer than 1.4.99.0).
+function Find-VulkanSdk {
+    Get-ChildItem -Path "C:\VulkanSDK" -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -as [version] } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+}
+$VulkanDir = Find-VulkanSdk
+if (-not $env:VULKAN_SDK -and -not $VulkanDir -and -not $SkipBootstrapping) {
+    Write-Host "Vulkan SDK not found. Installing it via Chocolatey..." -ForegroundColor Yellow
+    Install-ChocoPackages vulkan-sdk
+    $VulkanDir = Find-VulkanSdk
+}
+if (-not $env:VULKAN_SDK -and $VulkanDir) {
+    $env:VULKAN_SDK = $VulkanDir.FullName
+    $env:PATH = "$($VulkanDir.FullName)\Bin;$env:PATH"
+}
+if ($env:VULKAN_SDK) {
+    Write-Host "Found Vulkan SDK at $env:VULKAN_SDK" -ForegroundColor Gray
+} else {
+    Write-Warning "Vulkan SDK not found: the build will try to build the Vulkan loader from source, which fails with the Visual Studio generator. Install it with 'choco install vulkan-sdk' (admin) or from https://vulkan.lunarg.com/sdk/home"
 }
 
 # --- 4. OpenUTVDeps MSI ---
