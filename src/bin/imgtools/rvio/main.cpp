@@ -103,6 +103,7 @@
 #undef uint16_t
 #endif
 
+#include <TwkGLF/GLPixelBufferObjectPool.h>
 #include <TwkGLFFBO/FBOVideoDevice.h>
 
 #ifdef PLATFORM_WINDOWS
@@ -1757,6 +1758,15 @@ int utf8Main(int argc, char* argv[])
         // clean up any frame buffers we allocated writing the movie
         //
         MovieRV::uninit();
+
+        //
+        //  Delete the pixel buffer objects while the GL context is still
+        //  current. Left to the pools' static destructors, glDeleteBuffers
+        //  runs after the GL library has shut down, which crashes at exit
+        //  with Mesa.
+        //
+
+        TwkGLF::DeletePBOPoolBuffers();
     }
     catch (TwkExc::Exception& exc)
     {
