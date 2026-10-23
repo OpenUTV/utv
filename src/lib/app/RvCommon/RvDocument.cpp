@@ -482,6 +482,17 @@ namespace Rv
 
     void RvDocument::initializeSession()
     {
+        //
+        //  GLView and MetalView call this once they are initialized.
+        //  VulkanView doesn't, so RvApplication::newSessionFromFiles() calls
+        //  it after show() as well (see VulkanWindow::initialize()). The
+        //  caller makes the view's GL context current.
+        //
+
+        TwkGLF::GLVideoDevice* device = viewVideoDevice();
+        if (!device)
+            return;
+
         if (!m_session)
         {
             m_session = new RvSession;
@@ -494,12 +505,7 @@ namespace Rv
 #endif
 
             // RvApp()->addVideoDevice(m_glView->videoDevice());
-#if defined(PLATFORM_DARWIN) && defined(USE_METAL)
-            m_session->setControlVideoDevice(m_metalView ? static_cast<TwkApp::VideoDevice*>(m_metalView->videoDevice())
-                                                         : static_cast<TwkApp::VideoDevice*>(m_glView->videoDevice()));
-#else
-            m_session->setControlVideoDevice(m_glView->videoDevice());
-#endif
+            m_session->setControlVideoDevice(device);
 
             m_session->setRendererType("Composite");
             m_session->setOpaquePointer(this);
@@ -755,21 +761,8 @@ namespace Rv
         }
         else if (m == IPCore::Session::updateMessage())
         {
-#if defined(PLATFORM_DARWIN) && defined(USE_METAL)
-            if (m_metalView)
-            {
-                m_metalView->videoDevice()->redraw();
-            }
-            else if (m_glView)
-            {
-                m_glView->videoDevice()->redraw();
-            }
-#else
-            if (m_glView)
-            {
-                m_glView->videoDevice()->redraw();
-            }
-#endif
+            if (TwkGLF::GLVideoDevice* d = viewVideoDevice())
+                d->redraw();
         }
         else if (m == IPCore::Session::eventDeviceChangedMessage())
         {
@@ -782,6 +775,16 @@ namespace Rv
             {
                 if (ed && m_metalView->videoDevice())
                     m_metalView->videoDevice()->translator().setRelativeDomain(edw, edh);
+            }
+            else if (ed && m_glView->videoDevice())
+            {
+                m_glView->videoDevice()->translator().setRelativeDomain(edw, edh);
+            }
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+            if (m_vulkanView)
+            {
+                if (ed && m_vulkanView->videoDevice() && m_vulkanView->videoDevice()->hasTranslator())
+                    m_vulkanView->videoDevice()->translator().setRelativeDomain(edw, edh);
             }
             else if (ed && m_glView->videoDevice())
             {
@@ -1390,6 +1393,19 @@ namespace Rv
     GLView* RvDocument::view() const { return m_glView; }
 
     QWidget* RvDocument::viewWidget() const { return m_viewWidget; }
+
+    TwkGLF::GLVideoDevice* RvDocument::viewVideoDevice() const
+    {
+#if defined(PLATFORM_DARWIN) && defined(USE_METAL)
+        if (m_metalView)
+            return m_metalView->videoDevice();
+#endif
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_WINDOWS)
+        if (m_vulkanView)
+            return m_vulkanView->videoDevice();
+#endif
+        return m_glView ? m_glView->videoDevice() : nullptr;
+    }
 
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
     MetalView* RvDocument::metalView() const { return m_metalView; }
