@@ -65,6 +65,7 @@
 #include <TwkDeploy/Deploy.h>
 #include <TwkFB/IO.h>
 #include <TwkFB/Operations.h>
+#include <TwkGLF/GLFBO.h>
 #include <TwkMovie/Movie.h>
 #include <TwkUtil/File.h>
 #include <TwkUtil/FileStream.h>
@@ -80,6 +81,7 @@
 #include <half.h>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <sstream>
 #include <stl_ext/string_algo.h>
 #include <thread>
@@ -520,8 +522,20 @@ namespace Rv
 
         TwkApp::VideoDevice::Margins m = s->eventVideoDevice()->margins();
 
-        TwkFB::FrameBuffer* fb =
-            new TwkFB::FrameBuffer(d->width() - m.left - m.right, d->height() - m.bottom - m.top, 4, TwkFB::FrameBuffer::UCHAR);
+        //
+        //  Read from the framebuffer the renderer draws into. That's the
+        //  device's defaultFBO(): Qt's framebuffer for the GL view, an
+        //  offscreen one for the Metal and Vulkan presentation devices
+        //  (their fboID() is 0).
+        //
+
+        const TwkGLF::GLFBO* target = d->defaultFBO();
+
+        if (!target)
+            throwBadArgumentException(NODE_THIS, NODE_THREAD, "cannot read back the current frame");
+
+        std::unique_ptr<TwkFB::FrameBuffer> fb(
+            new TwkFB::FrameBuffer(d->width() - m.left - m.right, d->height() - m.bottom - m.top, 4, TwkFB::FrameBuffer::UCHAR));
 
         // Get current framebuffer id.
         GLuint qtDefaultFBO;
@@ -531,8 +545,7 @@ namespace Rv
 
         glFinish();
 
-        // Ensure we're reading from Qt's default framebuffer.
-        glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, d->fboID());
+        glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, target->fboID());
 
         glReadPixels(m.left, m.bottom, d->width() - m.left - m.right, d->height() - m.bottom - m.top, GL_RGBA, GL_UNSIGNED_BYTE,
                      fb->pixels<unsigned char>());
@@ -544,7 +557,7 @@ namespace Rv
 
         TwkFB::FrameBufferIO::WriteRequest request;
         TwkFB::FrameBufferIO::ConstFrameBufferVector fbs(1);
-        fbs.front() = fb;
+        fbs.front() = fb.get();
         TwkFB::GenericIO::writeImages(fbs, filename, request);
     }
 
