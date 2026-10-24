@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-from rv import rvtypes, commands, extra_commands as rve
+from rv import rvtypes, commands
 import os
 import urllib.request
 import PyOpenColorIO as OCIO
@@ -96,74 +96,6 @@ def ensure_ocio_config():
     return None
 
 
-def isAutoSetupACES():
-    try:
-        val = commands.readSettings("General", "autoSetupACES", "")
-        if val != "":
-            return bool(int(val))
-        val2 = commands.readSettings("OCIO", "auto_setup_aces", "")
-        if val2 != "":
-            return bool(int(val2))
-    except Exception:
-        pass
-    return False
-
-
-def get_aces_linear_colorspace(config):
-    if config is None:
-        return "ACEScg"
-    try:
-        cs = config.getColorSpace("ACEScg")
-        if cs:
-            return "ACEScg"
-    except Exception:
-        pass
-    try:
-        cs = config.getColorSpace(OCIO.ROLE_SCENE_LINEAR)
-        if cs:
-            return cs.getName()
-    except Exception:
-        pass
-    try:
-        for cs in config.getColorSpaces():
-            if "acescg" in cs.getName().lower():
-                return cs.getName()
-    except Exception:
-        pass
-    return "ACEScg"
-
-
-def get_aces_srgb_display(config):
-    if config is None:
-        return ""
-    displays = list(config.getDisplays())
-    for d in displays:
-        if d.lower() in ("srgb - display", "srgb", "srgb display"):
-            return d
-    for d in displays:
-        if "srgb" in d.lower():
-            return d
-    return config.getDefaultDisplay()
-
-
-def get_aces_srgb_view(config, display):
-    if config is None or not display:
-        return ""
-    views = list(config.getViews(display))
-    for v in views:
-        vl = v.lower()
-        if "sdr" in vl and "rec.709" in vl and "d60" not in vl:
-            return v
-    for v in views:
-        vl = v.lower()
-        if "sdr video" in vl or "sdr-video" in vl:
-            return v
-    for v in views:
-        if v.lower() in ("srgb", "rec.709", "rec709"):
-            return v
-    return config.getDefaultView(display)
-
-
 def ocio_config_from_media(media, attributes):
     cfg_path = ensure_ocio_config()
     if cfg_path and os.path.isfile(cfg_path):
@@ -179,12 +111,8 @@ def ocio_node_from_media(config, node, default, media=None, attributes={}):
     nodeType = commands.nodeType(node)
 
     if nodeType == "RVDisplayPipelineGroup":
-        if isAutoSetupACES():
-            display = get_aces_srgb_display(config)
-            view = get_aces_srgb_view(config, display)
-        else:
-            display = config.getDefaultDisplay()
-            view = config.getDefaultView(display)
+        display = config.getDefaultDisplay()
+        view = config.getDefaultView(display)
 
         result = [
             {
@@ -203,9 +131,6 @@ def ocio_node_from_media(config, node, default, media=None, attributes={}):
         inspace = config.parseColorSpaceFromString(media)
         if inspace == "":
             inspace = attributes.get("default_setting", "")
-        if inspace == "" and isAutoSetupACES():
-            inspace = get_aces_linear_colorspace(config)
-
         if inspace != "":
             result = [
                 {
@@ -604,7 +529,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         #   just going to assume the defaults
         #
 
-        if len(commands.nodesOfType("OCIOFile")) >= 1 or isAutoSetupACES():
+        if len(commands.nodesOfType("OCIOFile")) >= 1:
             for group in commands.nodesOfType("RVDisplayGroup"):
                 if not self.usingOCIOForDisplay.get(group, False):
                     self.useDisplayOCIO(group)
@@ -816,23 +741,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 )
             )
 
-        acesList = [
-            (
-                "Auto-Setup ACES (ACEScg -> sRGB)",
-                self.toggleAutoSetupACES,
-                None,
-                self.isAutoSetupACESCheck,
-            ),
-            (
-                "Apply ACES Setup Now",
-                self.applyACESNow,
-                None,
-                None,
-            ),
-            ("_", None),
-        ]
-
-        final = acesList + [
+        final = [
             ("Current Source", None, None, lambda: commands.DisabledMenuState),
             ("  File Color Space", cssList),
         ]
@@ -853,64 +762,6 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         final += [("Change Config...", self.selectConfig, None, None)]
 
         return [("OCIO", final)]
-
-    def toggleAutoSetupACES(self, event=None):
-        new_state = not isAutoSetupACES()
-        commands.writeSettings("General", "autoSetupACES", int(new_state))
-        commands.writeSettings("OCIO", "auto_setup_aces", int(new_state))
-        if new_state:
-            self.applyACESSetup()
-        else:
-            rve.displayFeedback("Auto-Setup ACES: Disabled", 2.0)
-        commands.defineModeMenu("OCIO Source Setup", self.buildOCIOMenu(), True)
-
-    def isAutoSetupACESCheck(self):
-        return commands.CheckedMenuState if isAutoSetupACES() else commands.UncheckedMenuState
-
-    def applyACESNow(self, event=None):
-        self.applyACESSetup()
-
-    def applyACESSetup(self):
-        if self.config is None:
-            cfg_path = ensure_ocio_config()
-            if cfg_path and os.path.isfile(cfg_path):
-                self.config = OCIO.Config.CreateFromFile(cfg_path)
-                OCIO.SetCurrentConfig(self.config)
-
-        if self.config is None:
-            print("ERROR: Cannot apply ACES setup without a valid OCIO config")
-            return
-
-        inspace = get_aces_linear_colorspace(self.config)
-        target_disp = get_aces_srgb_display(self.config)
-        target_view = get_aces_srgb_view(self.config, target_disp)
-
-        # 1. Update active sources to use OCIOFile with inspace
-        for src in commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource"):
-            self.useSourceOCIO(src, "OCIOFile", inspace)
-            src_group = commands.nodeGroup(src)
-            for n in commands.nodesInGroup(src_group):
-                if commands.nodeType(n) == "RVLinearizePipelineGroup":
-                    for pn in commands.nodesInGroup(n):
-                        if commands.nodeType(pn) == "OCIOFile":
-                            commands.setStringProperty(f"{pn}.ocio.inColorSpace", [inspace], True)
-                            commands.setStringProperty(f"{pn}.ocio_color.outColorSpace", [OCIO.ROLE_SCENE_LINEAR], True)
-                            commands.setIntProperty(f"{pn}.ocio.active", [1], True)
-
-        # 2. Update active displays to use OCIODisplay with target_disp and target_view
-        for dg in commands.nodesOfType("RVDisplayGroup"):
-            self.useDisplayOCIO(dg)
-            for n in commands.nodesInGroup(dg):
-                if commands.nodeType(n) == "RVDisplayPipelineGroup":
-                    for pn in commands.nodesInGroup(n):
-                        if commands.nodeType(pn) == "OCIODisplay":
-                            commands.setIntProperty(f"{pn}.ocio.active", [0], True)
-                            commands.setStringProperty(f"{pn}.ocio_display.display", [target_disp], True)
-                            commands.setStringProperty(f"{pn}.ocio_display.view", [target_view], True)
-                            commands.setIntProperty(f"{pn}.ocio.active", [1], True)
-
-        commands.redraw()
-        rve.displayFeedback(f"ACES Setup: {inspace} -> {target_disp} ({target_view})", 3.0)
 
     def __init__(self):
         rvtypes.MinorMode.__init__(self)

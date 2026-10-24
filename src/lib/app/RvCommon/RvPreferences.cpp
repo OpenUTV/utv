@@ -459,7 +459,6 @@ namespace Rv
         m_ui.desktopAwareToggle->setCheckState(opts.qtdesktop ? Qt::Checked : Qt::Unchecked);
         m_ui.noMenuBarToggle->setCheckState(opts.nomb ? Qt::Checked : Qt::Unchecked);
         m_ui.fullscreenOnStartupToggle->setCheckState(opts.fullscreen ? Qt::Checked : Qt::Unchecked);
-        m_ui.autoSetupACESToggle->setCheckState(opts.autoSetupACES ? Qt::Checked : Qt::Unchecked);
         m_ui.useNativeFileDialogToggle->setCheckState(opts.useNativeFileDialog ? Qt::Checked : Qt::Unchecked);
         s.setNum(opts.defaultfps, 'g', 4);
         m_ui.fpsEdit->setText(s);
@@ -1000,7 +999,6 @@ namespace Rv
             qputenv("OPENUTV_HWACCEL", val);
         }
         opts.autoRetime = int(settings.value("autoRetime", opts.autoRetime ? true : false).toBool());
-        opts.autoSetupACES = int(settings.value("autoSetupACES", opts.autoSetupACES ? true : false).toBool());
         opts.useNativeFileDialog = int(settings.value("useNativeFileDialog", opts.useNativeFileDialog ? true : false).toBool());
         opts.useCrashReporter = int(settings.value("useCrashReporter", opts.useCrashReporter ? true : false).toBool());
 
@@ -1335,7 +1333,6 @@ namespace Rv
         settings.setValue("playMode", m_ui.playbackModeCombo->currentIndex());
         settings.setValue("noMenuBar", m_ui.noMenuBarToggle->checkState() == Qt::Checked);
         settings.setValue("fullscreenOnStartup", m_ui.fullscreenOnStartupToggle->checkState() == Qt::Checked);
-        settings.setValue("autoSetupACES", m_ui.autoSetupACESToggle->checkState() == Qt::Checked);
         settings.setValue("useNativeFileDialog", m_ui.useNativeFileDialogToggle->checkState() == Qt::Checked);
         settings.setValue("startupScreenPolicy", m_ui.startupScreenCombo->currentIndex() - 1);
 
