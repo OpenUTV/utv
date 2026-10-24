@@ -699,7 +699,15 @@ namespace Rv
         m_vkSwapchainExtent = capabilities.currentExtent;
         if (m_vkSwapchainExtent.width == 0xFFFFFFFF)
         {
-            m_vkSwapchainExtent = {(uint32_t)width(), (uint32_t)height()};
+            // The surface leaves the size to us (Wayland). Use device pixels,
+            // rounded like QTVulkanVideoDevice::width()/height(): frames are
+            // requested at that size, and any other extent recreates the
+            // swapchain on every frame.
+            const float dpr = devicePixelRatioF();
+            const uint32_t w = static_cast<uint32_t>(width() * dpr + 0.5f);
+            const uint32_t h = static_cast<uint32_t>(height() * dpr + 0.5f);
+            m_vkSwapchainExtent = {std::clamp(w, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+                                   std::clamp(h, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)};
         }
         if (m_vkSwapchainExtent.width == 0 || m_vkSwapchainExtent.height == 0)
         {
