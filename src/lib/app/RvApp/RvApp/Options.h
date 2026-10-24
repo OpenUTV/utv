@@ -460,7 +460,7 @@ namespace Rv
         "Infer sequences from one file", "-autoRetime %d", &opt.autoRetime,                                                                \
         "Automatically retime conflicting media fps in sequences and stacks "                                                              \
         "(1 = on, 0 = off, default = %d)",                                                                                                 \
-        opts.autoRetime, "-autoACES %d", &opt.autoSetupACES, "Automatically setup ACES (1 = on, 0 = off, default=%d)", opts.autoSetupACES, \
+        opts.autoRetime, "-autoACES %d", &opt.autoSetupACES, "Deprecated and ignored (default=%d)", opts.autoSetupACES,                    \
         "-nativeFileDialog %d", &opt.useNativeFileDialog, "Use OS native file dialogs (1 = on, 0 = off, default=%d)",                      \
         opts.useNativeFileDialog, "-rthreads %d", &opt.readerThreads, "Number of reader threads (default=%d)", opts.readerThreads,         \
         "-workItemThreads %d", &opt.workItemThreads, "Number of work item threads (default=%d)", opts.workItemThreads,                     \
