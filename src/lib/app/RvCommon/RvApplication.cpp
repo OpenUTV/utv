@@ -770,6 +770,18 @@ namespace Rv
         doc->raise();
 #endif
 
+        //
+        //  GLView and MetalView have created the session by now; VulkanView
+        //  leaves it to us (see VulkanWindow::initialize()). Constructing the
+        //  session queries GL, so make the view's context current first.
+        //
+        if (!doc->session())
+        {
+            if (TwkGLF::GLVideoDevice* device = doc->viewVideoDevice())
+                device->makeCurrent();
+            doc->initializeSession();
+        }
+
         // doc->ensurePolished();
         Rv::RvSession* s = doc->session();
 

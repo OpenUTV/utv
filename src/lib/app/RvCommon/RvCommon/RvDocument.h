@@ -30,6 +30,11 @@ namespace TwkApp
     class Menu;
 }
 
+namespace TwkGLF
+{
+    class GLVideoDevice;
+}
+
 namespace Rv
 {
     class GLView;
@@ -83,6 +88,9 @@ namespace Rv
 
         GLView* view() const;
         QWidget* viewWidget() const;
+
+        // The video device of the active view: GLView, MetalView or VulkanView.
+        TwkGLF::GLVideoDevice* viewVideoDevice() const;
 
 #if defined(PLATFORM_DARWIN) && defined(USE_METAL)
         MetalView* metalView() const;
