@@ -301,6 +301,13 @@ runs:
             "C:\Program Files\7-Zip" | Add-Content -Path $env:GITHUB_PATH
         }
 
+    # install-qt-action's own Python setup asks for >=3.14.0, which now gets 3.15, and py7zr's pyppmd, pybcj and
+    # inflate64 have no Windows wheels for 3.15 yet. Pin the Python that aqtinstall runs on.
+    - name: Set up Python for aqtinstall
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.14'
+
     - name: Install Qt ${{ inputs.qt-version }}
       uses: jurplel/install-qt-action@v4
       with:
@@ -313,7 +320,7 @@ runs:
         modules: ${{ inputs.windows_qt6_modules }}
         archives: ${{ inputs.windows_qt6_archives }}
         cache: 'true'
-        setup-python: 'true'
+        setup-python: 'false'
         set-env: 'true'
         tools-only: 'false'
         aqtsource: 'git+https://github.com/miurahr/aqtinstall.git@master'
