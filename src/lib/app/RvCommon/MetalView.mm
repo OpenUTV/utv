@@ -421,6 +421,8 @@ namespace Rv
         if (!session)
             return;
 
+        bool profiling = false;
+
         if (m_doc && session && m_videoDevice)
         {
             m_videoDevice->makeCurrent();
@@ -462,7 +464,24 @@ namespace Rv
             absolutePosition(x, y);
             m_videoDevice->setAbsolutePosition(x, y);
 
+            //  As in GLView::paintGL(): the session's render and event code
+            //  writes into the current profiling sample, so -debug profile
+            //  needs one open around each render.
+            if (IPCore::debugProfile)
+            {
+                IPCore::Session::ProfilingRecord& trecord = session->beginProfilingSample();
+                trecord.renderStart = session->profilingElapsedTime();
+                profiling = true;
+            }
+
             session->render();
+
+            if (profiling)
+            {
+                IPCore::Session::ProfilingRecord& trecord = session->currentProfilingSample();
+                trecord.renderEnd = session->profilingElapsedTime();
+                trecord.swapStart = trecord.renderEnd;
+            }
 
             // Mirror GLView::paintGL(): on the first non-empty render, resize the
             // window to fit the media content and center it on screen.
@@ -496,6 +515,12 @@ namespace Rv
             {
                 m_videoDevice->syncBuffers();
             }
+        }
+
+        if (profiling)
+        {
+            session->currentProfilingSample().swapEnd = session->profilingElapsedTime();
+            session->endProfilingSample();
         }
 
         if (session)
