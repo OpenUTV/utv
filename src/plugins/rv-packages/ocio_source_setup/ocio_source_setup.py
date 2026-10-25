@@ -7,6 +7,7 @@ from rv import rvtypes, commands
 import os
 import urllib.request
 import PyOpenColorIO as OCIO
+from PySide6.QtCore import QTimer
 
 #
 #   Default implementations of helper methods
@@ -220,6 +221,63 @@ def isOCIODisplayManaged(group):
             return commands.UncheckedMenuState
 
     return F
+
+
+#
+#   What the OCIO menu shows next to each submenu: the value OCIO is
+#   applying, or "Built-in" when UTV's own color pipeline handles that
+#   step.
+#
+
+BUILT_IN = "Built-in"
+NO_LOOK = "None"
+
+#   Property changes that alter what the OCIO menu shows.
+MENU_PROPERTIES = (
+    ".ocio.active",
+    ".ocio.inColorSpace",
+    ".ocio_display.display",
+    ".ocio_display.view",
+    ".ocio_look.look",
+)
+
+
+def currentSourceOCIOValue(nodeType, prop, unmanaged=BUILT_IN):
+    "The value of prop on the current source's nodeType node, or unmanaged when OCIO isn't managing it."
+    try:
+        if commands.getIntProperty("#" + nodeType + ".ocio.active")[0] == 0:
+            return unmanaged
+        return commands.getStringProperty("#" + nodeType + "." + prop)[0]
+    except Exception:
+        return unmanaged
+
+
+def allSourcesOCIOValue(nodeType, prop, unmanaged=BUILT_IN):
+    'The value of prop shared by every nodeType node, unmanaged when none is active, or "Mixed".'
+    values = set()
+    for node in commands.nodesOfType(nodeType):
+        try:
+            if commands.getIntProperty(node + ".ocio.active")[0] != 0:
+                values.add(commands.getStringProperty(node + "." + prop)[0])
+        except Exception:
+            pass
+    if not values:
+        return unmanaged
+    return values.pop() if len(values) == 1 else "Mixed"
+
+
+def displayOCIOValue(group):
+    "\"display · view\" of the display group's OCIODisplay, or BUILT_IN when OCIO isn't managing it."
+    try:
+        dpipeline = groupMemberOfType(group, "RVDisplayPipelineGroup")
+        dOCIO = groupMemberOfType(dpipeline, "OCIODisplay")
+        if dOCIO is None or commands.getIntProperty(dOCIO + ".ocio.active")[0] == 0:
+            return BUILT_IN
+        display = commands.getStringProperty(dOCIO + ".ocio_display.display")[0]
+        view = commands.getStringProperty(dOCIO + ".ocio_display.view")[0]
+        return display + " \u00b7 " + view
+    except Exception:
+        return BUILT_IN
 
 
 def ocioMenuCheck(nodeType, prop, value):
@@ -725,8 +783,35 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
 
     def maybeUpdateViews(self, event):
         event.reject()
-        if event.contents().endswith("ocio_display.display"):
-            commands.defineModeMenu("OCIO Source Setup", self.buildOCIOMenu(), True)
+        if event.contents().endswith(MENU_PROPERTIES):
+            self.scheduleMenuUpdate()
+
+    def updateMenuForCurrentSource(self, event):
+        event.reject()
+        if commands.isPlaying():
+            return
+        state = (
+            currentSourceOCIOValue("OCIOFile", "ocio.inColorSpace"),
+            currentSourceOCIOValue("OCIOLook", "ocio_look.look", NO_LOOK),
+        )
+        if state != self.menuSourceState:
+            self.scheduleMenuUpdate()
+
+    def scheduleMenuUpdate(self, event=None):
+        """
+        Rebuild the menu once the current event is handled, so that a
+        burst of property changes (display and view are set together)
+        rebuilds it once.
+        """
+        if event is not None:
+            event.reject()
+        if not self.menuUpdatePending:
+            self.menuUpdatePending = True
+            QTimer.singleShot(0, self.updateMenu)
+
+    def updateMenu(self):
+        self.menuUpdatePending = False
+        commands.defineModeMenu("OCIO Source Setup", self.buildOCIOMenu(), True)
 
     def selectConfig(self, event):
         try:
@@ -789,7 +874,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                         )
                     )
                 dList.append((d, vList))
-            device = "  " + commands.getStringProperty(display + ".device.name")[0]
+            device = "  " + commands.getStringProperty(display + ".device.name")[0] + ": " + displayOCIOValue(display)
             daList.append((device, dList))
 
         #
@@ -885,18 +970,27 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 )
             )
 
+        #
+        #   Show what is applied in the submenu titles, so the user doesn't
+        #   have to look for check marks.
+        #
+
+        currentFile = currentSourceOCIOValue("OCIOFile", "ocio.inColorSpace")
+        currentLook = currentSourceOCIOValue("OCIOLook", "ocio_look.look", NO_LOOK)
+        self.menuSourceState = (currentFile, currentLook)
+
         final = [
             ("Current Source", None, None, lambda: commands.DisabledMenuState),
-            ("  File Color Space", cssList),
+            ("  File Color Space: " + currentFile, cssList),
         ]
         if len(lsList) > 2:
-            final += [("  Look", lsList)]
+            final += [("  Look: " + currentLook, lsList)]
         final += [
             ("All Sources", None, None, lambda: commands.DisabledMenuState),
-            ("  File Color Space", csaList),
+            ("  File Color Space: " + allSourcesOCIOValue("OCIOFile", "ocio.inColorSpace"), csaList),
         ]
         if len(laList) > 0:
-            final += [("  Look", laList)]
+            final += [("  Look: " + allSourcesOCIOValue("OCIOLook", "ocio_look.look", NO_LOOK), laList)]
         final += [
             ("_", None),
             ("Displays", None, None, lambda: commands.DisabledMenuState),
@@ -915,6 +1009,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         self.config = None
         self.autoInputSources = set()
         self.builtInProperties = {}
+        self.menuUpdatePending = False
+        self.menuSourceState = None
 
         #
         #   Look for an implementation of the OCIOHelper on the PATH.
@@ -961,6 +1057,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 ("graph-new-node", self.checkForDisplayGroup, ""),
                 ("graph-node-inputs-changed", self.checkForDisplayGroup, ""),
                 ("graph-state-change", self.maybeUpdateViews, ""),
+                ("after-graph-view-change", self.scheduleMenuUpdate, ""),
+                ("frame-changed", self.updateMenuForCurrentSource, ""),
+                ("play-stop", self.updateMenuForCurrentSource, ""),
             ],
             self.buildOCIOMenu(),
             "source_setup",
