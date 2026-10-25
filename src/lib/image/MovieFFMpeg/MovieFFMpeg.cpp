@@ -60,6 +60,7 @@ extern "C"
 #include <libavutil/pixdesc.h>
 #include <libavutil/timecode.h>
 #include <libavutil/display.h>
+#include <libavutil/hwcontext.h>
 #include <libswscale/swscale.h>
 }
 
@@ -1034,6 +1035,25 @@ namespace TwkMovie
             if (hardwareContext == nullptr)
             {
                 return -1;
+            }
+
+            //
+            //  The context pool frees a track's codec context and the track
+            //  opens a new one on next use. Keep the device the track already
+            //  has: creating a device is slow, and overwriting the pointer
+            //  would leak the old one.
+            //
+
+            if (hardwareContext->deviceContext)
+            {
+                const AVHWDeviceContext* existing = reinterpret_cast<const AVHWDeviceContext*>(hardwareContext->deviceContext->data);
+                if (existing->type == deviceType)
+                {
+                    codecContext->hw_device_ctx = av_buffer_ref(hardwareContext->deviceContext);
+                    return codecContext->hw_device_ctx ? 0 : AVERROR(ENOMEM);
+                }
+
+                av_buffer_unref(&hardwareContext->deviceContext);
             }
 
             AVBufferRef* hardwareDeviceContext = nullptr;
