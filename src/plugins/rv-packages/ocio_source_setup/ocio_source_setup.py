@@ -157,6 +157,14 @@ VIDEO_VIEWS = ["Video (colorimetric)"]
 SDR_SCENE_VIEWS = ["ACES 2.0 - SDR 100 nits (Rec.709)"]
 HDR_SCENE_VIEWS = ["ACES 2.0 - HDR 1000 nits (P3 D65)"]
 
+#   Graded video goes back through the inverse of the view, so the view's
+#   gamut has to hold it: Rec.2020 HDR video in the session gets the
+#   Rec.2020-limited view, or its colors outside P3 are compressed.
+REC2020_HDR_SCENE_VIEWS = ["ACES 2.0 - HDR 1000 nits (Rec.2020)"] + HDR_SCENE_VIEWS
+REC2020_HDR_VIDEO = (
+    METADATA_COLORSPACES[("SMPTE-2084", "Rec2020")] + METADATA_COLORSPACES[("Hybrid Log-Gamma", "Rec2020")]
+)
+
 
 def read_presentation_mode():
     'The macOS presentation mode (sdr, edr, pq or hlg) as MetalView reads it, or "" off macOS.'
@@ -226,11 +234,12 @@ def warnAboutDisplay(config, display):
 PRESENTATION_MODE = read_presentation_mode()
 
 
-def auto_display_view(config, mode, colorspace):
+def auto_display_view(config, mode, colorspace, videoColorSpaces=()):
     """
     The OCIO display for the presentation mode and the view for a source
-    in the given color space. Falls back to the config's defaults for
-    anything the config doesn't have.
+    in the given color space, with the session's graded video in
+    videoColorSpaces. Falls back to the config's defaults for anything
+    the config doesn't have.
     """
     display = PRESENTATION_DISPLAYS.get(mode, "")
     if display not in config.getDisplays():
@@ -242,6 +251,8 @@ def auto_display_view(config, mode, colorspace):
         encoding = ""
     if encoding in VIDEO_ENCODINGS:
         candidates = VIDEO_VIEWS
+    elif mode in ("pq", "hlg") and any(c in REC2020_HDR_VIDEO for c in videoColorSpaces):
+        candidates = REC2020_HDR_SCENE_VIEWS
     elif mode in ("pq", "hlg"):
         candidates = HDR_SCENE_VIEWS
     else:
@@ -267,7 +278,12 @@ def ocio_node_from_media(config, node, default, media=None, attributes={}):
     nodeType = commands.nodeType(node)
 
     if nodeType == "RVDisplayPipelineGroup":
-        display, view = auto_display_view(config, PRESENTATION_MODE, attributes.get("input_colorspace", ""))
+        display, view = auto_display_view(
+            config,
+            PRESENTATION_MODE,
+            attributes.get("input_colorspace", ""),
+            attributes.get("video_colorspaces", ()),
+        )
 
         result = [
             {
@@ -801,7 +817,12 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         commands.redraw()
 
     def displayPipeline(self, dpipeline, source=None):
-        attributes = {"input_colorspace": self.viewColorSpace(source)}
+        attributes = {
+            "input_colorspace": self.viewColorSpace(source),
+            "video_colorspaces": [
+                c for c in map(self.inputColorSpace, allSources()) if isVideoColorSpace(self.config, c)
+            ],
+        }
         return ocio_node_from_media(self.config, dpipeline, DEFAULT_PIPE["RVDisplayPipelineGroup"], None, attributes)
 
     def viewColorSpace(self, source=None):
