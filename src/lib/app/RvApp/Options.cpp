@@ -179,16 +179,21 @@ namespace Rv
         if (cores <= 1)
             return 1;
 
-        //  On high-core machines, reserve ~half the logical cores for the
-        //  main/UI, audio, caching and compositor threads so EXR decode (which
-        //  shares one global OpenEXR pool) cannot starve them and drop frames.
-        //  numCPUs() is the logical count, so on hyper-threaded systems this is
-        //  roughly the physical core count. Smaller machines keep the previous
-        //  behavior (all but one core).
-        if (cores > 16)
-            return cores / 2;
+        //  Up to 16 logical cores keep the previous behavior (all but one).
+        //  Above that, add one thread per four extra cores. The decode work
+        //  needed for playback is bounded by the media, not the core count, so
+        //  a large pool (which all readers share) only adds contention with the
+        //  main/UI, audio, caching and compositor threads and drops frames.
+        //  The curve is continuous and monotonic so moving to a machine with
+        //  more cores never lowers the count (e.g. 16 -> 15, 24 -> 17,
+        //  64 -> 27, 128 -> 43). On a 64-logical-core system, 12-32 threads
+        //  played back best and 40+ degraded.
+        constexpr int kAllButOneMaxCores = 16;
+        constexpr int kExtraCoresPerThread = 4;
+        if (cores <= kAllButOneMaxCores)
+            return cores - 1;
 
-        return cores - 1;
+        return (kAllButOneMaxCores - 1) + ((cores - kAllButOneMaxCores) / kExtraCoresPerThread);
     }
 
     int collectParams(Options::Params& p, const Options::Files& inputFiles, int index)
