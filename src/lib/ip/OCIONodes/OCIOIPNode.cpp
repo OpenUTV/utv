@@ -110,6 +110,7 @@ namespace IPCore
         declareProperty<StringProperty>("ocio.inColorSpace", "");
 
         declareProperty<StringProperty>("ocio_color.outColorSpace", "");
+        declareProperty<IntProperty>("ocio_color.invertView", 0);
 
         declareProperty<StringProperty>("ocio_look.look", "");
         declareProperty<IntProperty>("ocio_look.direction", 0);
@@ -544,11 +545,53 @@ namespace IPCore
                 //
 
                 string outName = stringProp("ocio_color.outColorSpace", m_state->linear);
-                OCIO::ConstColorSpaceRcPtr dstCS = m_state->config->getColorSpace(outName.c_str());
-                processor = m_state->config->getProcessor(m_state->context, srcCS, dstCS);
 
-                size_t hashValue = string_hash(inName + outName);
-                shaderName << "OCIO_c_" << shaderLegal(inName) << "_2_" << shaderLegal(outName) << "_" << name() << "_" << hex << hashValue;
+                if (intProp("ocio_color.invertView", 0) != 0)
+                {
+                    //
+                    //  Display-referred input (graded video) that will be
+                    //  shown through ocio_display.display/view: convert it
+                    //  to that display's color space, then invert the view
+                    //  into outName. The display node's forward view then
+                    //  gives the input back unchanged, wherever the view's
+                    //  gamut and peak can show it.
+                    //
+
+                    string display = stringProp("ocio_display.display", m_state->display);
+                    string view = stringProp("ocio_display.view", m_state->view);
+                    string displayCS = m_state->config->getDisplayViewColorSpaceName(display.c_str(), view.c_str());
+                    if (displayCS == OCIO::OCIO_VIEW_USE_DISPLAY_NAME)
+                    {
+                        displayCS = display;
+                    }
+
+                    OCIO::ColorSpaceTransformRcPtr toDisplay = OCIO::ColorSpaceTransform::Create();
+                    toDisplay->setSrc(inName.c_str());
+                    toDisplay->setDst(displayCS.c_str());
+
+                    OCIO::DisplayViewTransformRcPtr fromView = OCIO::DisplayViewTransform::Create();
+                    fromView->setSrc(outName.c_str());
+                    fromView->setDisplay(display.c_str());
+                    fromView->setView(view.c_str());
+                    fromView->setDirection(OCIO::TRANSFORM_DIR_INVERSE);
+
+                    OCIO::GroupTransformRcPtr transform = OCIO::GroupTransform::Create();
+                    transform->appendTransform(toDisplay);
+                    transform->appendTransform(fromView);
+                    processor = m_state->config->getProcessor(m_state->context, transform, OCIO::TRANSFORM_DIR_FORWARD);
+
+                    size_t hashValue = string_hash(inName + display + view + outName);
+                    shaderName << "OCIO_cv_" << shaderLegal(inName) << "_" << shaderLegal(view) << "_" << name() << "_" << hex << hashValue;
+                }
+                else
+                {
+                    OCIO::ConstColorSpaceRcPtr dstCS = m_state->config->getColorSpace(outName.c_str());
+                    processor = m_state->config->getProcessor(m_state->context, srcCS, dstCS);
+
+                    size_t hashValue = string_hash(inName + outName);
+                    shaderName << "OCIO_c_" << shaderLegal(inName) << "_2_" << shaderLegal(outName) << "_" << name() << "_" << hex
+                               << hashValue;
+                }
             }
             else if (ociofunction == "look")
             {
@@ -682,6 +725,11 @@ namespace IPCore
 
                 size_t hashValue = string_hash(outTransformURL);
                 shaderName << "OCIO_sd_" << name() << "_" << hex << hashValue;
+            }
+
+            if (!processor)
+            {
+                TWK_THROW_EXC_STREAM("unknown ocio.function '" << ociofunction << "'");
             }
 
             OCIO::GpuShaderDescRcPtr shaderDesc = OCIO::GpuShaderDesc::CreateShaderDesc();

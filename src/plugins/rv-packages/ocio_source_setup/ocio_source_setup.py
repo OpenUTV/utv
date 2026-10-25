@@ -361,6 +361,15 @@ MENU_PROPERTIES = (
     ".ocio_display.view",
     ".ocio_look.look",
 )
+DISPLAY_PROPERTIES = (".ocio.active", ".ocio_display.display", ".ocio_display.view")
+
+
+def displayValue(node):
+    "(display, view) of an OCIO node."
+    return (
+        commands.getStringProperty(node + ".ocio_display.display")[0],
+        commands.getStringProperty(node + ".ocio_display.view")[0],
+    )
 
 
 def currentSourceOCIOValue(nodeType, prop, unmanaged=BUILT_IN):
@@ -510,6 +519,27 @@ def restorePipelineProperties(pipeline, saved):
                 PROPERTY_ACCESSORS[kind][1](node + suffix, values, True)
             except Exception:
                 pass
+
+
+def allSources():
+    return commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource")
+
+
+def sourceOCIOFile(source):
+    srcPipeline = groupMemberOfType(commands.nodeGroup(source), OCIO_ROLES["OCIOFile"])
+    return groupMemberOfType(srcPipeline, "OCIOFile")
+
+
+def displayOCIONode(group):
+    return groupMemberOfType(groupMemberOfType(group, "RVDisplayPipelineGroup"), "OCIODisplay")
+
+
+def isVideoColorSpace(config, colorspace):
+    "True for a display-referred (graded video) color space."
+    try:
+        return config.getColorSpace(colorspace).getEncoding() in VIDEO_ENCODINGS
+    except Exception:
+        return False
 
 
 def currentSource():
@@ -724,8 +754,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                     DEFAULT_PIPE[groupName] = DEFAULT_RV_PIPE[groupName]
                 else:
                     DEFAULT_PIPE[groupName] = currentPipelineNodes
-            attributes = {"input_colorspace": self.inputColorSpace(source)}
-            pipelineList = ocio_node_from_media(self.config, dpipeline, DEFAULT_PIPE[groupName], None, attributes)
+            pipelineList = self.displayPipeline(dpipeline, source)
         except Exception as inst:
             print(("ERROR: Problem occurred while loading OCIO settings for OCIODisplay: %s" % inst))
             return
@@ -766,9 +795,47 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         self.usingOCIOForDisplay[group] = True
         dOCIO = groupMemberOfType(dpipeline, "OCIODisplay")
         if dOCIO is not None:
-            warnAboutDisplay(self.config, commands.getStringProperty(dOCIO + ".ocio_display.display")[0])
+            self.autoViews[group] = displayValue(dOCIO)
+            warnAboutDisplay(self.config, self.autoViews[group][0])
         self.useSourceOCIOInputs()
         commands.redraw()
+
+    def displayPipeline(self, dpipeline, source=None):
+        attributes = {"input_colorspace": self.viewColorSpace(source)}
+        return ocio_node_from_media(self.config, dpipeline, DEFAULT_PIPE["RVDisplayPipelineGroup"], None, attributes)
+
+    def viewColorSpace(self, source=None):
+        """
+        The input color space to choose the view for. Graded video comes
+        through any view unchanged (see syncVideoInputs), so a scene-referred
+        source anywhere in the session decides; otherwise source, or the
+        current one.
+        """
+        for s in allSources():
+            colorspace = self.inputColorSpace(s)
+            if colorspace and not isVideoColorSpace(self.config, colorspace):
+                return colorspace
+        return self.inputColorSpace(source)
+
+    def updateAutoViews(self):
+        """
+        A source added later can change the view to choose: switch the
+        displays whose view UTV chose and the user hasn't changed since.
+        """
+        for group, chosen in list(self.autoViews.items()):
+            dOCIO = displayOCIONode(group) if self.usingOCIOForDisplay.get(group, False) else None
+            if dOCIO is None or displayValue(dOCIO) != chosen:
+                del self.autoViews[group]
+                continue
+            try:
+                properties = self.displayPipeline(groupMemberOfType(group, "RVDisplayPipelineGroup"))[0]["properties"]
+                wanted = (properties["ocio_display.display"], properties["ocio_display.view"])
+            except Exception:
+                continue
+            if wanted != chosen:
+                print("INFO: OCIO display view is now %s · %s" % wanted)
+                self.autoViews[group] = wanted
+                ocioDisplayEvent(group, wanted[0], wanted[1])(None)
 
     def disableDisplayOCIO(self, group):
         """
@@ -791,8 +858,11 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         print(("INFO: using RVDisplayColor for display: %s" % device))
 
         self.usingOCIOForDisplay[group] = False
+        self.autoViews.pop(group, None)
         if not any(self.usingOCIOForDisplay.values()):
             self.disableSourceOCIOInputs()
+        else:
+            self.syncVideoInputs()
         commands.redraw()
 
     def sourceUsesOCIOInput(self, source):
@@ -857,14 +927,68 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 continue
             self.useSourceOCIO(source, "OCIOFile", colorspace)
             if self.sourceUsesOCIOInput(source):
-                self.autoInputSources.add(source)
+                self.autoInputSources[source] = colorspace
                 print("INFO: %s is %s for the OCIO display" % (source, colorspace))
+        self.syncVideoInputs()
 
     def disableSourceOCIOInputs(self):
         for source in self.autoInputSources:
-            if source in commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource"):
+            if source in allSources():
                 self.disableSourceOCIO(source, "OCIOFile")
         self.autoInputSources.clear()
+
+    def mainDisplayView(self):
+        "The display and view of the main window's OCIO display (else any OCIO display's), or None."
+        groups = [g for g in commands.nodesOfType("RVDisplayGroup") if self.usingOCIOForDisplay.get(g, False)]
+        groups.sort(key=lambda g: commands.getStringProperty(g + ".device.moduleName")[0] != "Desktop")
+        for group in groups:
+            dOCIO = displayOCIONode(group)
+            if dOCIO is not None:
+                return displayValue(dOCIO)
+        return None
+
+    def syncVideoInputs(self):
+        """
+        Show graded video as graded whatever the view. Each display-referred
+        source UTV gave an input color space goes through the inverse of
+        the main display's view (the OCIO node's ocio_color.invertView), so
+        the view gives the video back unchanged where it can show it, and
+        only scene-referred media gets the view's tone mapping. A source
+        whose input the user has changed since is theirs and left alone.
+        """
+        if self.config is None:
+            return
+        displayView = self.mainDisplayView()
+        for source, colorspace in list(self.autoInputSources.items()):
+            ocioFile = sourceOCIOFile(source) if source in allSources() else None
+            invertProp = None if ocioFile is None else ocioFile + ".ocio_color.invertView"
+            if invertProp is None or not commands.propertyExists(invertProp):
+                del self.autoInputSources[source]
+                continue
+            if commands.getStringProperty(ocioFile + ".ocio.inColorSpace")[0] != colorspace:
+                del self.autoInputSources[source]
+                commands.setIntProperty(invertProp, [0], True)
+                continue
+            if displayView is not None and isVideoColorSpace(self.config, colorspace):
+                wanted = (1,) + displayView
+            else:
+                wanted = (0,) + displayValue(ocioFile)
+            if (commands.getIntProperty(invertProp)[0],) + displayValue(ocioFile) == wanted:
+                continue
+            commands.setIntProperty(ocioFile + ".ocio.active", [0], True)
+            commands.setStringProperty(ocioFile + ".ocio_display.display", [wanted[1]], True)
+            commands.setStringProperty(ocioFile + ".ocio_display.view", [wanted[2]], True)
+            commands.setIntProperty(invertProp, [wanted[0]], True)
+            commands.setIntProperty(ocioFile + ".ocio.active", [1], True)
+
+    def scheduleVideoSync(self):
+        if not self.videoSyncPending:
+            self.videoSyncPending = True
+            QTimer.singleShot(0, self.runVideoSync)
+
+    def runVideoSync(self):
+        self.videoSyncPending = False
+        self.syncVideoInputs()
 
     def sourceSetup(self, event):
         """
@@ -887,6 +1011,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
 
         if any(self.usingOCIOForDisplay.values()):
             self.useSourceOCIOInputs([source])
+            self.updateAutoViews()
 
         #
         #   If this is the first OCIO color pipeline for a source assume
@@ -948,6 +1073,11 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         event.reject()
         if event.contents().endswith(MENU_PROPERTIES):
             self.scheduleMenuUpdate()
+        if (
+            event.contents().endswith(DISPLAY_PROPERTIES)
+            and commands.nodeType(event.contents().split(".")[0]) == "OCIODisplay"
+        ):
+            self.scheduleVideoSync()
 
     def updateMenuForCurrentSource(self, event):
         event.reject()
@@ -1170,7 +1300,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         self.usingOCIOForDisplay = {}
         self.readingSession = False
         self.config = None
-        self.autoInputSources = set()
+        self.autoInputSources = {}
+        self.autoViews = {}
+        self.videoSyncPending = False
         self.builtInProperties = {}
         self.menuUpdatePending = False
         self.menuSourceState = None
