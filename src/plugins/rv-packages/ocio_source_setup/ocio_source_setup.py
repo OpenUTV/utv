@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-from rv import rvtypes, commands
+from rv import rvtypes, commands, extra_commands
 import os
 import sys
 import urllib.request
@@ -170,6 +170,55 @@ def read_presentation_mode():
             mode = "sdr"
     mode = str(mode).lower()
     return mode if mode in PRESENTATION_DISPLAYS else "sdr"
+
+
+#
+#   The ACES config displays that show right in each presentation mode.
+#   The SDR and EDR surfaces have sRGB primaries, so P3 displays come out
+#   desaturated there, and the PQ and HLG surfaces are Rec.2100, so only
+#   the matching Rec.2100 display fits. Displays not named here (studio
+#   configs) are never warned about.
+#
+
+SDR_DISPLAYS = ["sRGB - Display", "Gamma 2.2 Rec.709 - Display", "Rec.1886 Rec.709 - Display"]
+PRESENTATION_COMPATIBLE_DISPLAYS = {
+    "sdr": SDR_DISPLAYS,
+    "edr": SDR_DISPLAYS,
+    "pq": ["Rec.2100-PQ - Display"],
+    "hlg": ["Rec.2100-HLG - Display"],
+}
+KNOWN_DISPLAYS = SDR_DISPLAYS + [
+    "Display P3 - Display",
+    "Display P3 HDR - Display",
+    "P3-D65 - Display",
+    "Rec.2100-PQ - Display",
+    "Rec.2100-HLG - Display",
+    "ST2084-P3-D65 - Display",
+]
+PRESENTATION_NAMES = {"sdr": "SDR", "edr": "EDR", "pq": "HDR PQ (Rec.2100)", "hlg": "HDR HLG (Rec.2100)"}
+
+
+def display_warning(config, mode, display):
+    'Why the display won\'t show right in the macOS presentation mode, or "".'
+    if not mode or config is None or display not in KNOWN_DISPLAYS:
+        return ""
+    if display in PRESENTATION_COMPATIBLE_DISPLAYS[mode]:
+        return ""
+    expected = PRESENTATION_DISPLAYS[mode]
+    if expected not in config.getDisplays():
+        return ""
+    return "%s doesn't match the %s presentation: colors or levels will be wrong. Use %s." % (
+        display,
+        PRESENTATION_NAMES[mode],
+        expected,
+    )
+
+
+def warnAboutDisplay(config, display):
+    warning = display_warning(config, PRESENTATION_MODE, display)
+    if warning:
+        print("WARNING: OCIO: " + warning)
+        extra_commands.displayFeedback("OCIO: " + warning, 6.0)
 
 
 #   The view reads the mode once at startup, so a changed preference only
@@ -415,6 +464,7 @@ def ocioDisplayEvent(group, display, view):
         commands.setStringProperty(dOCIO + ".ocio_display.display", [display], True)
         commands.setStringProperty(dOCIO + ".ocio_display.view", [view], True)
         commands.setIntProperty(dOCIO + ".ocio.active", [1], True)
+        warnAboutDisplay(theMode().config, display)
         commands.redraw()
 
     return F
@@ -714,6 +764,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 commands.setIntProperty(activeProp, [1], True)
 
         self.usingOCIOForDisplay[group] = True
+        dOCIO = groupMemberOfType(dpipeline, "OCIODisplay")
+        if dOCIO is not None:
+            warnAboutDisplay(self.config, commands.getStringProperty(dOCIO + ".ocio_display.display")[0])
         self.useSourceOCIOInputs()
         commands.redraw()
 
@@ -797,7 +850,10 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 continue
             colorspace = self.sourceInputColorSpace(source)
             if not colorspace:
-                print("WARNING: no OCIO input color space for %s; the OCIO display may show it wrongly" % source)
+                media = os.path.basename(commands.getStringProperty(source + ".media.movie")[0])
+                warning = "no input color space for %s, so the OCIO display may show it wrongly." % media
+                print("WARNING: OCIO: " + warning)
+                extra_commands.displayFeedback("OCIO: " + warning, 6.0)
                 continue
             self.useSourceOCIO(source, "OCIOFile", colorspace)
             if self.sourceUsesOCIOInput(source):
