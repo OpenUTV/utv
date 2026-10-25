@@ -5,6 +5,7 @@
 #
 from rv import rvtypes, commands
 import os
+import sys
 import urllib.request
 import PyOpenColorIO as OCIO
 from PySide6.QtCore import QTimer
@@ -130,6 +131,78 @@ def ocio_colorspace_from_metadata(config, attributes):
     return ""
 
 
+#
+#   The macOS view presents through a surface tagged with the color space
+#   of its presentation mode (MetalPresentationFormat.mm), so the OCIO
+#   display has to encode that color space. The EDR surface is extended
+#   sRGB, with sRGB primaries, so EDR uses the sRGB display and not
+#   Display P3 HDR.
+#
+
+PRESENTATION_DISPLAYS = {
+    "sdr": "sRGB - Display",
+    "edr": "sRGB - Display",
+    "pq": "Rec.2100-PQ - Display",
+    "hlg": "Rec.2100-HLG - Display",
+}
+
+#
+#   Display-referred video is already graded for a display: show it as it
+#   is. Scene-referred and log media go through an ACES output transform,
+#   tone-mapped for the presentation's range.
+#
+
+VIDEO_ENCODINGS = ("sdr-video", "hdr-video", "edr-video", "display-linear")
+VIDEO_VIEWS = ["Video (colorimetric)"]
+SDR_SCENE_VIEWS = ["ACES 2.0 - SDR 100 nits (Rec.709)"]
+HDR_SCENE_VIEWS = ["ACES 2.0 - HDR 1000 nits (P3 D65)"]
+
+
+def read_presentation_mode():
+    'The macOS presentation mode (sdr, edr, pq or hlg) as MetalView reads it, or "" off macOS.'
+    if sys.platform != "darwin" or os.getenv("RV_DISABLE_METAL_VIEW"):
+        return ""
+    mode = os.getenv("UTV_MACOS_PRESENTATION")
+    if mode is None:
+        try:
+            mode = commands.readSettings("Display", "macosPresentation", "sdr")
+        except Exception:
+            mode = "sdr"
+    mode = str(mode).lower()
+    return mode if mode in PRESENTATION_DISPLAYS else "sdr"
+
+
+#   The view reads the mode once at startup, so a changed preference only
+#   applies after a restart. Read it here at the same time.
+PRESENTATION_MODE = read_presentation_mode()
+
+
+def auto_display_view(config, mode, colorspace):
+    """
+    The OCIO display for the presentation mode and the view for a source
+    in the given color space. Falls back to the config's defaults for
+    anything the config doesn't have.
+    """
+    display = PRESENTATION_DISPLAYS.get(mode, "")
+    if display not in config.getDisplays():
+        display = config.getDefaultDisplay()
+
+    try:
+        encoding = config.getColorSpace(colorspace).getEncoding() if colorspace else ""
+    except Exception:
+        encoding = ""
+    if encoding in VIDEO_ENCODINGS:
+        candidates = VIDEO_VIEWS
+    elif mode in ("pq", "hlg"):
+        candidates = HDR_SCENE_VIEWS
+    else:
+        candidates = SDR_SCENE_VIEWS
+
+    views = config.getViews(display)
+    view = next((v for v in candidates if v in views), config.getDefaultView(display))
+    return display, view
+
+
 def ocio_config_from_media(media, attributes):
     cfg_path = ensure_ocio_config()
     if cfg_path and os.path.isfile(cfg_path):
@@ -145,8 +218,7 @@ def ocio_node_from_media(config, node, default, media=None, attributes={}):
     nodeType = commands.nodeType(node)
 
     if nodeType == "RVDisplayPipelineGroup":
-        display = config.getDefaultDisplay()
-        view = config.getDefaultView(display)
+        display, view = auto_display_view(config, PRESENTATION_MODE, attributes.get("input_colorspace", ""))
 
         result = [
             {
@@ -390,6 +462,19 @@ def restorePipelineProperties(pipeline, saved):
                 pass
 
 
+def currentSource():
+    "The file or image source at the current frame, else the first one, else None."
+    for sourceType in ("RVFileSource", "RVImageSource"):
+        try:
+            evalInfo = commands.metaEvaluateClosestByType(commands.frame(), sourceType, None)
+        except Exception:
+            evalInfo = []
+        if evalInfo:
+            return evalInfo[0]["node"]
+    sources = commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource")
+    return sources[0] if sources else None
+
+
 def groupMemberOfType(node, memberType):
     for n in commands.nodesInGroup(node):
         if commands.nodeType(n) == memberType:
@@ -560,10 +645,11 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         restorePipelineProperties(srcPipeline, self.builtInProperties.pop(srcPipeline, {}))
         commands.redraw()
 
-    def useDisplayOCIO(self, group):
+    def useDisplayOCIO(self, group, source=None):
         """
         This installs the OCIODisplay node in the DisplayGroup's display pipeline
-        in place of RV's RVDisplayColor node.
+        in place of RV's RVDisplayColor node. The display and view are chosen
+        for the presentation mode and for source (default: the current one).
 
         NOTE: in RV4 all display devices are separate
         DisplayGroups. So each one can have a completely different
@@ -588,7 +674,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                     DEFAULT_PIPE[groupName] = DEFAULT_RV_PIPE[groupName]
                 else:
                     DEFAULT_PIPE[groupName] = currentPipelineNodes
-            pipelineList = ocio_node_from_media(self.config, dpipeline, DEFAULT_PIPE[groupName])
+            attributes = {"input_colorspace": self.inputColorSpace(source)}
+            pipelineList = ocio_node_from_media(self.config, dpipeline, DEFAULT_PIPE[groupName], None, attributes)
         except Exception as inst:
             print(("ERROR: Problem occurred while loading OCIO settings for OCIODisplay: %s" % inst))
             return
@@ -612,10 +699,19 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         pipeNodes.sort()
         for index, pNode in enumerate(pipelineList):
             stageOCIO = pipeNodes[index]
+            # As in ocioDisplayEvent: keep the node off until display and view
+            # are both set, or it builds a transform from a view the display
+            # doesn't have.
+            activeProp = stageOCIO + ".ocio.active"
+            hasActive = commands.propertyExists(activeProp)
+            if hasActive:
+                commands.setIntProperty(activeProp, [0], True)
             try:
                 applyProps(stageOCIO, pNode["context"], pNode["properties"])
             except KeyError as inst:
                 print(("ERROR: Unable to apply properties to %s: %s" % (stageOCIO, inst)))
+            if hasActive:
+                commands.setIntProperty(activeProp, [1], True)
 
         self.usingOCIOForDisplay[group] = True
         self.useSourceOCIOInputs()
@@ -671,6 +767,17 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
             except Exception:
                 colorspace = ""
         return colorspace
+
+    def inputColorSpace(self, source=None):
+        'The OCIO color space of source, or of the source at the current frame, or "".'
+        if source is None:
+            source = currentSource()
+        if source is None:
+            return ""
+        if self.sourceUsesOCIOInput(source):
+            srcPipeline = groupMemberOfType(commands.nodeGroup(source), OCIO_ROLES["OCIOFile"])
+            return commands.getStringProperty(groupMemberOfType(srcPipeline, "OCIOFile") + ".ocio.inColorSpace")[0]
+        return self.sourceInputColorSpace(source)
 
     def useSourceOCIOInputs(self, sources=None):
         """
@@ -734,7 +841,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         if len(commands.nodesOfType("OCIOFile")) >= 1:
             for group in commands.nodesOfType("RVDisplayGroup"):
                 if not self.usingOCIOForDisplay.get(group, False):
-                    self.useDisplayOCIO(group)
+                    self.useDisplayOCIO(group, source)
 
     def beforeSessionRead(self, event):
         event.reject()
