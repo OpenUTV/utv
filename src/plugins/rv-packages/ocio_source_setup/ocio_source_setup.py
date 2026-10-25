@@ -96,6 +96,39 @@ def ensure_ocio_config():
     return None
 
 
+#
+#   Source metadata (the ColorSpace/Transfer and ColorSpace/Primaries
+#   attributes the readers set) -> OCIO color spaces to try, in order. The
+#   names and aliases are those of the ACES studio configs; a config without
+#   any of them falls back to its file rules.
+#
+
+METADATA_COLORSPACES = {
+    ("SMPTE-2084", "Rec2020"): ["Rec.2100-PQ - Display", "rec2100_pq_display", "pq_rec2020_display"],
+    ("SMPTE-2084", "P3"): ["ST2084-P3-D65 - Display", "st2084_p3d65_display", "pq_p3d65_display"],
+    ("Hybrid Log-Gamma", "Rec2020"): ["Rec.2100-HLG - Display", "rec2100_hlg_display", "hlg_rec2020_display"],
+    ("Rec709", "Rec709"): ["Rec.1886 Rec.709 - Display", "rec1886_rec709_display", "g24_rec709_display"],
+    ("sRGB", "Rec709"): ["sRGB - Display", "srgb_display"],
+    ("sRGB", "sRGB"): ["sRGB - Display", "srgb_display"],
+    ("Linear", "Rec709"): ["Linear Rec.709 (sRGB)", "lin_rec709"],
+    ("Linear", "Rec2020"): ["Linear Rec.2020", "lin_rec2020"],
+    ("Linear", "P3"): ["Linear P3-D65", "lin_p3d65"],
+}
+
+
+def ocio_colorspace_from_metadata(config, attributes):
+    "The config's color space for the source's transfer function and primaries, or \"\"."
+    key = (attributes.get("ColorSpace/Transfer", ""), attributes.get("ColorSpace/Primaries", ""))
+    for name in METADATA_COLORSPACES.get(key, []):
+        try:
+            colorspace = config.getColorSpace(name)
+        except Exception:
+            colorspace = None
+        if colorspace:
+            return colorspace.getName()
+    return ""
+
+
 def ocio_config_from_media(media, attributes):
     cfg_path = ensure_ocio_config()
     if cfg_path and os.path.isfile(cfg_path):
@@ -257,6 +290,48 @@ def ocioDisplayEvent(group, display, view):
     return F
 
 
+#
+#   Switching a pipeline to OCIO and back replaces its nodes, and the new
+#   built-in nodes start with default properties: the display loses its
+#   sRGB (or profile) transform and the source its file transfer function.
+#   Save the built-in nodes' properties before switching to OCIO and put
+#   them back after switching back.
+#
+
+PROPERTY_ACCESSORS = {
+    commands.IntType: (commands.getIntProperty, commands.setIntProperty),
+    commands.FloatType: (commands.getFloatProperty, commands.setFloatProperty),
+    commands.StringType: (commands.getStringProperty, commands.setStringProperty),
+    commands.HalfType: (commands.getHalfProperty, commands.setHalfProperty),
+    commands.ByteType: (commands.getByteProperty, commands.setByteProperty),
+}
+
+
+def savePipelineProperties(pipeline):
+    "{nodeType: {property: (type, values)}} for the nodes of a pipeline group."
+    saved = {}
+    for node in commands.nodesInGroup(pipeline):
+        values = {}
+        for prop in commands.properties(node):
+            try:
+                kind = commands.propertyInfo(prop)["type"]
+                if kind in PROPERTY_ACCESSORS:
+                    values[prop[len(node) :]] = (kind, PROPERTY_ACCESSORS[kind][0](prop))
+            except Exception:
+                pass
+        saved[commands.nodeType(node)] = values
+    return saved
+
+
+def restorePipelineProperties(pipeline, saved):
+    for node in commands.nodesInGroup(pipeline):
+        for suffix, (kind, values) in saved.get(commands.nodeType(node), {}).items():
+            try:
+                PROPERTY_ACCESSORS[kind][1](node + suffix, values, True)
+            except Exception:
+                pass
+
+
 def groupMemberOfType(node, memberType):
     for n in commands.nodesInGroup(node):
         if commands.nodeType(n) == memberType:
@@ -393,6 +468,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
 
         print(("INFO: using %s node for %s %s" % (nodeType, source, pipeSlot)))
 
+        if commands.getStringProperty(srcPipeline + ".pipeline.nodes") == DEFAULT_PIPE[pipeSlot]:
+            self.builtInProperties[srcPipeline] = savePipelineProperties(srcPipeline)
         commands.setStringProperty(srcPipeline + ".pipeline.nodes", pipeline, True)
         pipeNodes = commands.nodesInGroup(srcPipeline)
         pipeNodes.sort()
@@ -422,6 +499,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         print(("INFO: resetting %s for %s" % (pipeSlot, source)))
 
         commands.setStringProperty(srcPipeline + ".pipeline.nodes", DEFAULT_PIPE[pipeSlot], True)
+        restorePipelineProperties(srcPipeline, self.builtInProperties.pop(srcPipeline, {}))
         commands.redraw()
 
     def useDisplayOCIO(self, group):
@@ -468,6 +546,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         print(("INFO: using OCIODisplay for display: %s" % device))
 
         dpipeline = groupMemberOfType(group, groupName)
+        if commands.getStringProperty(dpipeline + ".pipeline.nodes") == DEFAULT_PIPE[groupName]:
+            self.builtInProperties[dpipeline] = savePipelineProperties(dpipeline)
         commands.setStringProperty(dpipeline + ".pipeline.nodes", pipeline, True)
 
         pipeNodes = commands.nodesInGroup(dpipeline)
@@ -480,6 +560,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 print(("ERROR: Unable to apply properties to %s: %s" % (stageOCIO, inst)))
 
         self.usingOCIOForDisplay[group] = True
+        self.useSourceOCIOInputs()
         commands.redraw()
 
     def disableDisplayOCIO(self, group):
@@ -497,12 +578,72 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
             return
 
         commands.setStringProperty(dpipeline + ".pipeline.nodes", DEFAULT_PIPE[groupName], True)
+        restorePipelineProperties(dpipeline, self.builtInProperties.pop(dpipeline, {}))
 
         device = commands.getStringProperty(group + ".device.name")[0]
         print(("INFO: using RVDisplayColor for display: %s" % device))
 
         self.usingOCIOForDisplay[group] = False
+        if not any(self.usingOCIOForDisplay.values()):
+            self.disableSourceOCIOInputs()
         commands.redraw()
+
+    def sourceUsesOCIOInput(self, source):
+        srcPipeline = groupMemberOfType(commands.nodeGroup(source), OCIO_ROLES["OCIOFile"])
+        ocioFile = groupMemberOfType(srcPipeline, "OCIOFile")
+        try:
+            return ocioFile is not None and commands.getIntProperty(ocioFile + ".ocio.active")[0] != 0
+        except Exception:
+            return False
+
+    def sourceInputColorSpace(self, source):
+        """
+        The OCIO color space a source's pixels are in: from the file's
+        metadata, else the config's file rules for its path.
+        """
+        media = commands.getStringProperty(source + ".media.movie")[0]
+        try:
+            attributes = dict(commands.sourceAttributes(source, media))
+        except Exception:
+            attributes = {}
+        colorspace = ocio_colorspace_from_metadata(self.config, attributes)
+        if not colorspace:
+            try:
+                colorspace = self.config.getColorSpaceFromFilepath(media)
+            except Exception:
+                colorspace = ""
+        return colorspace
+
+    def useSourceOCIOInputs(self, sources=None):
+        """
+        The OCIO display expects the working space (scene_linear) from
+        every source, but UTV's built-in linearize outputs linear Rec.709.
+        So while an OCIO display is in use, give each source that OCIO
+        isn't linearizing an OCIO input color space from its metadata or
+        the config's file rules. Sources set up this way are switched back
+        when no display uses OCIO any more; ones the user set are left.
+        """
+        if self.config is None or self.readingSession:
+            return
+        if sources is None:
+            sources = commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource")
+        for source in sources:
+            if self.sourceUsesOCIOInput(source):
+                continue
+            colorspace = self.sourceInputColorSpace(source)
+            if not colorspace:
+                print("WARNING: no OCIO input color space for %s; the OCIO display may show it wrongly" % source)
+                continue
+            self.useSourceOCIO(source, "OCIOFile", colorspace)
+            if self.sourceUsesOCIOInput(source):
+                self.autoInputSources.add(source)
+                print("INFO: %s is %s for the OCIO display" % (source, colorspace))
+
+    def disableSourceOCIOInputs(self):
+        for source in self.autoInputSources:
+            if source in commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource"):
+                self.disableSourceOCIO(source, "OCIOFile")
+        self.autoInputSources.clear()
 
     def sourceSetup(self, event):
         """
@@ -522,6 +663,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
 
         for nodeType in OCIO_ROLES.keys():
             self.useSourceOCIO(source, nodeType)
+
+        if any(self.usingOCIOForDisplay.values()):
+            self.useSourceOCIOInputs([source])
 
         #
         #   If this is the first OCIO color pipeline for a source assume
@@ -769,6 +913,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         self.usingOCIOForDisplay = {}
         self.readingSession = False
         self.config = None
+        self.autoInputSources = set()
+        self.builtInProperties = {}
 
         #
         #   Look for an implementation of the OCIOHelper on the PATH.
