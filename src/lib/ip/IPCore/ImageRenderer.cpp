@@ -115,7 +115,6 @@ namespace IPCore
     using namespace TwkGLF;
 
     static ENVVAR_BOOL(evUsePBOs, "RV_RENDERING_USE_PBOS", true);
-    static ENVVAR_INT(evMaxConcurrentPBOs, "RV_RENDERING_MAX_CONCURRENT_PBOS", 10);
     //  Upload 3-channel half/float images as native RGBA16F/RGBA32F (fast GPU
     //  DMA) instead of GL_RGB16F/GL_RGB32F (per-pixel driver expansion on
     //  upload). Set RV_EXPAND_RGB_TO_RGBA=0 to restore the legacy RGB path.
