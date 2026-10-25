@@ -1,0 +1,92 @@
+name: OpenRV Upstream Watch
+
+# UTV is a fork of OpenRV and still takes its fixes (#166). Once a week, list the OpenRV main
+# commits since the last one we reviewed (.github/openrv-reviewed), leaving out build, CI,
+# dependency and docs commits, and keep one open issue with the list. After triaging, update
+# .github/openrv-reviewed to the last commit reviewed.
+
+on:
+  schedule:
+    - cron: "23 14 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/openrv-upstream-watch.yml"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    name: List new OpenRV commits
+    if: github.repository_owner == 'OpenUTV'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Fetch OpenRV main
+        run: |
+          git remote add upstream https://github.com/AcademySoftwareFoundation/OpenRV.git
+          git fetch --no-tags upstream main
+
+      - name: List commits since the last review
+        id: list
+        run: |
+          reviewed=$(tr -d '[:space:]' < .github/openrv-reviewed)
+          if ! git cat-file -e "$reviewed^{commit}" 2>/dev/null; then
+            echo "::error::.github/openrv-reviewed ($reviewed) is not an OpenRV commit"
+            exit 1
+          fi
+
+          total=$(git rev-list --count "$reviewed..upstream/main")
+          {
+            echo "OpenRV \`main\` has **$total** commits since the last review (\`${reviewed:0:8}\`)."
+            echo "Build, CI, dependency and docs commits aren't listed."
+            echo
+            echo "| Commit | Date | Author | Title | Already in UTV? |"
+            echo "|---|---|---|---|---|"
+          } > body.md
+
+          listed=0
+          while IFS=$'\t' read -r sha date author subject; do
+            case "$subject" in
+              build*|ci*|chore*|docs*|style*|test*) continue ;;
+            esac
+            ticket=$(grep -oE 'SG-[0-9]+' <<<"$subject" | head -1 || true)
+            seen=""
+            if git log origin/main --format=%B | grep -q "cherry picked from commit $sha"; then
+              seen="yes (cherry-pick)"
+            elif [ -n "$ticket" ] && git log origin/main --format=%s | grep -qw "$ticket"; then
+              seen="maybe ($ticket)"
+            fi
+            subject=${subject//|/\\|}
+            echo "| [\`${sha:0:8}\`](https://github.com/AcademySoftwareFoundation/OpenRV/commit/$sha) | $date | $author | $subject | $seen |" >> body.md
+            listed=$((listed + 1))
+          done < <(git log --reverse --no-merges --date=short --format=$'%H\t%ad\t%an\t%s' "$reviewed..upstream/main")
+
+          {
+            echo
+            echo "Triage each one the way #166 does: already in UTV, not applicable, port, port with changes, or skip."
+            echo "Afterwards, set \`.github/openrv-reviewed\` to \`$(git rev-parse upstream/main)\`."
+          } >> body.md
+
+          echo "listed=$listed" >> "$GITHUB_OUTPUT"
+          cat body.md
+
+      - name: Update the watch issue
+        if: steps.list.outputs.listed != '0' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="OpenRV upstream: new commits to review"
+          existing=$(gh issue list -R "$GITHUB_REPOSITORY" --state open --search "in:title \"$title\"" --json number -q '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" -R "$GITHUB_REPOSITORY" --body-file body.md
+          else
+            gh issue create -R "$GITHUB_REPOSITORY" --title "$title" --body-file body.md
+          fi
