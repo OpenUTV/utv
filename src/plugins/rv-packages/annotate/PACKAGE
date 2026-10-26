@@ -26,5 +26,5 @@ description: |
   opacity, and history actions.</p>
 
   <p>This is the default annotation package. A newer, Python-based "Annotation (Beta)"
-  package is also available as part of the hidden packages. The two cannot run
-  at the same time, so enabling this package automatically disables the other</p>
+  package is also available in Preferences > Packages. The two cannot run
+  at the same time, so enabling this package automatically disables the other.</p>

@@ -5,7 +5,7 @@ version: 0.1
 rv: 2025.1
 openrv: 3.0.0
 optional: true
-hidden: true
+hidden: false
 excludes: annotate
 
 modes:
@@ -20,6 +20,6 @@ description: |
   (rectangle, ellipse, arrow, line) and text annotation tools
   in addition to brush and eraser tools.</p>
 
-  <p>This package is hidden and disabled by default in favor of the
-  legacy "Annotation" package. The two cannot run at the same time, so
-  enabling this package automatically disables the other.</p>
+  <p>This package is off by default in favor of the legacy "Annotation"
+  package. Turn it on in Preferences > Packages. The two cannot run at the
+  same time, so enabling this package automatically disables the other.</p>
