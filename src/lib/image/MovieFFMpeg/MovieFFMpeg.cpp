@@ -281,6 +281,7 @@ namespace TwkMovie
         AVBufferRef* deviceContext = nullptr;
         AVHWDeviceType deviceType = AV_HWDEVICE_TYPE_NONE;
         std::string deviceName;
+        bool openFailed = false; // the hardware decoder didn't open; the track stays on the CPU
     };
 
     struct VideoTrack
@@ -1041,7 +1042,9 @@ namespace TwkMovie
             //  The context pool frees a track's codec context and the track
             //  opens a new one on next use. Keep the device the track already
             //  has: creating a device is slow, and overwriting the pointer
-            //  would leak the old one.
+            //  would leak the old one. A device of another type is only
+            //  released once the new one exists, so a candidate that fails
+            //  doesn't cost the track the device it has.
             //
 
             if (hardwareContext->deviceContext)
@@ -1052,8 +1055,6 @@ namespace TwkMovie
                     codecContext->hw_device_ctx = av_buffer_ref(hardwareContext->deviceContext);
                     return codecContext->hw_device_ctx ? 0 : AVERROR(ENOMEM);
                 }
-
-                av_buffer_unref(&hardwareContext->deviceContext);
             }
 
             AVBufferRef* hardwareDeviceContext = nullptr;
@@ -1064,6 +1065,7 @@ namespace TwkMovie
                 return result;
             }
 
+            av_buffer_unref(&hardwareContext->deviceContext);
             hardwareContext->deviceContext = hardwareDeviceContext;
             codecContext->hw_device_ctx = av_buffer_ref(hardwareDeviceContext);
 
@@ -1270,6 +1272,19 @@ namespace TwkMovie
             if (candidates.empty())
             {
                 return false;
+            }
+
+            // A reopened decoder tries its track's device type first, so an
+            // earlier candidate (CUDA on a machine without NVIDIA, say) isn't
+            // created and failed again on every reopen.
+            if (hardwareContext->deviceContext)
+            {
+                const AVHWDeviceType current = reinterpret_cast<const AVHWDeviceContext*>(hardwareContext->deviceContext->data)->type;
+                auto it = std::find(candidates.begin(), candidates.end(), current);
+                if (it != candidates.end())
+                {
+                    std::rotate(candidates.begin(), it, it + 1);
+                }
             }
 
             for (AVHWDeviceType deviceType : candidates)
@@ -1783,7 +1798,11 @@ namespace TwkMovie
         bool hwAttempted = false;
         if (isCodecEligibleForHardwareDecode(avStream->codecpar->codec_id))
         {
-            if (!initHardwareAcceleration(avCodec, avCodecContext, hardwareContext))
+            if (hardwareContext != nullptr && hardwareContext->openFailed)
+            {
+                // Already warned when it fell back; a reopened decoder stays on the CPU.
+            }
+            else if (!initHardwareAcceleration(avCodec, avCodecContext, hardwareContext))
             {
                 announceSoftwareDecode(avCodec->name,
                                        "no hardware decoder could be opened for it (this FFmpeg build " + hardwareDeviceTypeNames() + ")");
@@ -1832,6 +1851,7 @@ namespace TwkMovie
                 hardwareContext->pixelFormat = AV_PIX_FMT_NONE;
                 hardwareContext->deviceType = AV_HWDEVICE_TYPE_NONE;
                 hardwareContext->deviceName.clear();
+                hardwareContext->openFailed = true;
                 (*avCodecContext)->opaque = nullptr;
                 (*avCodecContext)->get_format = nullptr;
                 (*avCodecContext)->thread_type = decoderThreadType(avStream->codecpar->codec_id, false);
