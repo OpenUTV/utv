@@ -15,6 +15,8 @@
 #include <TwkGLF/GLPipeline.h>
 #include <TwkGLF/GLState.h>
 #endif
+#include <TwkGLF/GLFBO.h>
+#include <TwkGLF/GLVideoDevice.h>
 
 #include <RvCommon/MediaFileTypes.h>
 #include <RvCommon/RvApplication.h>
@@ -72,6 +74,7 @@
 #include <RvCommon/MacNativeFileDialog.h>
 #endif
 #include <RvCommon/RvCodecManager.h>
+#include <array>
 #include <assert.h>
 #include <RvCommon/GLView.h> // WINDOWS NEEDS THIS LAST
 // #include <RvCommon/SequenceFileEngine.h>
@@ -403,9 +406,6 @@ namespace Rv
         MuLangContext* c = static_cast<MuLangContext*>(p->context());
         Session* s = Session::currentSession();
         RvDocument* doc = reinterpret_cast<RvDocument*>(s->opaquePointer());
-        QWidget* w = doc->view();
-
-        GLView* glview = dynamic_cast<GLView*>(w);
 
         Mu::Vector4f v;
         v[0] = 0;
@@ -413,7 +413,15 @@ namespace Rv
         v[2] = 0;
         v[3] = 0;
 
-        if (glview != NULL)
+        //
+        //  Read from the active view's framebuffer (GL, Metal or Vulkan). This
+        //  used doc->view(), the GL view, which is null on Metal and Vulkan, so
+        //  the annotation colour picker always read black there.
+        //
+        TwkGLF::GLVideoDevice* device = doc->viewVideoDevice();
+        const TwkGLF::GLFBO* fbo = device ? device->defaultFBO() : nullptr;
+
+        if (fbo)
         {
             float x = NODE_ARG(0, float);
             float y = NODE_ARG(1, float);
@@ -421,17 +429,18 @@ namespace Rv
             int ix = (int)(x + 0.5f);
             int iy = (int)(y + 0.5f);
 
-            QImage image = glview->readPixels(ix, iy, 1, 1);
-
-            if ((image.width() > 0) && (image.height() > 0))
+            if (ix >= 0 && iy >= 0 && static_cast<size_t>(ix) < fbo->width() && static_cast<size_t>(iy) < fbo->height())
             {
-                QRgb rgba = image.pixel(0, 0);
-                QColor qc(rgba);
+                device->makeCurrent();
+                fbo->bind(GL_READ_FRAMEBUFFER_EXT);
 
-                v[0] = qc.redF();
-                v[1] = qc.greenF();
-                v[2] = qc.blueF();
-                v[3] = qc.alphaF();
+                constexpr float maxByteValue = 255.0f;
+                std::array<GLubyte, 4> rgba{};
+                glReadPixels(ix, iy, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+                v[0] = static_cast<float>(rgba[0]) / maxByteValue;
+                v[1] = static_cast<float>(rgba[1]) / maxByteValue;
+                v[2] = static_cast<float>(rgba[2]) / maxByteValue;
+                v[3] = static_cast<float>(rgba[3]) / maxByteValue;
             }
         }
 
