@@ -54,6 +54,7 @@
 #endif
 
 #include <QtCore/qlogging.h>
+#include <QtCore/QRegularExpression>
 #include <QtCore/QStandardPaths>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QGridLayout>
@@ -1489,6 +1490,23 @@ namespace Rv
         }
     }
 
+    //
+    //  rvlink URLs can come from any web page, so -eval/-pyeval is limited
+    //  to a single call of one of the functions ShotGrid uses, with plain
+    //  data as arguments: numbers, lists, dicts and simple quoted strings.
+    //  Anything else (a second statement, an import, a nested call) is
+    //  refused.
+    //
+
+    static bool isAllowedURLEval(const string& code)
+    {
+        static const QRegularExpression allowed(R"(^\s*(?:[A-Za-z_]\w*(?:\(\))?\.)*)"
+                                                R"((?:launchTimeline|compareFromVersionIDs|sessionFromVersionIDs))"
+                                                R"(\s*\((?:[\s\w.,:\[\]{}+-]|'[\w .:/+-]*'|"[\w .:/+-]*")*\)\s*;?\s*$)");
+
+        return allowed.match(QString::fromStdString(code)).hasMatch();
+    }
+
     void RvApplication::parseURL(const char* s, vector<char*>& av)
     {
         cerr << "INFO: received URL '" << s << "'" << endl;
@@ -1546,21 +1564,29 @@ namespace Rv
         for (int i = 0; i < avNew.size(); ++i)
         {
             string s(avNew[i]);
-            if (s == "-eval" || s == "-pyeval" && i < avNew.size() - 1)
+            if (s == "-init")
             {
+                //
+                //  -init names a script to run at startup, which could be
+                //  on a network share; not something a link should choose.
+                //
+                cerr << "ERROR: -init is not allowed in rvlink URLs for security reasons." << endl;
+                if (i + 1 < avNew.size())
+                    ++i;
+            }
+            else if (s == "-eval" || s == "-pyeval")
+            {
+                if (i + 1 >= avNew.size())
+                    break;
+
                 //
                 //  Check for allowed evals (used by shotgrid).
                 //  XXX in the long run we need to change shotgrid to not use
                 //  these.
                 //
                 string s2(avNew[i + 1]);
-                string ok1("launchTimeline");
-                string ok2("compareFromVersionIDs");
-                string ok3("sessionFromVersionIDs");
-                string ok4("shotgrid_review_app");
 
-                if (s2.find(ok1) != string::npos || s2.find(ok2) != string::npos || s2.find(ok3) != string::npos
-                    || s2.find(ok4) != string::npos)
+                if (isAllowedURLEval(s2))
                 {
                     //
                     // When using -eval, we need to bootstrap the tk-rv engine

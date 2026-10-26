@@ -3345,12 +3345,29 @@ global let enterFrame = startTextEntryMode(\: (string;) {"Go To Frame: ";}, goto
             {
                 loadFile(filepath, F);
             }
-            else if (protocol == "http")
+            else if (protocol == "http" || protocol == "https")
             {
-                let temp = "/tmp/" + regex.replace("/", filepath, "_");
-                //  XXX linux only, must be some Qtish way to do this ...
-                system.system("curl -o %s %s" % (temp, url));
-                loadFile(temp, F);
+                //
+                //  Run curl directly, not through a shell, so the dropped
+                //  text can't add commands, and download into a private
+                //  directory with an unpredictable name. Keep the file's
+                //  name so the reader can tell the format from it.
+                //
+                let dir  = "%s/utv-drop-%d-%d" % (qt.QDir.tempPath(), system.getpid(), math_util.random(1000000000)),
+                    base = regex.replace("^.*/", regex.replace("[?#].*$", filepath, ""), ""),
+                    name = regex.replace("[^A-Za-z0-9._-]", base, "_"),
+                    temp = dir + "/" + (if name == "" then "download" else name);
+
+                qt.QDir(dir).mkpath(".");
+
+                if (qt.QProcess.execute("curl", string[] {"-fsSL", "-o", temp, url}) == 0)
+                {
+                    loadFile(temp, F);
+                }
+                else
+                {
+                    print("ERROR: could not download %s\n" % url);
+                }
             }
             else if (protocol == "rvnode")
             {
