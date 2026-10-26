@@ -62,7 +62,7 @@ namespace Mu
 #ifdef _MSC_VER
     std::wstring to_wstring(const char* c)
     {
-        wstring_convert<codecvt_utf8<wchar_t>> wstr;
+        wstring_convert<codecvt_utf8_utf16<wchar_t>> wstr;
         return wstr.from_bytes(c);
     }
 #endif

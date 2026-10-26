@@ -95,7 +95,7 @@ namespace Gto
             return false;
 
 #ifdef _MSC_VER
-        wstring_convert<codecvt_utf8<wchar_t>> wstr;
+        wstring_convert<codecvt_utf8_utf16<wchar_t>> wstr;
         wstring wstr_filename = wstr.from_bytes(filename);
         const wchar_t* w_filename = wstr_filename.c_str();
 #endif

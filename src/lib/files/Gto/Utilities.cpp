@@ -128,7 +128,7 @@ namespace Gto
         Header header;
 
 #ifdef _MSC_VER
-        wstring_convert<codecvt_utf8<wchar_t>> wstr;
+        wstring_convert<codecvt_utf8_utf16<wchar_t>> wstr;
         wstring wstr_filename = wstr.from_bytes(infile);
         const wchar_t* w_infile = wstr_filename.c_str();
 #endif
