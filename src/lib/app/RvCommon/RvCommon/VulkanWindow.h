@@ -219,6 +219,16 @@ namespace Rv
         bool m_interopNegotiated{false};
         void negotiateInteropConfig();
 
+        // After a failed fenced submit: re-signal the slot fence so the next
+        // wait on it cannot hang, consuming waitSemaphore if one is given.
+        void recoverFailedSubmit(uint32_t slot, VkSemaphore waitSemaphore);
+
+        // Recreates the swapchain if it no longer matches the surface extent.
+        bool ensureSwapchainMatchesSurface();
+
+        // The swapchain extent for the surface (device pixels on Wayland).
+        VkExtent2D surfaceExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
+
         VkSwapchainKHR m_vkSwapchain{VK_NULL_HANDLE};
         VkFormat m_vkSwapchainFormat{VK_FORMAT_UNDEFINED};
         // Last non-sRGB colour space warned about; createSwapchain() runs on every resize.
