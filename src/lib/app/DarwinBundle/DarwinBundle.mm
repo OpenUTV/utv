@@ -153,6 +153,18 @@ DarwinBundle::DarwinBundle(const FileName& appName,
         setEnvVar("PYTHONHOME", SYSTEM_PYTHONHOME, true);
 #endif
     }
+
+    // Keep Python's bytecode cache out of the app bundle: a __pycache__ written
+    // under Contents/ breaks the bundle's code signature.
+    if (!getenv("PYTHONPYCACHEPREFIX"))
+    {
+        NSArray *caches = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+        if ([caches count] > 0)
+        {
+            NSString *prefix = [[caches objectAtIndex:0] stringByAppendingPathComponent:@"UTV/pycache"];
+            setEnvVar("PYTHONPYCACHEPREFIX", [prefix UTF8String], true);
+        }
+    }
     
     bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
 #ifdef SYSTEM_PYTHONPATH

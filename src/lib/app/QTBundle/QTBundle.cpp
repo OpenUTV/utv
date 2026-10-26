@@ -6,6 +6,7 @@
 //
 //******************************************************************************
 #include <QTBundle/QTBundle.h>
+#include <QtCore/QStandardPaths>
 #include <sstream>
 #include <iostream>
 #include <algorithm>
@@ -138,6 +139,18 @@ namespace TwkApp
                 resolvedPythonHome = m_root.absolutePath();
             }
             setEnvVar("PYTHONHOME", resolvedPythonHome.toUtf8().constData(), true);
+        }
+
+        //  Keep Python's bytecode cache out of the install directory, which
+        //  usually isn't writable (Program Files, /opt), so modules are
+        //  compiled once rather than on every launch.
+        if (!getenv("PYTHONPYCACHEPREFIX"))
+        {
+            QString cache = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
+            if (!cache.isEmpty())
+            {
+                setEnvVar("PYTHONPYCACHEPREFIX", QDir(cache).absoluteFilePath("UTV/pycache").toUtf8().constData(), true);
+            }
         }
 
         bool forceToFront = (!getenv("RV_PYTHONPATH_APPEND_ONLY"));
