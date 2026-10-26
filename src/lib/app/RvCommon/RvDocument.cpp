@@ -670,6 +670,10 @@ namespace Rv
             //  Then this is the last document, so shutdown network
             //
 
+            // Before closing anything, so the console's queued auto-show cannot
+            // reopen it and keep the application alive.
+            RvApp()->setShuttingDown();
+
             if (RvNetworkDialog* d = RvApp()->networkWindow())
             {
                 if (d->serverRunning())

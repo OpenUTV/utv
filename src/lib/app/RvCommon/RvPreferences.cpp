@@ -135,6 +135,9 @@ namespace Rv
         connect(m_ui.exrNumThreadsEdit, SIGNAL(textChanged(const QString&)), this, SLOT(exrThreadNumChanged(const QString&)));
         setWindowTitle(UI_APPLICATION_NAME " Preferences");
 
+        // Auxiliary window: never keeps UTV alive.
+        setAttribute(Qt::WA_QuitOnClose, false);
+
 #ifndef PLATFORM_DARWIN
         m_ui.appleClientStorageToggle->setEnabled(false);
 #endif

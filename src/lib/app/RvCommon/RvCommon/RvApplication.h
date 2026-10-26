@@ -135,6 +135,12 @@ namespace Rv
         void setPresentationMode(bool);
         bool isInPresentationMode();
 
+        //  Set when the last document starts closing, so nothing (the console's
+        //  queued auto-show) reopens a window and keeps UTV alive.
+        bool isShuttingDown() const { return m_shuttingDown; }
+
+        void setShuttingDown() { m_shuttingDown = true; }
+
         DesktopVideoModule* desktopVideoModule() const { return m_desktopModule; }
 
         static int parseInFiles(int argc, char* argv[]);
@@ -172,6 +178,7 @@ namespace Rv
         RvWebManager* m_webManager;
         TwkApp::VideoDevice* m_presentationDevice;
         bool m_presentationMode;
+        bool m_shuttingDown{false};
         mutable pthread_mutex_t m_deleteLock;
         std::string m_executableNameCaps;
         DesktopVideoModule* m_desktopModule;

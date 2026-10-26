@@ -2050,6 +2050,8 @@ namespace Rv
         {
             m_globalSettingsP->sync();
             delete m_globalSettingsP;
+            // globalSettings() reallocates only when this is null.
+            m_globalSettingsP = nullptr;
         }
     }
 
