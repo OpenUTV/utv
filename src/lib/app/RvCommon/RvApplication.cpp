@@ -1948,16 +1948,32 @@ namespace Rv
         else
         {
             const VideoDevice* d = session->outputVideoDevice();
+            const bool separateOutput = d && d != session->controlVideoDevice();
 
-            if (d != session->controlVideoDevice())
+            //
+            //  Unbind before closing: close() destroys the GL context owning the
+            //  FBOs the renderer cloned for this device, and unbind() must
+            //  release them while it is still alive.
+            //
+            session->setOutputVideoDevice(session->controlVideoDevice());
+
+            if (separateOutput)
             {
                 const_cast<VideoDevice*>(d)->close();
 #ifdef PLATFORM_DARWIN
                 // rvDoc->setDoubleBuffer(true);
 #endif
-            }
 
-            session->setOutputVideoDevice(session->controlVideoDevice());
+                //
+                //  close() leaves no context current, and DesktopVideoDevice
+                //  cannot restore one when the main view is Metal or Vulkan.
+                //  Make the main view's context current.
+                //
+                if (const TwkGLF::GLVideoDevice* mainView = dynamic_cast<const TwkGLF::GLVideoDevice*>(session->controlVideoDevice()))
+                {
+                    mainView->makeCurrent();
+                }
+            }
 
 #if 0
         if (opts.vsync && !rvDoc->vsyncDisabled())

@@ -466,6 +466,19 @@ namespace TwkGLF
         TWK_GLDEBUG;
     }
 
+    bool GLFBO::isComplete() const
+    {
+        //
+        //  GLFBO must be bound for glCheckFramebufferStatus()
+        //
+        bind();
+
+        const GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        TWK_GLDEBUG;
+
+        return status == GL_FRAMEBUFFER_COMPLETE_EXT;
+    }
+
     void GLFBO::check() const
     {
         //

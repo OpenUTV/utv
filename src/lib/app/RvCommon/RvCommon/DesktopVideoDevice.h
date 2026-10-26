@@ -9,6 +9,8 @@
 #ifndef __RvCommon__DesktopVideoDevice__h__
 #define __RvCommon__DesktopVideoDevice__h__
 #include <iostream>
+#include <map>
+#include <memory>
 #include <TwkGLF/GLVideoDevice.h>
 #include <TwkGLF/GLState.h>
 #include <TwkGLF/GLPipeline.h>
@@ -72,7 +74,7 @@ namespace Rv
         //  Types
         //
 
-        typedef std::map<const TwkGLF::GLFBO*, TwkGLF::GLFBO*> FBOMap;
+        typedef std::map<const TwkGLF::GLFBO*, std::unique_ptr<TwkGLF::GLFBO>> FBOMap;
         typedef boost::mutex Mutex;
         typedef boost::mutex::scoped_lock ScopedLock;
 
@@ -253,6 +255,19 @@ namespace Rv
 #endif
 
     protected:
+        //
+        //  The clone of a renderer FBO in this device's context (FBOs aren't
+        //  shared between contexts, their textures are). The renderer
+        //  reallocates FBOs, so a cached clone is reused only while it still
+        //  wraps the same texture at the same size. Null when the clone is
+        //  incomplete (a dead source texture).
+        //
+        TwkGLF::GLFBO* cloneForSource(const TwkGLF::GLFBO* sourceFbo) const;
+
+        //  Deletes the clones with this device's context current: their FBO
+        //  names belong to it.
+        void releaseFBOClones() const;
+
         const QTGLVideoDevice* m_share;
         const TwkGLF::GLVideoDevice* m_viewDevice;
         QOpenGLWidget* m_view;
@@ -265,6 +280,7 @@ namespace Rv
         int m_screen;
         QTTranslator* m_translator;
         mutable ColorProfile m_colorProfile;
+        mutable GLuint m_reportedBadSourceTex{0};
 
         size_t m_videoFormatIndex;
         size_t m_dataFormatIndex;

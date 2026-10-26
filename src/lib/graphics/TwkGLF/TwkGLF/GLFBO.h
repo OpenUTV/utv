@@ -223,6 +223,14 @@ namespace TwkGLF
         void unbind(GLenum kind = GL_FRAMEBUFFER_EXT) const;
 
         //
+        //  Non-throwing completeness test, for FBOs built around foreign
+        //  attachments that can come out incomplete without any call failing.
+        //  Leaves the FBO bound.
+        //
+
+        bool isComplete() const;
+
+        //
         //  Binding the texture means you're going to use it as a texture
         //  (not as a render target). So typically you'd rendering into it
         //  and then bind it and use it to rendering into something else
