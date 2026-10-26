@@ -694,10 +694,14 @@ namespace IPCore
         //  VideoModules can be initialized late.
         //
 
-        for (size_t i = 0; i < m_displayGroups.size(); i++)
-        {
-            DisplayGroupIPNode* node = m_displayGroups[i];
+        //  Iterate over a copy: deleting a display group removes it from
+        //  m_displayGroups (see the node removal above).
+        //
 
+        const DisplayGroups groups = m_displayGroups;
+
+        for (DisplayGroupIPNode* node : groups)
+        {
             if (node == m_defaultOutputGroup)
             {
                 if (m_rootNode->isInput(m_defaultOutputGroup))
@@ -712,11 +716,11 @@ namespace IPCore
             }
         }
 
-        for (size_t i = 0; i < m_displayGroups.size(); i++)
+        for (DisplayGroupIPNode* node : groups)
         {
-            if (m_displayGroups[i] != m_defaultOutputGroup)
+            if (node != m_defaultOutputGroup)
             {
-                delete m_displayGroups[i];
+                delete node;
             }
         }
 
