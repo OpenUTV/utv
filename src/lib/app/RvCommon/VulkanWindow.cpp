@@ -25,6 +25,7 @@
 #include <QtGui/QPlatformSurfaceEvent>
 #include <QtGui/QWindow>
 #include <QtGui/QVulkanInstance>
+#include <QtCore/QVersionNumber>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QScreen>
 #include <QtWidgets/QMenu>
@@ -33,7 +34,10 @@
 #include <algorithm>
 #include <climits>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
+#include <memory>
+#include <optional>
 #include <sstream>
 #ifdef PLATFORM_WINDOWS
 // WIN32_LEAN_AND_MEAN prevents <windows.h> from including the legacy
@@ -83,6 +87,96 @@ namespace Rv
             return "(other)";
         }
     }
+
+    namespace
+    {
+        std::optional<uint32_t> findGraphicsPresentQueue(VkPhysicalDevice device, VkSurfaceKHR surface)
+        {
+            uint32_t familyCount = 0;
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &familyCount, nullptr);
+            std::vector<VkQueueFamilyProperties> families(familyCount);
+            vkGetPhysicalDeviceQueueFamilyProperties(device, &familyCount, families.data());
+
+            for (uint32_t i = 0; i < familyCount; ++i)
+            {
+                VkBool32 presentSupport = VK_FALSE;
+                if (vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport) == VK_SUCCESS
+                    && (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && presentSupport)
+                {
+                    return i;
+                }
+            }
+            return std::nullopt;
+        }
+
+        bool surfaceHasTenBitFormat(VkPhysicalDevice device, VkSurfaceKHR surface)
+        {
+            uint32_t formatCount = 0;
+            if (vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr) != VK_SUCCESS || formatCount == 0)
+            {
+                return false;
+            }
+
+            std::vector<VkSurfaceFormatKHR> formats(formatCount);
+            if (vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, formats.data()) != VK_SUCCESS)
+            {
+                return false;
+            }
+
+            return std::any_of(formats.begin(), formats.end(),
+                               [](const VkSurfaceFormatKHR& format) { return isTenBitFormat(format.format); });
+        }
+
+        bool deviceHasExtension(VkPhysicalDevice device, const char* name)
+        {
+            uint32_t extensionCount = 0;
+            if (vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr) != VK_SUCCESS)
+            {
+                return false;
+            }
+
+            std::vector<VkExtensionProperties> extensions(extensionCount);
+            if (vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions.data()) != VK_SUCCESS)
+            {
+                return false;
+            }
+
+            return std::any_of(extensions.begin(), extensions.end(),
+                               [name](const VkExtensionProperties& extension) { return strcmp(extension.extensionName, name) == 0; });
+        }
+
+        // The interop probes (vkGetPhysicalDeviceImageFormatProperties2,
+        // vkGetImageMemoryRequirements2, vkGetPhysicalDeviceProperties2) are
+        // Vulkan 1.1 core.
+        bool deviceSupportsVulkan11(VkPhysicalDevice device)
+        {
+            VkPhysicalDeviceProperties props = {};
+            vkGetPhysicalDeviceProperties(device, &props);
+            return props.apiVersion >= VK_API_VERSION_1_1;
+        }
+
+        //
+        //  One process-lifetime QVulkanInstance, shared by the 10-bit probe and
+        //  every VulkanWindow, never destroyed: destroying a VkInstance shortly
+        //  before another init corrupts RADV's X11 WSI state and segfaults in
+        //  vkGetPhysicalDeviceSurfaceSupportKHR.
+        //
+        QVulkanInstance* sharedVulkanInstance()
+        {
+            static QVulkanInstance* instance = []() -> QVulkanInstance*
+            {
+                auto inst = std::make_unique<QVulkanInstance>();
+                inst->setApiVersion(QVersionNumber(1, 1));
+                if (!inst->create())
+                {
+                    cerr << "ERROR: VulkanWindow: shared QVulkanInstance create failed" << endl;
+                    return nullptr;
+                }
+                return inst.release();
+            }();
+            return instance;
+        }
+    } // namespace
 
     //--------------------------------------------------------------------------
     // VulkanWindow implementation
@@ -187,123 +281,91 @@ namespace Rv
 
     bool VulkanWindow::supports10BitPresentation()
     {
-        QVulkanInstance qtVkInst;
-        if (!qtVkInst.create())
+        //  A fixed hardware property: probe once per process.
+        static const bool cached = []() -> bool
         {
-            cerr << "ERROR: VulkanWindow: supports10BitPresentation: QVulkanInstance create failed" << endl;
-            return false;
-        }
-
-        VkInstance instance = qtVkInst.vkInstance();
-        if (instance == VK_NULL_HANDLE)
-        {
-            return false;
-        }
-
-        QWindow dummyWindow;
-        dummyWindow.setSurfaceType(QSurface::VulkanSurface);
-        dummyWindow.create();
-        dummyWindow.setVulkanInstance(&qtVkInst);
-
-        VkSurfaceKHR dummySurface = qtVkInst.surfaceForWindow(&dummyWindow);
-        if (!dummySurface)
-        {
-            cerr << "ERROR: VulkanWindow: supports10BitPresentation: failed to create dummy surface" << endl;
-            return false;
-        }
-
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
-        if (deviceCount == 0)
-        {
-            cerr << "ERROR: VulkanWindow: supports10BitPresentation: vkEnumeratePhysicalDevices returned 0 devices" << endl;
-            return false;
-        }
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-
-        if (ImageRenderer::debugGpu())
-        {
-            cout << "INFO: VulkanWindow: supports10BitPresentation: probing " << deviceCount << " physical device(s)" << endl;
-        }
-
-        bool any10bit = false;
-        for (uint32_t di = 0; di < devices.size(); ++di)
-        {
-            VkPhysicalDevice dev = devices[di];
-
-            uint32_t formatCount = 0;
-            if (vkGetPhysicalDeviceSurfaceFormatsKHR(dev, dummySurface, &formatCount, nullptr) != VK_SUCCESS || formatCount == 0)
+            QVulkanInstance* qtVkInst = sharedVulkanInstance();
+            if (!qtVkInst)
             {
-                continue;
+                return false;
             }
-            std::vector<VkSurfaceFormatKHR> formats(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(dev, dummySurface, &formatCount, formats.data());
 
-            bool has10bit = false;
-            for (const auto& fmt : formats)
+            VkInstance instance = qtVkInst->vkInstance();
+            if (instance == VK_NULL_HANDLE)
             {
-                if (isTenBitFormat(fmt.format))
+                return false;
+            }
+
+            //  Leaked for the same RADV WSI reason as sharedVulkanInstance().
+            static QWindow* dummyWindow = []() -> QWindow*
+            {
+                auto* window = new QWindow();
+                window->setSurfaceType(QSurface::VulkanSurface);
+                window->create();
+                return window;
+            }();
+            dummyWindow->setVulkanInstance(qtVkInst);
+
+            VkSurfaceKHR dummySurface = qtVkInst->surfaceForWindow(dummyWindow);
+            if (!dummySurface)
+            {
+                cerr << "ERROR: VulkanWindow: supports10BitPresentation: failed to create dummy surface" << endl;
+                return false;
+            }
+
+            uint32_t deviceCount = 0;
+            vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+            if (deviceCount == 0)
+            {
+                cerr << "ERROR: VulkanWindow: supports10BitPresentation: vkEnumeratePhysicalDevices returned 0 devices" << endl;
+                return false;
+            }
+            std::vector<VkPhysicalDevice> devices(deviceCount);
+            vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+
+            if (ImageRenderer::debugGpu())
+            {
+                cout << "INFO: VulkanWindow: supports10BitPresentation: probing " << deviceCount << " physical device(s)" << endl;
+            }
+
+            bool any10bit = false;
+            for (uint32_t di = 0; di < devices.size(); ++di)
+            {
+                VkPhysicalDevice dev = devices[di];
+
+                const bool vulkan11 = deviceSupportsVulkan11(dev);
+                const bool canPresent =
+                    deviceHasExtension(dev, VK_KHR_SWAPCHAIN_EXTENSION_NAME) && findGraphicsPresentQueue(dev, dummySurface).has_value();
+                const bool has10bit = canPresent && surfaceHasTenBitFormat(dev, dummySurface);
+                any10bit = any10bit || (vulkan11 && has10bit);
+
+                VkPhysicalDeviceProperties props = {};
+                vkGetPhysicalDeviceProperties(dev, &props);
+                if (ImageRenderer::debugGpu())
                 {
-                    has10bit = true;
-                    any10bit = true;
-                    break;
+                    cout << "INFO: VulkanWindow:   device[" << di << "] '" << props.deviceName
+                         << "': vulkan1.1=" << (vulkan11 ? "YES" : "NO") << "  graphics+present=" << (canPresent ? "YES" : "NO")
+                         << "  10-bit surface format=" << (has10bit ? "YES" : "NO") << endl;
                 }
             }
 
-            VkPhysicalDeviceProperties props = {};
-            vkGetPhysicalDeviceProperties(dev, &props);
             if (ImageRenderer::debugGpu())
             {
-                cout << "INFO: VulkanWindow:   device[" << di << "] '" << props.deviceName
-                     << "': 10-bit surface format=" << (has10bit ? "YES" : "NO") << endl;
+                cout << "INFO: VulkanWindow: supports10BitPresentation: returning " << (any10bit ? "true" : "false") << endl;
             }
-        }
+            return any10bit;
+        }();
 
-        // The surface returned by surfaceForWindow() is owned by the platform
-        // integration and is released when dummyWindow is destroyed on return;
-        // QVulkanInstance has no destroySurface() in this Qt version.
-        if (ImageRenderer::debugGpu())
-        {
-            cout << "INFO: VulkanWindow: supports10BitPresentation: returning " << (any10bit ? "true" : "false") << endl;
-        }
-        return any10bit;
+        return cached;
     }
 
     bool VulkanWindow::initVulkan()
     {
-        // Create Instance
-        VkApplicationInfo appInfo = {};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "RV VulkanWindow";
-        appInfo.apiVersion = VK_API_VERSION_1_1;
-
-        // Need surface extensions
-        std::vector<const char*> instanceExtensions = {
-            VK_KHR_SURFACE_EXTENSION_NAME,
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-            VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-#elif defined(VK_USE_PLATFORM_XLIB_KHR)
-            VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
-#elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
-            VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
-#elif defined(VK_USE_PLATFORM_XCB_KHR)
-            VK_KHR_XCB_SURFACE_EXTENSION_NAME,
-#endif
-        };
-
-        // Try to get Qt's extensions
-        static QVulkanInstance* qtVkInst = nullptr;
+        QVulkanInstance* qtVkInst = sharedVulkanInstance();
         if (!qtVkInst)
         {
-            qtVkInst = new QVulkanInstance();
-            if (!qtVkInst->create())
-            {
-                cerr << "ERROR: VulkanWindow: QVulkanInstance create failed" << endl;
-                delete qtVkInst;
-                qtVkInst = nullptr;
-                return false;
-            }
+            cerr << "ERROR: VulkanWindow: shared QVulkanInstance unavailable" << endl;
+            return false;
         }
 
         m_vkInstance = qtVkInst->vkInstance();
@@ -339,32 +401,27 @@ namespace Rv
         bool foundQueue = false;
         m_queueFamilyIndex = 0;
 
+        //  The device must present 10-bit on this surface, not just present:
+        //  on a hybrid machine the first device with a present queue may not.
         for (VkPhysicalDevice dev : devices)
         {
-            uint32_t queueFamilyCount = 0;
-            vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueFamilyCount, nullptr);
-            std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-            vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueFamilyCount, queueFamilies.data());
-
-            for (uint32_t i = 0; i < queueFamilyCount; i++)
+            if (!deviceSupportsVulkan11(dev) || !deviceHasExtension(dev, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
             {
-                VkBool32 presentSupport = false;
-                vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, m_vkSurface, &presentSupport);
-                if ((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && presentSupport)
-                {
-                    m_vkPhysicalDevice = dev;
-                    m_queueFamilyIndex = i;
-                    foundQueue = true;
-                    break;
-                }
+                continue;
             }
-            if (foundQueue)
+            const std::optional<uint32_t> queueFamily = findGraphicsPresentQueue(dev, m_vkSurface);
+            if (queueFamily && surfaceHasTenBitFormat(dev, m_vkSurface))
+            {
+                m_vkPhysicalDevice = dev;
+                m_queueFamilyIndex = *queueFamily;
+                foundQueue = true;
                 break;
+            }
         }
 
         if (!foundQueue)
         {
-            cerr << "ERROR: VulkanWindow: initVulkan: No physical device with graphics and present support found." << endl;
+            cerr << "ERROR: VulkanWindow: initVulkan: no Vulkan 1.1 device with graphics, present and 10-bit surface support" << endl;
             return false;
         }
 
@@ -386,16 +443,30 @@ namespace Rv
         queueCreateInfo.queueCount = 1;
         queueCreateInfo.pQueuePriorities = &queuePriority;
 
-        std::vector<const char*> deviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+
+        //  Enable the GL interop extensions only when the device has them.
+        //  Requesting a missing one fails vkCreateDevice, which used to drop
+        //  the whole viewport to 8-bit OpenGL instead of the 10-bit CPU
+        //  readback path.
 #ifdef PLATFORM_WINDOWS
-            VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+        const char* externalMemoryExtension = VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME;
+        const char* externalSemaphoreExtension = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
 #else
-            VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
-            VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
+        const char* externalMemoryExtension = VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME;
+        const char* externalSemaphoreExtension = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
 #endif
-        };
+        m_externalInteropSupported = deviceHasExtension(m_vkPhysicalDevice, externalMemoryExtension)
+                                     && deviceHasExtension(m_vkPhysicalDevice, externalSemaphoreExtension);
+        if (m_externalInteropSupported)
+        {
+            deviceExtensions.push_back(externalMemoryExtension);
+            deviceExtensions.push_back(externalSemaphoreExtension);
+        }
+        else if (ImageRenderer::debugGpu())
+        {
+            cout << "INFO: VulkanWindow: external memory/semaphore extensions unavailable; using CPU fallback." << endl;
+        }
 
         VkDeviceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -657,25 +728,42 @@ namespace Rv
         // Linux/RADV), accept it too: the opposite R/B order is handled where
         // pixels are packed (CPU fallback) and by a component-wise blit (GPU
         // interop), so red and blue are not swapped.
-        for (const auto& fmt : formats)
-        {
-            if (fmt.format == VK_FORMAT_A2B10G10R10_UNORM_PACK32)
-            {
-                surfaceFormat = fmt;
-                found10bit = true;
-                break;
-            }
-        }
-        if (!found10bit)
+        //
+        // UTV emits sRGB, so require SRGB_NONLINEAR: in HDR mode NVIDIA lists a
+        // 10-bit HDR10_ST2084 entry first, which renders the viewport black. A
+        // second pass without SRGB_NONLINEAR keeps 10-bit anyway and warns below.
+        const auto findTenBit = [&formats](VkFormat wanted, bool requireSrgbNonlinear) -> std::optional<VkSurfaceFormatKHR>
         {
             for (const auto& fmt : formats)
             {
-                if (fmt.format == VK_FORMAT_A2R10G10B10_UNORM_PACK32)
+                if (fmt.format != wanted)
                 {
-                    surfaceFormat = fmt;
+                    continue;
+                }
+                if (requireSrgbNonlinear && fmt.colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+                {
+                    continue;
+                }
+                return fmt;
+            }
+            return std::nullopt;
+        };
+
+        for (const bool requireSrgbNonlinear : {true, false})
+        {
+            for (const VkFormat wanted : {VK_FORMAT_A2B10G10R10_UNORM_PACK32, VK_FORMAT_A2R10G10B10_UNORM_PACK32})
+            {
+                if (const auto match = findTenBit(wanted, requireSrgbNonlinear))
+                {
+                    surfaceFormat = *match;
                     found10bit = true;
                     break;
                 }
+            }
+
+            if (found10bit)
+            {
+                break;
             }
         }
 
@@ -683,7 +771,19 @@ namespace Rv
         {
             if (ImageRenderer::debugGpu())
             {
-                cout << "INFO: VulkanWindow: createSwapchain: chose " << formatName(surfaceFormat.format) << " (10-bit OK)" << endl;
+                cout << "INFO: VulkanWindow: createSwapchain: chose " << formatName(surfaceFormat.format)
+                     << " colorSpace=" << surfaceFormat.colorSpace
+                     << (surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR ? " (SRGB_NONLINEAR)" : " (NOT SRGB_NONLINEAR)")
+                     << " (10-bit OK)" << endl;
+            }
+
+            //  Only on change: createSwapchain() runs on every resize.
+            if (surfaceFormat.colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR && surfaceFormat.colorSpace != m_warnedSurfaceColorSpace)
+            {
+                m_warnedSurfaceColorSpace = surfaceFormat.colorSpace;
+                cout << "WARNING: VulkanWindow: no 10-bit surface format is paired with SRGB_NONLINEAR on this surface. UTV emits "
+                        "sRGB, so the image may look wrong (dark or washed out)."
+                     << endl;
             }
         }
         else
@@ -999,7 +1099,7 @@ namespace Rv
 
     const VulkanWindow::SharedImageInfo* VulkanWindow::getSharedImageInfo(int w, int h)
     {
-        if (!m_vkDevice)
+        if (!m_vkDevice || !m_externalInteropSupported)
             return nullptr;
 
         // Build/return the shared image for the current in-flight ring slot.

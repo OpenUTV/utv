@@ -137,9 +137,9 @@ namespace Rv
         //  Probe for whether this machine's Vulkan can present a 10-bit format
         //  (A2B10G10R10 or A2R10G10B10). Used at RvDocument construction time to
         //  decide whether a 10-bit display request should route to the Vulkan
-        //  path or fall back to OpenGL. Creates a throwaway QVulkanInstance +
-        //  dummy surface and queries the advertised surface formats; it never
-        //  throws — returns false if Vulkan is unavailable for any reason.
+        //  path or fall back to OpenGL. Queries a dummy surface on the shared
+        //  QVulkanInstance once per process; it never throws — returns false
+        //  if Vulkan is unavailable for any reason.
         //
         static bool supports10BitPresentation();
 
@@ -193,9 +193,13 @@ namespace Rv
         VkQueue m_vkQueue{VK_NULL_HANDLE};
         uint32_t m_queueFamilyIndex{0};
         VkCommandPool m_vkCommandPool{VK_NULL_HANDLE};
+        // The device has the external memory/semaphore extensions GL interop needs.
+        bool m_externalInteropSupported{false};
 
         VkSwapchainKHR m_vkSwapchain{VK_NULL_HANDLE};
         VkFormat m_vkSwapchainFormat{VK_FORMAT_UNDEFINED};
+        // Last non-sRGB colour space warned about; createSwapchain() runs on every resize.
+        VkColorSpaceKHR m_warnedSurfaceColorSpace{VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
         VkExtent2D m_vkSwapchainExtent{};
         std::vector<VkImage> m_vkSwapchainImages;
         std::vector<VkCommandBuffer> m_vkCommandBuffers;
