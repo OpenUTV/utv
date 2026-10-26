@@ -13,7 +13,10 @@
 #include <vulkan/vulkan.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 QT_BEGIN_NAMESPACE
 class QPlatformWindow;
@@ -105,12 +108,14 @@ namespace Rv
             int height{0};         // used sub-region height presented this frame
             int strideWidth{0};    // GL texture width = capacity rowPitch / 4
             int capacityHeight{0}; // allocated image height (>= height); GL texture height
-            // Non-zero when the shared image uses VK_IMAGE_TILING_OPTIMAL (the
-            // default on NVIDIA Linux, which avoids the blank large-image bug); GL
-            // must then import with GL_OPTIMAL_TILING_EXT instead of
-            // GL_LINEAR_TILING_EXT.
-            int optimalTiling{0};
+            // GL must import with the matching GL_{OPTIMAL,LINEAR}_TILING_EXT.
+            VkImageTiling tiling{VK_IMAGE_TILING_LINEAR};
+            // GL must set GL_DEDICATED_MEMORY_OBJECT_EXT to exactly this.
+            bool dedicatedAllocation{false};
         };
+
+        // Lets the GL bridge refuse external-memory interop across GPUs.
+        bool physicalDeviceMatchesUUID(const unsigned char* uuid, size_t size) const;
 
         // Number of frames the present path keeps in flight. Per-frame Vulkan
         // sync objects and the GL<->Vulkan shared resources are stored in rings
@@ -195,6 +200,24 @@ namespace Rv
         VkCommandPool m_vkCommandPool{VK_NULL_HANDLE};
         // The device has the external memory/semaphore extensions GL interop needs.
         bool m_externalInteropSupported{false};
+
+        //  GL<->Vulkan interop configuration, negotiated once per device from
+        //  what the driver reports exportable. Both the Vulkan export and the
+        //  GL import follow it: a tiling or dedicated-allocation mismatch
+        //  silently corrupts the image.
+        struct InteropConfig
+        {
+            bool supported{false};
+            VkImageTiling tiling{VK_IMAGE_TILING_LINEAR};
+            VkImageUsageFlags usage{0};
+            // The handle type reports DEDICATED_ONLY.
+            bool dedicatedOnly{false};
+            std::string rejectReason;
+        };
+
+        InteropConfig m_interopConfig;
+        bool m_interopNegotiated{false};
+        void negotiateInteropConfig();
 
         VkSwapchainKHR m_vkSwapchain{VK_NULL_HANDLE};
         VkFormat m_vkSwapchainFormat{VK_FORMAT_UNDEFINED};

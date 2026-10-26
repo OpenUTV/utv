@@ -10,6 +10,7 @@
 #include <RvCommon/VulkanWindow.h>
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -67,6 +68,10 @@ namespace Rv
         //
         void releaseSharedGLObjects();
 
+        //  Forget whether GL and Vulkan run on the same GPU; the next
+        //  initVulkan() may pick a different physical device.
+        void resetInteropDeviceMatch() { m_glVulkanDeviceMatch.reset(); }
+
         // VideoDevice API
         void makeCurrent() const override;
         void syncBuffers() const override;
@@ -99,6 +104,12 @@ namespace Rv
         // Ensure the QOpenGLContext + FBO exist and match the current window size.
         // Makes the GL context current and binds the FBO on return.
         void ensureGLContext() const;
+
+        //  Whether GL runs on the Vulkan device (GL_EXT_memory_object device
+        //  UUIDs). External-memory interop across GPUs on a hybrid machine
+        //  imports garbage, so a mismatch uses the CPU fallback. Cached.
+        bool glDeviceMatchesVulkan() const;
+        mutable std::optional<bool> m_glVulkanDeviceMatch;
 
         //
         //  Guarded: the window is embedded via QWidget::createWindowContainer(),

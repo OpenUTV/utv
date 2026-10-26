@@ -482,6 +482,11 @@ namespace Rv
 
         vkGetDeviceQueue(m_vkDevice, m_queueFamilyIndex, 0, &m_vkQueue);
 
+        if (m_externalInteropSupported)
+        {
+            negotiateInteropConfig();
+        }
+
         auto failInit = [this]()
         {
             cleanupVulkan();
@@ -596,6 +601,9 @@ namespace Rv
         if (m_videoDevice)
         {
             m_videoDevice->releaseSharedGLObjects();
+
+            //  The next initVulkan() may pick a different physical device.
+            m_videoDevice->resetInteropDeviceMatch();
         }
 
         for (uint32_t i = 0; i < FRAMES_IN_FLIGHT; ++i)
@@ -613,6 +621,10 @@ namespace Rv
         m_vkSwapchainExtent = {};
         m_vkSwapchainImages.clear();
         m_currentFrame = 0;
+
+        m_externalInteropSupported = false;
+        m_interopNegotiated = false;
+        m_interopConfig = {};
 
         m_initialized = false;
         m_initializedHandle = nullptr;
@@ -984,19 +996,169 @@ namespace Rv
         // correct zero-copy interop, so OPTIMAL is the default on NVIDIA. Both the
         // GL and Vulkan sides here are the same NVIDIA driver/GPU, so the
         // vendor-private optimal layout matches on import without needing explicit
-        // DRM-format-modifier negotiation. AMD/Intel keep the existing LINEAR path.
+        // DRM-format-modifier negotiation. AMD/Intel keep LINEAR.
         // Set RV_VULKAN_DISABLE_NVIDIA_INTEROP_WORKAROUND to revert NVIDIA to LINEAR
-        // (reproduces the blank-image bug, for debugging).
-        bool useOptimalTilingForInterop(VkPhysicalDevice dev)
+        // (reproduces the blank-image bug, for debugging). Under Mesa, GL and
+        // Vulkan are different drivers and OPTIMAL renders tile garbage (RADV
+        // PHOENIX2) even when reported exportable, so the preference is OPTIMAL
+        // on NVIDIA only, on Linux and Windows. negotiateInteropConfig() falls
+        // back to the other tiling when the preferred one isn't exportable.
+        bool useOptimalTilingForInterop(VkPhysicalDevice dev) { return !nvidiaInteropWorkaroundDisabled() && isNvidiaPhysicalDevice(dev); }
+
+        bool dedicatedAllocationDisabled()
         {
-#if defined(PLATFORM_LINUX)
-            return !nvidiaInteropWorkaroundDisabled() && isNvidiaPhysicalDevice(dev);
-#else
-            (void)dev;
-            return false;
-#endif
+            static const bool disabled =
+                getenv("RV_VULKAN_FORCE_NO_DEDICATED") != nullptr || getenv("RV_VULKAN_DISABLE_DEDICATED_ALLOCATION") != nullptr;
+            return disabled;
         }
+
+        const char* tilingName(VkImageTiling tiling) { return tiling == VK_IMAGE_TILING_OPTIMAL ? "OPTIMAL" : "LINEAR"; }
+
+        // RV_VULKAN_FORCE_TILING=optimal|linear; nullopt when unset or unrecognized.
+        std::optional<VkImageTiling> forcedTilingRequested()
+        {
+            const char* value = getenv("RV_VULKAN_FORCE_TILING");
+            if (!value)
+            {
+                return std::nullopt;
+            }
+
+            std::string lowered(value);
+            std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                           [](unsigned char ch) { return static_cast<char>(::tolower(ch)); });
+            if (lowered == "optimal")
+            {
+                return VK_IMAGE_TILING_OPTIMAL;
+            }
+            if (lowered == "linear")
+            {
+                return VK_IMAGE_TILING_LINEAR;
+            }
+
+            cout << "WARNING: VulkanWindow: RV_VULKAN_FORCE_TILING='" << value
+                 << "' is not recognized (expected 'optimal' or 'linear'); using the negotiated tiling" << endl;
+            return std::nullopt;
+        }
+
+#ifdef PLATFORM_WINDOWS
+        constexpr VkExternalMemoryHandleTypeFlagBits memoryHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+        constexpr VkExternalMemoryHandleTypeFlagBits memoryHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
     } // namespace
+
+    bool VulkanWindow::physicalDeviceMatchesUUID(const unsigned char* uuid, size_t size) const
+    {
+        if (!m_vkPhysicalDevice || !uuid || size != VK_UUID_SIZE)
+        {
+            return false;
+        }
+
+        VkPhysicalDeviceIDProperties idProperties = {};
+        idProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+
+        VkPhysicalDeviceProperties2 properties = {};
+        properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        properties.pNext = &idProperties;
+        vkGetPhysicalDeviceProperties2(m_vkPhysicalDevice, &properties);
+
+        return std::equal(idProperties.deviceUUID, idProperties.deviceUUID + VK_UUID_SIZE, uuid);
+    }
+
+    void VulkanWindow::negotiateInteropConfig()
+    {
+        if (m_interopNegotiated)
+        {
+            return;
+        }
+        m_interopNegotiated = true;
+
+        InteropConfig cfg;
+        //  Must cover GL's use too (it renders into the image): with only
+        //  TRANSFER_SRC the driver may pick a compressed layout GL cannot read.
+        cfg.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+        //  Exportability alone does not guarantee a usable import, so try the
+        //  vendor's preferred tiling first. See useOptimalTilingForInterop().
+        const bool preferOptimal = useOptimalTilingForInterop(m_vkPhysicalDevice);
+        const std::array<VkImageTiling, 2> candidates = {preferOptimal ? VK_IMAGE_TILING_OPTIMAL : VK_IMAGE_TILING_LINEAR,
+                                                         preferOptimal ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL};
+
+        auto probeTiling = [&](VkImageTiling tiling, VkExternalMemoryFeatureFlags& features) -> bool
+        {
+            VkPhysicalDeviceExternalImageFormatInfo extInfo = {};
+            extInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO;
+            extInfo.handleType = memoryHandleType;
+
+            VkPhysicalDeviceImageFormatInfo2 fmtInfo = {};
+            fmtInfo.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2;
+            fmtInfo.pNext = &extInfo;
+            fmtInfo.format = VK_FORMAT_A2B10G10R10_UNORM_PACK32; // == GL_RGB10_A2
+            fmtInfo.type = VK_IMAGE_TYPE_2D;
+            fmtInfo.tiling = tiling;
+            fmtInfo.usage = cfg.usage;
+
+            VkExternalImageFormatProperties extProps = {};
+            extProps.sType = VK_STRUCTURE_TYPE_EXTERNAL_IMAGE_FORMAT_PROPERTIES;
+
+            VkImageFormatProperties2 props = {};
+            props.sType = VK_STRUCTURE_TYPE_IMAGE_FORMAT_PROPERTIES_2;
+            props.pNext = &extProps;
+
+            const VkResult result = vkGetPhysicalDeviceImageFormatProperties2(m_vkPhysicalDevice, &fmtInfo, &props);
+            features = extProps.externalMemoryProperties.externalMemoryFeatures;
+            if (result != VK_SUCCESS)
+            {
+                return false;
+            }
+
+            return (extProps.externalMemoryProperties.compatibleHandleTypes & memoryHandleType) != 0
+                   && (features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) != 0
+                   && (features & VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT) != 0;
+        };
+
+        VkExternalMemoryFeatureFlags features = 0;
+        for (VkImageTiling tiling : candidates)
+        {
+            if (probeTiling(tiling, features))
+            {
+                cfg.supported = true;
+                cfg.tiling = tiling;
+                cfg.dedicatedOnly = (features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+                break;
+            }
+        }
+
+        if (!cfg.supported)
+        {
+            cfg.rejectReason = "no tiling is exportable at A2B10G10R10 with COLOR_ATTACHMENT|TRANSFER_SRC usage";
+            m_interopConfig = cfg;
+            return;
+        }
+
+        const std::optional<VkImageTiling> forcedTiling = forcedTilingRequested();
+        if (forcedTiling && *forcedTiling != cfg.tiling)
+        {
+            if (probeTiling(*forcedTiling, features))
+            {
+                cfg.tiling = *forcedTiling;
+                cfg.dedicatedOnly = (features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
+            }
+            else
+            {
+                cout << "WARNING: VulkanWindow: RV_VULKAN_FORCE_TILING=" << tilingName(*forcedTiling)
+                     << " refused -- the driver does not report it as exportable; using " << tilingName(cfg.tiling) << endl;
+            }
+        }
+
+        if (ImageRenderer::debugGpu())
+        {
+            cout << "INFO: VulkanWindow: interop tiling=" << tilingName(cfg.tiling) << (cfg.dedicatedOnly ? " (dedicated only)" : "")
+                 << endl;
+        }
+
+        m_interopConfig = cfg;
+    }
 
     void VulkanWindow::cleanupSharedImage(uint32_t slot)
     {
@@ -1065,7 +1227,8 @@ namespace Rv
         info.height = 0;
         info.size = 0;
         info.capacityHeight = 0;
-        info.optimalTiling = 0;
+        info.tiling = VK_IMAGE_TILING_LINEAR;
+        info.dedicatedAllocation = false;
         m_sharedCapacityW[slot] = 0;
         m_sharedCapacityH[slot] = 0;
     }
@@ -1101,6 +1264,16 @@ namespace Rv
     {
         if (!m_vkDevice || !m_externalInteropSupported)
             return nullptr;
+
+        if (!m_interopConfig.supported)
+        {
+            if (ImageRenderer::debugGpu())
+            {
+                cout << "INFO: VulkanWindow: getSharedImageInfo: interop unavailable (" << m_interopConfig.rejectReason
+                     << "); using the CPU readback path" << endl;
+            }
+            return nullptr;
+        }
 
         // Build/return the shared image for the current in-flight ring slot.
         const uint32_t slot = m_currentFrame;
@@ -1150,9 +1323,8 @@ namespace Rv
                  << capH << " for request " << w << "x" << h << endl;
         }
 
-        // OPTIMAL tiling on NVIDIA (the fix for the blank large-image bug); LINEAR
-        // elsewhere. See useOptimalTilingForInterop().
-        const bool optimalTiling = useOptimalTilingForInterop(m_vkPhysicalDevice);
+        // Negotiated once per device; see negotiateInteropConfig().
+        const bool optimalTiling = m_interopConfig.tiling == VK_IMAGE_TILING_OPTIMAL;
 
         // 1. Create Shared Image
         VkExternalMemoryImageCreateInfo extMemInfo = {};
@@ -1179,8 +1351,9 @@ namespace Rv
         imageInfo.mipLevels = 1;
         imageInfo.arrayLayers = 1;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.tiling = optimalTiling ? VK_IMAGE_TILING_OPTIMAL : VK_IMAGE_TILING_LINEAR;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT; // Only used as transfer src in Vulkan
+        imageInfo.tiling = m_interopConfig.tiling;
+        // GL renders into it and Vulkan copies from it; see negotiateInteropConfig().
+        imageInfo.usage = m_interopConfig.usage;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -1245,18 +1418,72 @@ namespace Rv
             info.strideWidth = static_cast<int>(layout.rowPitch / 4);
         }
         info.capacityHeight = capH; // GL imports the texture at capacity dimensions
-        info.optimalTiling = optimalTiling ? 1 : 0;
+        info.tiling = m_interopConfig.tiling;
 
-        VkMemoryRequirements memReqs;
-        vkGetImageMemoryRequirements(m_vkDevice, m_vkSharedImage[slot], &memReqs);
+        //  Some drivers (AMD on Windows) require dedicated memory for external
+        //  images; binding non-dedicated memory silently yields an all-zero GL
+        //  texture.
+        VkMemoryDedicatedRequirements dedicatedReqs = {};
+        dedicatedReqs.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS;
+
+        VkMemoryRequirements2 memReqs2 = {};
+        memReqs2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+        memReqs2.pNext = &dedicatedReqs;
+
+        VkImageMemoryRequirementsInfo2 memReqsInfo = {};
+        memReqsInfo.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+        memReqsInfo.image = m_vkSharedImage[slot];
+
+        vkGetImageMemoryRequirements2(m_vkDevice, &memReqsInfo, &memReqs2);
+        const VkMemoryRequirements& memReqs = memReqs2.memoryRequirements;
+
+        //  The decision GL mirrors. RV_VULKAN_FORCE_NO_DEDICATED may relax a
+        //  preference, never a requirement.
+        bool useDedicated =
+            m_interopConfig.dedicatedOnly || dedicatedReqs.requiresDedicatedAllocation || dedicatedReqs.prefersDedicatedAllocation;
+        if (dedicatedAllocationDisabled() && !m_interopConfig.dedicatedOnly && !dedicatedReqs.requiresDedicatedAllocation)
+        {
+            useDedicated = false;
+        }
+        info.dedicatedAllocation = useDedicated;
+
+        if (ImageRenderer::debugGpu())
+        {
+            cout << "INFO: VulkanWindow: getSharedImageInfo: shared image slot " << slot << " tiling=" << tilingName(info.tiling)
+                 << " memory=" << (useDedicated ? "dedicated" : "non-dedicated")
+                 << " (driver requires=" << (dedicatedReqs.requiresDedicatedAllocation ? "yes" : "no")
+                 << " prefers=" << (dedicatedReqs.prefersDedicatedAllocation ? "yes" : "no") << ")" << endl;
+        }
+
+        //  pNext chain, built back to front:
+        //    allocInfo -> exportAllocInfo [-> dedicatedAllocInfo] [-> exportWin32Info]
+        void* chain = nullptr;
+
+#ifdef PLATFORM_WINDOWS
+        //  Required by the spec for OPAQUE_WIN32 handles.
+        VkExportMemoryWin32HandleInfoKHR exportWin32Info = {};
+        exportWin32Info.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR;
+        exportWin32Info.pNext = chain;
+        exportWin32Info.pAttributes = nullptr; // default security attributes
+        exportWin32Info.dwAccess = GENERIC_ALL;
+        exportWin32Info.name = nullptr; // unnamed: shared within this process only
+        chain = &exportWin32Info;
+#endif
+
+        VkMemoryDedicatedAllocateInfo dedicatedAllocInfo = {};
+        if (useDedicated)
+        {
+            dedicatedAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+            dedicatedAllocInfo.pNext = chain;
+            dedicatedAllocInfo.image = m_vkSharedImage[slot];
+            dedicatedAllocInfo.buffer = VK_NULL_HANDLE;
+            chain = &dedicatedAllocInfo;
+        }
 
         VkExportMemoryAllocateInfo exportAllocInfo = {};
         exportAllocInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
-#ifdef PLATFORM_WINDOWS
-        exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-#else
-        exportAllocInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
-#endif
+        exportAllocInfo.pNext = chain;
+        exportAllocInfo.handleTypes = memoryHandleType;
 
         VkMemoryAllocateInfo allocInfo = {};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
