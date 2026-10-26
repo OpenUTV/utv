@@ -23,6 +23,8 @@
 #include <TwkGLF/GLFBO.h>
 #include <TwkMath/Frustum.h>
 #include <stdio.h>
+#include <array>
+#include <vector>
 
 #include <TwkFB/FrameBuffer.h>
 #include <TwkFB/IO.h>
@@ -955,39 +957,43 @@ namespace Rv
         HWND hwnd = reinterpret_cast<HWND>(windowOnTargetScreen->winId());
         HDC hdc = GetDC(hwnd);
 
+        // Start empty: a screen with no profile must not keep a previous one.
+        m_colorProfile = ColorProfile();
+
         if (hdc)
         {
-            // Look for the profile path
-            unsigned long pathLen;
+            // Look for the profile path. pathLen was read uninitialized, and
+            // the buffers were freed with delete instead of delete[].
+            DWORD pathLen = 0;
             GetICMProfile(hdc, &pathLen, NULL);
-            char* path = new char[pathLen];
 
-            if (GetICMProfile(hdc, &pathLen, path))
+            std::vector<char> path(pathLen > 0 ? pathLen : 1);
+
+            if (pathLen > 0 && GetICMProfile(hdc, &pathLen, path.data()))
             {
                 // If we found a profile lets set the type,
                 // url, and description
 
                 m_colorProfile.type = ICCProfile;
 
-                unsigned long maxLen = 2084;
-                char* url = new char[maxLen];
-                UrlCreateFromPath(path, url, &maxLen, NULL);
-                m_colorProfile.url = url;
+                DWORD maxLen = 2084;
+                std::vector<char> url(maxLen);
+                if (SUCCEEDED(UrlCreateFromPath(path.data(), url.data(), &maxLen, 0)))
+                {
+                    m_colorProfile.url = url.data();
+                }
 
-                char desc[256];
-                cmsHPROFILE profile = cmsOpenProfileFromFile(path, "r");
-                cmsGetProfileInfoASCII(profile, cmsInfoDescription, "en", "US", desc, 256);
-                m_colorProfile.description = desc;
-
-                delete url;
+                //  Null when the reported profile path is gone or unreadable.
+                if (cmsHPROFILE profile = cmsOpenProfileFromFile(path.data(), "r"))
+                {
+                    std::array<char, 256> desc{};
+                    cmsGetProfileInfoASCII(profile, cmsInfoDescription, "en", "US", desc.data(), desc.size());
+                    m_colorProfile.description = desc.data();
+                    cmsCloseProfile(profile);
+                }
             }
 
-            delete path;
             ReleaseDC(hwnd, hdc);
-        }
-        else
-        {
-            m_colorProfile = ColorProfile();
         }
 
         return m_colorProfile;
