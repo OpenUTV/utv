@@ -145,7 +145,10 @@ namespace IPCore
             std::vector<std::string> files;
             const QDir dir(QString::fromStdString(tipDir()));
             for (const QFileInfo& fi : dir.entryInfoList(QStringList() << "*.png", QDir::Files, QDir::Name))
-                files.push_back(fi.fileName().toStdString());
+            {
+                if (!fi.fileName().startsWith("._"))
+                    files.push_back(fi.fileName().toStdString());
+            }
             return files;
         }
 

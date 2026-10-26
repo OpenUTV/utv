@@ -262,7 +262,7 @@ jobs:
           SHORT_SHA=$(git rev-parse --short=7 HEAD)
           SAFE_BRANCH="${{ needs.check-authorization.outputs.safe_tag }}"
           cd _build/stage/app
-          ditto -c -k --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
+          ditto -c -k --sequesterRsrc --keepParent UTV.app "${GITHUB_WORKSPACE}/_dist/UTV-${SAFE_BRANCH}-${SHORT_SHA}-macOS-arm64.zip"
         shell: bash
 
       - name: Upload macOS Branch Artifact

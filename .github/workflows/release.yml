@@ -315,7 +315,7 @@ jobs:
             export COPYFILE_DISABLE=1
             find "$APP_PATH" -name "._*" -delete
             cd _build/stage/app
-            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+            /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
 
             if [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ] && [ -n "${APPLE_API_KEY}" ]; then
               echo "--- Submitting to Apple Notary Service ---"
@@ -352,7 +352,7 @@ jobs:
               xcrun stapler staple UTV.app
               xcrun stapler validate UTV.app
               rm -f "$ZIP_NAME"
-              /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+              /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
             else
               echo "Apple Notary API credentials not configured; skipping notarization submission."
             fi
@@ -360,7 +360,7 @@ jobs:
             echo "No Developer ID certificate configured. Applying Ad-Hoc code signature."
             codesign --force --deep --sign - "$APP_PATH"
             cd _build/stage/app
-            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+            /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
           fi
         shell: bash
 

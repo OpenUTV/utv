@@ -59,6 +59,10 @@ namespace IPCore
                     {
                         path p = di->path();
 
+                        //  Skip macOS AppleDouble files ("._name.gto")
+                        if (p.filename().string().compare(0, 2, "._") == 0)
+                            continue;
+
                         if (p.has_extension())
                         {
                             path ext = p.extension();

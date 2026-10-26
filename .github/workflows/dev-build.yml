@@ -250,7 +250,7 @@ jobs:
             export COPYFILE_DISABLE=1
             find "$APP_PATH" -name "._*" -delete
             cd _build/stage/app
-            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+            /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
 
             if [ -n "${APPLE_API_KEY_ID}" ] && [ -n "${APPLE_API_ISSUER}" ] && [ -n "${APPLE_API_KEY}" ]; then
               KEY_FILE=$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8
@@ -258,12 +258,12 @@ jobs:
               xcrun notarytool submit "$ZIP_NAME" --key "$KEY_FILE" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait
               xcrun stapler staple UTV.app
               rm -f "$ZIP_NAME"
-              /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+              /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
             fi
           else
             codesign --force --deep --sign - "$APP_PATH"
             cd _build/stage/app
-            /usr/bin/ditto -c -k --keepParent UTV.app "$ZIP_NAME"
+            /usr/bin/ditto -c -k --sequesterRsrc --keepParent UTV.app "$ZIP_NAME"
           fi
         shell: bash
 

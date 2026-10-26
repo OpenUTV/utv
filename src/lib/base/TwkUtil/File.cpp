@@ -310,6 +310,10 @@ namespace TwkUtil
 
                 for (int f = 0; f < re.matchCount(); ++f)
                 {
+                    //  Skip macOS AppleDouble files ("._name"), which unzip
+                    //  and SMB shares leave next to the real ones.
+                    if (re.fileName(f).compare(0, 2, "._") == 0)
+                        continue;
                     matchedFiles.push_back(pathdirs[d] + "/" + re.fileName(f));
                 }
             }

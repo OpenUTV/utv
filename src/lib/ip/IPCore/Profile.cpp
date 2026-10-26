@@ -48,7 +48,7 @@ namespace IPCore
                     {
                         path p = q->path();
 
-                        if (p.extension() == ".profile")
+                        if (p.extension() == ".profile" && p.filename().string().compare(0, 2, "._") != 0)
                         {
                             fspaths.push_back(p);
                         }
