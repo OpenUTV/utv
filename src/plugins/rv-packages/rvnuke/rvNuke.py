@@ -5,6 +5,7 @@
 #
 from __future__ import print_function
 
+import ast
 import nuke
 import nukescripts
 import os
@@ -1033,9 +1034,13 @@ class RvPreferences:
 
         prefsFileName = self.prefsPath()
         if os.path.exists(prefsFileName):
-            f = open(prefsFileName)
-            newDict = eval(f.read())
-            f.close()
+            # saveToDisk writes str(dict); read it back without running it as code.
+            try:
+                with open(prefsFileName) as f:
+                    newDict = ast.literal_eval(f.read())
+            except (OSError, SyntaxError, ValueError) as e:
+                log("    can't read prefs '%s': %s" % (prefsFileName, e))
+                newDict = {}
 
             for k in newDict:
                 if k in self.prefs:

@@ -18,6 +18,7 @@
 #include <string_view>
 #include <iostream>
 
+#include <QProcess>
 #include <QRegularExpression>
 
 namespace
@@ -684,24 +685,22 @@ namespace Rv
 
                 if (fbio)
                 {
-                    string makeFBIO = TwkApp::Bundle::mainBundle()->executableFile("makeFBIOformats");
-                    QFileInfo info(outfilename.c_str());
-                    QString dir = info.dir().absolutePath();
-                    string cmd = makeFBIO;
-                    cmd += " ";
-                    cmd += dir.toUtf8().constData();
+                    //
+                    //  Close the plugin first so makeFBIOformats sees all of
+                    //  it, and run it without a shell: the support directory
+                    //  can contain spaces ("Application Support") or shell
+                    //  metacharacters.
+                    //
 
-                    if (system(cmd.c_str()) == -1)
+                    outfile.close();
+
+                    const QString makeFBIO = QString::fromStdString(TwkApp::Bundle::mainBundle()->executableFile("makeFBIOformats"));
+                    const QString dir = QFileInfo(QString::fromUtf8(outfilename.c_str())).dir().absolutePath();
+
+                    if (QProcess::execute(makeFBIO, QStringList() << dir) < 0)
                     {
-                        cerr << "ERROR: executing command " << cmd << endl;
+                        cerr << "ERROR: executing command " << makeFBIO.toStdString() << " " << dir.toStdString() << endl;
                     }
-
-                    // QProcess process;
-                    // QStringList args;
-                    // args.push_back(dir);
-                    // args.push_back(dir);
-                    // process.start(makeFBIO.c_str(), args);
-                    // process.waitForFinished();
                 }
             }
 
