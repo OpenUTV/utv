@@ -51,15 +51,32 @@ namespace Rv
             return;
         }
 
+        PyGILState_STATE gstate = PyGILState_Ensure();
+
+        //
+        //  Call a snapshot, holding a reference to each callback: one that
+        //  registers or unregisters a callback would otherwise invalidate
+        //  the iteration, or free itself while it runs.
+        //
+
+        std::vector<PyObject*> callbacks;
+        callbacks.reserve(s_callbacks.size());
         for (auto& cb : s_callbacks)
         {
-            PyGILState_STATE gstate = PyGILState_Ensure();
-            PyObject* result = PyObject_CallObject(cb.get(), nullptr);
+            Py_INCREF(cb.get());
+            callbacks.push_back(cb.get());
+        }
+
+        for (PyObject* cb : callbacks)
+        {
+            PyObject* result = PyObject_CallObject(cb, nullptr);
             if (!result && PyErr_Occurred())
                 PyErr_Print();
             Py_XDECREF(result);
-            PyGILState_Release(gstate);
+            Py_DECREF(cb);
         }
+
+        PyGILState_Release(gstate);
     }
 
     int ImGuiPythonBridge::nbCallbacks() { return (int)s_callbacks.size(); }

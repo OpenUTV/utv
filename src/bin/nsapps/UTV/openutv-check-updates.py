@@ -14,6 +14,7 @@ import re
 import time
 import shutil
 import subprocess
+import tempfile
 import webbrowser
 import platform
 import urllib.request
@@ -289,8 +290,9 @@ def prompt_update_available(latest_tag, current_ver, is_deps=False, download_url
 
         upgrade_label = "Upgrade via Homebrew" if has_cask else "Download Update"
         esc_title = f"{item_name} Update Available"
+        esc_tag = str(latest_tag).replace("\\", "\\\\").replace('"', '\\"')
         esc_msg = (
-            f"{item_name} {latest_tag} is now available (you are running {current_ver}).\\n\\n"
+            f"{item_name} {esc_tag} is now available (you are running {current_ver}).\\n\\n"
             f"Would you like to install the update now?"
         )
 
@@ -306,8 +308,10 @@ def prompt_update_available(latest_tag, current_ver, is_deps=False, download_url
 
         if choice == upgrade_label:
             if has_cask:
-                script_path = "/tmp/openutv_upgrade.command"
-                with open(script_path, "w") as f:
+                # mkstemp creates the file with a random name, readable only by us, so
+                # another user can't plant or swap the script in the shared /tmp.
+                fd, script_path = tempfile.mkstemp(prefix="openutv_upgrade_", suffix=".command")
+                with os.fdopen(fd, "w") as f:
                     f.write("""#!/bin/bash
 clear 2>/dev/null || true
 echo "================================================================="
@@ -336,7 +340,7 @@ else
 fi
 read -n 1 -s -r -p "Press any key to close..." && exit 0
 """)
-                os.chmod(script_path, 0o755)
+                os.chmod(script_path, 0o700)
                 subprocess.run(["open", script_path])
             else:
                 webbrowser.open(target_url)

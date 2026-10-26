@@ -2153,16 +2153,14 @@ namespace TwkMovie
         rotation = (rotEntry) ? atoi(rotEntry->value) : 0;
 
         // If rotation metadata not in metadata, try to get it from side data
-        if (!rotEntry && videoCodecContext->nb_coded_side_data > 0)
+        if (!rotEntry && videoStream->codecpar->nb_coded_side_data > 0)
         {
             double rotationFromSideData = 0;
-            for (int i = 0; i < videoCodecContext->nb_coded_side_data; ++i)
+            const AVPacketSideData* sd = av_packet_side_data_get(videoStream->codecpar->coded_side_data,
+                                                                 videoStream->codecpar->nb_coded_side_data, AV_PKT_DATA_DISPLAYMATRIX);
+            if (sd && sd->size >= 9 * sizeof(int32_t))
             {
-                const AVPacketSideData* sd = &videoStream->codecpar->coded_side_data[i];
-                if (sd->type == AV_PKT_DATA_DISPLAYMATRIX)
-                {
-                    rotationFromSideData = av_display_rotation_get((int32_t*)sd->data);
-                }
+                rotationFromSideData = av_display_rotation_get(reinterpret_cast<const int32_t*>(sd->data));
             }
 
             // Getting rid of negative rotation metadata

@@ -331,7 +331,7 @@ class RvMonitor:
                     log("sessionDir setting changed: '%s'" % self.sessionDir)
                     log("restarting RV")
                     self.running = False
-                    while self.thread.isAlive():
+                    while self.thread.is_alive():
                         time.sleep(0.1)
                     rvmon.initializeRvSide()
                 else:

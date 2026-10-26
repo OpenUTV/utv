@@ -1251,7 +1251,7 @@ namespace IPCore
 
         err = clEnqueueReleaseGLObjects(m_clContext.commandQueue, 1, &clImage, 0, 0, 0);
         printCLError(err);
-        err = clEnqueueAcquireGLObjects(m_clContext.commandQueue, 1, &histoOut, 0, 0, 0);
+        err = clEnqueueReleaseGLObjects(m_clContext.commandQueue, 1, &histoOut, 0, 0, 0);
         printCLError(err);
         clFlush(m_clContext.commandQueue);
 
