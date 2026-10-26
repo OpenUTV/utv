@@ -69,6 +69,11 @@ namespace Rv
 
         bool event(QEvent* event) override;
 
+        //  Key and shortcut events another widget forwards to the viewport
+        //  (the Session Manager dock does, through mainViewWidget()), with the
+        //  same de-duplication as event().
+        bool forwardKeyEvent(QEvent* event);
+
         bool firstPaintCompleted() const { return m_firstPaintCompleted; }
 
         void absolutePosition(int& x, int& y) const;

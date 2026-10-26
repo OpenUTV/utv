@@ -2340,6 +2340,41 @@ namespace Rv
     // event()
     //--------------------------------------------------------------------------
 
+    bool VulkanWindow::forwardKeyEvent(QEvent* event)
+    {
+        if (event->type() != QEvent::KeyPress && event->type() != QEvent::KeyRelease && event->type() != QEvent::Shortcut
+            && event->type() != QEvent::ShortcutOverride)
+        {
+            return false;
+        }
+
+        //  Qt sends both ShortcutOverride and KeyPress for a key that isn't in
+        //  a menu; drop the repeat, as event() does.
+        if (QKeyEvent* kevent = dynamic_cast<QKeyEvent*>(event))
+        {
+            if (m_lastKey == kevent->key()
+                && (m_lastKeyType == QEvent::ShortcutOverride && (kevent->type() == QEvent::KeyPress) || (m_lastKeyType == kevent->type())))
+            {
+                m_lastKey = kevent->key();
+                m_lastKeyType = kevent->type();
+                event->accept();
+                return true;
+            }
+            m_lastKeyType = kevent->type();
+            m_lastKey = kevent->key();
+        }
+
+        Rv::Session* session = m_doc ? m_doc->session() : nullptr;
+        if (session && m_videoDevice && m_videoDevice->hasTranslator() && !m_stopProcessingEvents)
+        {
+            session->setEventVideoDevice(m_videoDevice);
+            m_videoDevice->translator().sendQTEvent(event);
+        }
+
+        event->accept();
+        return true;
+    }
+
     bool VulkanWindow::event(QEvent* event)
     {
         //

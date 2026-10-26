@@ -120,6 +120,31 @@ namespace Rv
         delete m_videoDevice;
     }
 
+    bool VulkanView::eventFilter(QObject* object, QEvent* event)
+    {
+        if (m_vulkanWindow && m_vulkanWindow->forwardKeyEvent(event))
+        {
+            return true;
+        }
+        return QWidget::eventFilter(object, event);
+    }
+
+    bool VulkanView::event(QEvent* event)
+    {
+        if (event->type() == QEvent::CursorChange && m_vulkanWindow)
+        {
+            if (testAttribute(Qt::WA_SetCursor))
+            {
+                m_vulkanWindow->setCursor(cursor());
+            }
+            else
+            {
+                m_vulkanWindow->unsetCursor();
+            }
+        }
+        return QWidget::event(event);
+    }
+
     void VulkanView::showEvent(QShowEvent* event)
     {
         QWidget::showEvent(event);

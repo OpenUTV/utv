@@ -95,8 +95,19 @@ namespace Rv
         void parentWindowDestroyed();
         void reattachVulkanWindow();
 
+    public:
+        //  The Session Manager's dock forwards key and shortcut events here
+        //  (mainViewWidget().eventFilter()), so UTV hotkeys work while it has
+        //  focus. Forwarded to the viewport window.
+        bool eventFilter(QObject* object, QEvent* event) override;
+
     protected:
         void showEvent(QShowEvent*) override;
+
+        //  Qt doesn't pass a widget's cursor down to an embedded QWindow, so
+        //  setCursor() on this widget (the setCursor command, cursor
+        //  auto-hide) is applied to the viewport window here.
+        bool event(QEvent* event) override;
 
     private:
         RvDocument* m_doc;
