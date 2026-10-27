@@ -222,8 +222,8 @@ def display_warning(config, mode, display):
     )
 
 
-def warnAboutDisplay(config, display):
-    warning = display_warning(config, PRESENTATION_MODE, display)
+def warnAboutDisplay(config, display, group):
+    warning = display_warning(config, presentationModeFor(group), display)
     if warning:
         print("WARNING: OCIO: " + warning)
         extra_commands.displayFeedback("OCIO: " + warning, 6.0)
@@ -232,6 +232,19 @@ def warnAboutDisplay(config, display):
 #   The view reads the mode once at startup, so a changed preference only
 #   applies after a restart. Read it here at the same time.
 PRESENTATION_MODE = read_presentation_mode()
+
+
+def presentationModeFor(group):
+    """
+    The presentation mode of a display group's device: PRESENTATION_MODE for
+    the main window (the Desktop module), "" for other outputs such as NDI or
+    SDI, which the macOS presentation setting doesn't apply to.
+    """
+    try:
+        desktop = commands.getStringProperty(group + ".device.moduleName")[0] == "Desktop"
+    except Exception:
+        desktop = False
+    return PRESENTATION_MODE if desktop else ""
 
 
 def auto_display_view(config, mode, colorspace, videoColorSpaces=()):
@@ -280,7 +293,7 @@ def ocio_node_from_media(config, node, default, media=None, attributes={}):
     if nodeType == "RVDisplayPipelineGroup":
         display, view = auto_display_view(
             config,
-            PRESENTATION_MODE,
+            attributes.get("presentation_mode", PRESENTATION_MODE),
             attributes.get("input_colorspace", ""),
             attributes.get("video_colorspaces", ()),
         )
@@ -489,7 +502,7 @@ def ocioDisplayEvent(group, display, view):
         commands.setStringProperty(dOCIO + ".ocio_display.display", [display], True)
         commands.setStringProperty(dOCIO + ".ocio_display.view", [view], True)
         commands.setIntProperty(dOCIO + ".ocio.active", [1], True)
-        warnAboutDisplay(theMode().config, display)
+        warnAboutDisplay(theMode().config, display, group)
         commands.redraw()
 
     return F
@@ -812,12 +825,13 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         dOCIO = groupMemberOfType(dpipeline, "OCIODisplay")
         if dOCIO is not None:
             self.autoViews[group] = displayValue(dOCIO)
-            warnAboutDisplay(self.config, self.autoViews[group][0])
+            warnAboutDisplay(self.config, self.autoViews[group][0], group)
         self.useSourceOCIOInputs()
         commands.redraw()
 
     def displayPipeline(self, dpipeline, source=None):
         attributes = {
+            "presentation_mode": presentationModeFor(commands.nodeGroup(dpipeline)),
             "input_colorspace": self.viewColorSpace(source),
             "video_colorspaces": [
                 c for c in map(self.inputColorSpace, allSources()) if isVideoColorSpace(self.config, c)
@@ -910,6 +924,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 colorspace = self.config.getColorSpaceFromFilepath(media)
             except Exception:
                 colorspace = ""
+            # PyOpenColorIO 2.6 returns (color space, rule index).
+            if isinstance(colorspace, tuple):
+                colorspace = colorspace[0]
         return colorspace
 
     def inputColorSpace(self, source=None):
@@ -1040,10 +1057,24 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         #   just going to assume the defaults
         #
 
-        if len(commands.nodesOfType("OCIOFile")) >= 1:
-            for group in commands.nodesOfType("RVDisplayGroup"):
-                if not self.usingOCIOForDisplay.get(group, False):
-                    self.useDisplayOCIO(group, source)
+        for group in commands.nodesOfType("RVDisplayGroup"):
+            if not self.usingOCIOForDisplay.get(group, False) and self.wantsDisplayOCIO(group, 1):
+                self.useDisplayOCIO(group, source)
+
+    def wantsDisplayOCIO(self, group, minOCIOSources):
+        """
+        Whether the display group should switch to OCIO on its own: a source
+        has an OCIO input, or the group is the main window and the macOS
+        presentation is HDR PQ or HLG. Those surfaces expect Rec.2100 and the
+        built-in display sends sRGB, so colors come out oversaturated and too
+        bright until an OCIO Rec.2100 display is used. Not for a display the
+        user turned OCIO off for.
+        """
+        if self.config is None or group in self.displayOptOut:
+            return False
+        if len(commands.nodesOfType("OCIOFile")) >= minOCIOSources:
+            return True
+        return presentationModeFor(group) in ("pq", "hlg")
 
     def beforeSessionRead(self, event):
         event.reject()
@@ -1052,18 +1083,21 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
     def afterSessionRead(self, event):
         event.reject()
         self.readingSession = False
-        if len(commands.nodesOfType("OCIOFile")) > 1:
-            for group in commands.nodesOfType("RVDisplayGroup"):
-                if not self.usingOCIOForDisplay.get(group, False):
-                    self.useDisplayOCIO(group)
+        for group in commands.nodesOfType("RVDisplayGroup"):
+            if not self.usingOCIOForDisplay.get(group, False) and self.wantsDisplayOCIO(group, 2):
+                self.useDisplayOCIO(group)
 
     def ocioActiveEvent(self, nodeType):
         def F(event):
             if nodeType not in ["OCIOFile", "OCIOLook"]:
+                # A display the user turned OCIO off for stays off: new
+                # sources don't switch it back on.
                 if isOCIODisplayManaged(nodeType)() == commands.CheckedMenuState:
                     self.disableDisplayOCIO(nodeType)
+                    self.displayOptOut.add(nodeType)
                 else:
                     self.useDisplayOCIO(nodeType)
+                    self.displayOptOut.discard(nodeType)
                 return
 
             evalInfo = commands.metaEvaluateClosestByType(commands.frame(), "RVFileSource", None)
@@ -1319,6 +1353,7 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
         rvtypes.MinorMode.__init__(self)
 
         self.usingOCIOForDisplay = {}
+        self.displayOptOut = set()
         self.readingSession = False
         self.config = None
         self.autoInputSources = {}
