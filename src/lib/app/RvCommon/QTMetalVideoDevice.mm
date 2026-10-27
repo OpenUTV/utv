@@ -155,7 +155,7 @@ namespace Rv
         // Delete the FBO and its colour texture while the GL context is current.
         // GLFBO::attachColorTexture passes owner=false so GLFBO does NOT delete
         // the colour texture — we must do it explicitly here.
-        if (m_glContext && (m_fbo || m_fboColorTex || m_ioFbos[0] || m_cpuFlipFbo))
+        if (m_glContext && (m_fbo || m_fboColorTex || m_ringCount > 0 || m_cpuFlipFbo))
         {
             m_glContext->makeCurrent(m_offscreenSurface);
             delete m_fbo;
@@ -482,10 +482,31 @@ namespace Rv
             m_interopDisabled = false;
         }
 
-        if (m_sharedWidth == w && m_sharedHeight == h && m_ioFbos[0])
+        if (m_sharedWidth == w && m_sharedHeight == h && m_ringCount > 0)
             return true;  // ring already matches the current size
 
         cleanupIOSurfaceTextures();
+
+        for (int i = 0; i < kInitialRingSize; ++i)
+        {
+            if (!addRingSurface(w, h))
+            {
+                cleanupIOSurfaceTextures();
+                latchInteropFailure();
+                return false;
+            }
+        }
+
+        m_sharedWidth  = w;
+        m_sharedHeight = h;
+        m_ringIndex    = 0;
+        return true;
+    }
+
+    bool QTMetalVideoDevice::addRingSurface(int w, int h) const
+    {
+        if (m_ringCount >= kMaxRingSize)
+            return false;
 
         // The Qt context is current (caller does makeCurrent first); its native
         // CGL context is what CGLTexImageIOSurface2D binds the IOSurface into.
@@ -494,7 +515,6 @@ namespace Rv
         {
             std::cerr << "[QTMetalVideoDevice] CGLGetCurrentContext() returned null "
                          "— falling back to CPU readback\n";
-            latchInteropFailure();
             return false;
         }
 
@@ -504,78 +524,93 @@ namespace Rv
         // 64RGBAHalf <-> GL_RGBA16F / GL_RGBA / GL_HALF_FLOAT.
         const MetalPresentationFormat& format = MetalView::presentationFormat();
 
-        for (int i = 0; i < kRingSize; ++i)
+        IOSurfaceRef surf = (IOSurfaceRef)createMetalPresentationSurface(w, h, format);
+        if (!surf)
         {
-            IOSurfaceRef surf = (IOSurfaceRef)createMetalPresentationSurface(w, h, format);
-            if (!surf)
-            {
-                std::cerr << "[QTMetalVideoDevice] IOSurfaceCreate failed "
-                          << w << "x" << h << " — CPU fallback\n";
-                cleanupIOSurfaceTextures();
-                latchInteropFailure();
-                return false;
-            }
-
-            GLuint tex = 0;
-            glGenTextures(1, &tex);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
-            glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-            // Alias the IOSurface's memory as the texture's storage — GPU writes
-            // to this texture land directly in the IOSurface the CALayer shows.
-            CGLError cglErr = CGLTexImageIOSurface2D(
-                cgl, GL_TEXTURE_RECTANGLE_ARB, format.glInternalFormat,
-                w, h, format.glFormat, format.glType,
-                surf, 0);
-            glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
-
-            if (cglErr != kCGLNoError)
-            {
-                std::cerr << "[QTMetalVideoDevice] CGLTexImageIOSurface2D failed: "
-                          << CGLErrorString(cglErr) << " — CPU fallback\n";
-                glDeleteTextures(1, &tex);
-                CFRelease(surf);
-                cleanupIOSurfaceTextures();
-                latchInteropFailure();
-                return false;
-            }
-
-            // Wrap the IOSurface-backed texture in a GLFBO so we can blit into it.
-            // owner=false (attachColorTexture) — we delete the texture ourselves.
-            TwkGLF::GLFBO* iofbo = new TwkGLF::GLFBO(w, h, format.glInternalFormat);
-            iofbo->attachColorTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
-
-            GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
-            if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
-            {
-                std::cerr << "[QTMetalVideoDevice] IOSurface FBO incomplete: 0x"
-                          << std::hex << status << std::dec << " — CPU fallback\n";
-                delete iofbo;
-                glDeleteTextures(1, &tex);
-                CFRelease(surf);
-                cleanupIOSurfaceTextures();
-                latchInteropFailure();
-                return false;
-            }
-
-            m_ioSurfaces[i] = (void*)surf;  // retained; released in cleanup
-            m_ioTextures[i] = tex;
-            m_ioFbos[i]     = iofbo;
+            std::cerr << "[QTMetalVideoDevice] IOSurfaceCreate failed "
+                      << w << "x" << h << " — CPU fallback\n";
+            return false;
         }
 
-        m_sharedWidth  = w;
-        m_sharedHeight = h;
-        m_ringIndex    = 0;
+        GLuint tex = 0;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        // Alias the IOSurface's memory as the texture's storage — GPU writes
+        // to this texture land directly in the IOSurface the CALayer shows.
+        CGLError cglErr = CGLTexImageIOSurface2D(
+            cgl, GL_TEXTURE_RECTANGLE_ARB, format.glInternalFormat,
+            w, h, format.glFormat, format.glType,
+            surf, 0);
+        glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+
+        if (cglErr != kCGLNoError)
+        {
+            std::cerr << "[QTMetalVideoDevice] CGLTexImageIOSurface2D failed: "
+                      << CGLErrorString(cglErr) << " — CPU fallback\n";
+            glDeleteTextures(1, &tex);
+            CFRelease(surf);
+            return false;
+        }
+
+        // Wrap the IOSurface-backed texture in a GLFBO so we can blit into it.
+        // owner=false (attachColorTexture) — we delete the texture ourselves.
+        TwkGLF::GLFBO* iofbo = new TwkGLF::GLFBO(w, h, format.glInternalFormat);
+        iofbo->attachColorTexture(GL_TEXTURE_RECTANGLE_ARB, tex);
+
+        GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+        if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
+        {
+            std::cerr << "[QTMetalVideoDevice] IOSurface FBO incomplete: 0x"
+                      << std::hex << status << std::dec << " — CPU fallback\n";
+            delete iofbo;
+            glDeleteTextures(1, &tex);
+            CFRelease(surf);
+            return false;
+        }
+
+        m_ioSurfaces[m_ringCount] = (void*)surf;  // retained; released in cleanup
+        m_ioTextures[m_ringCount] = tex;
+        m_ioFbos[m_ringCount]     = iofbo;
+        ++m_ringCount;
         return true;
+    }
+
+    int QTMetalVideoDevice::acquireRingSlot() const
+    {
+        // The window server keeps a surface "in use" for a while after the
+        // layer's contents moved on to a newer one. Rendering into it then
+        // shows a partly drawn frame (the checkerboard flicker), so take the
+        // oldest surface it has let go of.
+        for (int n = 0; n < m_ringCount; ++n)
+        {
+            const int slot = (m_ringIndex + n) % m_ringCount;
+            if (!IOSurfaceIsInUse((IOSurfaceRef)m_ioSurfaces[slot]))
+                return slot;
+        }
+
+        if (addRingSurface(m_sharedWidth, m_sharedHeight))
+            return m_ringCount - 1;
+
+        // Every surface is held and the ring can't grow: reuse the oldest, as
+        // before, rather than dropping the frame.
+        if (!m_ringFullLogged)
+        {
+            std::cerr << "INFO: [QTMetalVideoDevice] the compositor still holds all " << m_ringCount
+                      << " present surfaces; reusing the oldest.\n";
+            m_ringFullLogged = true;
+        }
+        return m_ringIndex;
     }
 
     void QTMetalVideoDevice::cleanupIOSurfaceTextures() const
     {
         // Must be called with the GL context current (GLFBO / glDeleteTextures).
-        for (int i = 0; i < kRingSize; ++i)
+        for (int i = 0; i < m_ringCount; ++i)
         {
             delete m_ioFbos[i];
             m_ioFbos[i] = nullptr;
@@ -591,6 +626,7 @@ namespace Rv
                 m_ioSurfaces[i] = nullptr;
             }
         }
+        m_ringCount    = 0;
         m_sharedWidth  = 0;
         m_sharedHeight = 0;
         m_ringIndex    = 0;
@@ -673,7 +709,7 @@ namespace Rv
         // --- Fast path: zero-copy GL -> IOSurface (no glFinish, no readback) ---
         if (ensureIOSurfaceTextures(w, h))
         {
-            const int slot = m_ringIndex;
+            const int slot = acquireRingSlot();
             TwkGLF::GLFBO* ioFbo = m_ioFbos[slot];
             bool blitOk = true;
 
@@ -735,7 +771,7 @@ namespace Rv
 
                 m_view->presentIOSurface(m_ioSurfaces[slot]);
 
-                m_ringIndex = (slot + 1) % kRingSize;
+                m_ringIndex = (slot + 1) % m_ringCount;
 
                 // Recovery telemetry: report once when the zero-copy path resumes
                 // after a stretch of CPU-readback presents.

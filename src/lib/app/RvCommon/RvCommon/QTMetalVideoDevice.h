@@ -112,6 +112,15 @@ namespace Rv
         bool ensureIOSurfaceTextures(int w, int h) const;
         void cleanupIOSurfaceTextures() const;
 
+        // Adds one IOSurface/texture/FBO to the end of the ring at the current
+        // size. Returns false if any step fails (nothing is added).
+        bool addRingSurface(int w, int h) const;
+
+        // The ring slot to render the next frame into: one the compositor no
+        // longer holds, growing the ring (up to kMaxRingSize) when every
+        // surface is still in use.
+        int acquireRingSlot() const;
+
         // Latch the zero-copy IOSurface interop off after a failure, but schedule
         // a retry (kInteropRetryFrames later) instead of disabling it for the
         // lifetime of the window — the failure may be transient (e.g. a
@@ -140,15 +149,20 @@ namespace Rv
         mutable bool m_glContextReady{false};
 
         // IOSurface present ring (zero-copy GL->IOSurface->CALayer path).
-        // Triple-buffered so the CA compositor can read the active surface
-        // while the previous surface finishes compositing and GL renders
-        // the next frame into the third one.
+        // Starts triple-buffered. The window server can hold a surface for
+        // several frames after it was replaced as the layer's contents (about
+        // half the time at 120 Hz, in every presentation mode), and drawing
+        // into a held surface shows partly drawn tiles: the checkerboard
+        // flicker. acquireRingSlot() skips held surfaces and grows the ring.
         // Stored as void* to keep this header free of ObjC/CoreVideo types.
-        static constexpr int kRingSize = 3;
-        mutable void* m_ioSurfaces[kRingSize]{nullptr, nullptr, nullptr}; // IOSurfaceRef
-        mutable GLuint m_ioTextures[kRingSize]{0, 0, 0};
-        mutable TwkGLF::GLFBO* m_ioFbos[kRingSize]{nullptr, nullptr, nullptr};
+        static constexpr int kInitialRingSize = 3;
+        static constexpr int kMaxRingSize = 8;
+        mutable void* m_ioSurfaces[kMaxRingSize]{}; // IOSurfaceRef
+        mutable GLuint m_ioTextures[kMaxRingSize]{};
+        mutable TwkGLF::GLFBO* m_ioFbos[kMaxRingSize]{};
+        mutable int m_ringCount{0};
         mutable int m_ringIndex{0};
+        mutable bool m_ringFullLogged{false}; // one-shot log when every surface is held
         mutable int m_sharedWidth{0};
         mutable int m_sharedHeight{0};
         mutable bool m_interopDisabled{false};   // interop currently off (with retry)
