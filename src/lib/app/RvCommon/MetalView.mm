@@ -59,7 +59,6 @@ namespace Rv
         , m_lastKey(0)
         , m_lastKeyType(QEvent::None)
         , m_caLayer(nullptr)
-        , m_ioSurface(nullptr)
         , m_ioSurfaceWidth(0)
         , m_ioSurfaceHeight(0)
         , m_lastPresentedSurface(nullptr)
@@ -101,12 +100,7 @@ namespace Rv
     {
         delete m_videoDevice;
 
-        // Release IOSurface
-        if (m_ioSurface)
-        {
-            CFRelease((IOSurfaceRef)m_ioSurface);
-            m_ioSurface = nullptr;
-        }
+        releaseCpuSurfaces();
 
         // Release CALayer (balance the __bridge_retained in initialize())
         if (m_caLayer)
@@ -294,10 +288,10 @@ namespace Rv
         if (!layer || w <= 0 || h <= 0)
             return;
 
-        // Create/recreate IOSurface if size changed.  Allocate the replacement
-        // before releasing the old surface so a failed recreate keeps the last
-        // good IOSurface for display.
-        if (!m_ioSurface
+        // Create/recreate the IOSurfaces if size changed.  Allocate the
+        // replacement before releasing the old surfaces so a failed recreate
+        // keeps the last good IOSurface for display.
+        if (m_ioSurfaceCount == 0
             || m_ioSurfaceWidth  != w
             || m_ioSurfaceHeight != h)
         {
@@ -309,17 +303,36 @@ namespace Rv
                 return;
             }
 
-            if (m_ioSurface)
-            {
-                CFRelease((IOSurfaceRef)m_ioSurface);
-            }
-
-            m_ioSurface       = newSurf;
+            releaseCpuSurfaces();
+            m_ioSurfaces[0]   = newSurf;
+            m_ioSurfaceCount  = 1;
             m_ioSurfaceWidth  = w;
             m_ioSurfaceHeight = h;
         }
 
-        IOSurfaceRef surf = (IOSurfaceRef)m_ioSurface;
+        // Write into the oldest surface the window server has let go of; add
+        // one when every surface is still held, and reuse the oldest only when
+        // no more can be added.
+        int slot = -1;
+        for (int n = 0; n < m_ioSurfaceCount && slot < 0; ++n)
+        {
+            const int s = (m_ioSurfaceNext + n) % m_ioSurfaceCount;
+            if (!IOSurfaceIsInUse((IOSurfaceRef)m_ioSurfaces[s]))
+                slot = s;
+        }
+        if (slot < 0 && m_ioSurfaceCount < kMaxCpuSurfaces)
+        {
+            if (void* added = createMetalPresentationSurface(w, h, presentationFormat()))
+            {
+                slot               = m_ioSurfaceCount++;
+                m_ioSurfaces[slot] = added;
+            }
+        }
+        if (slot < 0)
+            slot = m_ioSurfaceNext;
+        m_ioSurfaceNext = (slot + 1) % m_ioSurfaceCount;
+
+        IOSurfaceRef surf = (IOSurfaceRef)m_ioSurfaces[slot];
 
         // Lock the IOSurface for CPU write.  Bail out if the lock fails or the
         // base address is null — writing through a null/garbage pointer would
@@ -358,7 +371,18 @@ namespace Rv
         IOSurfaceUnlock(surf, 0, nullptr);
 
         // Push to display.
-        presentIOSurface(m_ioSurface);
+        presentIOSurface(surf);
+    }
+
+    void MetalView::releaseCpuSurfaces()
+    {
+        for (int i = 0; i < m_ioSurfaceCount; ++i)
+        {
+            CFRelease((IOSurfaceRef)m_ioSurfaces[i]);
+            m_ioSurfaces[i] = nullptr;
+        }
+        m_ioSurfaceCount = 0;
+        m_ioSurfaceNext  = 0;
     }
 
     //--------------------------------------------------------------------------

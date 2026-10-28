@@ -123,6 +123,11 @@ namespace Rv
         void presentCachedSurface();
 
         //
+        //  Release the CPU fallback path's IOSurfaces.
+        //
+        void releaseCpuSurfaces();
+
+        //
         //  Coalesced redraw request.  Posts a single QEvent::UpdateRequest per
         //  event-loop cycle (subsequent calls are no-ops until the pending
         //  render runs), mirroring the implicit coalescing QWidget::update()
@@ -170,13 +175,21 @@ namespace Rv
         QTimer m_eventProcessingTimer;
 
         //  Presentation objects — stored as void* to keep header pure C++.
-        void* m_caLayer;   // CALayer*
-        void* m_ioSurface; // IOSurfaceRef — owned here only by the CPU fallback path
+        void* m_caLayer; // CALayer*
+        //  IOSurfaceRefs owned here only by the CPU fallback path.  The window
+        //  server keeps a surface in use for a while after the layer's contents
+        //  move on, and writing into a held surface shows partly drawn tiles,
+        //  so presentPixelData() writes into one it has let go of, adding a
+        //  surface (up to kMaxCpuSurfaces) when every one is held.
+        static constexpr int kMaxCpuSurfaces = 8;
+        void* m_ioSurfaces[kMaxCpuSurfaces]{};
+        int m_ioSurfaceCount{0};
+        int m_ioSurfaceNext{0};
         int m_ioSurfaceWidth;
         int m_ioSurfaceHeight;
 
         //  Last IOSurface assigned to the CALayer (may be device-owned in the
-        //  zero-copy path or m_ioSurface in the fallback path).  Re-presented on
+        //  zero-copy path or one of m_ioSurfaces in the fallback path).  Re-presented on
         //  expose.  Not owned here; the CALayer retains its own contents.
         void* m_lastPresentedSurface;
 
