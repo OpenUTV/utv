@@ -393,13 +393,15 @@ namespace Rv
 
     void RvWebManager::managerSSLErrors(QNetworkReply* reply, QList<QSslError> errList)
     {
-        bool ignore = true;
+        //
+        //  Ignore ssl errors only if the request asked us to.  Requests made
+        //  directly on netManager() (networkAccessManager() in Mu and Python)
+        //  had no way to ask, so they follow UTV_IGNORE_SSL_ERRORS=1, for sites
+        //  whose certificates the system doesn't trust.
+        //
 
-        //
-        //  Ignore ssl errors either if the user asked us to, or if the request
-        //  was internally generated, so the user had no chance to specify the
-        //  behavior.
-        //
+        static const bool ignoreByDefault = qEnvironmentVariableIntValue("UTV_IGNORE_SSL_ERRORS") == 1;
+        bool ignore = ignoreByDefault;
 
         if (m_replyMap.contains(reply))
         {
@@ -409,12 +411,12 @@ namespace Rv
         if (ignore)
             reply->ignoreSslErrors();
 
-        if (reportErrors)
+        if (reportErrors || !ignore)
         {
             foreach (QSslError err, errList)
             {
                 cerr << "WARNING: " << ((ignore) ? "ignoring" : "not ignoring") << " SSL error: " << UTF8::qconvert(err.errorString())
-                     << endl;
+                     << " (" << UTF8::qconvert(reply->url().host()) << ")" << endl;
             }
         }
     }

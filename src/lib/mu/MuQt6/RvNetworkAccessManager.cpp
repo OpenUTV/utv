@@ -34,9 +34,12 @@ RvNetworkAccessManager::RvNetworkAccessManager(QObject* parent)
 
 void RvNetworkAccessManager::sslErrorsManagerSlot(QNetworkReply* reply, QList<QSslError> errors)
 {
-    reply->ignoreSslErrors();
+    // Like RvWebManager: certificate errors fail the request unless UTV_IGNORE_SSL_ERRORS=1.
+    static const bool ignore = qEnvironmentVariableIntValue("UTV_IGNORE_SSL_ERRORS") == 1;
+    if (ignore)
+        reply->ignoreSslErrors();
 
-    if (printErrors)
+    if (printErrors || !ignore)
     {
         foreach (QSslError err, errors)
         {
