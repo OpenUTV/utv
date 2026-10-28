@@ -58,6 +58,7 @@ With the **macOS Presentation** preference set to HDR PQ (Rec.2100), the viewer 
 ### Fixes
 
 - **Windows: high-DPI scaling is on by default**, so the UI is no longer tiny on scaled displays. Set `RV_NO_QT_HDPI_SUPPORT=1` to turn it off, on any platform (#144). Thanks to Jim Hourihan.
+- **Windows: when the viewer crashes, UTV says so** with the error code and the `openutv-diagnostics.cmd` to run for a bug report, instead of disappearing without a message (#189).
 - **Windows: paths with emoji and other characters outside the Basic Multilingual Plane open** instead of failing (#178).
 - **Export > Snapshot** wrote a blank white image on macOS and with the 10-bit Vulkan view. It now saves the frame (#147). Thanks to Jim Hourihan.
 - **UTV quits** when the Console, Preferences or another tool window is still open (#170). Thanks to Cédrik Fuoco.
