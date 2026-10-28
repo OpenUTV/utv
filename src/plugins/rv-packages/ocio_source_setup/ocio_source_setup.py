@@ -1164,6 +1164,9 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
     def selectConfig(self, event):
         try:
             config = commands.openFileDialog(True, False, False, "ocio|OCIO Config", None)[0]
+        except Exception:
+            return  # File dialog cancelled
+        try:
             self.config = OCIO.Config.CreateFromFile(config)
             OCIO.SetCurrentConfig(self.config)
             for source in commands.nodesOfType("RVFileSource") + commands.nodesOfType("RVImageSource"):
@@ -1180,8 +1183,8 @@ class OCIOSourceSetupMode(rvtypes.MinorMode):
                 self.useDisplayOCIO(group)
             commands.defineModeMenu("OCIO Source Setup", self.buildOCIOMenu(), True)
             commands.writeSettings("ocio_source_setup", "ocio_config", config)
-        except Exception as inst:
-            print(inst)
+        except Exception as error:
+            print(f"ERROR: Unable to select OCIO config: {error}")
 
     def buildOCIOMenu(self):
         #
