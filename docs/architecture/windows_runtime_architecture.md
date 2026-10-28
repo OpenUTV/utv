@@ -58,7 +58,7 @@ Each launcher:
 5. **Starts `<name>-bin.exe`** with the caller's arguments exactly as typed (`--software-gl` is the launcher's own option and is removed), the caller's standard handles, and:
    - the error mode `SEM_FAILCRITICALERRORS`, inherited by the program, so a missing or mismatched DLL ends it with an NTSTATUS exit code (`0xC0000135`, `0xC0000139`, ...) instead of one system dialog per DLL. The launcher turns that into one message naming the OpenUTVDeps release it used and the one the build needs;
    - a job object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`, so killing the launcher (a script's timeout, Task Manager) ends the program too. `JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK` keeps processes the program starts (a browser, an editor) out of the job.
-6. **Waits** and returns the program's exit code. The console launcher ignores Ctrl+C itself; the program gets it and exits.
+6. **Waits** and returns the program's exit code. The console launcher ignores Ctrl+C itself; the program gets it and exits. When the program crashes (any other NTSTATUS error code, such as `0xC0000005`), the launcher says so, because Windows usually shows nothing and the viewer would just disappear, and names `openutv-diagnostics.cmd` for the bug report.
 
 `utv --run <command> [args...]` runs any program with the OpenUTV environment.
 

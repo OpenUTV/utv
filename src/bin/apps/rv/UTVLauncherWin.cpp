@@ -114,6 +114,26 @@ namespace
         0xC0000142, // STATUS_DLL_INIT_FAILED
     };
 
+    // A program that crashed: an NTSTATUS error code, except Ctrl+C or closing its console.
+    bool IsCrash(DWORD exitCode) { return (exitCode & 0xF0000000) == 0xC0000000 && exitCode != 0xC000013A; }
+
+    const wchar_t* CrashName(DWORD exitCode)
+    {
+        switch (exitCode)
+        {
+        case 0xC0000005:
+            return L"access violation";
+        case 0xC00000FD:
+            return L"stack overflow";
+        case 0xC0000409:
+            return L"the program stopped itself after a fatal error";
+        case 0xC0000374:
+            return L"heap corruption";
+        default:
+            return nullptr;
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     //  Small helpers
     // ---------------------------------------------------------------------------------------------
@@ -1037,6 +1057,20 @@ int RunLauncher()
                         + DescribeDeps(deps) + L" (found through " + deps.source + L"). " + cause
                         + L"\n\nInstall OpenUTVDeps " UTV_DEPS_VERSION L" again from the download page.",
                     kDepsReleasesUrl);
+    }
+    else if (IsCrash(exitCode))
+    {
+        // Windows usually shows nothing when a program crashes: without this the viewer just disappears.
+        wchar_t status[32];
+        swprintf_s(status, L"0x%08lX", exitCode);
+        const wchar_t* name = CrashName(exitCode);
+        std::wstring details = BaseNameNoExe(target.path) + L" stopped with error " + status
+                               + (name ? L" (" + std::wstring(name) + L")" : L"") + L". It was started with " + DescribeDeps(deps) + L".";
+        std::wstring diagnostics = appDir + L"\\openutv-diagnostics.cmd";
+        if (FileExists(diagnostics))
+            details += L"\n\nTo report it, run " + diagnostics
+                       + L". It collects the logs and crash reports into a zip file to attach to a bug report.";
+        ReportError(L"OpenUTV quit unexpectedly", details, NULL);
     }
 
     return static_cast<int>(exitCode);
