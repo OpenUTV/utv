@@ -521,6 +521,8 @@ jobs:
       - name: Run tests (Linux)
         env:
           QT_QPA_PLATFORM: offscreen
+        # An explicit `shell: bash` adds -o pipefail (the default shell does not), so utvio failing under `| tail` fails the step.
+        shell: bash
         run: |
           # Staged Linux executables are launch wrappers that set up the library path themselves (#66).
           # First with an X display (utvio uses GLX): a virtual X server.
