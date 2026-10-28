@@ -62,6 +62,17 @@ int AppleProResContext::decode_frame(AVCodecContext* avctx, AVFrame* videoFrame,
     uint16_t version = readBE(header_chunk + 2);
     uint16_t width = readBE(header_chunk + 8);
     uint16_t height = readBE(header_chunk + 10);
+    if (width == 0 || height == 0)
+    {
+        return AVERROR_INVALIDDATA;
+    }
+
+    // Every packet carries its own frame size, so a stream can change size mid-way.  The frame buffer is reused
+    // between packets; drop it when the size or format changes so the conversion below can't write past its end.
+    if (videoFrame->buf[0] && (videoFrame->width != width || videoFrame->height != height || videoFrame->format != avctx->pix_fmt))
+    {
+        av_frame_unref(videoFrame);
+    }
 
     // Color primaries, transfer function, color space, and color range
     videoFrame->color_primaries = static_cast<AVColorPrimaries>(header_chunk[14]);
@@ -95,11 +106,15 @@ int AppleProResContext::decode_frame(AVCodecContext* avctx, AVFrame* videoFrame,
         }
     }
 
-    // Make sure we have memory in which to decode.  We assume that if the
-    // linesize[0] isn't initialized that we haven't gotten the buffer, yet.
-    if (!videoFrame->linesize[0])
+    // Make sure we have memory in which to decode.
+    if (!videoFrame->buf[0])
     {
-        av_frame_get_buffer(videoFrame, 0);
+        ret = av_frame_get_buffer(videoFrame, 0);
+        if (ret < 0)
+        {
+            av_log(avctx, AV_LOG_ERROR, "av_frame_get_buffer failed for %dx%d: %d\n", videoFrame->width, videoFrame->height, ret);
+            return ret;
+        }
     }
 
     // Allocate a decoder if we don't have one
