@@ -124,16 +124,15 @@ namespace TwkGLF
     //
     //  These two express "resolution x bytes-per-pixel". The bytes-per-pixel
     //  term is 8 (4-channel half) rather than 6 (3-channel half) because the
-    //  upload path expands 3-channel half/float frames to RGBA before upload:
-    //  GL_RGB16F/RGB32F have no native DMA path, so the driver would otherwise
-    //  expand per-pixel during the transfer (see the expandRGBToRGBA path in
-    //  ImageRenderer). Leaving the term at 6 would silently lower the maximum
-    //  workable resolution by ~25%, and a frame over the max makes pop() return
-    //  NULL, which falls back to the slow non-PBO upload -- the very stall the
-    //  transient-PBO work removed. Keep this in step with the widest format the
-    //  upload path can produce.
+    //  upload path expands 3-channel frames to RGBA before upload: GL_RGB
+    //  formats have no native DMA path, so the driver would otherwise expand
+    //  per-pixel during the transfer (see the expandRGBToRGBA path in
+    //  ImageRenderer). A frame over the max can't use one buffer: pop() returns
+    //  NULL for it, so ImageRenderer::uploadPlane() splits it into strips of at
+    //  most MAX_SIZE and only falls back to the slow non-PBO upload when that
+    //  takes more buffers than the pool has.
     //
-    //  MAX_SIZE = 4032x4536 at RGBA16 -> 18.3 Mpx ceiling, 140 MiB per buffer.
+    //  MAX_SIZE = 4032x4536 at RGBA16 -> 18.3 Mpx per buffer, 140 MiB.
     //  Note the fixed-size pool pre-allocates ceil(MAX_NB_BUFFERS * 1.05)
     //  buffers of this size, so raising it raises the pre-allocated footprint
     //  proportionally; the pool purges against its soft caps and refuses only
@@ -966,5 +965,13 @@ namespace TwkGLF
     }
 
     void DeletePBOPoolBuffers() { PBOWrap::deletePBOPoolBuffers(); }
+
+    //-----------------------------------------------------------------------------
+    //
+    size_t MaxPooledPBOBytes() { return PipelinePrefetchUseFixedSizePBOs() ? PipelinePrefetchFixedSizePBOsMaxSize() : 0; }
+
+    //-----------------------------------------------------------------------------
+    //
+    unsigned MaxPooledPBOs() { return PipelinePrefetchPoolMaxNbBuffers(); }
 
 } // namespace TwkGLF

@@ -638,11 +638,28 @@ void swap_bytes_32bit_MP(size_t width, size_t height, const uint32_t* FASTMEMCPY
 //------------------------------------------------------------------------------
 //  RGB -> RGBA expansion (inserts an opaque alpha component).
 //
-//  GPUs have no fast DMA path for 3-component float texture uploads
-//  (GL_RGB16F/GL_RGB32F): the driver expands RGB->RGBA per pixel, which is
-//  slow. Expanding on the CPU here lets the upload use the native
-//  GL_RGBA16F/GL_RGBA32F transfer path.
+//  GPUs have no fast DMA path for 3-component texture uploads (GL_RGB8,
+//  GL_RGB16, GL_RGB16F, GL_RGB32F): the driver expands RGB->RGBA per pixel,
+//  which is slow. Expanding on the CPU here lets the upload use the native
+//  RGBA transfer path.
 //
+void expand_rgb_to_rgba_8bit(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
+                             uint8_t* FASTMEMCPYRESTRICT outBuf, uint8_t alpha)
+{
+    for (size_t row = 0; row < height; row++)
+    {
+        const uint8_t* FASTMEMCPYRESTRICT p0 = inBuf + row * inRowBytes;
+        uint8_t* FASTMEMCPYRESTRICT p1 = outBuf + row * width * 4;
+        for (size_t x = 0; x < width; x++, p0 += 3, p1 += 4)
+        {
+            p1[0] = p0[0];
+            p1[1] = p0[1];
+            p1[2] = p0[2];
+            p1[3] = alpha;
+        }
+    }
+}
+
 void expand_rgb_to_rgba_16bit(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
                               uint16_t* FASTMEMCPYRESTRICT outBuf, uint16_t alpha)
 {
@@ -698,7 +715,10 @@ public:
 
     virtual void execute()
     {
-        if (sizeof(T) == 2)
+        if (sizeof(T) == 1)
+            expand_rgb_to_rgba_8bit(_width, _height, _inBuf, _inRowBytes, reinterpret_cast<uint8_t*>(_outBuf),
+                                    static_cast<uint8_t>(_alpha));
+        else if (sizeof(T) == 2)
             expand_rgb_to_rgba_16bit(_width, _height, _inBuf, _inRowBytes, reinterpret_cast<uint16_t*>(_outBuf),
                                      static_cast<uint16_t>(_alpha));
         else
@@ -735,6 +755,12 @@ static void expand_rgb_to_rgba_MP(size_t width, size_t height, const uint8_t* FA
         TwkFB::ThreadPool::addTask(new ExpandRGBToRGBATask<T>(&taskGroup, width, curHeight, curInBuf, inRowBytes, curOutBuf, alpha));
         curY += curHeight;
     }
+}
+
+void expand_rgb_to_rgba_8bit_MP(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
+                                uint8_t* FASTMEMCPYRESTRICT outBuf, uint8_t alpha)
+{
+    expand_rgb_to_rgba_MP<uint8_t>(width, height, inBuf, inRowBytes, outBuf, alpha);
 }
 
 void expand_rgb_to_rgba_16bit_MP(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,

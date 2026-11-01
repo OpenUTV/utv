@@ -217,8 +217,6 @@ namespace IPCore
             int uncropX; // position of the data window (can be negative) for
                          // uncropped
             int uncropY;
-
-            std::shared_ptr<TwkGLF::GLPixelBufferObjectFromPool> pPBOToGPU;
         };
 
         typedef stl_ext::replacement_allocator<std::pair<const std::string, TextureDescription*>> TextureDescriptionAlloc;

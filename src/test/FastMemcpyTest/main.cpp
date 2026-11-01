@@ -11,5 +11,5 @@
 int main(int argc, char* argv[])
 {
     TestFastMemcpy();
-    return 0;
+    return TestExpandRGBToRGBA() ? 0 : 1;
 }

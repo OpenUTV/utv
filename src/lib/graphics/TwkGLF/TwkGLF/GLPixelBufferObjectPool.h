@@ -27,6 +27,15 @@ namespace TwkGLF
 
     void DeletePBOPoolBuffers();
 
+    //
+    //  The most a caller can get from the to-GPU pool: one PBO of up to
+    //  MaxPooledPBOBytes() (0 means no limit), and up to MaxPooledPBOs() of
+    //  them at once. A transfer bigger than one PBO has to be split.
+    //
+
+    size_t MaxPooledPBOBytes();
+    unsigned MaxPooledPBOs();
+
     class GLPixelBufferObjectFromPool
     {
     public:

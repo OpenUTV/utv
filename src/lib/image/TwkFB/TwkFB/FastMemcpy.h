@@ -68,18 +68,29 @@ extern "C"
                                           uint32_t* FASTMEMCPYRESTRICT outBuf);
 
     /// @brief Expand packed 3-component RGB to packed 4-component RGBA by
-    /// inserting an opaque alpha, for 16-bit components (half float).
+    /// inserting an opaque alpha, for 8-bit components.
+    /// @see expand_rgb_to_rgba_16bit.
     ///
-    /// GPUs have no fast DMA path for 3-component float uploads (GL_RGB16F);
+    /// @param alpha Alpha value to insert (0xFF == opaque).
+    TWKFB_EXPORT void expand_rgb_to_rgba_8bit(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
+                                              uint8_t* FASTMEMCPYRESTRICT outBuf, uint8_t alpha);
+    TWKFB_EXPORT void expand_rgb_to_rgba_8bit_MP(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
+                                                 uint8_t* FASTMEMCPYRESTRICT outBuf, uint8_t alpha);
+
+    /// @brief Expand packed 3-component RGB to packed 4-component RGBA by
+    /// inserting an opaque alpha, for 16-bit components (half float or integer).
+    ///
+    /// GPUs have no fast DMA path for 3-component uploads (GL_RGB8, GL_RGB16F);
     /// the driver expands RGB->RGBA per pixel on upload. Doing the expansion on
-    /// the CPU here lets the texture use the native GL_RGBA16F transfer path.
+    /// the CPU here lets the texture use the native RGBA transfer path.
     ///
     /// @param width Pixels per row.
     /// @param height Number of rows.
     /// @param inBuf Source RGB buffer.
     /// @param inRowBytes Source scanline stride in bytes (>= width*3*2).
     /// @param outBuf Destination RGBA buffer (tightly packed, width*4*2 bytes/row).
-    /// @param alpha Raw 16-bit alpha value to insert (0x3C00 == half 1.0).
+    /// @param alpha Raw 16-bit alpha value to insert (0x3C00 == half 1.0,
+    /// 0xFFFF == opaque integer).
     TWKFB_EXPORT void expand_rgb_to_rgba_16bit(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
                                                uint16_t* FASTMEMCPYRESTRICT outBuf, uint16_t alpha);
     TWKFB_EXPORT void expand_rgb_to_rgba_16bit_MP(size_t width, size_t height, const uint8_t* FASTMEMCPYRESTRICT inBuf, size_t inRowBytes,
