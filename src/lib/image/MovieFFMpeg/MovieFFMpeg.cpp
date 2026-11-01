@@ -2504,6 +2504,16 @@ namespace TwkMovie
             }
         }
 
+        //  NotchLC's matrix and range are fixed by the codec: full range with
+        //  the Rec601 luma weights. FFmpeg's decoder gives YUV planes but tags
+        //  them as RGB, which leaves no conversion set, and a COLR atom can't
+        //  change how the data was encoded.
+        if (videoCodecContext->codec_id == AV_CODEC_ID_NOTCHLC)
+        {
+            track->fb.setConversion(ColorSpace::Rec601());
+            track->fb.setRange(ColorSpace::FullRange());
+        }
+
         // If any information was found in the COLR atom list it here
         if (track->colrType != "")
         {
