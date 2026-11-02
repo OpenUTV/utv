@@ -903,6 +903,10 @@ namespace TwkMovie
                 return AV_PIX_FMT_YUVA444P16LE;
             if (native == AV_PIX_FMT_NV12)
                 return AV_PIX_FMT_YUV420P;
+            if (native == AV_PIX_FMT_NV16)
+                return AV_PIX_FMT_YUV422P;
+            if (native == AV_PIX_FMT_NV24)
+                return AV_PIX_FMT_YUV444P;
             if (native == AV_PIX_FMT_P010LE)
                 return AV_PIX_FMT_YUV420P16LE;
 
