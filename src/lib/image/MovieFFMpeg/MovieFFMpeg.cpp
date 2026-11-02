@@ -6227,8 +6227,6 @@ namespace TwkMovie
             } while (location != string::npos);
             break;
         case AV_OPT_TYPE_CONST:
-        case AV_OPT_TYPE_INT:
-        case AV_OPT_TYPE_INT64:
             int integer;
             invalue >> integer;
             setopt = av_opt_set_int(avObj, opt->name, integer, 0);
@@ -6246,6 +6244,9 @@ namespace TwkMovie
             rational = av_d2q(quotient, INT_MAX);
             setopt = av_opt_set_q(avObj, opt->name, rational, 0);
             break;
+        // FFmpeg parses these, since an integer option can be set by name, e.g. profile=hq.
+        case AV_OPT_TYPE_INT:
+        case AV_OPT_TYPE_INT64:
         case AV_OPT_TYPE_STRING:
         case AV_OPT_TYPE_IMAGE_SIZE:
         case AV_OPT_TYPE_PIXEL_FMT:
