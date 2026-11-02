@@ -933,7 +933,8 @@ namespace TwkMovie
                     av_pix_fmt_get_chroma_sub_sample(native, &log2w, &log2h);
                     int usampling = int(pow(2.0f, log2w));
                     int vsampling = int(pow(2.0f, log2h));
-                    int hfourcc = 4 / (usampling * vsampling);
+                    // 4:2:0 gives 1 here, the same as 4:1:1, so it has to be picked out.
+                    int hfourcc = (usampling == 2 && vsampling == 2) ? 0 : 4 / (usampling * vsampling);
                     switch (hfourcc)
                     {
                     case 0:
