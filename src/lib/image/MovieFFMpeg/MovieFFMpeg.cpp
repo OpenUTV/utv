@@ -465,6 +465,14 @@ namespace TwkMovie
 
         static void flushContext(MovieFFMpegReader* reader, int streamIndex);
 
+        //
+        //  MovieFFMpeg calls contextClosing() before it frees a context it
+        //  holds reserved and opens a replacement. The Reservation picks up
+        //  the new context when it ends.
+        //
+
+        static void contextClosing(MovieFFMpegReader* reader, int streamIndex);
+
     private:
         typedef std::pair<MovieFFMpegReader*, int> ContextKey;
         typedef std::map<ContextKey, Context> ContextMap;
@@ -508,6 +516,32 @@ namespace TwkMovie
         }
 
         gcp.m_contextMap.erase(i);
+    }
+
+    void ContextPool::contextClosing(MovieFFMpegReader* reader, int streamIndex)
+    {
+        if (!globalContextPool)
+            return;
+
+        ContextPool& gcp = *globalContextPool;
+
+        LockGuard lock(gcp.m_mutex);
+
+        ContextMap::iterator i = gcp.m_contextMap.find(ContextKey(reader, streamIndex));
+
+        if (i == gcp.m_contextMap.end())
+            return;
+
+        Context& context = i->second;
+
+        if (context.inOpenList)
+        {
+            gcp.m_openContexts.erase(context.listIterator);
+            gcp.m_currentOpenThreads -= context.avContext->thread_count;
+            context.inOpenList = false;
+        }
+
+        context.avContext = nullptr;
     }
 
     ContextPool::Reservation::Reservation(MovieFFMpegReader* reader, int streamIndex)
@@ -1153,6 +1187,20 @@ namespace TwkMovie
                     || codecId == AV_CODEC_ID_VP9 || codecId == AV_CODEC_ID_AV1);
         }
 
+        bool isNativeAV1Decoder(const AVCodec* codec) { return codec != nullptr && strcmp(codec->name, "av1") == 0; }
+
+        // libdav1d, FFmpeg's default AV1 decoder, has no hardware path. FFmpeg's
+        // native decoder does, but has no software path and fails on the first
+        // frame of anything else, so only use it for the formats hardware takes.
+        const AVCodec* nativeAV1DecoderForHardware(const AVCodecParameters* params)
+        {
+            if (params->codec_id != AV_CODEC_ID_AV1 || (params->format != AV_PIX_FMT_YUV420P && params->format != AV_PIX_FMT_YUV420P10LE))
+            {
+                return nullptr;
+            }
+            return avcodec_find_decoder_by_name("av1");
+        }
+
         bool isCodecEligibleForHardwareDecode(AVCodecID codecId)
         {
             HwDecodeMode mode = getHardwareDecodeMode();
@@ -1316,6 +1364,8 @@ namespace TwkMovie
                     }
                     else if (avCodec->id == AV_CODEC_ID_VP9)
                     {
+                        // VP9 reports as unsupported until its decoder is registered.
+                        VTRegisterSupplementalVideoDecoderIfAvailable(kCMVideoCodecType_VP9);
                         if (!VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9))
                         {
                             continue;
@@ -1773,6 +1823,14 @@ namespace TwkMovie
             break;
         }
 
+        if (hardwareContext != nullptr && !hardwareContext->openFailed && isCodecEligibleForHardwareDecode(avStream->codecpar->codec_id))
+        {
+            if (const AVCodec* nativeAV1 = nativeAV1DecoderForHardware(avStream->codecpar))
+            {
+                avCodec = nativeAV1;
+            }
+        }
+
         if (avCodec == nullptr)
         {
             std::cerr << "ERROR: MovieFFMpeg: Unsupported codec_id '" << avStream->codecpar->codec_id << "' in " << m_filename << '\n';
@@ -1806,6 +1864,12 @@ namespace TwkMovie
             {
                 announceSoftwareDecode(avCodec->name,
                                        "no hardware decoder could be opened for it (this FFmpeg build " + hardwareDeviceTypeNames() + ")");
+                if (isNativeAV1Decoder(avCodec))
+                {
+                    hardwareContext->openFailed = true;
+                    avcodec_free_context(avCodecContext);
+                    return openAVCodec(index, avCodecContext, hardwareContext);
+                }
             }
             else
             {
@@ -1855,6 +1919,11 @@ namespace TwkMovie
                 (*avCodecContext)->opaque = nullptr;
                 (*avCodecContext)->get_format = nullptr;
                 (*avCodecContext)->thread_type = decoderThreadType(avStream->codecpar->codec_id, false);
+                if (isNativeAV1Decoder(avCodec))
+                {
+                    avcodec_free_context(avCodecContext);
+                    return openAVCodec(index, avCodecContext, hardwareContext);
+                }
                 if (avcodec_open2(*avCodecContext, avCodec, nullptr) >= 0)
                 {
                     goto codec_opened;
@@ -4411,6 +4480,32 @@ namespace TwkMovie
         return true;
     }
 
+    bool MovieFFMpegReader::fallBackToSoftwareDecoder(VideoTrack* track)
+    {
+        if (track->avCodecContext == nullptr || !isNativeAV1Decoder(track->avCodecContext->codec))
+        {
+            return false;
+        }
+
+        HardwareContext& hardwareContext = track->hardwareContext;
+        std::cerr << "WARNING: MovieFFMpeg: " << hardwareContext.deviceName
+                  << " hardware decoder can't decode this AV1 stream. Falling back to CPU software decoding.\n";
+
+        ContextPool::contextClosing(this, track->number);
+        avcodec_free_context(&track->avCodecContext);
+        av_buffer_unref(&hardwareContext.deviceContext);
+        hardwareContext.pixelFormat = AV_PIX_FMT_NONE;
+        hardwareContext.deviceType = AV_HWDEVICE_TYPE_NONE;
+        hardwareContext.deviceName.clear();
+        hardwareContext.openFailed = true;
+
+        track->tsSet.clear();
+        av_packet_unref(track->videoPacket);
+        av_frame_unref(track->videoFrame);
+        track->isOpen = openAVCodec(track->number, &track->avCodecContext, &hardwareContext);
+        return track->isOpen;
+    }
+
     FrameBuffer* MovieFFMpegReader::decodeImageAtFrame(int inframe, VideoTrack* track)
     {
 #if defined(__APPLE__)
@@ -4836,7 +4931,19 @@ namespace TwkMovie
             }
 #endif
 
-            FrameBuffer* out = decodeImageAtFrame(decodeFrame, track);
+            FrameBuffer* out = nullptr;
+            try
+            {
+                out = decodeImageAtFrame(decodeFrame, track);
+            }
+            catch (const TwkExc::Exception&)
+            {
+                if (!fallBackToSoftwareDecoder(track))
+                {
+                    throw;
+                }
+                out = decodeImageAtFrame(decodeFrame, track);
+            }
             fbs.push_back(out);
 
             track->fb.appendAttributesAndPrefixTo(out, "");

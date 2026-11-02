@@ -224,6 +224,7 @@ namespace TwkMovie
         //
 
         FrameBuffer* decodeImageAtFrame(int inframe, VideoTrack* track);
+        bool fallBackToSoftwareDecoder(VideoTrack* track);
         FrameBuffer* configureYUVPlanes(FrameBuffer::DataType dataType, int width, int height, int rowSpan, int rowSpanUV, int usampling,
                                         int vsampling, bool addAlpha, FrameBuffer::Orientation orientation);
         void identifier(int frame, std::ostream&);
