@@ -3632,7 +3632,7 @@ namespace IPCore
             {
                 stop("buffering");
                 if (!m_wrapping)
-                    setFrameInternal(currentFrame);
+                    setFrameInternal(currentFrame, "buffering");
 
                 if (playing)
                 {
@@ -4325,7 +4325,7 @@ namespace IPCore
                 {
                     stop("buffering");
                     if (!m_wrapping)
-                        setFrameInternal(currentFrame);
+                        setFrameInternal(currentFrame, "buffering");
 
                     if (playing)
                     {
