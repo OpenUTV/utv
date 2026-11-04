@@ -9,6 +9,7 @@
 #include <TwkQtChat/Connection.h>
 #include <QtNetwork/QtNetwork>
 #include <QtNetwork/QTcpSocket>
+#include <iostream>
 
 namespace TwkQtChat
 {
@@ -18,41 +19,29 @@ namespace TwkQtChat
         : QTcpServer(parent)
         , m_connectionFactory(fact)
     {
-        int myPort = 0;
         int fallbackCount = 10;
         if (getenv("TWK_SERVER_PORT_FALLBACK_COUNT"))
         {
             fallbackCount = atoi(getenv("TWK_SERVER_PORT_FALLBACK_COUNT"));
         }
 
+        // Disable application-wide proxy if any for this QTcpServer
+        setProxy(QNetworkProxy::NoProxy);
+
+        //
+        //  Listen on the first port in the range that we can bind. Binding is
+        //  the reliable test: connecting to a port to see whether something
+        //  answers can report a connection where there is none.
+        //
+
         for (int p = port; p <= port + fallbackCount; ++p)
         {
-            QTcpSocket probe;
-            probe.connectToHost(QHostAddress("127.0.0.1"), p);
-            if (probe.waitForConnected(300) && probe.isValid())
-            {
-                probe.disconnectFromHost();
-            }
-            else
-            {
-                myPort = p;
-                break;
-            }
+            if (listen(QHostAddress::Any, p))
+                return;
         }
-        if (myPort)
-        {
-            // Disable application-wide proxy if any for this QTcpServer
-            setProxy(QNetworkProxy::NoProxy);
 
-            if (!listen(QHostAddress::Any, myPort))
-            {
-                cerr << "ERROR: RvNetwork could not listen to the network port " << port << " - " << errorString().toStdString() << endl;
-            }
-        }
-        else
-        {
-            cerr << "ERROR: RvNetwork: cannot find a free network port, tried " << port << "-" << port + fallbackCount << endl;
-        }
+        cerr << "ERROR: RvNetwork: cannot listen on any network port, tried " << port << "-" << port + fallbackCount << " - "
+             << errorString().toStdString() << endl;
     }
 
     void Server::incomingConnection(qintptr socketDescriptor)
