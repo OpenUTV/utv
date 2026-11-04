@@ -14,6 +14,7 @@
 #include <QRegularExpression>
 #include <QtNetwork/QtNetwork>
 #include <QtWidgets/QMessageBox>
+#include <TwkQtChat/Auth.h>
 #include <TwkQtChat/Client.h>
 #include <TwkQtChat/Connection.h>
 #include <IPCore/Session.h>
@@ -385,20 +386,18 @@ namespace Rv
     {
         DB("savePortNumber");
 
-        //  System temp dir
-        QDir tmp = QDir::temp();
+        //
+        //  Write the port number to <dir>/<processID>_<tag>, where rvpush
+        //  looks for running UTVs. The directory belongs to this user, so
+        //  other users can't read, replace or remove these files.
+        //
 
-        if (!tmp.exists("tweak_rv_proc"))
+        const QString dir = Auth::portFileDirectory();
+        if (dir.isEmpty())
         {
-            DB("    dir doesn't exist");
-            tmp.mkdir("tweak_rv_proc");
-            tmp.cd("tweak_rv_proc");
-            QFile::setPermissions(tmp.absolutePath(), QFile::ReadOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther
-                                                          | QFile::WriteOwner | QFile::WriteUser | QFile::WriteGroup | QFile::WriteOther
-                                                          | QFile::ExeOwner | QFile::ExeUser | QFile::ExeGroup | QFile::ExeOther);
+            cerr << "WARNING: RvNetwork: no private directory for the port file, rvpush won't find this UTV" << endl;
+            return;
         }
-        else
-            tmp.cd("tweak_rv_proc");
 
         QString pid;
 #ifdef PLATFORM_WINDOWS
@@ -407,23 +406,17 @@ namespace Rv
         pid.setNum(getpid());
 #endif
 
-        //
-        //  Write port number to file named:
-        //  <tmp>/tweak_rv_proc/<processID>_<tag>
-        //
-
         QString tagString("_");
         const Rv::Options& opts = Rv::Options::sharedOptions();
         if (opts.networkTag)
             tagString += opts.networkTag;
 
-        QFile portFile(tmp.absolutePath() + "/" + pid + tagString);
+        QFile portFile(dir + "/" + pid + tagString);
 
         DB("    opening portfile '" << portFile.fileName().toUtf8().constData() << "'");
         if (portFile.open(QIODevice::WriteOnly | QIODevice::Truncate))
         {
-            portFile.setPermissions(QFile::ReadOwner | QFile::ReadUser | QFile::ReadGroup | QFile::ReadOther | QFile::WriteOwner
-                                    | QFile::WriteUser | QFile::WriteGroup | QFile::WriteOther);
+            portFile.setPermissions(QFile::ReadOwner | QFile::WriteOwner);
 
             QString portNum;
             portNum.setNum(myPort());
@@ -494,6 +487,10 @@ namespace Rv
 
             if (m_client->online())
             {
+                //  Create the user's local key now, so local tools such as
+                //  the Python clients find it on their first connection.
+                Auth::localKey();
+
                 fprintf(stderr, "INFO: listening on port %d\n", m_client->serverPort());
                 QString portStr = QString(QString("%1").arg(m_client->serverPort()));
                 m_ui.portLineEdit->setText(portStr);
@@ -559,9 +556,11 @@ namespace Rv
         s->userGenericEvent("remote-connection-start", name.toUtf8().constData(), "");
     }
 
-    RvNetworkDialog::ConnectPermission RvNetworkDialog::contactPermission(const QStringList& parts)
+    RvNetworkDialog::ConnectPermission RvNetworkDialog::contactPermission(const QStringList& parts, bool* saved)
     {
         int n = m_contactsModel->rowCount();
+        if (saved)
+            *saved = false;
 
         for (int i = 0; i < n; i++)
         {
@@ -575,12 +574,16 @@ namespace Rv
                 {
                     QStandardItem* item3 = m_contactsModel->item(i, 3);
                     QString perms = item3->text();
+                    if (saved)
+                        *saved = true;
                     if (perms == "Ask")
                         return AskConnect;
                     if (perms == "Allow")
                         return AllowConnect;
                     if (perms == "Deny")
                         return DenyConnect;
+                    if (saved)
+                        *saved = false;
                 }
             }
         }
@@ -641,6 +644,12 @@ namespace Rv
         DB("    new sessionMap val '" << m_sessionMap[sender] << "'");
         csess = session->name().c_str();
 
+        //
+        //  Local means the peer proved it runs as this user on this machine
+        //  (see TwkQtChat::Auth), not just that it connected from the
+        //  loopback address.
+        //
+
         if (c->isLocal())
         {
             addContact(parts[0], parts[1], c, CurrentConnect, c->remoteApp());
@@ -652,14 +661,34 @@ namespace Rv
         //  trying to make the connection.
         //
 
-        ConnectPermission perm = contactPermission(parts);
+        bool saved = false;
+        ConnectPermission perm = contactPermission(parts, &saved);
+
+        //
+        //  A saved "Allow" names a user and a host, which any program can
+        //  claim. Honor it only if the peer proves it has the pairing key we
+        //  gave it when the user chose "Always Allow".
+        //
+
+        if (perm == AllowConnect && saved && !Auth::checkPairingProof(name, c->pairingProof()))
+            perm = AskConnect;
 
         if (perm == AskConnect)
         {
-            QMessageBox box(QMessageBox::Warning, "Connection Request", QString("%1 wants to connect\n ").arg(name), QMessageBox::NoButton,
-                            this, Qt::Dialog);
+            //
+            //  Pairing needs an OpenUTV peer on another machine: on this
+            //  machine an OpenUTV running as this user is already local.
+            //
 
-            QPushButton* q3 = box.addButton("Always Allow", QMessageBox::AcceptRole);
+            const bool canPair = c->peerSupportsPairing() && !Auth::normalized(c->peerAddress()).isLoopback();
+
+            QString text = QString("%1 wants to connect.\n\nAllowing it lets it run commands on this computer as you.").arg(name);
+            if (Auth::normalized(c->peerAddress()).isLoopback())
+                text += "\n\nIt is on this machine but did not prove it runs as you.";
+
+            QMessageBox box(QMessageBox::Warning, "Connection Request", text, QMessageBox::NoButton, this, Qt::Dialog);
+
+            QPushButton* q3 = canPair ? box.addButton("Always Allow", QMessageBox::AcceptRole) : nullptr;
             QPushButton* q1 = box.addButton("Allow Once", QMessageBox::ApplyRole);
             QPushButton* q2 = box.addButton("Deny", QMessageBox::RejectRole);
             box.exec();
@@ -675,11 +704,19 @@ namespace Rv
                 // allow
                 addContact(parts[0], parts[1], c, CurrentConnect, c->remoteApp());
             }
-            else if (box.clickedButton() == q3)
+            else if (q3 && box.clickedButton() == q3)
             {
-                // allow and record it for future
+                //  Allow, and give the peer a key that it must present to be
+                //  allowed again without asking.
 
+                c->sendPairingKey(Auth::createPairingKey(name));
                 addContact(parts[0], parts[1], c, AllowConnect, c->remoteApp());
+            }
+            else
+            {
+                //  Closed without choosing.
+                m_client->rejectConnection(c);
+                addContact(parts[0], parts[1], 0, CurrentConnect, "");
             }
         }
         else if (perm == DenyConnect)
@@ -1014,6 +1051,8 @@ namespace Rv
 
         for (set<int>::reverse_iterator i = rows.rbegin(); i != rows.rend(); ++i)
         {
+            const QString contact = m_contactsModel->item(*i, 1)->text() + "@" + m_contactsModel->item(*i, 2)->text();
+            Auth::forgetPairingKey(contact);
             m_contactsModel->removeRow(*i);
         }
 

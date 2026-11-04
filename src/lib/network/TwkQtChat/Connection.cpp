@@ -7,6 +7,7 @@
 //
 #include <iostream>
 #include <TwkQtChat/Connection.h>
+#include <TwkQtChat/Auth.h>
 #include <QtNetwork/QtNetwork>
 
 #if 0
@@ -50,6 +51,7 @@ namespace TwkQtChat
         m_pingpong = pingpong;
         m_duplicate = false;
         m_incoming = true;
+        m_peerSupportsPairing = false;
 
         static bool first = true;
 
@@ -218,16 +220,9 @@ namespace TwkQtChat
                 return;
             }
 
-            QHostInfo hostInfo = QHostInfo::fromName(peerAddress().toString());
+            readGreeting();
 
-            m_remoteName = QString(m_buffer);
-            if (m_currentDataType == NewGreeting)
-            {
-                m_remoteApp = m_remoteName.section(" ", 1, 1);
-                m_remoteName = m_remoteName.section(" ", 0, 0);
-            }
-            else
-                m_remoteApp = "rv";
+            QHostInfo hostInfo = QHostInfo::fromName(peerAddress().toString());
 
             if (hostInfo.error() == QHostInfo::NoError)
             {
@@ -246,7 +241,6 @@ namespace TwkQtChat
                     m_remoteContactName = m_remoteName + "@unknown.host";
                 }
             }
-            m_local = QHostAddress(QHostAddress::LocalHost).isEqual(peerAddress());
             m_currentDataType = Undefined;
             m_numBytesForCurrentDataType = 0;
             emit requestGreeting();
@@ -334,18 +328,112 @@ namespace TwkQtChat
         }
     }
 
+    quint16 Connection::serverPort() const { return m_incoming ? localPort() : peerPort(); }
+
+    quint16 Connection::clientPort() const { return m_incoming ? peerPort() : localPort(); }
+
+    //
+    //  The third word of our greeting: "utv=1", then ";local=<proof>" on a
+    //  loopback connection or ";pair=<proof>" if the peer gave us pairing
+    //  keys.
+    //
+    QByteArray Connection::greetingExtensions()
+    {
+        QByteArray ext = "utv=1";
+        const QHostAddress peer = Auth::normalized(peerAddress());
+
+        if (peer.isLoopback())
+        {
+            const QString proof = Auth::makeLocalProof(m_incoming, serverPort(), clientPort());
+            if (!proof.isEmpty())
+                ext += ";local=" + proof.toLatin1();
+        }
+        else
+        {
+            const QString proof = Auth::makePairingProof(peer);
+            if (!proof.isEmpty())
+                ext += ";pair=" + proof.toLatin1();
+        }
+
+        return ext;
+    }
+
+    //
+    //  Read the peer's greeting from m_buffer. GREETING carries only a name.
+    //  NEWGREETING carries "<name> <app>", and from OpenUTV a third word of
+    //  extensions, in which case the name is percent-encoded.
+    //
+    void Connection::readGreeting()
+    {
+        const QString greeting = QString::fromUtf8(m_buffer);
+        QString localProof;
+
+        m_remoteName = greeting;
+        m_remoteApp = "rv";
+        m_peerSupportsPairing = false;
+        m_pairingProof.clear();
+        m_local = false;
+
+        if (m_currentDataType == NewGreeting)
+        {
+            m_remoteName = greeting.section(' ', 0, 0);
+            m_remoteApp = greeting.section(' ', 1, 1);
+
+            const QStringList ext = greeting.section(' ', 2, 2).split(';');
+
+            if (ext.contains("utv=1"))
+            {
+                m_peerSupportsPairing = true;
+                m_remoteName = QUrl::fromPercentEncoding(m_remoteName.toUtf8());
+
+                for (const QString& field : ext)
+                {
+                    if (field.startsWith("local="))
+                        localProof = field.mid(6);
+                    else if (field.startsWith("pair="))
+                        m_pairingProof = field.mid(5);
+                }
+            }
+        }
+
+        //
+        //  A connection is local only if the peer is on this machine and
+        //  proves it runs as this user. Being on the loopback address is not
+        //  enough: other users on the machine can connect there too.
+        //
+        if (!localProof.isEmpty() && Auth::normalized(peerAddress()).isLoopback())
+            m_local = Auth::checkLocalProof(localProof, !m_incoming, serverPort(), clientPort());
+    }
+
+    void Connection::sendPairingKey(const QByteArray& key)
+    {
+        if (m_isGreetingMessageSent)
+            Connection::sendData("PAIRKEY(1)", key);
+        else
+            m_pendingPairingKey = key;
+    }
+
     void Connection::sendGreetingMessage()
     {
-        QString greetingString = m_greetingName;
-        if (m_greetingApp != "rv")
-            greetingString += " " + m_greetingApp;
-        QByteArray greeting = greetingString.toUtf8();
-
-        QByteArray data = ((m_greetingApp != "rv") ? "NEWGREETING " : "GREETING ") + QByteArray::number(greeting.size()) + " " + greeting;
+        //
+        //  Always NEWGREETING, so the extensions can follow the app name.
+        //  Older receivers read the first two words and ignore the rest, and
+        //  see the percent-encoded name.
+        //
+        const QByteArray greeting = QUrl::toPercentEncoding(m_greetingName) + " " + m_greetingApp.toUtf8() + " " + greetingExtensions();
+        const QByteArray data = "NEWGREETING " + QByteArray::number(greeting.size()) + " " + greeting;
 
         DB("send: '" << data.data() << "'");
         if (write(data) == data.size())
+        {
             m_isGreetingMessageSent = true;
+
+            if (!m_pendingPairingKey.isEmpty())
+            {
+                Connection::sendData("PAIRKEY(1)", m_pendingPairingKey);
+                m_pendingPairingKey.clear();
+            }
+        }
     }
 
     int Connection::readDataIntoBuffer(int maxSize)
@@ -486,6 +574,13 @@ namespace TwkQtChat
             emit newMessage(m_remoteContactName, QString::fromUtf8(m_buffer));
             break;
         case RawData:
+            if (m_dataInterp.startsWith("PAIRKEY("))
+            {
+                //  A key the peer gave us when it chose "Always Allow". Keep
+                //  it for our next connection to that address.
+                Auth::storeGivenPairingKey(peerAddress(), m_buffer);
+                break;
+            }
             emit newData(m_remoteContactName, m_dataInterp, m_buffer);
             break;
         case Ping:

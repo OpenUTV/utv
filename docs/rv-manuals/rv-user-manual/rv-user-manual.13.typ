@@ -36,12 +36,16 @@ tricky, see @networking-internet.
     *Warning:* Care should be taken with #app networking. Once a connection is
     established to a client application (#app or any other client) all
     scripting commands (including `system(...)`) are allowed and executed
-    with the user id and permissions of the local #app user. Local
-    connections (from a client application running on the same machine as
-    #app), are not authenticated and the user is not required to confirm the
-    connection. Remote connections must be explicitly allowed by the user,
-    but the identity of the remote user can not be confirmed. Also note that
-    traffic over #app network connections is generally not encrypted.
+    with the user id and permissions of the local #app user. A connection
+    from the same machine is accepted without asking only when the client
+    proves it runs as the same user, by reading a key that #app keeps in that
+    user's private directory. `rvpush`, `rvshell`, the Python clients and
+    another #app do this automatically; any other connection must be
+    explicitly allowed. "Always Allow" gives the remote #app a pairing key,
+    and the contact is allowed again without asking only when it presents
+    that key, so another user or program can't connect by claiming the same
+    name and machine. Also note that traffic over #app network connections
+    is not encrypted.
 
     Use of #app Remote Sync is at your own risk. Although we may recommend
     preferred configurations, we cannot guarantee that any configuration
@@ -103,7 +107,10 @@ If networking is on, and a connection is initiated by another party, #app
 will ask whether or not you want the connection to occur. At that point you
 have three choices: accept the connection but ask for permission next time,
 always accept connections from the user/program that's asking, or deny the
-connection.
+connection. "Always Allow" is offered only for another #app on a different
+machine, because it relies on the pairing key described above. Contacts
+allowed by an older version, or by editing their permission to Allow, are
+asked again once, and choosing "Always Allow" then pairs them.
 
 Each new contact that #app receives (whether or not you accept) is recorded
 in the Contacts page. On this page you can delete existing contacts, change

@@ -218,8 +218,24 @@ message is exchanged. This consists of an UTF-8 byte string composed of:
     caption: [Greeting Message],
 )
 
-In response, the application should receive a NEWGREETING message back. At
-this point the application will be connected to #app.
+OpenUTV adds an optional third word after the application name, separated
+by a space: `utv=1`, followed on a connection from the same machine by
+`;local=<proof>`, and on a connection from another machine by `;pair=<proof>`
+when the peer holds pairing keys. When the third word is present the contact
+name is percent-encoded. A local proof is `<time>:<nonce>:<mac>`, where
+`<time>` is the current Unix time in seconds, `<nonce>` is 16 random bytes in
+hex, and `<mac>` is the hex HMAC-SHA256 of
+`utv-local-v1|client|<time>|<nonce>|<server port>|<client port>` keyed with
+the 32 bytes hex-encoded in the user's `local.key` (in
+`~/Library/Application Support/OpenUTV/network` on macOS,
+`$XDG_DATA_HOME/openutv/network` or `~/.local/share/openutv/network` on Linux,
+and `%APPDATA%\OpenUTV\network` on Windows). #app accepts a connection from
+the same machine without asking only with a valid proof; see `rvNetwork.py`
+for a client that makes one. Other clients are asked about as before.
+
+In response, the application should receive a NEWGREETING message back,
+which may also carry the third word. At this point the application will be
+connected to #app.
 
 A standard message is a single UTF-8 string which has the form:
 

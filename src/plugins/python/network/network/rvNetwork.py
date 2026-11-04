@@ -6,10 +6,81 @@
 #
 from __future__ import print_function
 
+import binascii
+import hashlib
+import hmac
+import os
 import socket
 import sys
 import time
 import six
+
+
+try:
+    from urllib.parse import quote as _quote
+except ImportError:
+    from urllib import quote as _quote
+
+
+def _localKeyFile():
+    """
+    The per-user key that OpenUTV creates for authenticating connections
+    on this machine (see TwkQtChat/Auth.cpp, which uses the same paths).
+    """
+    if sys.platform == "win32":
+        appData = os.environ.get("APPDATA")
+        if not appData:
+            return None
+        base = os.path.join(appData, "OpenUTV", "network")
+    elif sys.platform == "darwin":
+        base = os.path.expanduser("~/Library/Application Support/OpenUTV/network")
+    else:
+        data = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+        base = os.path.join(data, "openutv", "network")
+    return os.path.join(base, "local.key")
+
+
+def _localProof(serverPort, clientPort):
+    """
+    Proof that this client runs as the same user as the OpenUTV it
+    connects to on this machine, or None without a key. Without it, OpenUTV
+    asks the user before accepting the connection.
+    """
+    path = _localKeyFile()
+    if not path:
+        return None
+    try:
+        with open(path, "rb") as f:
+            key = binascii.unhexlify(f.read().strip())
+    except Exception:
+        return None
+    if len(key) != 32:
+        return None
+
+    stamp = str(int(time.time()))
+    nonce = binascii.hexlify(os.urandom(16)).decode("ascii")
+    message = "utv-local-v1|client|%s|%s|%d|%d" % (stamp, nonce, serverPort, clientPort)
+    mac = hmac.new(key, message.encode("ascii"), hashlib.sha256).hexdigest()
+    return "%s:%s:%s" % (stamp, nonce, mac)
+
+
+def _greeting(sock, name, serverPort):
+    """
+    "<name> rvController", plus the local proof when connected over the
+    loopback address. With the proof the name is percent-encoded, as
+    OpenUTV expects.
+    """
+    proof = None
+    try:
+        peer = sock.getpeername()[0]
+        if peer.startswith("127.") or peer == "::1":
+            proof = _localProof(serverPort, sock.getsockname()[1])
+    except Exception:
+        proof = None
+
+    if proof is None:
+        return "%s rvController" % name
+    return "%s rvController utv=1;local=%s" % (_quote(name, safe=""), proof)
 
 
 class RvCommunicator:
@@ -20,9 +91,10 @@ class RvCommunicator:
     happen from the command line: "-network -networkPort 45129".
     By default, RV will listen on port 45124.
 
-    NOTE: if the target RV is not on the same machine as this
-    client, the user will need to specifically allow the connection.
-    Connections from the local machine are assumed to be safe.
+    NOTE: OpenUTV accepts a connection from this machine without asking
+    only when the client proves it runs as the same user, by reading the
+    key that OpenUTV keeps in the user's private directory. Otherwise the
+    user has to allow the connection.
     """
 
     def __init__(self, name="rvCommunicator-1", noPP=True):
@@ -68,7 +140,7 @@ class RvCommunicator:
             return
 
         try:
-            greeting = "%s rvController" % self.name
+            greeting = _greeting(self.sock, self.name, self.port)
             msg = "NEWGREETING %d %s" % (len(greeting), greeting)
             self.sock.sendall(six.ensure_binary(msg))
             if self.noPingPong:

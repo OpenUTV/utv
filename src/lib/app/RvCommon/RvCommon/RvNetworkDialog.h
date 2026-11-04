@@ -99,7 +99,7 @@ namespace Rv
         void addContact(const QString& name, const QString& host, TwkQtChat::Connection* connection, unsigned int perms,
                         const QString& capp, bool checkForExisting = true);
 
-        ConnectPermission contactPermission(const QStringList& parts);
+        ConnectPermission contactPermission(const QStringList& parts, bool* saved = nullptr);
 
         void sendSessionEvent(const QString&, const QString&, const QString&);
 

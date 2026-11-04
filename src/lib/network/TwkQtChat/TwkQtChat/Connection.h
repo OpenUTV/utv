@@ -71,6 +71,16 @@ namespace TwkQtChat
 
         bool incoming() { return m_incoming; }
 
+        //  True when the peer's greeting came from OpenUTV, which can receive
+        //  a pairing key.
+        bool peerSupportsPairing() const { return m_peerSupportsPairing; }
+
+        //  The pairing proof from the peer's greeting, if any.
+        const QString& pairingProof() const { return m_pairingProof; }
+
+        //  Give the peer a pairing key. Sent after our greeting.
+        void sendPairingKey(const QByteArray& key);
+
     signals:
         void readyForUse();
         void newMessage(const QString& from, const QString& message);
@@ -93,6 +103,10 @@ namespace TwkQtChat
         void processData();
         void startPingPong();
         void stopPingPong();
+        QByteArray greetingExtensions();
+        void readGreeting();
+        quint16 serverPort() const;
+        quint16 clientPort() const;
 
         QString m_greetingName;
         QString m_greetingApp;
@@ -114,6 +128,9 @@ namespace TwkQtChat
         bool m_pingpong;
         bool m_duplicate;
         bool m_incoming;
+        bool m_peerSupportsPairing;
+        QString m_pairingProof;
+        QByteArray m_pendingPairingKey;
     };
 
     typedef Connection* (*ConnectionFactory)(QObject*, bool);

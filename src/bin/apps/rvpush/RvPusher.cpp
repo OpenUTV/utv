@@ -5,6 +5,7 @@
 //
 
 #include <RvPusher.h>
+#include <TwkQtChat/Auth.h>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QProcess>
@@ -68,12 +69,12 @@ void RvPusher::buildFileList()
 {
     DB("buildFileList");
 
-    QDir tmp = QDir::temp();
-
-    if (!tmp.exists("tweak_rv_proc"))
+    //  UTV writes its port files to a directory that belongs to this user.
+    const QString dir = TwkQtChat::Auth::portFileDirectory();
+    if (dir.isEmpty())
         return;
 
-    tmp.cd("tweak_rv_proc");
+    QDir tmp(dir);
 
     //
     //  Get files in this dir (not subdirs), sorted by modification time.

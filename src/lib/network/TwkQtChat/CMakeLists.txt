@@ -15,7 +15,14 @@ SET(CMAKE_AUTOMOC
 )
 
 SET(_sources
-    Client.cpp Connection.cpp Server.cpp TwkQtChat/Client.h TwkQtChat/Connection.h TwkQtChat/Server.h
+    Auth.cpp
+    Client.cpp
+    Connection.cpp
+    Server.cpp
+    TwkQtChat/Auth.h
+    TwkQtChat/Client.h
+    TwkQtChat/Connection.h
+    TwkQtChat/Server.h
 )
 
 ADD_LIBRARY(
