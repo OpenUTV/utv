@@ -14,6 +14,9 @@ For each format listed by `utvio -formats` with Write capability:
 It then decodes the files in samples/ (the same test image, encoded elsewhere), which checks that
 a format can be read on platforms where it cannot be written, e.g. HEIC on Windows.
 
+Last, utvio writes the test image as a movie and `utvls -x -decoder` must report the decoder of its
+first frame, with hardware decoding turned off so the answer is the same on every machine (#196).
+
 The source has distinct colored blocks in three corners, so a vertical flip, horizontal flop,
 channel swap, dropped channel, or truncated file all fail. Only pure 0/1 values are used so the
 check is independent of transfer functions. The test also fails if a format is advertised as
@@ -207,6 +210,21 @@ def decode_sample(utvio, env, timeout, workdir, sample_path):
     return check_decoded(decoded, ext)
 
 
+def movie_decoder(utvio, utvls, env, timeout, workdir, source):
+    movie = os.path.join(workdir, "decoder.mov")
+    result = run_tool([utvio, "-err-to-out", source, "-o", movie], env, timeout)
+    if result.timed_out or result.returncode != 0 or not os.path.isfile(movie):
+        return f"write failed (exit {result.returncode}, timed_out={result.timed_out}): {last_error(result.output)}"
+
+    software_env = dict(env, UTV_HWACCEL="none")
+    result = run_tool([utvls, "-x", "-decoder", movie], software_env, timeout)
+    if result.timed_out or result.returncode != 0:
+        return f"utvls failed (exit {result.returncode}, timed_out={result.timed_out}): {last_error(result.output)}"
+    if not re.search(r"VideoDecoder\s+Software \(\w+\)", result.output):
+        return f"no software VideoDecoder in utvls -x -decoder output: {last_error(result.output)}"
+    return None
+
+
 def last_error(output):
     lines = output.strip().splitlines()
     # X11 protocol errors span several lines; the first one names the error and request.
@@ -262,6 +280,17 @@ def main():
         else:
             print(f"ok   sample {name} (read)")
 
+    extra_checks = 0
+    utvls = find_tool(args.bin_dir, "utvls")
+    if not args.only:
+        extra_checks += 1
+        problem = movie_decoder(utvio, utvls, env, args.timeout, workdir, source) if utvls else "utvls not found"
+        if problem:
+            failures.append(("movie decoder", problem))
+            print(f"FAIL movie decoder: {problem}")
+        else:
+            print("ok   movie decoder (utvls -x -decoder)")
+
     not_installed = [ext for ext, problem in results if problem == NOT_INSTALLED]
     for ext, problem in results:
         known = KNOWN_FAILURES.get(ext)
@@ -283,7 +312,7 @@ def main():
         shutil.rmtree(workdir, ignore_errors=True)
 
     if failures:
-        print(f"\n{len(failures)} of {len(tested) + len(samples)} checks failed")
+        print(f"\n{len(failures)} of {len(tested) + len(samples) + extra_checks} checks failed")
         return 1
     tested = [ext for ext in tested if ext not in not_installed]
     xfails = sum(1 for ext, problem in results if problem and problem != NOT_INSTALLED and ext in KNOWN_FAILURES)
