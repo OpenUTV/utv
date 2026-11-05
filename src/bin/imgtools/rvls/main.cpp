@@ -52,6 +52,7 @@ using namespace TwkContainer;
 using namespace boost;
 
 bool bruteForce = false;
+bool showDecoder = false;
 
 vector<string> inputFiles;
 
@@ -325,6 +326,35 @@ string lsExtended(const string& seq, bool yaml = false)
             out_yaml << YAML::Value << attrs[i]->valueAsString();
         }
         out_yaml << YAML::EndMap; // Attribute Map End
+
+        if (showDecoder && minfo.video)
+        {
+            //  The decoder is only known once a frame is decoded: hardware can
+            //  refuse a stream of a codec it otherwise decodes.
+            string decoder;
+            try
+            {
+                Movie::FrameBufferVector fbs;
+                reader->imagesAtFrame(MovieReader::ReadRequest(minfo.start), fbs);
+                if (!fbs.empty() && fbs.front()->hasAttribute("VideoDecoder"))
+                {
+                    decoder = fbs.front()->attribute<string>("VideoDecoder");
+                }
+                for (FrameBuffer* f : fbs)
+                    delete f;
+            }
+            catch (std::exception& exc)
+            {
+                cerr << "ERROR: decoding the first frame of " << seq << ": " << exc.what() << endl;
+            }
+
+            if (!decoder.empty())
+            {
+                listing.push_back({"VideoDecoder", decoder});
+                out_yaml << YAML::Key << "VideoDecoder";
+                out_yaml << YAML::Value << decoder;
+            }
+        }
 
         if (minfo.video)
         {
@@ -642,6 +672,7 @@ int utf8Main(int argc, char** argv)
     int ns = 0;
     int showFormats = 0;
     int yaml = 0;
+    int decoderFlag = 0;
     char* debugString = 0;
     char* outputFile = 0;
 
@@ -658,7 +689,8 @@ int utf8Main(int argc, char** argv)
                   &outputFile, "Output log file. Results will be printed to stdout by default", "-nr", ARG_FLAG(&nr),
                   "Do not show frame ranges", "-ns", ARG_FLAG(&ns), "Do not infer sequences (list each file separately)", "-min %d",
                   &minseq, "Minimum number of files considered a sequence (default=%d)", minseq, "-formats", ARG_FLAG(&showFormats),
-                  "List image/movie formats", "-yaml", ARG_FLAG(&yaml), "Output in YAML format. (-x only)", "-version",
+                  "List image/movie formats", "-yaml", ARG_FLAG(&yaml), "Output in YAML format. (-x only)", "-decoder",
+                  ARG_FLAG(&decoderFlag), "Decode the first frame of each movie and show which decoder produced it (-x only)", "-version",
                   ARG_FLAG(&showVersion), "Show rvls version number", "-debug %S", &debugString, "Debug category (only 'plugins' for now)",
                   NULL)
         < 0)
@@ -667,6 +699,7 @@ int utf8Main(int argc, char** argv)
     }
 
     bruteForce = b ? true : false;
+    showDecoder = decoderFlag != 0;
     bool nonmatching = !s ? true : false;
     bool showranges = nr ? false : true;
 

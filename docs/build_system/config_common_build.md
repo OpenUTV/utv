@@ -217,6 +217,8 @@ At runtime, hardware decoding can be configured via:
 
 If hardware decoding fails to initialize or hits system stream limits, UTV automatically and seamlessly falls back to CPU software decoding.
 
+Each decoded frame has a `VideoDecoder` attribute that names the decoder that produced it, such as `VideoToolbox (hevc)`, `NVDEC (av1)` or `Software (libdav1d)`. It is shown as Decoder in Media Info and in Image Info. To check a file from the command line, decode its first frame with `utvls -x -decoder clip.mov`. A frame is only marked as hardware decoded when it came from a hardware surface, so a stream that the hardware decoder handed back to FFmpeg shows `Software`.
+
 **Important:** Before enabling ProRes decoding on Linux/Windows, you are required to obtain a proper license agreement and the SDK from
 Apple by contacting [ProRes@apple.com](mailto:ProRes@apple.com).
 

@@ -575,6 +575,7 @@ class MediaInfoDialog(QDialog):
             ("Codec", attrDict.get("Codec", attrDict.get("VideoCodec", attrDict.get("RED/redcode", "")))),
             ("Codec ID / Name", attrDict.get("CodecName", attrDict.get("Production/REDCODE", ""))),
             ("Pixel Format", attrDict.get("PixelFormat", attrDict.get("VideoPixelFormat", ""))),
+            ("Decoder", attrDict.get("VideoDecoder", "")),
             ("Pixel Aspect Ratio", attrDict.get("PixelAspectRatio", "")),
             ("Video Tracks", attrDict.get("VideoTracks", "")),
             ("Rotation", attrDict.get("Rotation", "")),

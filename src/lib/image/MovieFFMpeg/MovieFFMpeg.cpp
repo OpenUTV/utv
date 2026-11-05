@@ -1233,6 +1233,34 @@ namespace TwkMovie
             }
         }
 
+        // The name of a hardware decoder as users know it, for the VideoDecoder
+        // attribute: "NVDEC" rather than FFmpeg's "cuda".
+        std::string hardwareDecoderName(AVHWDeviceType deviceType)
+        {
+            switch (deviceType)
+            {
+            case AV_HWDEVICE_TYPE_VIDEOTOOLBOX:
+                return "VideoToolbox";
+            case AV_HWDEVICE_TYPE_CUDA:
+                return "NVDEC";
+            case AV_HWDEVICE_TYPE_D3D11VA:
+                return "D3D11VA";
+            case AV_HWDEVICE_TYPE_DXVA2:
+                return "DXVA2";
+            case AV_HWDEVICE_TYPE_VAAPI:
+                return "VA-API";
+            case AV_HWDEVICE_TYPE_VDPAU:
+                return "VDPAU";
+            case AV_HWDEVICE_TYPE_QSV:
+                return "Quick Sync";
+            default:
+            {
+                const char* name = av_hwdevice_get_type_name(deviceType);
+                return (name != nullptr) ? name : "hardware";
+            }
+            }
+        }
+
         // The hardware acceleration methods this FFmpeg build has, e.g. "cuda, d3d11va".
         std::string hardwareDeviceTypeNames()
         {
@@ -4336,7 +4364,12 @@ namespace TwkMovie
         ojph::mem_infile infile;
         infile.open(pkt->data, pkt->size);
 
-        return decodeHTJ2K(&infile);
+        FrameBuffer* out = decodeHTJ2K(&infile);
+        if (out)
+        {
+            out->newAttribute("VideoDecoder", std::string("OpenJPH"));
+        }
+        return out;
     }
 
 #if defined(__APPLE__)
@@ -4367,6 +4400,7 @@ namespace TwkMovie
         }
 
         track->lastDecodedVideo = inframe;
+        out->newAttribute("VideoDecoder", std::string("AVFoundation (ProRes RAW)"));
         return out;
     }
 #endif
@@ -4802,6 +4836,26 @@ namespace TwkMovie
         DBL(DB_TIMING, "frame: " << inframe << " copyFrame: " << duration);
 #endif
 
+        // Which decoder produced this frame, e.g. "VideoToolbox (hevc)" or
+        // "Software (libdav1d)". A frame copied from a hardware surface came
+        // from the hardware decoder; any other frame was decoded on the CPU,
+        // including frames of a stream the hardware decoder handed back.
+        // OpenRV uses the same attribute name.
+        std::string videoDecoder;
+#if defined(RV_USE_APPLE_PRORES_SDK)
+        if (track->useAppleProRes)
+        {
+            videoDecoder = "Apple ProRes SDK";
+        }
+        else
+#endif
+        {
+            const std::string codecName = videoCodecContext->codec ? videoCodecContext->codec->name : "unknown";
+            videoDecoder = (softwareFrame != nullptr && hardwareContext != nullptr)
+                               ? hardwareDecoderName(hardwareContext->deviceType) + " (" + codecName + ")"
+                               : "Software (" + codecName + ")";
+        }
+
         // Clean up
         av_frame_free(&outFrame);
         av_frame_free(&softwareFrame);
@@ -4840,6 +4894,8 @@ namespace TwkMovie
             delete out;
             out = Yrot;
         }
+
+        out->newAttribute("VideoDecoder", videoDecoder);
 
         //
         // Add Timecode if necessary
