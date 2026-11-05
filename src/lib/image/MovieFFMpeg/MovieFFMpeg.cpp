@@ -296,6 +296,7 @@ namespace TwkMovie
             , isOpen(false)
             , useOpenJPH(false)
             , useAppleProRes(false)
+            , dropAlpha(false)
 #if defined(__APPLE__)
             , useAVFProResRaw(false)
             , avfReader(nullptr)
@@ -353,6 +354,7 @@ namespace TwkMovie
             name = t->name;
             useOpenJPH = t->useOpenJPH;
             useAppleProRes = t->useAppleProRes;
+            dropAlpha = t->dropAlpha;
             number = t->number;
             rotate = t->rotate;
 #if defined(RV_USE_APPLE_PRORES_SDK)
@@ -377,6 +379,7 @@ namespace TwkMovie
         int lastEncodedVideo;
         bool useOpenJPH;
         bool useAppleProRes;
+        bool dropAlpha; // the decoder adds an alpha plane the file doesn't have
 #if defined(__APPLE__)
         bool useAVFProResRaw;
         AVFProResRawReader* avfReader;
@@ -1292,6 +1295,28 @@ namespace TwkMovie
             if (announced.insert(codecName).second)
             {
                 std::cout << "INFO: Decoding '" << codecName << "' on the CPU: " << reason << "." << std::endl;
+            }
+        }
+
+        // FFmpeg's NotchLC decoder always outputs yuva444p12 and fills the alpha
+        // plane with 4095 when a file has none. A MOV sample description gives
+        // a depth of 24 for NotchLC without alpha and 32 with it. Leaving the
+        // plane out takes a quarter off every frame: 128 MiB at 8192 x 8192.
+        bool hasNoAlpha(const AVCodecParameters* codecpar)
+        {
+            return codecpar->codec_id == AV_CODEC_ID_NOTCHLC && codecpar->bits_per_coded_sample == 24;
+        }
+
+        AVPixelFormat withoutAlpha(AVPixelFormat format)
+        {
+            switch (format)
+            {
+            case AV_PIX_FMT_YUVA444P12LE:
+                return AV_PIX_FMT_YUV444P12LE;
+            case AV_PIX_FMT_YUVA444P16LE:
+                return AV_PIX_FMT_YUV444P16LE;
+            default:
+                return format;
             }
         }
 
@@ -2930,6 +2955,7 @@ namespace TwkMovie
                     videoReservations.emplace_back(this, i);
                     VideoTrack* track = new VideoTrack;
                     track->useOpenJPH = isJ2K;
+                    track->dropAlpha = hasNoAlpha(tsStream->codecpar);
 #if defined(RV_USE_APPLE_PRORES_SDK)
                     track->useAppleProRes = isProRes;
 #endif
@@ -3326,6 +3352,11 @@ namespace TwkMovie
                     nativeFormat = AV_PIX_FMT_RGB24;
                 }
             }
+
+        if (m_videoTracks[0]->dropAlpha)
+        {
+            nativeFormat = withoutAlpha(nativeFormat);
+        }
 
         const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get(nativeFormat);
         int bitSize = desc->comp[0].depth;
@@ -4847,6 +4878,10 @@ namespace TwkMovie
             break;
         default:
             nativeFormat = getBestRVFormat(nativeFormat);
+            if (track->dropAlpha)
+            {
+                nativeFormat = withoutAlpha(nativeFormat);
+            }
             outFrame->format = nativeFormat;
             desc = av_pix_fmt_desc_get(nativeFormat);
             bitSize = desc->comp[0].depth;
