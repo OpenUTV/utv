@@ -146,6 +146,9 @@ namespace TwkGLF
 
     static ENVVAR_INT(evDebug, "RV_PBO_POOL_DEBUG", 0);
 
+    //  See LastPooledPBORequest().
+    static thread_local PooledPBORequest tlsLastRequest;
+
     //------------------------------------------------------------------------------
     //
     unsigned PipelinePrefetchPoolMaxNbBuffers() { return prefetchPoolMaxNbBuffers; }
@@ -566,13 +569,19 @@ namespace TwkGLF
         GLPixelBufferObject* pop(size_t size, bool purgeable = true /* only used when first allocated */
         )
         {
+            tlsLastRequest = PooledPBORequest();
+
             if (_maxPBOSize != 0 && size > _maxPBOSize)
+            {
+                tlsLastRequest.outcome = "too-big";
                 return NULL;
+            }
 
             GLPixelBufferObject* pbo = NULL;
 
             // Recycle.
             pbo = _recycle(size);
+            tlsLastRequest.outcome = "recycled";
 
             if (!pbo)
             {
@@ -602,8 +611,13 @@ namespace TwkGLF
                     TwkUtil::SystemInfo::getSystemMemoryInfo(&physTotal, &physFree, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 
                     float freeMemory = static_cast<float>(physFree) / physTotal;
+                    tlsLastRequest.freeMemory = freeMemory;
                     if (freeMemory < _hardMaxMinFreeMemory)
+                    {
+                        tlsLastRequest.outcome = "free-memory";
+                        tlsLastRequest.buffers = _allocNbBuffers;
                         return NULL;
+                    }
                 }
 
                 pbo = new GLPixelBufferObject(_dir, size);
@@ -611,6 +625,8 @@ namespace TwkGLF
                 _usedPool[size].push_back(PBOInfo(pbo, new GLSyncObject, ++_curStamp, purgeable));
                 _allocSize += size;
                 ++_allocNbBuffers;
+                tlsLastRequest.outcome = "allocated";
+                tlsLastRequest.buffers = _allocNbBuffers;
             }
             else
             {
@@ -622,6 +638,8 @@ namespace TwkGLF
 
                 if (_softMaxNbBuffers > 0 && _allocNbBuffers > _softMaxNbBuffers)
                     _purgeNoLock(0, _allocNbBuffers - _softMaxNbBuffers);
+
+                tlsLastRequest.buffers = _allocNbBuffers;
             }
 
             if (evDebug.getValue())
@@ -973,5 +991,9 @@ namespace TwkGLF
     //-----------------------------------------------------------------------------
     //
     unsigned MaxPooledPBOs() { return PipelinePrefetchPoolMaxNbBuffers(); }
+
+    //-----------------------------------------------------------------------------
+    //
+    PooledPBORequest LastPooledPBORequest() { return tlsLastRequest; }
 
 } // namespace TwkGLF

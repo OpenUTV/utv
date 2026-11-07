@@ -36,6 +36,25 @@ namespace TwkGLF
     size_t MaxPooledPBOBytes();
     unsigned MaxPooledPBOs();
 
+    //
+    //  What happened to the last request for a to-GPU PBO made on this thread,
+    //  for the playback diagnostics: "recycled" (a free buffer was reused),
+    //  "allocated" (the pool grew, because no free buffer was ready),
+    //  "too-big" or "free-memory" (refused; the caller falls back to a
+    //  client-memory upload). freeMemory is the fraction of physical memory
+    //  free when the pool last checked (-1 if it didn't), and buffers the
+    //  number of buffers the pool holds.
+    //
+
+    struct PooledPBORequest
+    {
+        const char* outcome = "none";
+        float freeMemory = -1.0f;
+        unsigned buffers = 0;
+    };
+
+    PooledPBORequest LastPooledPBORequest();
+
     class GLPixelBufferObjectFromPool
     {
     public:

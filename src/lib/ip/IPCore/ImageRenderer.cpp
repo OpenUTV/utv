@@ -4872,6 +4872,11 @@ namespace IPCore
 
         std::vector<std::shared_ptr<TwkGLF::GLPixelBufferObjectFromPool>> stagingPBOs;
 
+        //  For the playback diagnostics: why this upload did or didn't use
+        //  PBOs, and what the pool did with the last request.
+        const char* diagPath = "pbo";
+        TwkGLF::PooledPBORequest diagPoolRequest;
+
         if (pboEligible && numStrips > 0 && (numStrips == 1 || (evPBOUploadStrips.getValue() && numStrips <= TwkGLF::MaxPooledPBOs())))
         {
             for (size_t strip = 0; strip < numStrips; ++strip)
@@ -4880,17 +4885,43 @@ namespace IPCore
                 const size_t stripBytes = rows * rowBytes;
 
                 auto pbo = std::make_shared<TwkGLF::GLPixelBufferObjectFromPool>(TwkGLF::GLPixelBufferObject::TO_GPU, stripBytes);
+                if (diagUpload)
+                {
+                    diagPoolRequest = TwkGLF::LastPooledPBORequest();
+                }
                 //  pop() hands back a zero-sized wrapper when the pool is
                 //  exhausted or the request exceeds the max PBO size; fall back
                 //  to the client-memory path in that case.
                 if (pbo->getSize() < stripBytes)
                 {
                     stagingPBOs.clear();
+                    diagPath = "pool-refused";
                     break;
                 }
                 stagingPBOs.push_back(pbo);
             }
         }
+        else if (diagUpload)
+        {
+            if (!m_pixelBuffers)
+                diagPath = "pbos-off";
+            else if (d->channels == 3 && d->channelType == GL_UNSIGNED_SHORT)
+                diagPath = "rgb16";
+            else if (useAppleClientStorage())
+                diagPath = "client-storage";
+            else if (fb->scanlinePixelPadding() != 0 || !contiguousData)
+                diagPath = "padded";
+            else if (totalBytes <= 128 * 1024)
+                diagPath = "small";
+            else
+                diagPath = "strips-unavailable";
+        }
+
+        double diagMapMs = 0.0;
+        double diagCopyMs = 0.0;
+        double diagUnmapMs = 0.0;
+        double diagTexMs = 0.0;
+        auto diagNow = [diagUpload]() { return diagUpload ? TwkUtil::SystemClock().now() : 0.0; };
 
         const bool usePBO = !stagingPBOs.empty();
 
@@ -4927,11 +4958,13 @@ namespace IPCore
                 const unsigned char* src = p + y * fb->scanlineSize();
 
                 void* b = nullptr;
+                double diagT = diagNow();
                 {
                     HOP_PROF("ImageRenderer::uploadPlane() - usePBO - glMapBuffer");
 
                     b = pbo.map();
                 }
+                diagMapMs += (diagNow() - diagT) * 1000.0;
 
                 if (!b)
                 {
@@ -4942,6 +4975,7 @@ namespace IPCore
                     TWK_THROW_STREAM(RenderFailedExc, "glMapBuffer FAILED" << estring);
                 }
 
+                diagT = diagNow();
                 if (d->expandRGBToRGBA)
                 {
                     //  Expand RGB->RGBA directly into the mapped PBO (no extra
@@ -4952,9 +4986,12 @@ namespace IPCore
                 {
                     FastMemcpy_MP(b, src, rows * rowBytes);
                 }
+                diagCopyMs += (diagNow() - diagT) * 1000.0;
 
+                diagT = diagNow();
                 pbo.unmap();
                 pbo.bind();
+                diagUnmapMs += (diagNow() - diagT) * 1000.0;
 
                 {
                     HOP_PROF("ImageRenderer::uploadPlane() - usePBO - glBindTexture");
@@ -4980,6 +5017,7 @@ namespace IPCore
                     TWK_GLDEBUG;
                 }
 
+                diagT = diagNow();
                 if (updateOnly)
                 {
                     HOP_PROF("ImageRenderer::uploadPlane() - usePBO - updateOnly - "
@@ -5012,6 +5050,7 @@ namespace IPCore
                     TWK_GLDEBUG;
                     HOP_CALL(glFinish();)
                 }
+                diagTexMs += (diagNow() - diagT) * 1000.0;
 
                 pbo.unbind();
             }
@@ -5070,6 +5109,7 @@ namespace IPCore
             glTexParameteri(d->target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
             TWK_GLDEBUG;
 
+            const double diagT = diagNow();
             if (updateOnly && !useAppleClientStorage())
             {
                 //
@@ -5103,6 +5143,7 @@ namespace IPCore
 
                 TWK_GLDEBUG;
             }
+            diagTexMs = (diagNow() - diagT) * 1000.0;
 
             d->uploaded = true;
         }
@@ -5119,7 +5160,11 @@ namespace IPCore
             std::ostringstream extra;
             extra << "w=" << iw << ";h=" << ih << ";ch=" << d->channels << ";type=" << d->channelType << ";pxsz=" << d->pixelSize
                   << ";mb=" << mbytes << ";pbo=" << (usePBO ? 1 : 0) << ";strips=" << (usePBO ? numStrips : 0)
-                  << ";update=" << (updateOnly ? 1 : 0) << ";cpuGBps=" << gbPerSec;
+                  << ";update=" << (updateOnly ? 1 : 0) << ";cpuGBps=" << gbPerSec << ";path=" << diagPath
+                  << ";pool=" << diagPoolRequest.outcome << ";poolBuffers=" << diagPoolRequest.buffers
+                  << ";freeMem=" << diagPoolRequest.freeMemory << ";mapMs=" << diagMapMs << ";copyMs=" << diagCopyMs
+                  << ";unmapMs=" << diagUnmapMs << ";texMs=" << diagTexMs << std::hex << ";ifmt=0x" << d->internalFormat << ";fmt=0x"
+                  << d->format << ";ctype=0x" << d->channelType << std::dec;
             TwkUtil::PlaybackDiagnostics::instance().record("upload", -1, -1, cpuMs, extra.str());
         }
     }
