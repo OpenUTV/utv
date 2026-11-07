@@ -251,11 +251,8 @@ FOREACH(
 ENDFOREACH()
 
 #
-# Generate about_rv.cpp with build information
+# Build information for about_utv.cpp
 #
-SET(_about_rv_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/about_utv.cpp
-)
 
 # Get compiler name
 IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -321,29 +318,11 @@ SET(_arch_name
 # Add commercial RV-specific SDK versions if they exist
 
 #
-# Generate about_utv.cpp with build information
+# Generate about_utv.cpp with build information. It goes in the build tree, not the source tree, and is regenerated on every build so the commit hash is
+# current; the script only rewrites it when its content changes.
 #
 SET(_about_utv_cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/${_target}/generated/about_utv.cpp
-)
-
-# Get compiler name
-IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  SET(_compiler_name
-      "GCC"
-  )
-ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  SET(_compiler_name
-      "AppleClang"
-  )
-ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  SET(_compiler_name
-      "MSVC"
-  )
-ENDIF()
-
-SET(_vfx_platform_str
-    "${RV_VFX_PLATFORM}"
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/about_utv.cpp
 )
 
 # Gather dependency versions for about_utv
@@ -423,19 +402,13 @@ IF(Python3_EXECUTABLE)
   )
 ENDIF()
 
-ADD_CUSTOM_COMMAND(
-  OUTPUT ${_about_utv_cpp}
-  COMMAND ${_py_exec} ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py ${_about_utv_cpp} "${_compiler_name}" "${_vfx_platform_str}" "${_platform_name}"
-          "${_arch_name}" "${RV_UI_APPLICATION_NAME}" "${_dep_versions_str}" "${RV_GIT_COMMIT_SHORT_HASH}"
-  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py
-  COMMENT "Generating about_utv.cpp with build information"
-  VERBATIM
-)
-
-# Create explicit target to ensure about_utv.cpp is generated before RvCommon builds
 ADD_CUSTOM_TARGET(
   generate_about_utv_cpp
-  DEPENDS ${_about_utv_cpp}
+  COMMAND ${_py_exec} ${CMAKE_CURRENT_SOURCE_DIR}/generate_about_utv.py ${_about_utv_cpp} "${_compiler_name}" "${_vfx_platform_str}" "${_platform_name}"
+          "${_arch_name}" "${RV_UI_APPLICATION_NAME}" "${_dep_versions_str}" "${RV_GIT_COMMIT_SHORT_HASH}" --source-dir "${PROJECT_SOURCE_DIR}"
+  BYPRODUCTS ${_about_utv_cpp}
+  COMMENT "Generating about_utv.cpp with build information"
+  VERBATIM
 )
 
 LIST(APPEND _sources ${_about_utv_cpp})

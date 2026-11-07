@@ -14,8 +14,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 
-def get_git_info(git_hash_from_cmake=""):
-    """Get git commit hash from CMake"""
+def get_git_info(git_hash_from_cmake="", source_dir=""):
+    """Get the commit hash at build time, falling back to the one CMake saw at configure time"""
+    if source_dir:
+        try:
+            return subprocess.check_output(
+                ["git", "-C", source_dir, "rev-parse", "--short=8", "HEAD"], stderr=subprocess.DEVNULL, text=True
+            ).strip()
+        except (subprocess.SubprocessError, OSError):
+            pass
     return git_hash_from_cmake if git_hash_from_cmake else "unknown"
 
 
@@ -183,7 +190,7 @@ def get_dependencies_info(versions, app_name, platform=""):
         ),
         (
             "libspng",
-            resolve_version(["libspng", "spng"], "libspng"),
+            resolve_version(["libspng", "spng"], "spng"),
             "BSD 2-Clause",
         ),
         (
@@ -239,10 +246,11 @@ def generate_about_cpp(
     app_name,
     versions_str="",
     git_hash="",
+    source_dir="",
 ):
     """Generate the about_utv.cpp file"""
 
-    git_commit = get_git_info(git_hash)
+    git_commit = get_git_info(git_hash, source_dir)
     versions = parse_versions(versions_str)
     vfx_deps, other_deps, rv_specific_deps = get_dependencies_info(versions, app_name, platform)
     build_date = datetime.now(UTC).strftime("%B %d, %Y")
@@ -370,6 +378,12 @@ const char* about_UTV = "{html_str}";
         print(f"Creating directory: {output_path.parent}")
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        #  The build runs this every time; only rewrite the file when it
+        #  changes so RvCommon isn't recompiled for nothing.
+        if output_path.exists() and output_path.read_text(encoding="utf-8") == cpp_content:
+            print(f"{output_file} is up to date")
+            return
+
         with open(output_file, "w", encoding="utf-8", newline="\n") as f:
             f.write(cpp_content)
 
@@ -396,6 +410,7 @@ if __name__ == "__main__":
     parser.add_argument("app_name", nargs="?", default="UTV", help="Application name")
     parser.add_argument("versions", nargs="?", default="", help="Comma-separated dependency versions")
     parser.add_argument("git_hash", nargs="?", default="", help="Git commit hash")
+    parser.add_argument("--source-dir", default="", help="Source checkout to read the commit hash from at build time")
 
     args = parser.parse_args()
 
@@ -409,4 +424,5 @@ if __name__ == "__main__":
         args.app_name,
         args.versions,
         args.git_hash,
+        args.source_dir,
     )

@@ -9,6 +9,9 @@
 **/moc_*.cpp
 **/ui_*.h
 **/qrc_*.cpp
+
+# Old in-tree location of the About dialog source, now generated in the build tree
+src/lib/app/RvCommon/RvCommon/generated/about_utv.cpp
 **/*.qmlc
 **/*.pkg
 **/*.dmg
